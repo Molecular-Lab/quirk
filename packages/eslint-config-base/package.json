@@ -1,0 +1,23 @@
+{
+	"name": "@proxify/eslint-config-base",
+	"main": "eslint.config.mjs",
+	"publishConfig": {
+		"access": "public"
+	},
+	"devDependencies": {
+		"@eslint/js": "^9.26.0",
+		"@types/eslint": "^9.6.0",
+		"eslint": "catalog:",
+		"eslint-config-prettier": "10.1.2",
+		"eslint-config-turbo": "^2.5.2",
+		"eslint-plugin-autofix": "^2.2.0",
+		"eslint-plugin-import": "^2.31.0",
+		"eslint-plugin-prettier": "^5.2.6",
+		"eslint-plugin-simple-import-sort": "^12.1.0",
+		"eslint-plugin-sort-exports": "^0.9.1",
+		"eslint-plugin-turbo": "^2.5.2",
+		"eslint-plugin-unused-imports": "^4.1.4",
+		"typescript": "catalog:",
+		"typescript-eslint": "catalog:"
+	}
+}

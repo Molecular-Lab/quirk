@@ -1,0 +1,41 @@
+version: "2"
+plugins:
+  - name: ts
+    wasm:
+      url: https://downloads.sqlc.dev/plugin/sqlc-gen-typescript_0.1.3.wasm
+      sha256: 287df8f6cc06377d67ad5ba02c9e0f00c585509881434d15ea8bd9fc751a9368
+
+sql:
+  - engine: "postgresql"
+    schema: "./database/migrations"
+    queries: "./database/queries"
+    gen:
+      go:
+        package: "gen"
+        out: "./server/internal/gen"
+        sql_package: "pgx/v5"
+        emit_db_tags: true
+        emit_prepared_queries: true
+        emit_pointers_for_null_types: true
+        overrides:
+          - db_type: "uuid"
+            go_type:
+              import: "github.com/google/uuid"
+              type: "UUID"
+          - db_type: "pg_catalog.timestamptz"
+            nullable: true
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
+          - db_type: "pg_catalog.timestamptz"
+            go_type:
+              import: "time"
+              type: "Time"
+    codegen:
+      - plugin: ts
+        out: packages/database/src/gen
+        options:
+            runtime: node
+            driver: postgres
+

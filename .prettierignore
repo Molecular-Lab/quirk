@@ -1,0 +1,11 @@
+**/docs
+**/dist
+**/.git
+**/.svn
+**/.hg
+**/node_modules
+**/gen/*
+**/__generated__/*
+**/generated/*
+apps/solana-web/src/router.ts
+**/*.d.ts

@@ -1,0 +1,17 @@
+{
+	"name": "@proxify/core-web",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./src/index.ts",
+	"dependencies": {
+		"@proxify/core": "workspace:*",
+		"@tanstack/react-query": "catalog:",
+		"axios": "catalog:",
+		"react": "catalog:"
+	},
+	"devDependencies": {
+		"@types/react": "catalog:",
+		"typescript": "catalog:",
+		"@proxify/tsconfig": "workspace:*"
+	}
+}

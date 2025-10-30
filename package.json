@@ -1,0 +1,23 @@
+{
+	"name": "@proxify/root",
+	"private": true,
+	"scripts": {
+		"build": "turbo build",
+		"start": "turbo start",
+		"dev": "turbo dev",
+		"lint": "turbo lint",
+		"format": "prettier --write \"**/*.{ts,tsx,md}\"",
+		"db:generate": "sqlc generate",
+		"db:migrate": "./scripts/migrate.sh",
+		"dev:api": "pnpm --filter @proxify/core dev",
+		"dev:web": "pnpm --filter web dev"
+	},
+	"devDependencies": {
+		"prettier": "^3.5.3",
+		"turbo": "^2.5.2"
+	},
+	"packageManager": "pnpm@10.18.3",
+	"engines": {
+		"node": ">=22"
+	}
+}

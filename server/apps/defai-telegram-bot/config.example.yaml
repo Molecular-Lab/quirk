@@ -1,0 +1,7 @@
+telegram_bot:
+  bot_token: "your_telegram_bot_token_here"
+
+defai_server:
+  api_url: "https://your-api-server.com"
+  api_key: "your_api_key_here"
+  debug: false

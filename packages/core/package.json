@@ -1,0 +1,21 @@
+{
+	"name": "@proxify/core",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./index.ts",
+	"types": "./index.ts",
+	"scripts": {
+		"dev": "tsc --watch"
+	},
+	"dependencies": {
+		"@ts-rest/core": "catalog:",
+		"axios": "catalog:",
+		"bignumber.js": "^9.1.2",
+		"viem": "^2.38.3",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@proxify/tsconfig": "workspace:*",
+		"typescript": "catalog:"
+	}
+}

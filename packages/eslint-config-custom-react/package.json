@@ -1,0 +1,16 @@
+{
+	"name": "@proxify/eslint-config-custom-react",
+	"main": "eslint.config.mjs",
+	"dependencies": {
+		"@proxify/eslint-config-base": "workspace:*",
+		"eslint-plugin-react": "^7.37.5",
+		"eslint-plugin-react-hooks": "^5.2.0",
+		"eslint-plugin-react-refresh": "^0.4.20",
+		"eslint-plugin-tailwindcss": "^3.18.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	},
+	"version": "0.0.0",
+	"private": true
+}

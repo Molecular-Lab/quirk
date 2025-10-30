@@ -1,0 +1,177 @@
+# ============================================
+# Go Monorepo Template - .gitignore
+# ============================================
+
+# ============================================
+# Go
+# ============================================
+# Binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+dist/
+
+# Go test files
+*.test
+*.out
+
+# Go workspace file (can be committed if needed)
+# go.work.sum
+
+# Go module cache
+go.sum
+vendor/
+
+# Build artifacts
+*.o
+*.a
+*.prof
+
+# ============================================
+# Node.js / Frontend
+# ============================================
+node_modules/
+.pnpm-store/
+pnpm-lock.yaml
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# Build outputs
+dist/
+build/
+.next/
+.turbo/
+out/
+.vercel
+
+# ============================================
+# Environment & Config
+# ============================================
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+
+# Config files with secrets
+config.yaml
+config.local.yaml
+config.prod.yaml
+secrets.yaml
+
+# ============================================
+# Database
+# ============================================
+# PostgreSQL
+*.sql~
+*.backup
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# Database dumps
+*.dump
+*.tar.gz
+
+# ============================================
+# IDE & Editors
+# ============================================
+# VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+.idea_modules/
+
+# Vim
+*.swp
+*.swo
+*~
+
+# Emacs
+*~
+\#*\#
+.\#*
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# ============================================
+# OS Files
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# ============================================
+# Logs & Temp Files
+# ============================================
+*.log
+logs/
+*.tmp
+tmp/
+temp/
+
+# Coverage reports
+coverage/
+*.coverprofile
+.nyc_output/
+
+# ============================================
+# Docker
+# ============================================
+docker-compose.override.yml
+.dockerignore~
+
+# ============================================
+# Testing
+# ============================================
+.cache/
+*.cover
+htmlcov/
+
+# ============================================
+# Documentation
+# ============================================
+# Keep main docs, ignore generated docs
+docs/_build/
+docs/.vuepress/dist/
+
+# ============================================
+# Optional: Personal Notes
+# ============================================
+# Uncomment if you use these patterns for personal notes
+# TODO.md
+# NOTES.md
+# scratch/
+# playground/

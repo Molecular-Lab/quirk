@@ -1,0 +1,1 @@
+Calculated all Brain yiled execution maximize yield, rebalancing, 20%, 80% self also see data from observer the Yield and execute following our strategies@

@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: go-monorepo-postgres
+    environment:
+      POSTGRES_USER: go_monorepo_postgres
+      POSTGRES_PASSWORD: go_monorepo_password
+      POSTGRES_DB: go_monorepo_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/migrations:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

@@ -1,0 +1,32 @@
+{
+	"name": "@proxify/contract-executor",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/app.ts",
+		"build": "tsc",
+		"start": "node dist/app.js",
+		"type-check": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@proxify/contract-executor-client": "workspace:*",
+		"@proxify/core": "workspace:*",
+		"@safe-global/safe-core-sdk-types": "^5.1.0",
+		"dotenv": "^16.4.7",
+		"express": "^4.21.2",
+		"viem": "^2.21.53",
+		"winston": "^3.17.0",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@safe-global/api-kit": "^4.0.0",
+		"@safe-global/protocol-kit": "^4.1.7",
+		"@safe-global/types-kit": "^3.0.0",
+		"@types/express": "^5.0.0",
+		"@types/node": "^22.10.2",
+		"tsx": "^4.19.2",
+		"typescript": "^5.7.2"
+	},
+	"packageManager": "pnpm@10.18.3"
+}
