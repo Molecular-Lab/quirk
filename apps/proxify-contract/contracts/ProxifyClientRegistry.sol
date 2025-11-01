@@ -47,16 +47,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
 
     // ============ Client Management Functions ============
 
-    /**
-     * @notice Register a new client in the system
-     * @dev Can only be called by oracle role. Risk tiers must be set separately.
-     * @param clientId Unique identifier for the client
-     * @param clientAddress Address to receive fee distributions
-     * @param name Human-readable name for the client
-     * @param feeBps Client's revenue share from service fees (basis points, e.g., 500 = 5%)
-     * @param serviceFeeBps Service fee charged on yield (basis points, e.g., 2000 = 20%)
-     * @param clientFeeBps Client's share of service fee (basis points, e.g., 500 = 5%, remaining goes to protocol)
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function registerClient(
         bytes32 clientId,
         address clientAddress,
@@ -90,10 +81,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         emit ClientActivated(clientId);
     }
 
-    /**
-     * @notice Activate a previously deactivated client
-     * @param clientId The client's unique identifier
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function activateClient(bytes32 clientId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(isClientRegistered(clientId), "Client not registered");
         require(!clients[clientId].isActive, "Client already active");
@@ -102,10 +90,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         emit ClientActivated(clientId);
     }
 
-    /**
-     * @notice Deactivate/suspend a client
-     * @param clientId The client's unique identifier
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function deactivateClient(bytes32 clientId) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(isClientRegistered(clientId), "Client not registered");
         require(clients[clientId].isActive, "Client already inactive");
@@ -114,11 +99,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         emit ClientDeactivated(clientId);
     }
 
-    /**
-     * @notice Update client's fee distribution address
-     * @param clientId The client's unique identifier
-     * @param newAddress New address to receive fees
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function updateClientAddress(bytes32 clientId, address newAddress) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(isClientRegistered(clientId), "Client not registered");
         require(newAddress != address(0), "Invalid new address");
@@ -129,13 +110,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         emit ClientAddressUpdated(clientId, oldAddress, newAddress);
     }
 
-    /**
-     * @notice Update client's fee configuration
-     * @param clientId The client's unique identifier
-     * @param feeBps New client revenue share (basis points)
-     * @param serviceFeeBps New service fee percentage (basis points)
-     * @param clientFeeBps New client's share of service fee (basis points, e.g., 500 = 5%)
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function updateClientFees(
         bytes32 clientId,
         uint16 feeBps,
@@ -157,12 +132,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
 
     // ============ Risk Tier Management Functions ============
 
-    /**
-     * @notice Set risk tiers for a client (replaces existing configuration)
-     * @dev Total allocationBps must sum to 10000 (100%)
-     * @param clientId The client's unique identifier
-     * @param riskTiers Array of RiskTier structs defining the client's allocation strategy
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function setClientRiskTiers(
         bytes32 clientId,
         RiskTier[] calldata riskTiers
@@ -171,10 +141,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         require(riskTiers.length > 0, "At least one tier required");
         require(riskTiers.length <= MAX_TIERS_PER_CLIENT, "Too many tiers");
 
-        // Validate allocations sum to 100%
-        require(validateTierAllocations(riskTiers), "Allocations must sum to 100%");
-
-        // Validate no duplicate tier IDs
+        // Validate no duplicate tier IDs and proper tier data
         for (uint i = 0; i < riskTiers.length; i++) {
             require(riskTiers[i].tierId != bytes32(0), "Invalid tierId");
             require(bytes(riskTiers[i].name).length > 0, "Tier name required");
@@ -184,6 +151,9 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
                 require(riskTiers[i].tierId != riskTiers[j].tierId, "Duplicate tierId");
             }
         }
+
+        // Validate allocations sum to 100%
+        require(validateTierAllocations(riskTiers), "Allocations must sum to 100%");
 
         // Clear existing tier index map
         RiskTier[] storage existingTiers = clientRiskTiers[clientId];
@@ -203,12 +173,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         emit ClientRiskTiersUpdated(clientId, riskTiers.length);
     }
 
-    /**
-     * @notice Add a new risk tier to a client's configuration
-     * @dev Must rebalance existing allocations to maintain 100% total
-     * @param clientId The client's unique identifier
-     * @param tier The new RiskTier to add
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function addClientRiskTier(
         bytes32 clientId,
         RiskTier calldata tier
@@ -221,14 +186,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         RiskTier[] storage tiers = clientRiskTiers[clientId];
         require(tiers.length < MAX_TIERS_PER_CLIENT, "Max tiers reached");
 
-        // Calculate new total allocation
-        uint256 totalAllocation = tier.allocationBps;
-        for (uint i = 0; i < tiers.length; i++) {
-            totalAllocation += tiers[i].allocationBps;
-        }
-        require(totalAllocation == MAX_FEE_BPS, "Allocations must sum to 100%");
-
-        // Add new tier
+        // Add new tier with provided allocation and active status
         uint256 newIndex = tiers.length;
         tiers.push(tier);
         tierIndexMap[clientId][tier.tierId] = newIndex;
@@ -236,13 +194,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         emit ClientRiskTiersUpdated(clientId, tiers.length);
     }
 
-    /**
-     * @notice Update an existing risk tier's allocation
-     * @dev Total allocations must still sum to 100% after update
-     * @param clientId The client's unique identifier
-     * @param tierId The tier to update
-     * @param newAllocationBps New allocation percentage (basis points)
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function updateTierAllocation(
         bytes32 clientId,
         bytes32 tierId,
@@ -250,31 +202,17 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
     ) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(isClientRegistered(clientId), "Client not registered");
         require(hasTier(clientId, tierId), "Tier not found");
+        require(newAllocationBps <= MAX_FEE_BPS, "Allocation exceeds 100%");
 
         uint256 tierIndex = tierIndexMap[clientId][tierId];
         RiskTier[] storage tiers = clientRiskTiers[clientId];
-
-        // Calculate total with new allocation
-        uint256 totalAllocation = newAllocationBps;
-        for (uint i = 0; i < tiers.length; i++) {
-            if (i != tierIndex) {
-                totalAllocation += tiers[i].allocationBps;
-            }
-        }
-        require(totalAllocation == MAX_FEE_BPS, "Allocations must sum to 100%");
 
         tiers[tierIndex].allocationBps = newAllocationBps;
 
         emit ClientRiskTiersUpdated(clientId, tiers.length);
     }
 
-    /**
-     * @notice Activate or deactivate a specific risk tier
-     * @dev Deactivating a tier doesn't affect allocation percentages
-     * @param clientId The client's unique identifier
-     * @param tierId The tier to update
-     * @param isActive New active status
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function setTierActive(
         bytes32 clientId,
         bytes32 tierId,
@@ -291,60 +229,35 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
 
     // ============ View Functions ============
 
-    /**
-     * @notice Check if a client is registered and active
-     * @param clientId The client's unique identifier
-     * @return bool True if client is registered and active, false otherwise
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function isClientActive(bytes32 clientId) external view returns (bool) {
         return clients[clientId].registeredAt != 0 && clients[clientId].isActive;
     }
 
-    /**
-     * @notice Check if a client is registered (regardless of active status)
-     * @param clientId The client's unique identifier
-     * @return bool True if client is registered, false otherwise
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function isClientRegistered(bytes32 clientId) public view returns (bool) {
         return clients[clientId].registeredAt != 0;
     }
 
-    /**
-     * @notice Get full client information (without risk tiers)
-     * @param clientId The client's unique identifier
-     * @return info ClientInfo struct containing client data
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function getClientInfo(bytes32 clientId) external view returns (ClientInfo memory info) {
         require(isClientRegistered(clientId), "Client not registered");
         return clients[clientId];
     }
 
-    /**
-     * @notice Get client's fee recipient address
-     * @param clientId The client's unique identifier
-     * @return clientAddress Address that receives fee distributions
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function getClientAddress(bytes32 clientId) external view returns (address clientAddress) {
         require(isClientRegistered(clientId), "Client not registered");
         return clients[clientId].clientAddress;
     }
 
-    /**
-     * @notice Get all risk tiers for a client
-     * @param clientId The client's unique identifier
-     * @return tiers Array of RiskTier structs
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function getClientRiskTiers(bytes32 clientId) external view returns (RiskTier[] memory tiers) {
         require(isClientRegistered(clientId), "Client not registered");
         return clientRiskTiers[clientId];
     }
 
-    /**
-     * @notice Get a specific risk tier for a client
-     * @param clientId The client's unique identifier
-     * @param tierId The tier identifier
-     * @return tier The RiskTier struct
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function getClientRiskTier(
         bytes32 clientId,
         bytes32 tierId
@@ -356,12 +269,7 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         return clientRiskTiers[clientId][tierIndex];
     }
 
-    /**
-     * @notice Check if a client has a specific risk tier configured
-     * @param clientId The client's unique identifier
-     * @param tierId The tier identifier
-     * @return bool True if tier exists, false otherwise
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function hasTier(bytes32 clientId, bytes32 tierId) public view returns (bool) {
         uint256 index = tierIndexMap[clientId][tierId];
         if (index == type(uint256).max) {
@@ -374,12 +282,31 @@ contract ProxifyClientRegistry is IProxifyClientRegistry, AccessControl {
         return tiers[index].tierId == tierId;
     }
 
-    /**
-     * @notice Validate that a set of risk tiers sums to 100%
-     * @param tiers Array of RiskTier structs to validate
-     * @return bool True if allocations sum to 10000 (100%), false otherwise
-     */
+    /// @inheritdoc IProxifyClientRegistry
     function validateTierAllocations(RiskTier[] calldata tiers) public pure returns (bool) {
+        uint256 totalAllocation = 0;
+        for (uint i = 0; i < tiers.length; i++) {
+            totalAllocation += tiers[i].allocationBps;
+        }
+        return totalAllocation == MAX_FEE_BPS;
+    }
+
+    /// @inheritdoc IProxifyClientRegistry
+    function getClientTotalAllocation(bytes32 clientId) external view returns (uint256 totalAllocation) {
+        require(isClientRegistered(clientId), "Client not registered");
+        
+        RiskTier[] storage tiers = clientRiskTiers[clientId];
+        for (uint i = 0; i < tiers.length; i++) {
+            totalAllocation += tiers[i].allocationBps;
+        }
+        return totalAllocation;
+    }
+
+    /// @inheritdoc IProxifyClientRegistry
+    function isClientAllocationValid(bytes32 clientId) external view returns (bool) {
+        require(isClientRegistered(clientId), "Client not registered");
+        
+        RiskTier[] storage tiers = clientRiskTiers[clientId];
         uint256 totalAllocation = 0;
         for (uint i = 0; i < tiers.length; i++) {
             totalAllocation += tiers[i].allocationBps;

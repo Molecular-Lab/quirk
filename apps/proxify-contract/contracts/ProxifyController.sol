@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./interfaces/IProxify.sol";
 import "./interfaces/IProxifyClientRegistry.sol";
+import "./interfaces/IProxifyController.sol";
 
 /**
  * @title ProxifyController
@@ -14,7 +15,7 @@ import "./interfaces/IProxifyClientRegistry.sol";
  * @notice Controller contract for Proxify with dynamic risk tier support
  * @dev Supports tier-specific operations and batch processing
  */
-contract ProxifyController is AccessControl, Pausable {
+contract ProxifyController is IProxifyController, AccessControl, Pausable {
     using SafeERC20 for IERC20;
 
     // ============ Constants ============
@@ -35,96 +36,6 @@ contract ProxifyController is AccessControl, Pausable {
     // Track tier-to-protocol assignments (for transparency)
     mapping(bytes32 => address[]) public tierProtocols;
     mapping(bytes32 => mapping(address => bool)) public isTierProtocol;
-
-    // ============ Events ============
-
-    event TransferExecuted(
-        address indexed token,
-        address indexed protocol,
-        uint256 amount,
-        bytes32 indexed tierId,
-        string tierName,
-        uint256 timestamp
-    );
-
-    event TierIndexUpdated(
-        address indexed token,
-        bytes32 indexed tierId,
-        uint256 oldIndex,
-        uint256 newIndex,
-        uint256 timestamp
-    );
-
-    event BatchTierIndicesUpdated(
-        address indexed token,
-        uint256 tierCount,
-        uint256 timestamp
-    );
-
-    event TierInitialized(
-        address indexed token,
-        bytes32 indexed tierId,
-        uint256 initialIndex,
-        uint256 timestamp
-    );
-
-    event TierProtocolAssigned(
-        bytes32 indexed tierId,
-        address indexed protocol,
-        uint256 timestamp
-    );
-
-    event TierProtocolRemoved(
-        bytes32 indexed tierId,
-        address indexed protocol,
-        uint256 timestamp
-    );
-
-    event BatchWithdrawalExecuted(
-        uint256 indexed batchId,
-        address indexed token,
-        uint256 requestCount,
-        uint256 totalAmount,
-        uint256 totalServiceFees,
-        uint256 totalGasFees,
-        uint256 timestamp
-    );
-
-    event UnstakedFromProtocol(
-        address indexed token,
-        uint256 amount,
-        uint256 timestamp
-    );
-
-    event ProtocolWhitelisted(
-        address indexed protocol,
-        uint256 timestamp
-    );
-
-    event ProtocolRemovedFromWhitelist(
-        address indexed protocol,
-        uint256 timestamp
-    );
-
-    event TokenAdded(
-        address indexed token,
-        uint256 timestamp
-    );
-
-    event TokenRemoved(
-        address indexed token,
-        uint256 timestamp
-    );
-
-    event EmergencyPaused(
-        address indexed guardian,
-        uint256 timestamp
-    );
-
-    event EmergencyUnpaused(
-        address indexed admin,
-        uint256 timestamp
-    );
 
     // ============ Constructor ============
 
@@ -159,15 +70,7 @@ contract ProxifyController is AccessControl, Pausable {
 
     // ============ Core Oracle Functions ============
 
-    /**
-     * @notice Execute transfer to protocol for a specific tier
-     * @dev Oracle specifies which tier this transfer belongs to (for tracking and transparency)
-     * @param token Token address
-     * @param protocol Protocol address (must be whitelisted)
-     * @param amount Amount to transfer
-     * @param tierId Risk tier identifier
-     * @param tierName Human-readable tier name (for events)
-     */
+    /// @inheritdoc IProxifyController
     function executeTransfer(
         address token,
         address protocol,
@@ -193,11 +96,24 @@ contract ProxifyController is AccessControl, Pausable {
         emit TransferExecuted(token, protocol, amount, tierId, tierName, block.timestamp);
     }
 
-    /**
-     * @notice Confirm unstaking from protocols (when funds return to Proxify)
-     * @param token Token address
-     * @param amount Amount unstaked
-     */
+    /// @inheritdoc IProxifyController
+    function staking(
+        address token,
+        uint256 amount,
+        address to
+    )
+        external
+        onlyRole(ORACLE_ROLE)
+        whenNotPaused
+    {
+        require(supportedTokens[token], "Token not supported");
+        require(amount > 0, "Amount must be > 0");
+        require(to != address(0), "Invalid recipient");
+        
+        proxify.staking(token, amount, to);
+    }
+
+    /// @inheritdoc IProxifyController
     function confirmUnstake(address token, uint256 amount)
         external
         onlyRole(ORACLE_ROLE)
@@ -213,12 +129,7 @@ contract ProxifyController is AccessControl, Pausable {
 
     // ============ Tier Index Management ============
 
-    /**
-     * @notice Update vault index for a single tier
-     * @param token Token address
-     * @param tierId Tier identifier
-     * @param newIndex New index value
-     */
+    /// @inheritdoc IProxifyController
     function updateTierIndex(
         address token,
         bytes32 tierId,
@@ -237,13 +148,7 @@ contract ProxifyController is AccessControl, Pausable {
         emit TierIndexUpdated(token, tierId, oldIndex, newIndex, block.timestamp);
     }
 
-    /**
-     * @notice Batch update tier indices (gas-efficient for daily updates)
-     * @dev Oracle calculates new indices off-chain based on protocol yields
-     * @param token Token address
-     * @param tierIds Array of tier identifiers
-     * @param newIndices Array of new index values
-     */
+    /// @inheritdoc IProxifyController
     function batchUpdateTierIndices(
         address token,
         bytes32[] calldata tierIds,
@@ -262,11 +167,7 @@ contract ProxifyController is AccessControl, Pausable {
         emit BatchTierIndicesUpdated(token, tierIds.length, block.timestamp);
     }
 
-    /**
-     * @notice Initialize a new tier for a token
-     * @param token Token address
-     * @param tierId Tier identifier
-     */
+    /// @inheritdoc IProxifyController
     function initializeTier(
         address token,
         bytes32 tierId
@@ -281,11 +182,7 @@ contract ProxifyController is AccessControl, Pausable {
         emit TierInitialized(token, tierId, 1e18, block.timestamp);
     }
 
-    /**
-     * @notice Batch initialize multiple tiers for a token
-     * @param token Token address
-     * @param tierIds Array of tier identifiers to initialize
-     */
+    /// @inheritdoc IProxifyController
     function batchInitializeTiers(
         address token,
         bytes32[] calldata tierIds
@@ -304,12 +201,7 @@ contract ProxifyController is AccessControl, Pausable {
 
     // ============ Batch Withdrawal ============
 
-    /**
-     * @notice Execute batch withdrawals (oracle pre-calculates all values)
-     * @dev This is the gas-efficient way to process multiple withdrawals
-     * @param executions Array of withdrawal executions with pre-calculated values
-     * @return batchId Unique identifier for this batch
-     */
+    /// @inheritdoc IProxifyController
     function batchWithdraw(IProxify.WithdrawalExecution[] calldata executions)
         external
         onlyRole(ORACLE_ROLE)
@@ -363,12 +255,7 @@ contract ProxifyController is AccessControl, Pausable {
 
     // ============ Fee Management ============
 
-    /**
-     * @notice Oracle claims accumulated operation fees
-     * @param token Token address
-     * @param to Recipient address
-     * @param amount Amount to claim
-     */
+    /// @inheritdoc IProxifyController
     function claimOperationFee(
         address token,
         address to,
@@ -382,12 +269,7 @@ contract ProxifyController is AccessControl, Pausable {
         proxify.claimOperationFee(token, to, amount);
     }
 
-    /**
-     * @notice Admin claims accumulated protocol revenue
-     * @param token Token address
-     * @param to Recipient address (protocol treasury)
-     * @param amount Amount to claim
-     */
+    /// @inheritdoc IProxifyController
     function claimProtocolRevenue(
         address token,
         address to,
@@ -400,13 +282,7 @@ contract ProxifyController is AccessControl, Pausable {
         proxify.claimProtocolRevenue(token, to, amount);
     }
 
-    /**
-     * @notice Client claims their accumulated revenue
-     * @param clientId Client identifier
-     * @param token Token address
-     * @param to Recipient address (client wallet)
-     * @param amount Amount to claim
-     */
+    /// @inheritdoc IProxifyController
     function claimClientRevenue(
         bytes32 clientId,
         address token,
@@ -423,12 +299,7 @@ contract ProxifyController is AccessControl, Pausable {
 
     // ============ Protocol & Tier Management ============
 
-    /**
-     * @notice Assign a protocol to a tier (for tracking purposes)
-     * @dev This helps track which protocols belong to which risk tier
-     * @param tierId Tier identifier
-     * @param protocol Protocol address
-     */
+    /// @inheritdoc IProxifyController
     function assignProtocolToTier(
         bytes32 tierId,
         address protocol
@@ -445,11 +316,7 @@ contract ProxifyController is AccessControl, Pausable {
         emit TierProtocolAssigned(tierId, protocol, block.timestamp);
     }
 
-    /**
-     * @notice Remove protocol from tier assignment
-     * @param tierId Tier identifier
-     * @param protocol Protocol address
-     */
+    /// @inheritdoc IProxifyController
     function removeProtocolFromTier(
         bytes32 tierId,
         address protocol
@@ -474,10 +341,7 @@ contract ProxifyController is AccessControl, Pausable {
         emit TierProtocolRemoved(tierId, protocol, block.timestamp);
     }
 
-    /**
-     * @notice Add protocol to whitelist
-     * @param protocol Protocol address
-     */
+    /// @inheritdoc IProxifyController
     function addWhitelistedProtocol(address protocol)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -490,10 +354,7 @@ contract ProxifyController is AccessControl, Pausable {
         emit ProtocolWhitelisted(protocol, block.timestamp);
     }
 
-    /**
-     * @notice Remove protocol from whitelist
-     * @param protocol Protocol address
-     */
+    /// @inheritdoc IProxifyController
     function removeWhitelistedProtocol(address protocol)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -507,10 +368,7 @@ contract ProxifyController is AccessControl, Pausable {
 
     // ============ Token Management ============
 
-    /**
-     * @notice Add supported token
-     * @param token Token address
-     */
+    /// @inheritdoc IProxifyController
     function addSupportedToken(address token)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -524,10 +382,7 @@ contract ProxifyController is AccessControl, Pausable {
         emit TokenAdded(token, block.timestamp);
     }
 
-    /**
-     * @notice Remove supported token
-     * @param token Token address
-     */
+    /// @inheritdoc IProxifyController
     function removeSupportedToken(address token)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -543,11 +398,7 @@ contract ProxifyController is AccessControl, Pausable {
 
     // ============ Configurable Limit Management ============
 
-    /**
-     * @notice Update maximum batch size for withdrawals
-     * @dev Admin can adjust this based on gas limits and network conditions
-     * @param _newMax New maximum batch size (1-1000)
-     */
+    /// @inheritdoc IProxifyController
     function updateMaxBatchSize(uint256 _newMax)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -555,13 +406,7 @@ contract ProxifyController is AccessControl, Pausable {
         proxify.updateMaxBatchSize(_newMax);
     }
 
-    /**
-     * @notice Update maximum gas fee per user (deprecated - no-op)
-     * @dev This function is kept for interface compatibility but does nothing
-     *      Gas fee validation removed because different tokens have different decimals
-     *      Oracle is trusted to calculate reasonable gas fees per withdrawal
-     * @param _newMax Ignored parameter
-     */
+    /// @inheritdoc IProxifyController
     function updateMaxGasFeePerUser(uint256 _newMax)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -569,11 +414,7 @@ contract ProxifyController is AccessControl, Pausable {
         proxify.updateMaxGasFeePerUser(_newMax);
     }
 
-    /**
-     * @notice Update maximum index growth multiplier
-     * @dev Admin can adjust APY growth safety limits
-     * @param _newMax New maximum growth multiplier (2x-10x)
-     */
+    /// @inheritdoc IProxifyController
     function updateMaxIndexGrowth(uint256 _newMax)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -583,17 +424,13 @@ contract ProxifyController is AccessControl, Pausable {
 
     // ============ Emergency Functions ============
 
-    /**
-     * @notice Emergency pause (guardian only)
-     */
+    /// @inheritdoc IProxifyController
     function emergencyPause() external onlyRole(GUARDIAN_ROLE) {
         _pause();
         emit EmergencyPaused(msg.sender, block.timestamp);
     }
 
-    /**
-     * @notice Unpause (admin only)
-     */
+    /// @inheritdoc IProxifyController
     function unpause() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _unpause();
         emit EmergencyUnpaused(msg.sender, block.timestamp);
@@ -601,65 +438,37 @@ contract ProxifyController is AccessControl, Pausable {
 
     // ============ View Functions ============
 
-    /**
-     * @notice Get protocols assigned to a tier
-     * @param tierId Tier identifier
-     * @return Array of protocol addresses
-     */
+    /// @inheritdoc IProxifyController
     function getTierProtocols(bytes32 tierId) external view returns (address[] memory) {
         return tierProtocols[tierId];
     }
 
-    /**
-     * @notice Check if protocol is whitelisted
-     * @param protocol Protocol address
-     * @return bool True if whitelisted
-     */
+    /// @inheritdoc IProxifyController
     function isProtocolWhitelisted(address protocol) external view returns (bool) {
         return whitelistedProtocols[protocol];
     }
 
-    /**
-     * @notice Check if token is supported
-     * @param token Token address
-     * @return bool True if supported
-     */
+    /// @inheritdoc IProxifyController
     function isTokenSupported(address token) external view returns (bool) {
         return supportedTokens[token];
     }
 
-    /**
-     * @notice Check if contract is paused
-     * @return bool True if paused
-     */
+    /// @inheritdoc IProxifyController
     function isPaused() external view returns (bool) {
         return paused();
     }
 
-    /**
-     * @notice Get operation fee balance for a token
-     * @param token Token address
-     * @return Balance available for oracle to claim
-     */
+    /// @inheritdoc IProxifyController
     function getOperationFeeBalance(address token) external view returns (uint256) {
         return proxify.getOperationFeeBalance(token);
     }
 
-    /**
-     * @notice Get protocol revenue balance for a token
-     * @param token Token address
-     * @return Balance available for protocol to claim
-     */
+    /// @inheritdoc IProxifyController
     function getProtocolRevenueBalance(address token) external view returns (uint256) {
         return proxify.getProtocolRevenueBalance(token);
     }
 
-    /**
-     * @notice Get client revenue balance
-     * @param clientId Client identifier
-     * @param token Token address
-     * @return Balance available for client to claim
-     */
+    /// @inheritdoc IProxifyController
     function getClientRevenueBalance(bytes32 clientId, address token) external view returns (uint256) {
         return proxify.getClientRevenueBalance(clientId, token);
     }

@@ -1,5 +1,5 @@
 import type { Address } from "viem"
-import { BatchWithdrawParams, ClaimClientRevenueParams, ClaimRevenueParams, WithdrawalExecution } from ".."
+import { BatchWithdrawParams, ClaimClientRevenueParams, ClaimRevenueParams, ControllerWithdrawParams, WithdrawalExecution } from ".."
 
 export interface ProxifyControllerReadAdapter {
 	DEFAULT_ADMIN_ROLE(): Promise<string>
@@ -46,6 +46,7 @@ export interface ProxifyControllerWriteAdapter {
 	// Oracle actions
 	executeTransfer(token: Address, protocol: Address, amount: bigint, tierId: string, tierName: string): Promise<void>
 	confirmUnstake(token: Address, amount: bigint): Promise<void>
+	staking(token: Address, amount: bigint, stakingExecutor: Address): Promise<void>
 	updateTierIndex(token: Address, tierId: string, newIndex: bigint): Promise<void>
 	batchUpdateTierIndices(token: Address, tierIds: string[], newIndices: bigint[]): Promise<void>
 	initializeTier(token: Address, tierId: string): Promise<void>
@@ -54,7 +55,7 @@ export interface ProxifyControllerWriteAdapter {
 	claimClientRevenue(params: ClaimClientRevenueParams): Promise<void>
 	claimOperationFee(params: ClaimRevenueParams): Promise<void>
 	batchWithdraw(params: BatchWithdrawParams): Promise<void>
-	withdraw(clientId: string, userId: string, token: Address, amount: bigint, to: Address): Promise<void>
+	withdraw(params: ControllerWithdrawParams): Promise<void>
 
 	// Guardian actions
 	emergencyPause(): Promise<void>

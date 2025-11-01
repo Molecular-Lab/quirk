@@ -21,6 +21,7 @@ import type {
 	UpdateTierIndexParams,
 	BatchUpdateTierIndicesParams,
 	ExecuteTransferParams,
+	StakingParams,
 } from "../entity"
 
 export class ProxifyControllerRepository<TChainId = string> {
@@ -193,6 +194,16 @@ export class ProxifyControllerRepository<TChainId = string> {
 		}
 	}
 
+	async staking(chainId: TChainId, params: StakingParams): Promise<ControllerRepositoryResult> {
+		const client = this.getClient(chainId)
+		try {
+			await client.write.staking(params.token, params.amount, params.stakingExecutor)
+			return { success: true, message: "Staking executed" }
+		} catch (error) {
+			return this.toFailure("Failed to execute staking", error)
+		}
+	}
+
 	async updateTierIndex(chainId: TChainId, params: UpdateTierIndexParams): Promise<ControllerRepositoryResult> {
 		const client = this.getClient(chainId)
 		try {
@@ -296,7 +307,7 @@ export class ProxifyControllerRepository<TChainId = string> {
 	async withdraw(chainId: TChainId, params: ControllerWithdrawParams): Promise<ControllerRepositoryResult> {
 		const client = this.getClient(chainId)
 		try {
-			await client.write.withdraw(params.clientId, params.userId, params.token, params.amount, params.to)
+			await client.write.withdraw(params)
 			return { success: true, message: "Withdrawal executed" }
 		} catch (error) {
 			return this.toFailure("Failed to execute withdrawal", error)

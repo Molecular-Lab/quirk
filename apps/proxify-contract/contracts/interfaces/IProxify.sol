@@ -128,6 +128,20 @@ interface IProxify {
     );
 
     /**
+     * @notice Emitted when funds are transferred to staking executor for external protocol deployment
+     * @param token Token address (e.g., USDC, USDT)
+     * @param amount Amount transferred in token's smallest unit
+     * @param stakingExecutor Staking executor wallet address (oracle-controlled)
+     * @param timestamp Block timestamp when transfer occurred
+     */
+    event StakingExecuted(
+        address indexed token,
+        uint256 amount,
+        address indexed stakingExecutor,
+        uint256 timestamp
+    );
+
+    /**
      * @notice Emitted when tier vault index is updated (yield accrual)
      * @param token Token whose index was updated
      * @param tierId Risk tier identifier
@@ -251,6 +265,19 @@ interface IProxify {
         bytes32[] calldata tierIds,
         uint256[] calldata tierReductions,
         address to
+    ) external;
+
+    /**
+     * @notice Transfer funds to staking executor for external protocol deployment
+     * @dev Withdraws from stakeable balance (excludes fee vaults) for yield generation
+     * @param token Token address to transfer
+     * @param amount Amount to transfer
+     * @param stakingExecutor Address of staking executor wallet
+     */
+    function staking(
+        address token,
+        uint256 amount,
+        address stakingExecutor
     ) external;
 
     // ============ Tier Index Management ============

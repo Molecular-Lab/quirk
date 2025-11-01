@@ -44,6 +44,13 @@ export const executeTransferParamsSchema = z.object({
 })
 export type ExecuteTransferParams = z.infer<typeof executeTransferParamsSchema>
 
+export const stakingParamsSchema = z.object({
+	token: addressSchema,
+	amount: z.bigint(),
+	stakingExecutor: addressSchema,
+})
+export type StakingParams = z.infer<typeof stakingParamsSchema>
+
 export const controllerGrantRoleParamsSchema = z.object({
 	role: z.string(),
 	account: addressSchema,

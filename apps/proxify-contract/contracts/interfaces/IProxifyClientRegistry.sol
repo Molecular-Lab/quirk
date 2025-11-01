@@ -238,4 +238,18 @@ interface IProxifyClientRegistry {
      * @return bool True if allocations sum to 10000 (100%), false otherwise
      */
     function validateTierAllocations(RiskTier[] calldata tiers) external pure returns (bool);
+
+    /**
+     * @notice Get the current total allocation percentage for a client's tiers
+     * @param clientId The client's unique identifier
+     * @return totalAllocation Total allocation in basis points
+     */
+    function getClientTotalAllocation(bytes32 clientId) external view returns (uint256 totalAllocation);
+
+    /**
+     * @notice Check if a client's tier allocations are valid (sum to 100%)
+     * @param clientId The client's unique identifier
+     * @return bool True if allocations sum to exactly 100%, false otherwise
+     */
+    function isClientAllocationValid(bytes32 clientId) external view returns (bool);
 }

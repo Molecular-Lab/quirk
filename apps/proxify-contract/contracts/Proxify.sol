@@ -85,14 +85,7 @@ contract Proxify is IProxify, ReentrancyGuard {
 
     // ============ Deposit Functions ============
 
-    /**
-     * @notice Deposit tokens with automatic tier splitting based on client configuration
-     * @param clientId B2B client identifier
-     * @param userId End user identifier
-     * @param token Token address
-     * @param amount Amount to deposit
-     * @param from Address to transfer from
-     */
+    /// @inheritdoc IProxify
     function deposit(
         bytes32 clientId,
         bytes32 userId,
@@ -145,13 +138,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         emit Deposited(clientId, userId, token, amount, tierIds, tierAmounts, block.timestamp);
     }
 
-    /**
-     * @notice Direct deposit from msg.sender
-     * @param clientId Client identifier
-     * @param userId User identifier
-     * @param token Token address
-     * @param amount Amount to deposit
-     */
+    /// @inheritdoc IProxify
     function depositFrom(
         bytes32 clientId,
         bytes32 userId,
@@ -199,11 +186,7 @@ contract Proxify is IProxify, ReentrancyGuard {
 
     // ============ Withdrawal Functions ============
 
-    /**
-     * @notice Batch withdraw for multiple users (oracle-driven, gas-efficient)
-     * @dev Oracle pre-calculates all values off-chain, contract validates and executes
-     * @param executions Array of withdrawal executions
-     */
+    /// @inheritdoc IProxify
     function batchWithdraw(WithdrawalExecution[] calldata executions)
         external
         onlyController
@@ -292,15 +275,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         emit BatchWithdrawalExecuted(executions.length, totalServiceFees, totalGasFees, block.timestamp);
     }
 
-    /**
-     * @notice Individual withdrawal (less gas-efficient, for emergency use)
-     * @param clientId Client identifier
-     * @param userId User identifier
-     * @param token Token address
-     * @param tierIds Array of tier identifiers
-     * @param tierReductions Array of balance units to reduce
-     * @param to Recipient address
-     */
+    /// @inheritdoc IProxify
     function withdraw(
         bytes32 clientId,
         bytes32 userId,
@@ -351,14 +326,33 @@ contract Proxify is IProxify, ReentrancyGuard {
         emit Withdrawn(clientId, userId, token, amountToTransfer, to, block.timestamp);
     }
 
+    /// @inheritdoc IProxify
+    function staking(
+        address token,
+        uint256 amount,
+        address stakingExecutor
+    )
+        external
+        onlyController
+        nonReentrant
+    {
+        require(supportedTokens[token], "Token not supported");
+        require(amount > 0, "Amount must be greater than zero");
+        require(stakingExecutor != address(0), "Invalid staking executor address");
+
+        // Verify sufficient unstaked funds available (excludes fee vaults)
+        uint256 stakeableBalance = this.getStakeableBalance(token);
+        require(stakeableBalance >= amount, "Insufficient stakeable balance");
+
+        // Transfer tokens to staking executor wallet
+        IERC20(token).safeTransfer(stakingExecutor, amount);
+
+        emit StakingExecuted(token, amount, stakingExecutor, block.timestamp);
+    }
+
     // ============ Tier Index Management ============
 
-    /**
-     * @notice Update vault index for a tier
-     * @param token Token address
-     * @param tierId Tier identifier
-     * @param newIndex New index value (must be >= current index)
-     */
+    /// @inheritdoc IProxify
     function updateTierIndex(address token, bytes32 tierId, uint256 newIndex)
         external
         onlyController
@@ -376,12 +370,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         emit TierIndexUpdated(token, tierId, currentIndex, newIndex, block.timestamp);
     }
 
-    /**
-     * @notice Batch update tier indices (gas-efficient)
-     * @param token Token address
-     * @param tierIds Array of tier identifiers
-     * @param newIndices Array of new index values
-     */
+    /// @inheritdoc IProxify
     function batchUpdateTierIndices(
         address token,
         bytes32[] calldata tierIds,
@@ -410,11 +399,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         }
     }
 
-    /**
-     * @notice Initialize a new tier for a token
-     * @param token Token address
-     * @param tierId Tier identifier
-     */
+    /// @inheritdoc IProxify
     function initializeTier(address token, bytes32 tierId)
         external
         onlyController
@@ -431,28 +416,33 @@ contract Proxify is IProxify, ReentrancyGuard {
 
     // ============ Admin Functions ============
 
+    /// @inheritdoc IProxify
     function setController(address _controller) external onlyController {
         require(_controller != address(0), "Invalid controller");
         controller = _controller;
     }
 
+    /// @inheritdoc IProxify
     function setClientRegistry(address _registry) external onlyController {
         require(_registry != address(0), "Invalid registry");
         clientRegistry = IProxifyClientRegistry(_registry);
     }
 
+    /// @inheritdoc IProxify
     function addSupportedToken(address token) external onlyController {
         require(token != address(0), "Invalid token");
         require(!supportedTokens[token], "Token already supported");
         supportedTokens[token] = true;
     }
 
+    /// @inheritdoc IProxify
     function removeSupportedToken(address token) external onlyController {
         require(supportedTokens[token], "Token not supported");
         require(totalDeposits[token] == 0, "Token has active deposits");
         supportedTokens[token] = false;
     }
 
+    /// @inheritdoc IProxify
     function updateStaked(address token, uint256 amount, bool isStaking) external onlyController {
         if (isStaking) {
             totalStaked[token] += amount;
@@ -463,10 +453,7 @@ contract Proxify is IProxify, ReentrancyGuard {
 
     // ============ Configurable Limit Management ============
 
-    /**
-     * @notice Update maximum batch size for withdrawals
-     * @param _newMax New maximum (must be between 1 and 1000)
-     */
+    /// @inheritdoc IProxify
     function updateMaxBatchSize(uint256 _newMax) external onlyController {
         require(_newMax > 0 && _newMax <= 1000, "Invalid range");
         uint256 oldMax = maxBatchSize;
@@ -474,10 +461,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         emit MaxBatchSizeUpdated(oldMax, _newMax, block.timestamp);
     }
 
-    /**
-     * @notice Update maximum index growth multiplier
-     * @param _newMax New maximum (must be between 2x and 100x)
-     */
+    /// @inheritdoc IProxify
     function updateMaxIndexGrowth(uint256 _newMax) external onlyController {
         require(_newMax >= 2 && _newMax <= 100, "Invalid range"); // 2x-100x (allows extreme recovery scenarios)
         uint256 oldMax = maxIndexGrowth;
@@ -485,11 +469,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         emit MaxIndexGrowthUpdated(oldMax, _newMax, block.timestamp);
     }
 
-    /**
-     * @notice Update maximum gas fee per user (removed - not compatible with multi-token support)
-     * @dev This function is kept for interface compatibility but does nothing
-     * @param _newMax Ignored parameter
-     */
+    /// @inheritdoc IProxify
     function updateMaxGasFeePerUser(uint256 _newMax) external onlyController {
         // No-op: Gas fee validation removed because different tokens have different decimals
         // Oracle is trusted to calculate reasonable gas fees per withdrawal
@@ -574,6 +554,7 @@ contract Proxify is IProxify, ReentrancyGuard {
 
     // ============ View Functions - Account Information ============
 
+    /// @inheritdoc IProxify
     function getAccount(
         bytes32 clientId,
         bytes32 userId,
@@ -583,6 +564,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         return accounts[clientId][userId][tierId][token];
     }
 
+    /// @inheritdoc IProxify
     function getUserActiveTiers(
         bytes32 clientId,
         bytes32 userId,
@@ -591,6 +573,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         return userActiveTiers[clientId][userId][token];
     }
 
+    /// @inheritdoc IProxify
     function getTotalValue(
         bytes32 clientId,
         bytes32 userId,
@@ -605,6 +588,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         return totalValue;
     }
 
+    /// @inheritdoc IProxify
     function getTierValue(
         bytes32 clientId,
         bytes32 userId,
@@ -618,6 +602,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         return (account.balance * currentIndex) / account.entryIndex;
     }
 
+    /// @inheritdoc IProxify
     function getAccruedYield(
         bytes32 clientId,
         bytes32 userId,
@@ -640,6 +625,7 @@ contract Proxify is IProxify, ReentrancyGuard {
         return totalValue > totalBalance ? totalValue - totalBalance : 0;
     }
 
+    /// @inheritdoc IProxify
     function getUserAccountSummary(
         bytes32 clientId,
         bytes32 userId,
@@ -668,10 +654,12 @@ contract Proxify is IProxify, ReentrancyGuard {
 
     // ============ View Functions - Tier Indices ============
 
+    /// @inheritdoc IProxify
     function getTierIndex(address token, bytes32 tierId) external view returns (uint256 index) {
         return tierVaultIndices[tierId][token];
     }
 
+    /// @inheritdoc IProxify
     function getTierIndexWithTimestamp(
         address token,
         bytes32 tierId
@@ -680,28 +668,34 @@ contract Proxify is IProxify, ReentrancyGuard {
         updatedAt = tierVaultIndexUpdatedAt[tierId][token];
     }
 
+    /// @inheritdoc IProxify
     function isTierInitialized(address token, bytes32 tierId) external view returns (bool) {
         return isTierInitializedMap[tierId][token];
     }
 
     // ============ View Functions - Global State ============
 
+    /// @inheritdoc IProxify
     function getTotalDeposits(address token) external view returns (uint256) {
         return totalDeposits[token];
     }
 
+    /// @inheritdoc IProxify
     function getTotalStaked(address token) external view returns (uint256) {
         return totalStaked[token];
     }
 
+    /// @inheritdoc IProxify
     function isSupportedToken(address token) external view returns (bool) {
         return supportedTokens[token];
     }
 
+    /// @inheritdoc IProxify
     function getContractBalance(address token) external view returns (uint256) {
         return IERC20(token).balanceOf(address(this));
     }
 
+    /// @inheritdoc IProxify
     function getStakeableBalance(address token) external view returns (uint256) {
         uint256 contractBalance = IERC20(token).balanceOf(address(this));
         uint256 reserved = operationFeeVault[token] + protocolRevenueVault[token] + totalClientRevenues[token];
@@ -710,36 +704,43 @@ contract Proxify is IProxify, ReentrancyGuard {
 
     // ============ View Functions - Fee Vaults ============
 
+    /// @inheritdoc IProxify
     function getOperationFeeBalance(address token) external view returns (uint256) {
         return operationFeeVault[token];
     }
 
+    /// @inheritdoc IProxify
     function getProtocolRevenueBalance(address token) external view returns (uint256) {
         return protocolRevenueVault[token];
     }
 
+    /// @inheritdoc IProxify
     function getClientRevenueBalance(bytes32 clientId, address token) external view returns (uint256) {
         return clientRevenueVault[clientId][token];
     }
 
+    /// @inheritdoc IProxify
     function getTotalClientRevenues(address token) external view returns (uint256) {
         return totalClientRevenues[token];
     }
 
     // ============ Fee Claiming Functions ============
 
+    /// @inheritdoc IProxify
     function claimOperationFee(address token, address to, uint256 amount) external onlyController {
         require(operationFeeVault[token] >= amount, "Insufficient operation fees");
         operationFeeVault[token] -= amount;
         IERC20(token).safeTransfer(to, amount);
     }
 
+    /// @inheritdoc IProxify
     function claimProtocolRevenue(address token, address to, uint256 amount) external onlyController {
         require(protocolRevenueVault[token] >= amount, "Insufficient protocol revenue");
         protocolRevenueVault[token] -= amount;
         IERC20(token).safeTransfer(to, amount);
     }
 
+    /// @inheritdoc IProxify
     function claimClientRevenue(bytes32 clientId, address token, address to, uint256 amount) external onlyController {
         require(clientRevenueVault[clientId][token] >= amount, "Insufficient client revenue");
         clientRevenueVault[clientId][token] -= amount;

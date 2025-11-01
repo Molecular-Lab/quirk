@@ -1,4 +1,4 @@
-import { BatchWithdrawParams, ClaimClientRevenueParams, ClaimRevenueParams, ProxifyAccessControl, ProxifyAccessControlType, PROXIFY_CONTROLLER_ABI, ROLE_HASHES } from "@proxify/core"
+import { BatchWithdrawParams, ClaimClientRevenueParams, ClaimRevenueParams, ControllerWithdrawParams, ProxifyAccessControl, ProxifyAccessControlType, PROXIFY_CONTROLLER_ABI, ROLE_HASHES } from "@proxify/core"
 import { MetaTransactionData } from "@safe-global/safe-core-sdk-types"
 import { Address, encodeFunctionData, type WalletClient } from "viem"
 import { SupportedChainId, GnosisSafeClient, ViemClient } from "../config"
@@ -283,6 +283,19 @@ class ProxifyControllerWriteClient {
 		})
 	}
 
+	async staking(token: Address, amount: bigint, stakingExecutor: Address): Promise<void> {
+		await this.withRoleWallet(ProxifyAccessControl.Enum.ORACLE_ROLE, async (walletClient) => {
+			await walletClient.writeContract({
+				abi: PROXIFY_CONTROLLER_ABI,
+				functionName: "staking",
+				args: [token, amount, stakingExecutor] as any,
+				address: this.contractAddress,
+				account: walletClient.account!,
+				chain: walletClient.chain,
+			})
+		})
+	}
+
 	// NEW: Tier index management
 	async updateTierIndex(token: Address, tierId: string, newIndex: bigint): Promise<void> {
 		await this.withRoleWallet(ProxifyAccessControl.Enum.ORACLE_ROLE, async (walletClient) => {
@@ -350,8 +363,17 @@ class ProxifyControllerWriteClient {
 		})
 	}
 
-	async withdraw(){
-		throw new Error("Method not implemented.")
+	async withdraw(params: ControllerWithdrawParams): Promise<void> {
+		await this.withRoleWallet(ProxifyAccessControl.Enum.ORACLE_ROLE, async (walletClient) => {
+			await walletClient.writeContract({
+				abi: PROXIFY_CONTROLLER_ABI,
+				functionName: "withdraw",
+				args: [params.clientId, params.userId, params.token, params.amount, params.to] as any,
+				address: this.contractAddress,
+				account: walletClient.account!,
+				chain: walletClient.chain,
+			})
+		})
 	}
 
 	// NEW: Revenue claiming
