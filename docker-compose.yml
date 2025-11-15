@@ -1,17 +1,45 @@
 services:
   postgres:
     image: postgres:15-alpine
-    container_name: go-monorepo-postgres
+    container_name: proxify-postgres
     environment:
-      POSTGRES_USER: go_monorepo_postgres
-      POSTGRES_PASSWORD: go_monorepo_password
-      POSTGRES_DB: go_monorepo_dev
+      POSTGRES_USER: proxify_user
+      POSTGRES_PASSWORD: proxify_password
+      POSTGRES_DB: proxify_dev
     ports:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./database/migrations:/docker-entrypoint-initdb.d
+      - ./packages/core/migrations:/migrations
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U proxify_user -d proxify_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - proxify-network
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: proxify-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - '5050:80'
+    depends_on:
+      - postgres
+    networks:
+      - proxify-network
     restart: unless-stopped
 
 volumes:
   postgres_data:
+
+networks:
+  proxify-network:
+    driver: bridge

@@ -8,14 +8,20 @@
 		"dev": "tsc --watch"
 	},
 	"dependencies": {
+		"@privy-io/node": "^0.4.1",
 		"@ts-rest/core": "catalog:",
 		"axios": "catalog:",
 		"bignumber.js": "^9.1.2",
+		"dayjs": "^1.11.19",
+		"uuid": "^11.0.3",
+		"verror": "^1.10.1",
 		"viem": "^2.38.3",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@proxify/tsconfig": "workspace:*",
+		"@types/uuid": "^10.0.0",
+		"@types/verror": "^1.10.11",
 		"typescript": "catalog:"
 	}
 }

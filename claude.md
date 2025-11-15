@@ -1,102 +1,154 @@
-# DeFi Liquidity Aggregator - Project Context
+# Proxify - White-Label DeFi Yield Platform
 
-> **For detailed documentation, see `/docs` directory** **For coding standards, see `~/.claude/CLAUDE.md` (Go monorepo
-> best practices)**
+> **For complete product vision, see `PRODUCT_OWNER_FLOW.md`** | **For coding standards, see `~/.claude/CLAUDE.md` (Go monorepo best practices)**
 
 ## 🎯 Quick Reference
 
-**What We're Building:** B2B API infrastructure for embedded DeFi yield ("Stripe for DeFi Yield")
+**What We're Building:** B2B2C white-label DeFi yield platform for apps with idle user cash
 
-**Core Model:** 50 bps revenue share on AUM | White-label solution | Oracle-driven architecture
+**Core Model:**
+- Product Owners register → Get custodial wallet + SDK
+- Embed SDK in their app → End-users deposit fiat → USDC
+- Pooled custodial funds → DeFi protocols (AAVE, Curve, Compound, Uniswap)
+- Index-based accounting → Fair yield distribution → White-label dashboard
 
-**Target:** Crypto payroll, card issuers, gaming platforms, insurance protocols
+**Target:** E-commerce, Streaming, Freelancer, Gaming, Subscription platforms
 
 ## 📚 Documentation Structure
 
 ```
-/docs
-├── WORK_STYLE.md                    # Agent-first execution strategy
-├── /business
-│   ├── OVERVIEW.md                  # Business model & value proposition
-│   ├── TARGET_CUSTOMERS.md          # Customer segments & GTM
-│   └── GTM_STRATEGY.md             # 3-phase rollout plan
-├── /architecture
-│   ├── SYSTEM_DESIGN.md            # Oracle-driven centralized architecture
-│   └── SMART_CONTRACTS.md          # 3-phase contract implementation
-└── /technical
-    ├── SECURITY.md                  # Security requirements & vulnerabilities
-    └── IMPLEMENTATION_CHECKLIST.md  # Week-by-week build plan
+/
+├── PRODUCT_OWNER_FLOW.md           # ⭐ COMPLETE BUSINESS PLAN (READ THIS FIRST)
+├── QUICK_START.md                  # Database + Privy setup guide
+├── /docs
+│   ├── WORK_STYLE.md               # Agent-first execution strategy
+│   ├── /business
+│   │   ├── IDEA_VALIDATION.md      # Market validation
+│   │   └── LICENSE_REQUIREMENTS.md # Payment licensing
+│   ├── /technical
+│   │   ├── SECURITY.md             # Security requirements
+│   │   └── ON_OFF_RAMP_INTEGRATION.md # Fiat on-ramp guide
+│   └── /archive                    # Old versions (V1, V2, V3)
+└── /apps/proxify-contract          # V2 smart contract code (archived)
 ```
 
-## 🚀 Current Phase: Phase 1 MVP
+## 🚀 Current Phase: V4 - White-Label DeFi Platform
 
-**Goal:** Validate demand with minimal product
+**Goal:** Build B2B2C yield platform with custodial pooling
 
-- **TVL Cap:** $500k
-- **Timeline:** 8-10 weeks
-- **Budget:** $35k
-- **Target:** 3 paying customers, manual oracle
+**Key Features:**
+- ✅ Client registration & whitelisting
+- ✅ Privy custodial wallet per client
+- ✅ SDK for embedding (@proxify/sdk)
+- ✅ On-ramp: MoonPay/Apple Pay (V1), Internal gateway (V2)
+- ✅ Index-based accounting (like vault shares, off-chain)
+- ✅ DeFi execution: AAVE, Curve, Compound, Uniswap
+- ✅ White-label dashboard (Glider.Fi style UI)
+- ✅ AI agent for market insights
 
-**See:** `/docs/business/GTM_STRATEGY.md` for complete roadmap
+**See:** `PRODUCT_OWNER_FLOW.md` for complete details
 
 ## 🏗️ Architecture Summary
 
 ```
-Client API Call → Vault Contract (on-chain)
-                      ↓
-                 Oracle Service (off-chain)
-                      ↓
-                 DeFi Protocols (Aave, Compound, Curve)
+Product Owner Registration
+    ↓
+Privy Custodial Wallet Created (holds all end-user funds)
+    ↓
+SDK Embedded in Client App (E-commerce, Streaming, etc.)
+    ↓
+End-User Deposits: $100 Fiat → 100 USDC
+    ↓
+Pooled Custody: All users' USDC in one wallet
+    ↓
+Index-Based Tracking:
+    • user_deposits table (PostgreSQL)
+    • entry_index (locked at deposit)
+    • current_index (grows with yield)
+    • value = (balance × current_index) / entry_index
+    ↓
+DeFi Deployment:
+    • 70% AAVE (low risk)
+    • 20% Curve (moderate risk)
+    • 10% Uniswap (high risk)
+    ↓
+Yield Distribution: Index grows, all users earn proportionally
+    ↓
+White-Label Dashboard: Portfolio, Analytics, AI Insights
 ```
 
-**Key Principle:** Oracle has authority, contract has limits
+**Key Principle:** Custodial aggregation + Index accounting + No smart contracts (off-chain only)
 
-**See:** `/docs/architecture/SYSTEM_DESIGN.md` for details
+**See:** `PRODUCT_OWNER_FLOW.md` - Section "Technical Architecture"
 
 ## 🔒 Security Priorities
 
 **Phase 1 Must-Haves:**
 
-1. ✅ Multisig (3-of-5)
-2. ✅ On-chain transfer limits ($1M/tx, $5M/day)
-3. ✅ Protocol whitelisting
-4. ✅ Emergency pause
+1. ✅ Client KYB verification
+2. ✅ Privy MPC custody (handled by Privy)
+3. ✅ Index growth safety checks (max 2× per update)
+4. ✅ API key authentication
+5. ✅ Rate limiting
+6. ✅ Audit logging for all transactions
+7. ✅ On-ramp compliance (licensed providers)
 
 **See:** `/docs/technical/SECURITY.md` for complete requirements
 
 ## 💡 Core Positioning
 
 ```
-We ARE:  B2B infrastructure (like Stripe, Plaid)
-We're NOT: Retail yield platform (like Yearn)
+We ARE:  White-label DeFi yield infrastructure for apps
+We're NOT: Direct-to-consumer wallet app
 
-We DO:  Enable ecosystems to offer yield
-We DON'T: Compete with CEXs like Binance
+We DO:  Turn idle app balances into yield-generating assets
+We DON'T: Compete with end-user wallet apps
+
+Think: Stripe for DeFi yield
 ```
 
 ## 📋 Quick Start
 
-1. **Business Context:** Read `/docs/business/OVERVIEW.md`
-2. **Technical Specs:** Review `/docs/architecture/SMART_CONTRACTS.md`
-3. **Implementation:** Follow `/docs/technical/IMPLEMENTATION_CHECKLIST.md`
+1. **Product Vision:** Read `PRODUCT_OWNER_FLOW.md` (⭐ START HERE)
+2. **Database Setup:** Follow `QUICK_START.md` for PostgreSQL + Privy
+3. **Index Concept:** Reference `apps/proxify-contract/VAULT_INDEX_EXPLAINED.md` (archived, but concept applies)
 4. **Work Style:** Use agent-first execution (`/docs/WORK_STYLE.md`)
 
-## 🤝 Key Partnerships
+## 🎯 Target Clients & Use Cases
 
-- **Bitkub** (Thailand): Ecosystem access to 100+ startups
-- **SMBC Nikko** (Japan): Institutional client access
+1. **E-Commerce Platforms** - Yield on seller pending payouts
+2. **Streaming Platforms** - Creator revenue earns until withdrawal
+3. **Freelancer Platforms** - Escrow funds earn yield
+4. **Gaming Platforms** - Idle in-game balance earns
+5. **Subscription SaaS** - Annual billing float earns yield
 
-**See:** `/docs/business/GTM_STRATEGY.md` for partnership details
+**Example ROI:**
+- Client has $500K AUM (Assets Under Management)
+- 7% APY average yield
+- Client earns $2,712/month passive income
+- Proxify takes 7% yield share + $499 SaaS fee
+
+**See:** `PRODUCT_OWNER_FLOW.md` - Section "Target Clients & Use Cases"
 
 ## ⚡ Development Standards
 
 **All code must follow production-grade patterns from `~/.claude/CLAUDE.md`:**
 
 - Go monorepo structure with workspace
-- SQLC for type-safe database operations
+- PostgreSQL for index tracking + user deposits
 - Fiber v2 for HTTP services
+- Viem for DeFi protocol interactions
+- React + Vite + TypeScript for white-label dashboard
 - TurboRepo + PNPM for builds
-- React + Vite + TypeScript for frontend
+
+## 📜 Version History
+
+- **V1 (Archived):** Smart contract DeFi yield aggregator with on-chain accounting
+- **V2 (Archived):** Enhanced V1 with oracle-based index updates
+- **V3 (Archived):** Wallet custodial API provider (Privy-based, no DeFi)
+- **V4 (Current):** White-label DeFi platform with custodial pooling + index accounting (off-chain)
+
+**Archived Versions:** See `/docs/archive/` for old business models
 
 ## 🎓 CODING WORK STYLE (IMPORTANT!)
 
@@ -201,4 +253,7 @@ Show me your attempt."
 
 ---
 
-**Last Updated:** 2025-10-21 **Status:** Pre-Launch / Fundraising **Version:** 2.1 (Added Teaching Style)
+**Last Updated:** 2025-11-12
+**Status:** MVP Development
+**Version:** 3.0 (Product Shift: Wallet Custodial Provider via Privy)
+**V2 Vision:** DeFi Yield Aggregator (archived in `/docs/archive/v2-defi-aggregator/`)
