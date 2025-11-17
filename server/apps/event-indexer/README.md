@@ -1,1 +1,0 @@
-All event occured on laac contract write into database
