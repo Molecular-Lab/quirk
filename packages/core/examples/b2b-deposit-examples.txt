@@ -1,0 +1,371 @@
+/**
+ * Proxify B2B SDK Usage Examples
+ *
+ * This file demonstrates how clients integrate Proxify deposits
+ * into their applications (YouTube, E-commerce, etc.)
+ */
+
+import { ProxifyClient } from '../sdk'
+
+// ============================================
+// INITIALIZATION
+// ============================================
+
+/**
+ * Initialize the SDK
+ */
+const proxify = new ProxifyClient({
+	apiKey: process.env.PROXIFY_API_KEY!,
+	productId: 'youtube', // or 'my-ecommerce', 'gaming-platform', etc.
+	environment: 'production', // or 'staging', 'development'
+})
+
+// ============================================
+// EXAMPLE 1: YOUTUBE INTERNAL TRANSFER
+// ============================================
+
+/**
+ * YouTube Creator Dashboard - Transfer balance to earn yield
+ *
+ * Scenario:
+ * - Creator has $10,000 in YouTube earnings
+ * - Wants to transfer $5,000 to Proxify to earn 7.3% APY
+ * - Uses internal transfer (instant, no fees)
+ */
+async function youtubeInternalTransfer() {
+	const creatorId = 'creator_123'
+	const creatorBalance = 10000 // $10k in YouTube
+
+	try {
+		// Create internal deposit
+		const deposit = await proxify.deposits.create({
+			type: 'internal',
+			userId: creatorId,
+			amount: 5000,
+			currency: 'USD',
+			clientBalanceId: `youtube_balance_${creatorId}`,
+		})
+
+		if (deposit.data.type === 'internal') {
+			console.log('✅ Internal transfer completed!')
+			console.log(`Order ID: ${deposit.data.orderId}`)
+			console.log(`USDC Amount: ${deposit.data.cryptoAmount}`)
+			console.log(`Wallet: ${deposit.data.walletAddress}`)
+			console.log(`Completed At: ${deposit.data.completedAt}`)
+
+			// Update UI: Show success message
+			// "Your $5,000 is now earning 7.3% APY!"
+		}
+	} catch (error) {
+		console.error('❌ Transfer failed:', error)
+
+		// Handle insufficient balance
+		if (error instanceof Error && error.message.includes('Insufficient balance')) {
+			console.log('YouTube needs to top up their Proxify balance')
+		}
+	}
+}
+
+// ============================================
+// EXAMPLE 2: E-COMMERCE APPLE PAY CHECKOUT
+// ============================================
+
+/**
+ * E-commerce Checkout - Pay with Apple Pay
+ *
+ * Scenario:
+ * - Customer checking out with $150 cart
+ * - Selects Apple Pay
+ * - Proxify converts payment to USDC and credits store wallet
+ * - Customer earns yield on store credit
+ */
+async function ecommerceApplePayCheckout() {
+	const customerId = 'customer_456'
+	const cartTotal = 150
+
+	try {
+		// Create external deposit (Apple Pay)
+		const deposit = await proxify.deposits.create({
+			type: 'external',
+			userId: customerId,
+			amount: cartTotal,
+			currency: 'USD',
+			method: 'apple_pay',
+			userEmail: 'customer@example.com',
+			returnUrl: 'https://mystore.com/checkout/success',
+		})
+
+		if (deposit.data.type === 'external') {
+			console.log('✅ Payment URL generated!')
+			console.log(`Order ID: ${deposit.data.orderId}`)
+			console.log(`Payment URL: ${deposit.data.paymentUrl}`)
+			console.log(`Estimated USDC: ${deposit.data.estimatedCrypto}`)
+			console.log(`Fees: $${deposit.data.fees.total}`)
+			console.log(`Expires: ${deposit.data.expiresAt}`)
+
+			// Open Apple Pay popup
+			window.open(deposit.data.paymentUrl, '_blank')
+
+			// Start polling for status
+			await pollDepositStatus(deposit.data.orderId)
+		}
+	} catch (error) {
+		console.error('❌ Checkout failed:', error)
+	}
+}
+
+/**
+ * Poll deposit status until completed
+ */
+async function pollDepositStatus(orderId: string) {
+	const maxAttempts = 60 // 5 minutes max
+	let attempts = 0
+
+	const interval = setInterval(async () => {
+		attempts++
+
+		try {
+			const deposit = await proxify.deposits.getStatus(orderId)
+
+			console.log(`Status: ${deposit.status}`)
+
+			// Check completion
+			if (deposit.status === 'COMPLETED' || deposit.status === 'INSTANT_COMPLETED') {
+				clearInterval(interval)
+				console.log('✅ Deposit completed!')
+				// Redirect to success page
+			}
+
+			// Check failure
+			if (deposit.status === 'FAILED' || deposit.status === 'EXPIRED') {
+				clearInterval(interval)
+				console.log('❌ Deposit failed:', deposit.errorMessage)
+				// Show error to user
+			}
+		} catch (error) {
+			console.error('Error polling status:', error)
+		}
+
+		// Stop after max attempts
+		if (attempts >= maxAttempts) {
+			clearInterval(interval)
+			console.log('⏱️ Polling timeout')
+		}
+	}, 5000) // Poll every 5 seconds
+}
+
+// ============================================
+// EXAMPLE 3: CHECK CLIENT BALANCE
+// ============================================
+
+/**
+ * Check client's prepaid balance with Proxify
+ *
+ * Before allowing internal transfers, check if client has
+ * sufficient balance deposited with Proxify
+ */
+async function checkClientBalance() {
+	try {
+		const balance = await proxify.getClientBalance()
+
+		console.log('Client Balance:')
+		console.log(`  Available: $${balance.available.toLocaleString()}`)
+		console.log(`  Reserved: $${balance.reserved.toLocaleString()}`)
+		console.log(`  Total: $${balance.total.toLocaleString()}`)
+
+		// Check if can afford transfer
+		const transferAmount = 5000
+
+		if (balance.available >= transferAmount) {
+			console.log(`✅ Can transfer $${transferAmount}`)
+			return true
+		} else {
+			console.log(`❌ Insufficient balance. Need $${transferAmount - balance.available} more`)
+			return false
+		}
+	} catch (error) {
+		console.error('Error fetching balance:', error)
+		return false
+	}
+}
+
+// ============================================
+// EXAMPLE 4: LIST USER DEPOSITS
+// ============================================
+
+/**
+ * Get deposit history for a user
+ */
+async function listUserDeposits() {
+	const userId = 'user_123'
+
+	try {
+		const deposits = await proxify.deposits.list(userId, 1, 20)
+
+		console.log(`Total deposits: ${deposits.pagination.total}`)
+		console.log(`Page ${deposits.pagination.page} of ${deposits.pagination.totalPages}`)
+
+		deposits.data.forEach((deposit) => {
+			console.log(`\nDeposit: ${deposit.orderId}`)
+			console.log(`  Type: ${deposit.type}`)
+			console.log(`  Status: ${deposit.status}`)
+			console.log(`  Amount: $${deposit.fiatAmount} → ${deposit.cryptoAmount} USDC`)
+
+			if (deposit.type === 'external') {
+				console.log(`  Method: ${deposit.paymentMethod}`)
+				console.log(`  Fees: $${deposit.fees.total}`)
+			}
+
+			console.log(`  Created: ${deposit.createdAt}`)
+
+			if (deposit.completedAt) {
+				console.log(`  Completed: ${deposit.completedAt}`)
+			}
+		})
+	} catch (error) {
+		console.error('Error listing deposits:', error)
+	}
+}
+
+// ============================================
+// EXAMPLE 5: WEBHOOK HANDLER
+// ============================================
+
+/**
+ * Handle Proxify webhooks (Express.js example)
+ */
+import express from 'express'
+
+const app = express()
+
+app.post('/webhooks/proxify', express.raw({ type: 'application/json' }), (req, res) => {
+	// Verify webhook signature
+	const signature = req.headers['x-proxify-signature'] as string
+	const isValid = proxify.verifyWebhook(req.body.toString(), signature)
+
+	if (!isValid) {
+		console.error('❌ Invalid webhook signature')
+		return res.status(401).send('Invalid signature')
+	}
+
+	// Parse event
+	const event = JSON.parse(req.body.toString())
+
+	console.log(`Webhook received: ${event.eventName}`)
+
+	// Handle different events
+	switch (event.eventName) {
+		case 'ORDER_CREATED':
+			console.log(`Order created: ${event.orderId}`)
+			break
+
+		case 'ORDER_PROCESSING':
+			console.log(`Order processing: ${event.orderId}`)
+			break
+
+		case 'ORDER_COMPLETED':
+			console.log(`Order completed: ${event.orderId}`)
+			console.log(`USDC Amount: ${event.cryptoAmount}`)
+			console.log(`Wallet: ${event.walletAddress}`)
+			console.log(`Tx Hash: ${event.transactionHash}`)
+
+			// Update your database
+			// Send confirmation email to user
+			// Update UI (via WebSocket/SSE)
+			break
+
+		case 'ORDER_FAILED':
+			console.log(`Order failed: ${event.orderId}`)
+			console.log(`Status: ${event.status}`)
+
+			// Notify user of failure
+			// Offer retry option
+			break
+	}
+
+	res.status(200).send('OK')
+})
+
+// ============================================
+// EXAMPLE 6: FLEXIBLE DEPOSIT (BOTH TYPES)
+// ============================================
+
+/**
+ * Let user choose between internal balance or external payment
+ */
+async function flexibleDeposit(userId: string, amount: number, useInternalBalance: boolean) {
+	if (useInternalBalance) {
+		// Check if client has balance
+		const canAfford = await checkClientBalance()
+
+		if (!canAfford) {
+			console.log('Switching to external payment (insufficient internal balance)')
+			useInternalBalance = false
+		}
+	}
+
+	if (useInternalBalance) {
+		// Use internal transfer (instant, no fees)
+		const deposit = await proxify.deposits.create({
+			type: 'internal',
+			userId,
+			amount,
+			currency: 'USD',
+			clientBalanceId: `user_${userId}_balance`,
+		})
+
+		if (deposit.data.type === 'internal') {
+			console.log('✅ Instant transfer complete!')
+			return deposit.data.orderId
+		}
+	} else {
+		// Use external payment (Apple Pay, has fees)
+		const deposit = await proxify.deposits.create({
+			type: 'external',
+			userId,
+			amount,
+			currency: 'USD',
+			method: 'apple_pay',
+			returnUrl: 'https://myapp.com/deposit/success',
+		})
+
+		if (deposit.data.type === 'external') {
+			console.log('✅ Payment URL generated!')
+			window.open(deposit.data.paymentUrl, '_blank')
+			return deposit.data.orderId
+		}
+	}
+}
+
+// ============================================
+// RUN EXAMPLES
+// ============================================
+
+async function main() {
+	console.log('=== Proxify B2B SDK Examples ===\n')
+
+	// Example 1: YouTube internal transfer
+	console.log('\n--- Example 1: YouTube Internal Transfer ---')
+	await youtubeInternalTransfer()
+
+	// Example 2: E-commerce Apple Pay
+	// console.log('\n--- Example 2: E-commerce Apple Pay ---')
+	// await ecommerceApplePayCheckout()
+
+	// Example 3: Check client balance
+	console.log('\n--- Example 3: Client Balance ---')
+	await checkClientBalance()
+
+	// Example 4: List deposits
+	console.log('\n--- Example 4: User Deposits ---')
+	await listUserDeposits()
+
+	// Example 5: Webhook handler runs separately
+
+	// Example 6: Flexible deposit
+	console.log('\n--- Example 6: Flexible Deposit ---')
+	await flexibleDeposit('user_789', 1000, true)
+}
+
+// Uncomment to run
+// main()

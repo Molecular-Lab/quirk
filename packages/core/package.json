@@ -5,23 +5,29 @@
 	"main": "./index.ts",
 	"types": "./index.ts",
 	"scripts": {
-		"dev": "tsc --watch"
+		"dev": "tsc --watch",
+		"build": "tsc",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
 	},
 	"dependencies": {
 		"@privy-io/node": "^0.4.1",
 		"@ts-rest/core": "catalog:",
 		"axios": "catalog:",
 		"bignumber.js": "^9.1.2",
-		"dayjs": "^1.11.19",
+		"dayjs": "catalog:",
 		"uuid": "^11.0.3",
 		"verror": "^1.10.1",
 		"viem": "^2.38.3",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
+		"@proxify/eslint-config-base": "workspace:*",
 		"@proxify/tsconfig": "workspace:*",
 		"@types/uuid": "^10.0.0",
 		"@types/verror": "^1.10.11",
+		"eslint": "catalog:",
 		"typescript": "catalog:"
 	}
 }

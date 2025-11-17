@@ -6,6 +6,7 @@
 		"start": "turbo start",
 		"dev": "turbo dev",
 		"lint": "turbo lint",
+		"lint:fix": "turbo lint:fix",
 		"format": "prettier --write \"**/*.{ts,tsx,md}\"",
 		"db:generate": "sqlc generate",
 		"db:migrate": "./scripts/migrate.sh",
@@ -13,6 +14,8 @@
 		"dev:web": "pnpm --filter web dev"
 	},
 	"devDependencies": {
+		"@proxify/eslint-config-base": "workspace:*",
+		"eslint": "catalog:",
 		"prettier": "^3.5.3",
 		"turbo": "^2.5.2"
 	},

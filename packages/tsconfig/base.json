@@ -2,7 +2,8 @@
   "$schema": "https://json.schemastore.org/tsconfig",
   "display": "Default",
   "compilerOptions": {
-    "declaration": false,
+    "declaration": true,
+    "declarationMap": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "inlineSources": false,
@@ -12,7 +13,17 @@
     "noUnusedParameters": false,
     "preserveWatchOutput": true,
     "skipLibCheck": true,
-    "strict": true
+    "strict": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    "noEmit": false
   },
-  "exclude": ["node_modules", "**/node_modules/**"]
+  "exclude": [
+    "node_modules",
+    "**/node_modules/**",
+    "dist",
+    "**/dist/**",
+    ".turbo",
+    "**/.turbo/**"
+  ]
 }
