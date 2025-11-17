@@ -53,6 +53,19 @@ build/
 out/
 .vercel
 
+# TypeScript compiled files (keep config files)
+*.js
+*.d.ts
+*.d.ts.map
+!*.config.js
+!*.config.mjs
+!eslint.config.js
+!eslint.config.mjs
+!tailwind.config.js
+!postcss.config.js
+!vite.config.js
+!hardhat.config.js
+
 # ============================================
 # Environment & Config
 # ============================================
