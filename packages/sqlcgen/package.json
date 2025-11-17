@@ -1,0 +1,27 @@
+{
+	"name": "@proxify/sqlcgen",
+	"version": "1.0.0",
+	"description": "SQLC-generated TypeScript queries for Proxify B2B platform",
+	"private": true,
+	"main": "./src/gen/index.ts",
+	"types": "./src/gen/index.ts",
+	"exports": {
+		".": "./src/gen/index.ts",
+		"./gen/*": "./src/gen/*.ts"
+	},
+	"scripts": {
+		"generate": "sqlc generate",
+		"migrate": "../scripts/migrate.sh"
+	},
+	"dependencies": {
+		"postgres": "^3.4.7"
+	},
+	"keywords": [
+		"sqlc",
+		"postgres",
+		"database",
+		"b2b"
+	],
+	"author": "",
+	"license": "ISC"
+}

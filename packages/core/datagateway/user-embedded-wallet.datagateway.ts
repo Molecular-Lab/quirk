@@ -1,4 +1,4 @@
-import { UserEmbeddedWallet } from "../entity/user-embedded-wallet.entity"
+import { UserEmbeddedWallet } from "../entity/old/user-embedded-wallet.entity"
 
 /**
  * User Embedded Wallet DataGateway

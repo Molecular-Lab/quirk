@@ -3,7 +3,7 @@ import type {
 	EthereumTransactionResult,
 	RpcRequestParams,
 	TransactionHistoryEntry,
-} from "../entity/wallet-transaction.entity"
+} from "../entity/old/wallet-transaction.entity"
 
 /**
  * Wallet Transaction DataGateway

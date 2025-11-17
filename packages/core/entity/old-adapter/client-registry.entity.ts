@@ -1,5 +1,5 @@
 import type { Address } from "viem"
-import type { RiskTier } from "../client-registry.entity"
+import type { RiskTier } from "../old/client-registry.entity"
 
 export interface ProxifyClientRegistryReadAdapter {
 	DEFAULT_ADMIN_ROLE(): Promise<string>

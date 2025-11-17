@@ -1115,8 +1115,8 @@ WHERE client_id = $1
 
 export interface GetDepositStatsArgs {
     clientId: string;
-    createdAt: Date;
-    createdAt: Date;
+    startDate: Date;
+    endDate: Date;
 }
 
 export interface GetDepositStatsRow {
@@ -1130,7 +1130,7 @@ export interface GetDepositStatsRow {
 }
 
 export async function getDepositStats(sql: Sql, args: GetDepositStatsArgs): Promise<GetDepositStatsRow | null> {
-    const rows = await sql.unsafe(getDepositStatsQuery, [args.clientId, args.createdAt, args.createdAt]).values();
+    const rows = await sql.unsafe(getDepositStatsQuery, [args.clientId, args.startDate, args.endDate]).values();
     if (rows.length !== 1) {
         return null;
     }

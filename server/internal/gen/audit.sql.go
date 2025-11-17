@@ -102,9 +102,9 @@ ORDER BY count DESC
 `
 
 type GetActionFrequencyParams struct {
-	ClientID    pgtype.UUID        `db:"client_id"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at"`
-	CreatedAt_2 pgtype.Timestamptz `db:"created_at_2"`
+	ClientID  pgtype.UUID        `db:"client_id"`
+	StartDate pgtype.Timestamptz `db:"start_date"`
+	EndDate   pgtype.Timestamptz `db:"end_date"`
 }
 
 type GetActionFrequencyRow struct {
@@ -119,7 +119,7 @@ type GetActionFrequencyRow struct {
 // ============================================
 // Get frequency of actions
 func (q *Queries) GetActionFrequency(ctx context.Context, arg GetActionFrequencyParams) ([]GetActionFrequencyRow, error) {
-	rows, err := q.db.Query(ctx, getActionFrequency, arg.ClientID, arg.CreatedAt, arg.CreatedAt_2)
+	rows, err := q.db.Query(ctx, getActionFrequency, arg.ClientID, arg.StartDate, arg.EndDate)
 	if err != nil {
 		return nil, err
 	}
@@ -249,10 +249,10 @@ LIMIT $4
 `
 
 type GetUserActivityParams struct {
-	ClientID    pgtype.UUID        `db:"client_id"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at"`
-	CreatedAt_2 pgtype.Timestamptz `db:"created_at_2"`
-	Limit       int32              `db:"limit"`
+	ClientID  pgtype.UUID        `db:"client_id"`
+	StartDate pgtype.Timestamptz `db:"start_date"`
+	EndDate   pgtype.Timestamptz `db:"end_date"`
+	Limit     int32              `db:"limit"`
 }
 
 type GetUserActivityRow struct {
@@ -268,8 +268,8 @@ type GetUserActivityRow struct {
 func (q *Queries) GetUserActivity(ctx context.Context, arg GetUserActivityParams) ([]GetUserActivityRow, error) {
 	rows, err := q.db.Query(ctx, getUserActivity,
 		arg.ClientID,
-		arg.CreatedAt,
-		arg.CreatedAt_2,
+		arg.StartDate,
+		arg.EndDate,
 		arg.Limit,
 	)
 	if err != nil {
@@ -492,24 +492,24 @@ WHERE client_id = $1
   AND created_at >= $2
   AND created_at <= $3
 ORDER BY created_at DESC
-LIMIT $4 OFFSET $5
+LIMIT $5 OFFSET $4
 `
 
 type ListAuditLogsByClientAndDateRangeParams struct {
-	ClientID    pgtype.UUID        `db:"client_id"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at"`
-	CreatedAt_2 pgtype.Timestamptz `db:"created_at_2"`
-	Limit       int32              `db:"limit"`
-	Offset      int32              `db:"offset"`
+	ClientID  pgtype.UUID        `db:"client_id"`
+	StartDate pgtype.Timestamptz `db:"start_date"`
+	EndDate   pgtype.Timestamptz `db:"end_date"`
+	Offset    int32              `db:"offset"`
+	Limit     int32              `db:"limit"`
 }
 
 func (q *Queries) ListAuditLogsByClientAndDateRange(ctx context.Context, arg ListAuditLogsByClientAndDateRangeParams) ([]AuditLog, error) {
 	rows, err := q.db.Query(ctx, listAuditLogsByClientAndDateRange,
 		arg.ClientID,
-		arg.CreatedAt,
-		arg.CreatedAt_2,
-		arg.Limit,
+		arg.StartDate,
+		arg.EndDate,
 		arg.Offset,
+		arg.Limit,
 	)
 	if err != nil {
 		return nil, err
@@ -547,22 +547,22 @@ SELECT id, client_id, user_id, actor_type, action, resource_type, resource_id, d
 WHERE created_at >= $1
   AND created_at <= $2
 ORDER BY created_at DESC
-LIMIT $3 OFFSET $4
+LIMIT $4 OFFSET $3
 `
 
 type ListAuditLogsByDateRangeParams struct {
-	CreatedAt   pgtype.Timestamptz `db:"created_at"`
-	CreatedAt_2 pgtype.Timestamptz `db:"created_at_2"`
-	Limit       int32              `db:"limit"`
-	Offset      int32              `db:"offset"`
+	StartDate pgtype.Timestamptz `db:"start_date"`
+	EndDate   pgtype.Timestamptz `db:"end_date"`
+	Offset    int32              `db:"offset"`
+	Limit     int32              `db:"limit"`
 }
 
 func (q *Queries) ListAuditLogsByDateRange(ctx context.Context, arg ListAuditLogsByDateRangeParams) ([]AuditLog, error) {
 	rows, err := q.db.Query(ctx, listAuditLogsByDateRange,
-		arg.CreatedAt,
-		arg.CreatedAt_2,
-		arg.Limit,
+		arg.StartDate,
+		arg.EndDate,
 		arg.Offset,
+		arg.Limit,
 	)
 	if err != nil {
 		return nil, err

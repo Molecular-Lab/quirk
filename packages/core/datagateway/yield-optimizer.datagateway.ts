@@ -4,9 +4,9 @@ import type {
 	YieldOpportunity,
 	PortfolioOptimization,
 	StrategyRecommendation,
-} from "../entity/yield-strategy.entity"
-import type { RiskProfile } from "../entity/risk-profile.entity"
-import type { DeFiPosition } from "../entity/defi-position.entity"
+} from "../entity/old/yield-strategy.entity"
+import type { RiskProfile } from "../entity/old/risk-profile.entity"
+import type { DeFiPosition } from "../entity/old/defi-position.entity"
 
 /**
  * Yield Optimizer DataGateway

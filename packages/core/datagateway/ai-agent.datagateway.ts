@@ -1,6 +1,6 @@
-import type { RiskProfile } from "../entity/risk-profile.entity"
-import type { DeFiPosition } from "../entity/defi-position.entity"
-import type { StrategyRecommendation, YieldOpportunity } from "../entity/yield-strategy.entity"
+import type { RiskProfile } from "../entity/old/risk-profile.entity"
+import type { DeFiPosition } from "../entity/old/defi-position.entity"
+import type { StrategyRecommendation, YieldOpportunity } from "../entity/old/yield-strategy.entity"
 
 /**
  * AI Agent DataGateway

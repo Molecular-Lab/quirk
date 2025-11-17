@@ -1,10 +1,10 @@
 import VError from "verror"
 import dayjs from "dayjs"
-import { IPrivyWalletDataGateway } from "../datagateway/privy-wallet.datagateway"
-import { IPrivyUserDataGateway } from "../datagateway/privy-user.datagateway"
-import { PrivyEmbeddedWallet, privyEmbeddedWalletSchema } from "../entity/privy-wallet.entity"
-import { PrivyUser } from "../entity/privy-user.entity"
-import { safeParse } from "../utils/safe-parse"
+import { IPrivyWalletDataGateway } from "../../datagateway/privy-wallet.datagateway"
+import { IPrivyUserDataGateway } from "../../datagateway/privy-user.datagateway"
+import { PrivyEmbeddedWallet, privyEmbeddedWalletSchema } from "../../entity/old/privy-wallet.entity"
+import { PrivyUser } from "../../entity/old/privy-user.entity"
+import { safeParse } from "../../utils/safe-parse"
 
 /**
  * Privy Usecase

@@ -18,7 +18,8 @@ import type {
 	DepositTransaction,
 	WithdrawalTransaction,
 	AuditLog,
-} from '../entity/b2b-client.entity'
+	ClientRiskTier,
+} from '../entity/old/b2b-client.entity'
 
 /**
  * Client Organization Data Gateway

@@ -461,9 +461,9 @@ WHERE client_id = $1
 `
 
 type GetDepositStatsParams struct {
-	ClientID    uuid.UUID          `db:"client_id"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at"`
-	CreatedAt_2 pgtype.Timestamptz `db:"created_at_2"`
+	ClientID  uuid.UUID          `db:"client_id"`
+	StartDate pgtype.Timestamptz `db:"start_date"`
+	EndDate   pgtype.Timestamptz `db:"end_date"`
 }
 
 type GetDepositStatsRow struct {
@@ -481,7 +481,7 @@ type GetDepositStatsRow struct {
 // ============================================
 // Deposit statistics for a client
 func (q *Queries) GetDepositStats(ctx context.Context, arg GetDepositStatsParams) (GetDepositStatsRow, error) {
-	row := q.db.QueryRow(ctx, getDepositStats, arg.ClientID, arg.CreatedAt, arg.CreatedAt_2)
+	row := q.db.QueryRow(ctx, getDepositStats, arg.ClientID, arg.StartDate, arg.EndDate)
 	var i GetDepositStatsRow
 	err := row.Scan(
 		&i.TotalDeposits,

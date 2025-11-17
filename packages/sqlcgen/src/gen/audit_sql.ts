@@ -317,13 +317,13 @@ SELECT id, client_id, user_id, actor_type, action, resource_type, resource_id, d
 WHERE created_at >= $1
   AND created_at <= $2
 ORDER BY created_at DESC
-LIMIT $3 OFFSET $4`;
+LIMIT $4 OFFSET $3`;
 
 export interface ListAuditLogsByDateRangeArgs {
-    createdAt: Date;
-    createdAt: Date;
-    limit: string;
+    startDate: Date;
+    endDate: Date;
     offset: string;
+    limit: string;
 }
 
 export interface ListAuditLogsByDateRangeRow {
@@ -342,7 +342,7 @@ export interface ListAuditLogsByDateRangeRow {
 }
 
 export async function listAuditLogsByDateRange(sql: Sql, args: ListAuditLogsByDateRangeArgs): Promise<ListAuditLogsByDateRangeRow[]> {
-    return (await sql.unsafe(listAuditLogsByDateRangeQuery, [args.createdAt, args.createdAt, args.limit, args.offset]).values()).map(row => ({
+    return (await sql.unsafe(listAuditLogsByDateRangeQuery, [args.startDate, args.endDate, args.offset, args.limit]).values()).map(row => ({
         id: row[0],
         clientId: row[1],
         userId: row[2],
@@ -364,14 +364,14 @@ WHERE client_id = $1
   AND created_at >= $2
   AND created_at <= $3
 ORDER BY created_at DESC
-LIMIT $4 OFFSET $5`;
+LIMIT $5 OFFSET $4`;
 
 export interface ListAuditLogsByClientAndDateRangeArgs {
     clientId: string | null;
-    createdAt: Date;
-    createdAt: Date;
-    limit: string;
+    startDate: Date;
+    endDate: Date;
     offset: string;
+    limit: string;
 }
 
 export interface ListAuditLogsByClientAndDateRangeRow {
@@ -390,7 +390,7 @@ export interface ListAuditLogsByClientAndDateRangeRow {
 }
 
 export async function listAuditLogsByClientAndDateRange(sql: Sql, args: ListAuditLogsByClientAndDateRangeArgs): Promise<ListAuditLogsByClientAndDateRangeRow[]> {
-    return (await sql.unsafe(listAuditLogsByClientAndDateRangeQuery, [args.clientId, args.createdAt, args.createdAt, args.limit, args.offset]).values()).map(row => ({
+    return (await sql.unsafe(listAuditLogsByClientAndDateRangeQuery, [args.clientId, args.startDate, args.endDate, args.offset, args.limit]).values()).map(row => ({
         id: row[0],
         clientId: row[1],
         userId: row[2],
@@ -501,8 +501,8 @@ ORDER BY count DESC`;
 
 export interface GetActionFrequencyArgs {
     clientId: string | null;
-    createdAt: Date;
-    createdAt: Date;
+    startDate: Date;
+    endDate: Date;
 }
 
 export interface GetActionFrequencyRow {
@@ -513,7 +513,7 @@ export interface GetActionFrequencyRow {
 }
 
 export async function getActionFrequency(sql: Sql, args: GetActionFrequencyArgs): Promise<GetActionFrequencyRow[]> {
-    return (await sql.unsafe(getActionFrequencyQuery, [args.clientId, args.createdAt, args.createdAt]).values()).map(row => ({
+    return (await sql.unsafe(getActionFrequencyQuery, [args.clientId, args.startDate, args.endDate]).values()).map(row => ({
         action: row[0],
         count: row[1],
         firstOccurrence: row[2],
@@ -540,8 +540,8 @@ LIMIT $4`;
 
 export interface GetUserActivityArgs {
     clientId: string | null;
-    createdAt: Date;
-    createdAt: Date;
+    startDate: Date;
+    endDate: Date;
     limit: string;
 }
 
@@ -555,7 +555,7 @@ export interface GetUserActivityRow {
 }
 
 export async function getUserActivity(sql: Sql, args: GetUserActivityArgs): Promise<GetUserActivityRow[]> {
-    return (await sql.unsafe(getUserActivityQuery, [args.clientId, args.createdAt, args.createdAt, args.limit]).values()).map(row => ({
+    return (await sql.unsafe(getUserActivityQuery, [args.clientId, args.startDate, args.endDate, args.limit]).values()).map(row => ({
         userId: row[0],
         actorType: row[1],
         totalActions: row[2],
