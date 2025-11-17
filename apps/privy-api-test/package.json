@@ -12,7 +12,7 @@
 	"dependencies": {
 		"@proxify/core": "workspace:*",
 		"@proxify/privy-client": "workspace:*",
-		"dayjs": "^1.11.19",
+		"dayjs": "catalog:",
 		"dotenv": "^16.4.7",
 		"express": "^4.21.2",
 		"winston": "^3.17.0",

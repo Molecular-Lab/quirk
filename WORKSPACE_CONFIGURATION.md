@@ -48,7 +48,7 @@ export * from "./usecase"
   "@ts-rest/core": "catalog:",
   "axios": "catalog:",
   "bignumber.js": "^9.1.2",
-  "dayjs": "^1.11.19",        // ✅ ADDED
+  "dayjs": "catalog:",        // ✅ ADDED
   "uuid": "^11.0.3",
   "verror": "^1.10.1",
   "viem": "^2.38.3",
@@ -66,7 +66,7 @@ export * from "./usecase"
 {
   "@proxify/core": "workspace:*",          // ✅ Proper workspace reference
   "@proxify/privy-client": "workspace:*",  // ✅ Proper workspace reference
-  "dayjs": "^1.11.19",                    // ✅ ADDED
+  "dayjs": "catalog:",                    // ✅ ADDED
   "dotenv": "^16.4.7",
   "express": "^4.21.2",
   "winston": "^3.17.0",
