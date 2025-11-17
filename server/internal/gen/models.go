@@ -5,12 +5,280 @@
 package gen
 
 import (
+	"net/netip"
+
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type User struct {
+// Complete audit trail for all system activities
+type AuditLog struct {
+	ID       uuid.UUID   `db:"id"`
+	ClientID pgtype.UUID `db:"client_id"`
+	UserID   *string     `db:"user_id"`
+	// client | end_user | system | admin
+	ActorType string `db:"actor_type"`
+	// client.registered | deposit.created | withdrawal.completed | vault.rebalanced | etc.
+	Action       string             `db:"action"`
+	ResourceType *string            `db:"resource_type"`
+	ResourceID   *string            `db:"resource_id"`
+	Description  *string            `db:"description"`
+	Metadata     []byte             `db:"metadata"`
+	IpAddress    *netip.Addr        `db:"ip_address"`
+	UserAgent    *string            `db:"user_agent"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at"`
+}
+
+// Prepaid balances for instant internal transfers (client pays upfront)
+type ClientBalance struct {
+	ID       uuid.UUID `db:"id"`
+	ClientID uuid.UUID `db:"client_id"`
+	// Available for internal transfers
+	Available pgtype.Numeric `db:"available"`
+	// Reserved for pending operations
+	Reserved    pgtype.Numeric     `db:"reserved"`
+	Currency    string             `db:"currency"`
+	LastTopupAt pgtype.Timestamptz `db:"last_topup_at"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Product owners (clients) who integrate Proxify into their platforms
+type ClientOrganization struct {
+	ID uuid.UUID `db:"id"`
+	// Unique product identifier
+	ProductID   string `db:"product_id"`
+	CompanyName string `db:"company_name"`
+	// ecommerce, streaming, gaming, freelance, saas, other
+	BusinessType string  `db:"business_type"`
+	Description  *string `db:"description"`
+	WebsiteUrl   *string `db:"website_url"`
+	// custodial | non-custodial
+	WalletType string `db:"wallet_type"`
+	// proxify | client
+	WalletManagedBy     string `db:"wallet_managed_by"`
+	PrivyOrganizationID string `db:"privy_organization_id"`
+	// Master wallet for client operations
+	PrivyWalletAddress string   `db:"privy_wallet_address"`
+	ApiKeyHash         string   `db:"api_key_hash"`
+	ApiKeyPrefix       string   `db:"api_key_prefix"`
+	WebhookUrls        []string `db:"webhook_urls"`
+	WebhookSecret      *string  `db:"webhook_secret"`
+	CustomStrategy     []byte   `db:"custom_strategy"`
+	// Percent of yield given to end users (e.g., 90.00)
+	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
+	IsActive            bool               `db:"is_active"`
+	IsSandbox           bool               `db:"is_sandbox"`
+	PlatformFee         pgtype.Numeric     `db:"platform_fee"`
+	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Aggregated custodial vault per client with index-based yield tracking
+type ClientVault struct {
+	ID           uuid.UUID `db:"id"`
+	ClientID     uuid.UUID `db:"client_id"`
+	Chain        string    `db:"chain"`
+	TokenAddress string    `db:"token_address"`
+	TokenSymbol  string    `db:"token_symbol"`
+	// Sum of all end_user_vaults.shares for this vault
+	TotalShares pgtype.Numeric `db:"total_shares"`
+	// Growth index (scaled by 1e18, starts at 1.0)
+	CurrentIndex    pgtype.Numeric     `db:"current_index"`
+	LastIndexUpdate pgtype.Timestamptz `db:"last_index_update"`
+	// Deposits waiting to be batched and staked
+	PendingDepositBalance pgtype.Numeric `db:"pending_deposit_balance"`
+	// Total amount deployed to DeFi protocols
+	TotalStakedBalance pgtype.Numeric     `db:"total_staked_balance"`
+	CumulativeYield    pgtype.Numeric     `db:"cumulative_yield"`
+	Apy7d              pgtype.Numeric     `db:"apy_7d"`
+	Apy30d             pgtype.Numeric     `db:"apy_30d"`
+	IsActive           bool               `db:"is_active"`
+	CreatedAt          pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Tracks fund allocations to DeFi protocols
+type DefiAllocation struct {
 	ID            uuid.UUID `db:"id"`
-	WalletAddress string    `db:"wallet_address"`
-	Name          string    `db:"name"`
-	Email         string    `db:"email"`
+	ClientID      uuid.UUID `db:"client_id"`
+	ClientVaultID uuid.UUID `db:"client_vault_id"`
+	ProtocolID    uuid.UUID `db:"protocol_id"`
+	Category      string    `db:"category"`
+	Chain         string    `db:"chain"`
+	TokenAddress  string    `db:"token_address"`
+	TokenSymbol   string    `db:"token_symbol"`
+	// Current balance deployed (scaled by 1e18)
+	Balance              pgtype.Numeric `db:"balance"`
+	PercentageAllocation pgtype.Numeric `db:"percentage_allocation"`
+	Apy                  pgtype.Numeric `db:"apy"`
+	// Cumulative yield earned (scaled by 1e18)
+	YieldEarned pgtype.Numeric `db:"yield_earned"`
+	TxHash      *string        `db:"tx_hash"`
+	// active | withdrawn | rebalancing
+	Status          string             `db:"status"`
+	DeployedAt      pgtype.Timestamptz `db:"deployed_at"`
+	LastRebalanceAt pgtype.Timestamptz `db:"last_rebalance_at"`
+	WithdrawnAt     pgtype.Timestamptz `db:"withdrawn_at"`
+	CreatedAt       pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Queue for deposits waiting to be batched and staked
+type DepositBatchQueue struct {
+	ID                   uuid.UUID      `db:"id"`
+	ClientVaultID        uuid.UUID      `db:"client_vault_id"`
+	DepositTransactionID uuid.UUID      `db:"deposit_transaction_id"`
+	Amount               pgtype.Numeric `db:"amount"`
+	// pending → batched → staked
+	Status    string             `db:"status"`
+	BatchedAt pgtype.Timestamptz `db:"batched_at"`
+	StakedAt  pgtype.Timestamptz `db:"staked_at"`
+	CreatedAt pgtype.Timestamptz `db:"created_at"`
+}
+
+// Complete deposit transaction history (external via payment gateway, internal via client balance)
+type DepositTransaction struct {
+	ID       uuid.UUID `db:"id"`
+	OrderID  string    `db:"order_id"`
+	ClientID uuid.UUID `db:"client_id"`
+	UserID   string    `db:"user_id"`
+	// external | internal
+	DepositType        string             `db:"deposit_type"`
+	PaymentMethod      *string            `db:"payment_method"`
+	FiatAmount         pgtype.Numeric     `db:"fiat_amount"`
+	CryptoAmount       pgtype.Numeric     `db:"crypto_amount"`
+	Currency           string             `db:"currency"`
+	CryptoCurrency     *string            `db:"crypto_currency"`
+	GatewayFee         pgtype.Numeric     `db:"gateway_fee"`
+	ProxifyFee         pgtype.Numeric     `db:"proxify_fee"`
+	NetworkFee         pgtype.Numeric     `db:"network_fee"`
+	TotalFees          pgtype.Numeric     `db:"total_fees"`
+	Status             string             `db:"status"`
+	PaymentUrl         *string            `db:"payment_url"`
+	GatewayOrderID     *string            `db:"gateway_order_id"`
+	ClientBalanceID    pgtype.UUID        `db:"client_balance_id"`
+	DeductedFromClient pgtype.Numeric     `db:"deducted_from_client"`
+	WalletAddress      *string            `db:"wallet_address"`
+	CreatedAt          pgtype.Timestamptz `db:"created_at"`
+	CompletedAt        pgtype.Timestamptz `db:"completed_at"`
+	FailedAt           pgtype.Timestamptz `db:"failed_at"`
+	ExpiresAt          pgtype.Timestamptz `db:"expires_at"`
+	ErrorMessage       *string            `db:"error_message"`
+	ErrorCode          *string            `db:"error_code"`
+}
+
+// End-users who deposit funds through client platforms
+type EndUser struct {
+	ID       uuid.UUID `db:"id"`
+	ClientID uuid.UUID `db:"client_id"`
+	// Client internal user ID
+	UserID string `db:"user_id"`
+	// custodial | non-custodial
+	UserType          string             `db:"user_type"`
+	UserWalletAddress *string            `db:"user_wallet_address"`
+	IsActive          bool               `db:"is_active"`
+	FirstDepositAt    pgtype.Timestamptz `db:"first_deposit_at"`
+	LastDepositAt     pgtype.Timestamptz `db:"last_deposit_at"`
+	LastWithdrawalAt  pgtype.Timestamptz `db:"last_withdrawal_at"`
+	CreatedAt         pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt         pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Individual user vault positions using share-based accounting
+type EndUserVault struct {
+	ID           uuid.UUID `db:"id"`
+	EndUserID    uuid.UUID `db:"end_user_id"`
+	ClientID     uuid.UUID `db:"client_id"`
+	Chain        string    `db:"chain"`
+	TokenAddress string    `db:"token_address"`
+	TokenSymbol  string    `db:"token_symbol"`
+	// Normalized balance units (effective_balance = shares * current_index / 1e18)
+	Shares pgtype.Numeric `db:"shares"`
+	// Weighted average entry index (handles DCA deposits)
+	WeightedEntryIndex pgtype.Numeric `db:"weighted_entry_index"`
+	// Cumulative deposit amount (for yield calculation)
+	TotalDeposited   pgtype.Numeric     `db:"total_deposited"`
+	TotalWithdrawn   pgtype.Numeric     `db:"total_withdrawn"`
+	LastDepositAt    pgtype.Timestamptz `db:"last_deposit_at"`
+	LastWithdrawalAt pgtype.Timestamptz `db:"last_withdrawal_at"`
+	IsActive         bool               `db:"is_active"`
+	CreatedAt        pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt        pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Reference table for supported DeFi protocol integrations across chains
+type SupportedDefiProtocol struct {
+	ID    uuid.UUID `db:"id"`
+	Name  string    `db:"name"`
+	Chain string    `db:"chain"`
+	// Protocol addresses: {pool, router, wrapped_usdt, wrapped_usdc, reward_distributor}
+	AddressBook []byte `db:"address_book"`
+	// Lending | LP | RealYield | Arbitrage
+	Category  string             `db:"category"`
+	RiskLevel string             `db:"risk_level"`
+	IsActive  bool               `db:"is_active"`
+	CreatedAt pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Declares the desired allocation per category for a client vault
+type VaultStrategy struct {
+	ID            uuid.UUID `db:"id"`
+	ClientVaultID uuid.UUID `db:"client_vault_id"`
+	// lending | lp | staking | arbitrage
+	Category string `db:"category"`
+	// Percentage of vault allocated to this category (e.g., 50.00)
+	TargetPercent pgtype.Numeric     `db:"target_percent"`
+	CreatedAt     pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt     pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Queue for withdrawals requiring DeFi unstaking
+type WithdrawalQueue struct {
+	ID                      uuid.UUID `db:"id"`
+	ClientID                uuid.UUID `db:"client_id"`
+	WithdrawalTransactionID uuid.UUID `db:"withdrawal_transaction_id"`
+	EndUserVaultID          uuid.UUID `db:"end_user_vault_id"`
+	// Shares to burn from user vault (proportional to withdrawal)
+	SharesToBurn    pgtype.Numeric `db:"shares_to_burn"`
+	EstimatedAmount pgtype.Numeric `db:"estimated_amount"`
+	ActualAmount    pgtype.Numeric `db:"actual_amount"`
+	// JSON array of protocols to unstake from
+	ProtocolsToUnstake []byte `db:"protocols_to_unstake"`
+	// Higher = process first (0 = normal, 10 = high)
+	Priority int32 `db:"priority"`
+	// queued → unstaking → ready → processing → completed
+	Status             string             `db:"status"`
+	QueuedAt           pgtype.Timestamptz `db:"queued_at"`
+	UnstakingStartedAt pgtype.Timestamptz `db:"unstaking_started_at"`
+	ReadyAt            pgtype.Timestamptz `db:"ready_at"`
+	CompletedAt        pgtype.Timestamptz `db:"completed_at"`
+	ErrorMessage       *string            `db:"error_message"`
+	CreatedAt          pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Withdrawal transactions - user cashes out to bank/card or back to client balance
+type WithdrawalTransaction struct {
+	ID              uuid.UUID      `db:"id"`
+	OrderID         string         `db:"order_id"`
+	ClientID        uuid.UUID      `db:"client_id"`
+	UserID          string         `db:"user_id"`
+	RequestedAmount pgtype.Numeric `db:"requested_amount"`
+	ActualAmount    pgtype.Numeric `db:"actual_amount"`
+	Currency        string         `db:"currency"`
+	WithdrawalFee   pgtype.Numeric `db:"withdrawal_fee"`
+	NetworkFee      pgtype.Numeric `db:"network_fee"`
+	GatewayOrderID  *string        `db:"gateway_order_id"`
+	// client_balance | bank_account | debit_card | crypto_wallet
+	DestinationType    string             `db:"destination_type"`
+	DestinationDetails []byte             `db:"destination_details"`
+	Status             string             `db:"status"`
+	CreatedAt          pgtype.Timestamptz `db:"created_at"`
+	CompletedAt        pgtype.Timestamptz `db:"completed_at"`
+	FailedAt           pgtype.Timestamptz `db:"failed_at"`
+	ErrorMessage       *string            `db:"error_message"`
+	ErrorCode          *string            `db:"error_code"`
 }
