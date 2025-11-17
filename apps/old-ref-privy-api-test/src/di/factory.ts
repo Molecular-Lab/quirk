@@ -1,4 +1,4 @@
-import { initializePrivyServices, type PrivyServices } from "@proxify/privy-client"
+import { initializePrivyServices, type PrivyServices } from "../../../../packages/old-ref-privy-client/src"
 import type { IUserEmbeddedWalletDataGateway } from "@proxify/core"
 import { createServiceContainer, type DIContainer } from "./container"
 

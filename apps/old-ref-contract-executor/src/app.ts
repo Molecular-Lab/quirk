@@ -3,7 +3,7 @@ import express from "express"
 import { getChainConfig, getDefaultChainId } from "./config/chain"
 import { ENV } from "./config/env"
 
-import { GnosisSafeClient, ViemClient } from "@proxify/contract-executor-client"
+import { GnosisSafeClient, ViemClient } from "../../../packages/old-ref-contract-executor-client/src"
 import { createClientFactory } from "./di/factory"
 import { createClientRegistryRouter } from "./routers/client-registry.router"
 import { createControllerRouter } from "./routers/controller.router"

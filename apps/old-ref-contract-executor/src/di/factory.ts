@@ -5,7 +5,7 @@ import {
 	ProxifyClientRegistryClient,
 	ProxifyControllerClient,
 	type SupportedChainId,
-} from "@proxify/contract-executor-client"
+} from "../../../../packages/old-ref-contract-executor-client/src"
 import { ProxifyClientRegistryRepository, ProxifyControllerRepository, ProxifyRepository } from "@proxify/core"
 import type { Address } from "viem"
 import { createServiceContainer, type DIContainer } from "./container"
