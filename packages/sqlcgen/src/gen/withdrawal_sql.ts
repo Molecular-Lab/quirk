@@ -1047,8 +1047,8 @@ WHERE client_id = $1
 
 export interface GetWithdrawalStatsArgs {
     clientId: string;
-    createdAt: Date;
-    createdAt: Date;
+    startDate: Date;
+    endDate: Date;
 }
 
 export interface GetWithdrawalStatsRow {
@@ -1062,7 +1062,7 @@ export interface GetWithdrawalStatsRow {
 }
 
 export async function getWithdrawalStats(sql: Sql, args: GetWithdrawalStatsArgs): Promise<GetWithdrawalStatsRow | null> {
-    const rows = await sql.unsafe(getWithdrawalStatsQuery, [args.clientId, args.createdAt, args.createdAt]).values();
+    const rows = await sql.unsafe(getWithdrawalStatsQuery, [args.clientId, args.startDate, args.endDate]).values();
     if (rows.length !== 1) {
         return null;
     }

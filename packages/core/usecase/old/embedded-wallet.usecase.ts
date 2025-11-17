@@ -1,16 +1,16 @@
 import VError from "verror"
 import dayjs from "dayjs"
-import { IPrivyUserDataGateway } from "../datagateway/privy-user.datagateway"
-import { IUserEmbeddedWalletDataGateway } from "../datagateway/user-embedded-wallet.datagateway"
-import { PrivyEmbeddedWallet, privyEmbeddedWalletSchema } from "../entity/privy-wallet.entity"
-import { PrivyUser } from "../entity/privy-user.entity"
+import { IPrivyUserDataGateway } from "../../datagateway/privy-user.datagateway"
+import { IUserEmbeddedWalletDataGateway } from "../../datagateway/user-embedded-wallet.datagateway"
+import { PrivyEmbeddedWallet, privyEmbeddedWalletSchema } from "../../entity/old/privy-wallet.entity"
+import { PrivyUser } from "../../entity/old/privy-user.entity"
 import {
 	CreateEmbeddedWalletParams,
 	GetWalletByUserIdParams,
 	GetWalletByAddressParams,
 	UserEmbeddedWallet,
-} from "../entity/user-embedded-wallet.entity"
-import { safeParse } from "../utils/safe-parse"
+} from "../../entity/old/user-embedded-wallet.entity"
+import { safeParse } from "../../utils/safe-parse"
 import { v5 as uuidv5 } from "uuid"
 import { randomUUID } from "crypto"
 /**

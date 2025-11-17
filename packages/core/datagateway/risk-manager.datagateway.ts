@@ -4,9 +4,9 @@ import type {
 	UpdateRiskProfile,
 	RiskScore,
 	RiskLevel,
-} from "../entity/risk-profile.entity"
-import type { DeFiPosition } from "../entity/defi-position.entity"
-import type { YieldStrategy } from "../entity/yield-strategy.entity"
+} from "../entity/old/risk-profile.entity"
+import type { DeFiPosition } from "../entity/old/defi-position.entity"
+import type { YieldStrategy } from "../entity/old/yield-strategy.entity"
 
 /**
  * Risk Manager DataGateway

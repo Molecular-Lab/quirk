@@ -3,11 +3,11 @@ import type {
 	CreateDeFiPosition,
 	UpdateDeFiPosition,
 	PositionQuery,
-} from "../entity/defi-position.entity"
+} from "../entity/old/defi-position.entity"
 import type {
 	YieldOpportunity,
 	PortfolioOptimization,
-} from "../entity/yield-strategy.entity"
+} from "../entity/old/yield-strategy.entity"
 
 /**
  * AAVE Protocol DataGateway

@@ -4,7 +4,7 @@
  */
 
 import dayjs from "dayjs"
-import type { CreateEmbeddedWalletParams } from "../entity/user-embedded-wallet.entity"
+import type { CreateEmbeddedWalletParams } from "../entity/old/user-embedded-wallet.entity"
 
 /**
  * Example 1: Basic wallet with custom auth (default)

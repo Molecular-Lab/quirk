@@ -45,18 +45,18 @@ LIMIT $3 OFFSET $4;
 
 -- name: ListAuditLogsByDateRange :many
 SELECT * FROM audit_logs
-WHERE created_at >= $1
-  AND created_at <= $2
+WHERE created_at >= sqlc.arg('start_date')
+  AND created_at <= sqlc.arg('end_date')
 ORDER BY created_at DESC
-LIMIT $3 OFFSET $4;
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: ListAuditLogsByClientAndDateRange :many
 SELECT * FROM audit_logs
-WHERE client_id = $1
-  AND created_at >= $2
-  AND created_at <= $3
+WHERE client_id = sqlc.arg('client_id')
+  AND created_at >= sqlc.arg('start_date')
+  AND created_at <= sqlc.arg('end_date')
 ORDER BY created_at DESC
-LIMIT $4 OFFSET $5;
+LIMIT sqlc.arg('limit') OFFSET sqlc.arg('offset');
 
 -- name: CreateAuditLog :one
 INSERT INTO audit_logs (
@@ -92,9 +92,9 @@ SELECT
   MIN(created_at) AS first_occurrence,
   MAX(created_at) AS last_occurrence
 FROM audit_logs
-WHERE client_id = $1
-  AND created_at >= $2
-  AND created_at <= $3
+WHERE client_id = sqlc.arg('client_id')
+  AND created_at >= sqlc.arg('start_date')
+  AND created_at <= sqlc.arg('end_date')
 GROUP BY action
 ORDER BY count DESC;
 
@@ -108,13 +108,13 @@ SELECT
   MIN(created_at) AS first_activity,
   MAX(created_at) AS last_activity
 FROM audit_logs
-WHERE client_id = $1
-  AND created_at >= $2
-  AND created_at <= $3
+WHERE client_id = sqlc.arg('client_id')
+  AND created_at >= sqlc.arg('start_date')
+  AND created_at <= sqlc.arg('end_date')
   AND user_id IS NOT NULL
 GROUP BY user_id, actor_type
 ORDER BY total_actions DESC
-LIMIT $4;
+LIMIT sqlc.arg('limit');
 
 -- name: GetResourceActivity :many
 -- Get activity for a specific resource

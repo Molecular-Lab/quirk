@@ -13,10 +13,12 @@
 	},
 	"dependencies": {
 		"@privy-io/node": "^0.4.1",
+		"@proxify/sqlcgen": "workspace:*",
 		"@ts-rest/core": "catalog:",
 		"axios": "catalog:",
-		"bignumber.js": "^9.1.2",
+		"bignumber.js": "^9.3.1",
 		"dayjs": "catalog:",
+		"postgres": "^3.4.7",
 		"uuid": "^11.0.3",
 		"verror": "^1.10.1",
 		"viem": "^2.38.3",
@@ -25,6 +27,7 @@
 	"devDependencies": {
 		"@proxify/eslint-config-base": "workspace:*",
 		"@proxify/tsconfig": "workspace:*",
+		"@types/node": "^22.10.1",
 		"@types/uuid": "^10.0.0",
 		"@types/verror": "^1.10.11",
 		"eslint": "catalog:",

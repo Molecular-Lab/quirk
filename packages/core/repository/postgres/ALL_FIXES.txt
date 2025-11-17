@@ -1,0 +1,14 @@
+=== SQLC INTERFACE CORRECTIONS ===
+
+1. UpdateAllocationYieldArgs needs: id, balance, yieldEarned, apy
+2. IncreaseAllocationBalanceArgs needs: id, balance (not delta)
+3. DecreaseAllocationBalanceArgs needs: id, balance (not delta)
+4. CompleteDepositArgs needs: id, cryptoAmount, gatewayFee, proxifyFee, networkFee, totalFees (NO txHash, blockNumber)
+5. GetEndUserPortfolioArgs needs: id (not clientId, userId)
+6. CreateEndUserArgs needs: clientId, userId, userType, userWalletAddress, isActive
+7. UpdateDepositGatewayInfoArgs: needs checking
+8. MarkWithdrawalReadyArgs: needs actualAmount
+9. CompleteWithdrawalArgs: needs checking  
+10. ListWithdrawalQueueByVaultArgs: needs checking
+
+Let me check these...

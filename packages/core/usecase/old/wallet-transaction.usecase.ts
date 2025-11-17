@@ -1,13 +1,13 @@
 import { randomUUID } from "node:crypto"
 import VError from "verror"
-import type { IWalletTransactionDataGateway } from "../datagateway/wallet-transaction.datagateway"
-import type { ITransactionHistoryDataGateway } from "../datagateway/wallet-transaction.datagateway"
+import type { IWalletTransactionDataGateway } from "../../datagateway/wallet-transaction.datagateway"
+import type { ITransactionHistoryDataGateway } from "../../datagateway/wallet-transaction.datagateway"
 import type {
 	EthereumTransactionParams,
 	EthereumTransactionResult,
 	RpcRequestParams,
 	TransactionHistoryEntry,
-} from "../entity/wallet-transaction.entity"
+} from "../../entity/old/wallet-transaction.entity"
 
 /**
  * Wallet Transaction Use Case

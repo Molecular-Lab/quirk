@@ -513,9 +513,9 @@ WHERE client_id = $1
 `
 
 type GetWithdrawalStatsParams struct {
-	ClientID    uuid.UUID          `db:"client_id"`
-	CreatedAt   pgtype.Timestamptz `db:"created_at"`
-	CreatedAt_2 pgtype.Timestamptz `db:"created_at_2"`
+	ClientID  uuid.UUID          `db:"client_id"`
+	StartDate pgtype.Timestamptz `db:"start_date"`
+	EndDate   pgtype.Timestamptz `db:"end_date"`
 }
 
 type GetWithdrawalStatsRow struct {
@@ -533,7 +533,7 @@ type GetWithdrawalStatsRow struct {
 // ============================================
 // Withdrawal statistics for a client
 func (q *Queries) GetWithdrawalStats(ctx context.Context, arg GetWithdrawalStatsParams) (GetWithdrawalStatsRow, error) {
-	row := q.db.QueryRow(ctx, getWithdrawalStats, arg.ClientID, arg.CreatedAt, arg.CreatedAt_2)
+	row := q.db.QueryRow(ctx, getWithdrawalStats, arg.ClientID, arg.StartDate, arg.EndDate)
 	var i GetWithdrawalStatsRow
 	err := row.Scan(
 		&i.TotalWithdrawals,

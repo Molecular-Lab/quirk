@@ -32,7 +32,7 @@ import type {
 	DepositTransaction,
 	WithdrawalTransaction,
 	AuditLog,
-} from '../entity/old/b2b-client.entity'
+} from '../entity/b2b-client.entity'
 
 /**
  * Client Organization Repository

@@ -188,6 +188,6 @@ SELECT
   COALESCE(SUM(total_fees) FILTER (WHERE status = 'completed'), 0) AS total_fees_collected,
   COALESCE(AVG(crypto_amount) FILTER (WHERE status = 'completed'), 0) AS avg_deposit_amount
 FROM deposit_transactions
-WHERE client_id = $1
-  AND created_at >= $2  -- start date
-  AND created_at <= $3; -- end date
+WHERE client_id = sqlc.arg('client_id')
+  AND created_at >= sqlc.arg('start_date')  -- start date
+  AND created_at <= sqlc.arg('end_date'); -- end date

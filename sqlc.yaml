@@ -34,7 +34,7 @@ sql:
               type: "Time"
     codegen:
       - plugin: ts
-        out: packages/database/src/gen
+        out: packages/sqlcgen/src/gen
         options:
             runtime: node
             driver: postgres
