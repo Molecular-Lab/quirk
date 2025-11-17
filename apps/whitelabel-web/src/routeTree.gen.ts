@@ -9,17 +9,28 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
-import { Route as DashboardSettingsRouteImport } from './routes/dashboard/settings'
+import { Route as DashboardMarketRouteImport } from './routes/dashboard/market'
+import { Route as DashboardIntegrationRouteImport } from './routes/dashboard/integration'
 import { Route as DashboardExploreRouteImport } from './routes/dashboard/explore'
 import { Route as DashboardDocsRouteImport } from './routes/dashboard/docs'
-import { Route as DashboardBillingRouteImport } from './routes/dashboard/billing'
-import { Route as DashboardApiKeysRouteImport } from './routes/dashboard/api-keys'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
+import { Route as DashboardSettingsIndexRouteImport } from './routes/dashboard/settings/index'
+import { Route as DashboardPortfoliosIndexRouteImport } from './routes/dashboard/portfolios/index'
+import { Route as DashboardSettingsRiskConfigRouteImport } from './routes/dashboard/settings/risk-config'
+import { Route as DashboardSettingsBillingRouteImport } from './routes/dashboard/settings/billing'
+import { Route as DashboardSettingsApiKeysRouteImport } from './routes/dashboard/settings/api-keys'
+import { Route as DashboardPortfoliosIdRouteImport } from './routes/dashboard/portfolios/$id'
 
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -40,9 +51,14 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
   path: '/',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardSettingsRoute = DashboardSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
+const DashboardMarketRoute = DashboardMarketRouteImport.update({
+  id: '/market',
+  path: '/market',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardIntegrationRoute = DashboardIntegrationRouteImport.update({
+  id: '/integration',
+  path: '/integration',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardExploreRoute = DashboardExploreRouteImport.update({
@@ -55,19 +71,43 @@ const DashboardDocsRoute = DashboardDocsRouteImport.update({
   path: '/docs',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardBillingRoute = DashboardBillingRouteImport.update({
-  id: '/billing',
-  path: '/billing',
-  getParentRoute: () => DashboardRoute,
-} as any)
-const DashboardApiKeysRoute = DashboardApiKeysRouteImport.update({
-  id: '/api-keys',
-  path: '/api-keys',
-  getParentRoute: () => DashboardRoute,
-} as any)
 const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardPortfoliosIndexRoute =
+  DashboardPortfoliosIndexRouteImport.update({
+    id: '/portfolios/',
+    path: '/portfolios/',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardSettingsRiskConfigRoute =
+  DashboardSettingsRiskConfigRouteImport.update({
+    id: '/settings/risk-config',
+    path: '/settings/risk-config',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardSettingsBillingRoute =
+  DashboardSettingsBillingRouteImport.update({
+    id: '/settings/billing',
+    path: '/settings/billing',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardSettingsApiKeysRoute =
+  DashboardSettingsApiKeysRouteImport.update({
+    id: '/settings/api-keys',
+    path: '/settings/api-keys',
+    getParentRoute: () => DashboardRoute,
+  } as any)
+const DashboardPortfoliosIdRoute = DashboardPortfoliosIdRouteImport.update({
+  id: '/portfolios/$id',
+  path: '/portfolios/$id',
   getParentRoute: () => DashboardRoute,
 } as any)
 
@@ -75,37 +115,55 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
-  '/dashboard/api-keys': typeof DashboardApiKeysRoute
-  '/dashboard/billing': typeof DashboardBillingRoute
   '/dashboard/docs': typeof DashboardDocsRoute
   '/dashboard/explore': typeof DashboardExploreRoute
-  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/integration': typeof DashboardIntegrationRoute
+  '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
+  '/dashboard/settings/api-keys': typeof DashboardSettingsApiKeysRoute
+  '/dashboard/settings/billing': typeof DashboardSettingsBillingRoute
+  '/dashboard/settings/risk-config': typeof DashboardSettingsRiskConfigRoute
+  '/dashboard/portfolios': typeof DashboardPortfoliosIndexRoute
+  '/dashboard/settings': typeof DashboardSettingsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
-  '/dashboard/api-keys': typeof DashboardApiKeysRoute
-  '/dashboard/billing': typeof DashboardBillingRoute
   '/dashboard/docs': typeof DashboardDocsRoute
   '/dashboard/explore': typeof DashboardExploreRoute
-  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/integration': typeof DashboardIntegrationRoute
+  '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
+  '/dashboard/settings/api-keys': typeof DashboardSettingsApiKeysRoute
+  '/dashboard/settings/billing': typeof DashboardSettingsBillingRoute
+  '/dashboard/settings/risk-config': typeof DashboardSettingsRiskConfigRoute
+  '/dashboard/portfolios': typeof DashboardPortfoliosIndexRoute
+  '/dashboard/settings': typeof DashboardSettingsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
-  '/dashboard/api-keys': typeof DashboardApiKeysRoute
-  '/dashboard/billing': typeof DashboardBillingRoute
   '/dashboard/docs': typeof DashboardDocsRoute
   '/dashboard/explore': typeof DashboardExploreRoute
-  '/dashboard/settings': typeof DashboardSettingsRoute
+  '/dashboard/integration': typeof DashboardIntegrationRoute
+  '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
+  '/dashboard/settings/api-keys': typeof DashboardSettingsApiKeysRoute
+  '/dashboard/settings/billing': typeof DashboardSettingsBillingRoute
+  '/dashboard/settings/risk-config': typeof DashboardSettingsRiskConfigRoute
+  '/dashboard/portfolios/': typeof DashboardPortfoliosIndexRoute
+  '/dashboard/settings/': typeof DashboardSettingsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -113,46 +171,72 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/login'
+    | '/register'
     | '/dashboard/analytics'
-    | '/dashboard/api-keys'
-    | '/dashboard/billing'
     | '/dashboard/docs'
     | '/dashboard/explore'
-    | '/dashboard/settings'
+    | '/dashboard/integration'
+    | '/dashboard/market'
     | '/dashboard/'
+    | '/dashboard/portfolios/$id'
+    | '/dashboard/settings/api-keys'
+    | '/dashboard/settings/billing'
+    | '/dashboard/settings/risk-config'
+    | '/dashboard/portfolios'
+    | '/dashboard/settings'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/login'
+    | '/register'
     | '/dashboard/analytics'
-    | '/dashboard/api-keys'
-    | '/dashboard/billing'
     | '/dashboard/docs'
     | '/dashboard/explore'
-    | '/dashboard/settings'
+    | '/dashboard/integration'
+    | '/dashboard/market'
     | '/dashboard'
+    | '/dashboard/portfolios/$id'
+    | '/dashboard/settings/api-keys'
+    | '/dashboard/settings/billing'
+    | '/dashboard/settings/risk-config'
+    | '/dashboard/portfolios'
+    | '/dashboard/settings'
   id:
     | '__root__'
     | '/'
     | '/dashboard'
     | '/login'
+    | '/register'
     | '/dashboard/analytics'
-    | '/dashboard/api-keys'
-    | '/dashboard/billing'
     | '/dashboard/docs'
     | '/dashboard/explore'
-    | '/dashboard/settings'
+    | '/dashboard/integration'
+    | '/dashboard/market'
     | '/dashboard/'
+    | '/dashboard/portfolios/$id'
+    | '/dashboard/settings/api-keys'
+    | '/dashboard/settings/billing'
+    | '/dashboard/settings/risk-config'
+    | '/dashboard/portfolios/'
+    | '/dashboard/settings/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
   LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -181,11 +265,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/settings': {
-      id: '/dashboard/settings'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof DashboardSettingsRouteImport
+    '/dashboard/market': {
+      id: '/dashboard/market'
+      path: '/market'
+      fullPath: '/dashboard/market'
+      preLoaderRoute: typeof DashboardMarketRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/integration': {
+      id: '/dashboard/integration'
+      path: '/integration'
+      fullPath: '/dashboard/integration'
+      preLoaderRoute: typeof DashboardIntegrationRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/explore': {
@@ -202,20 +293,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDocsRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/billing': {
-      id: '/dashboard/billing'
-      path: '/billing'
-      fullPath: '/dashboard/billing'
-      preLoaderRoute: typeof DashboardBillingRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/api-keys': {
-      id: '/dashboard/api-keys'
-      path: '/api-keys'
-      fullPath: '/dashboard/api-keys'
-      preLoaderRoute: typeof DashboardApiKeysRouteImport
-      parentRoute: typeof DashboardRoute
-    }
     '/dashboard/analytics': {
       id: '/dashboard/analytics'
       path: '/analytics'
@@ -223,27 +300,79 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAnalyticsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/settings/': {
+      id: '/dashboard/settings/'
+      path: '/settings'
+      fullPath: '/dashboard/settings'
+      preLoaderRoute: typeof DashboardSettingsIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/portfolios/': {
+      id: '/dashboard/portfolios/'
+      path: '/portfolios'
+      fullPath: '/dashboard/portfolios'
+      preLoaderRoute: typeof DashboardPortfoliosIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings/risk-config': {
+      id: '/dashboard/settings/risk-config'
+      path: '/settings/risk-config'
+      fullPath: '/dashboard/settings/risk-config'
+      preLoaderRoute: typeof DashboardSettingsRiskConfigRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings/billing': {
+      id: '/dashboard/settings/billing'
+      path: '/settings/billing'
+      fullPath: '/dashboard/settings/billing'
+      preLoaderRoute: typeof DashboardSettingsBillingRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/settings/api-keys': {
+      id: '/dashboard/settings/api-keys'
+      path: '/settings/api-keys'
+      fullPath: '/dashboard/settings/api-keys'
+      preLoaderRoute: typeof DashboardSettingsApiKeysRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/portfolios/$id': {
+      id: '/dashboard/portfolios/$id'
+      path: '/portfolios/$id'
+      fullPath: '/dashboard/portfolios/$id'
+      preLoaderRoute: typeof DashboardPortfoliosIdRouteImport
+      parentRoute: typeof DashboardRoute
+    }
   }
 }
 
 interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
-  DashboardApiKeysRoute: typeof DashboardApiKeysRoute
-  DashboardBillingRoute: typeof DashboardBillingRoute
   DashboardDocsRoute: typeof DashboardDocsRoute
   DashboardExploreRoute: typeof DashboardExploreRoute
-  DashboardSettingsRoute: typeof DashboardSettingsRoute
+  DashboardIntegrationRoute: typeof DashboardIntegrationRoute
+  DashboardMarketRoute: typeof DashboardMarketRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
+  DashboardPortfoliosIdRoute: typeof DashboardPortfoliosIdRoute
+  DashboardSettingsApiKeysRoute: typeof DashboardSettingsApiKeysRoute
+  DashboardSettingsBillingRoute: typeof DashboardSettingsBillingRoute
+  DashboardSettingsRiskConfigRoute: typeof DashboardSettingsRiskConfigRoute
+  DashboardPortfoliosIndexRoute: typeof DashboardPortfoliosIndexRoute
+  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
-  DashboardApiKeysRoute: DashboardApiKeysRoute,
-  DashboardBillingRoute: DashboardBillingRoute,
   DashboardDocsRoute: DashboardDocsRoute,
   DashboardExploreRoute: DashboardExploreRoute,
-  DashboardSettingsRoute: DashboardSettingsRoute,
+  DashboardIntegrationRoute: DashboardIntegrationRoute,
+  DashboardMarketRoute: DashboardMarketRoute,
   DashboardIndexRoute: DashboardIndexRoute,
+  DashboardPortfoliosIdRoute: DashboardPortfoliosIdRoute,
+  DashboardSettingsApiKeysRoute: DashboardSettingsApiKeysRoute,
+  DashboardSettingsBillingRoute: DashboardSettingsBillingRoute,
+  DashboardSettingsRiskConfigRoute: DashboardSettingsRiskConfigRoute,
+  DashboardPortfoliosIndexRoute: DashboardPortfoliosIndexRoute,
+  DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
@@ -254,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
   LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

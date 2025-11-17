@@ -8,6 +8,7 @@ export * from './vault-index'
 export * from './defi-protocol'
 export * from './transaction'
 export * from './ai-insights'
+export * from './registration'
 
 /**
  * Common API response types

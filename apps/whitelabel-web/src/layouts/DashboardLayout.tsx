@@ -1,27 +1,21 @@
 import { Outlet, Link, useNavigate } from '@tanstack/react-router'
 import { usePrivy } from '@privy-io/react-auth'
 import {
-	LayoutDashboard,
-	Compass,
-	Key,
-	BarChart3,
-	CreditCard,
-	FileText,
-	Settings,
+	BookText,
 	LogOut,
 	Menu,
 	X,
+	Sparkles,
+	LayoutDashboard,
+	Aperture,
 } from 'lucide-react'
 import { useState } from 'react'
 
 const navigation = [
 	{ name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-	{ name: 'Explore', href: '/dashboard/explore', icon: Compass },
-	{ name: 'API Keys', href: '/dashboard/api-keys', icon: Key },
-	{ name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
-	{ name: 'Billing', href: '/dashboard/billing', icon: CreditCard },
-	{ name: 'Documentation', href: '/dashboard/docs', icon: FileText },
-	{ name: 'Settings', href: '/dashboard/settings', icon: Settings },
+	{ name: 'Explore', href: '/dashboard/explore', icon: Aperture },
+	{ name: 'Market', href: '/dashboard/market', icon: Sparkles },
+	{ name: 'Integration', href: '/dashboard/integration', icon: BookText },
 ]
 
 export function DashboardLayout() {
