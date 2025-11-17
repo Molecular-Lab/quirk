@@ -10,7 +10,7 @@
 *$py.class
 *.so
 cache/
-
+__pycache__/
 externals
 
 *.bat
