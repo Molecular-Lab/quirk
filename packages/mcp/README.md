@@ -38,27 +38,47 @@ pnpm dev
 
 ## Usage
 
-### As an MCP Server
+### HTTP Server Mode (Default)
 
-Add to your Claude Desktop or other MCP client configuration:
-
-```json
-{
-  "mcpServers": {
-    "proxify-yield": {
-      "command": "node",
-      "args": ["/path/to/proxify/packages/mcp/dist/index.js"]
-    }
-  }
-}
-```
-
-### Direct Usage
+The MCP server now runs as an HTTP server with Server-Sent Events (SSE) support:
 
 ```bash
-# Start the server
+# Start the server (default port: 3000)
 pnpm start
+
+# Or with custom port and host
+PORT=8080 HOST=0.0.0.0 pnpm start
 ```
+
+The server will be available at:
+- **Endpoint**: `POST http://localhost:3000/`
+- **Protocol**: MCP over Streamable HTTP
+- **Sessions**: Stateful with automatic session management
+
+### Environment Variables
+
+- `PORT` - Server port (default: 3000)
+- `HOST` - Server host (default: localhost)
+
+### Client Connection
+
+Connect to the server using MCP HTTP client:
+
+```typescript
+// Example using MCP SDK
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+
+const transport = new StreamableHTTPClientTransport(
+  new URL('http://localhost:3000')
+);
+const client = new Client({ name: 'my-client', version: '1.0.0' }, {});
+await client.connect(transport);
+```
+
+### Legacy: Claude Desktop (Stdio Mode)
+
+For backward compatibility with stdio-based clients, you can use a proxy or wrapper. HTTP mode is recommended for better scalability and multi-client support.
 
 ## Project Structure
 
@@ -87,6 +107,13 @@ The server is part of the @proxify monorepo. To develop:
 - **DeFiLlama API**: Real-time protocol TVL, fees, and revenue data
 - Base URL: `https://api.llama.fi`
 - All endpoints used are free (non-pro) endpoints
+
+## Transport
+
+- **Protocol**: MCP Streamable HTTP with SSE
+- **Session Management**: Stateful with UUID-based session IDs
+- **Concurrency**: Supports multiple simultaneous sessions
+- **Resumability**: Sessions persist for the server lifetime
 
 ## Future Enhancements
 
