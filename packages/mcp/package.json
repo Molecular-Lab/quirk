@@ -1,0 +1,31 @@
+{
+	"name": "@proxify/mcp",
+	"version": "0.1.0",
+	"description": "MCP server for yield optimization agent",
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"bin": {
+		"proxify-mcp": "./dist/index.js"
+	},
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc --watch",
+		"start": "node dist/index.js"
+	},
+	"dependencies": {
+		"@modelcontextprotocol/sdk": "^1.0.4",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@proxify/tsconfig": "workspace:*",
+		"@types/node": "^22.10.2",
+		"typescript": "catalog:"
+	},
+	"keywords": [
+		"mcp",
+		"yield",
+		"optimization",
+		"defi"
+	]
+}
