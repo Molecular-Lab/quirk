@@ -80,8 +80,8 @@ type CreateClientParams struct {
 	WalletManagedBy     string         `db:"wallet_managed_by"`
 	PrivyOrganizationID string         `db:"privy_organization_id"`
 	PrivyWalletAddress  string         `db:"privy_wallet_address"`
-	ApiKeyHash          string         `db:"api_key_hash"`
-	ApiKeyPrefix        string         `db:"api_key_prefix"`
+	ApiKeyHash          *string        `db:"api_key_hash"`
+	ApiKeyPrefix        *string        `db:"api_key_prefix"`
 	WebhookUrls         []string       `db:"webhook_urls"`
 	WebhookSecret       *string        `db:"webhook_secret"`
 	CustomStrategy      []byte         `db:"custom_strategy"`
@@ -336,7 +336,7 @@ WHERE api_key_hash = $1 LIMIT 1
 `
 
 // Direct lookup by API key hash
-func (q *Queries) GetClientByAPIKeyHash(ctx context.Context, apiKeyHash string) (ClientOrganization, error) {
+func (q *Queries) GetClientByAPIKeyHash(ctx context.Context, apiKeyHash *string) (ClientOrganization, error) {
 	row := q.db.QueryRow(ctx, getClientByAPIKeyHash, apiKeyHash)
 	var i ClientOrganization
 	err := row.Scan(
@@ -372,7 +372,7 @@ WHERE api_key_prefix = $1 LIMIT 1
 `
 
 // For API key validation (then verify hash)
-func (q *Queries) GetClientByAPIKeyPrefix(ctx context.Context, apiKeyPrefix string) (ClientOrganization, error) {
+func (q *Queries) GetClientByAPIKeyPrefix(ctx context.Context, apiKeyPrefix *string) (ClientOrganization, error) {
 	row := q.db.QueryRow(ctx, getClientByAPIKeyPrefix, apiKeyPrefix)
 	var i ClientOrganization
 	err := row.Scan(
@@ -764,8 +764,8 @@ WHERE id = $1
 
 type UpdateClientAPIKeyParams struct {
 	ID           uuid.UUID `db:"id"`
-	ApiKeyHash   string    `db:"api_key_hash"`
-	ApiKeyPrefix string    `db:"api_key_prefix"`
+	ApiKeyHash   *string   `db:"api_key_hash"`
+	ApiKeyPrefix *string   `db:"api_key_prefix"`
 }
 
 func (q *Queries) UpdateClientAPIKey(ctx context.Context, arg UpdateClientAPIKeyParams) error {

@@ -10,5 +10,5 @@
 		"target": "ES2020"
 	},
 	"include": ["**/*.ts"],
-	"exclude": ["node_modules", "repository/old/**"]
+	"exclude": ["node_modules", "repository/old/**", "usecase/*.usecase.ts"]
 }

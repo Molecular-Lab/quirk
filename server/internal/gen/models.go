@@ -60,8 +60,8 @@ type ClientOrganization struct {
 	PrivyOrganizationID string `db:"privy_organization_id"`
 	// Master wallet for client operations
 	PrivyWalletAddress string   `db:"privy_wallet_address"`
-	ApiKeyHash         string   `db:"api_key_hash"`
-	ApiKeyPrefix       string   `db:"api_key_prefix"`
+	ApiKeyHash         *string  `db:"api_key_hash"`
+	ApiKeyPrefix       *string  `db:"api_key_prefix"`
 	WebhookUrls        []string `db:"webhook_urls"`
 	WebhookSecret      *string  `db:"webhook_secret"`
 	CustomStrategy     []byte   `db:"custom_strategy"`

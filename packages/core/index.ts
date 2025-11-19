@@ -1,6 +1,7 @@
 export * from "./abis"
 export * from "./constants"
 export * from "./entity"
+export * from "./dto"
 export * from "./utils"
 export * from "./repository"
 export * from "./datagateway"

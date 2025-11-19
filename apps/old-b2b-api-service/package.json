@@ -1,0 +1,31 @@
+{
+	"name": "@proxify/old-b2b-api-service",
+	"version": "1.0.0",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"dev": "tsx watch src/app.ts",
+		"build": "tsc",
+		"start": "node dist/app.js",
+		"type-check": "tsc --noEmit"
+	},
+	"dependencies": {
+		"@proxify/b2b-api-core": "workspace:*",
+		"@proxify/core": "workspace:*",
+		"@proxify/sqlcgen": "workspace:*",
+		"@ts-rest/express": "catalog:",
+		"dayjs": "catalog:",
+		"dotenv": "^16.4.7",
+		"express": "^4.21.2",
+		"postgres": "^3.4.7",
+		"winston": "^3.17.0",
+		"zod": "^3.23.8"
+	},
+	"devDependencies": {
+		"@types/express": "^5.0.0",
+		"@types/node": "^22.10.2",
+		"tsx": "^4.19.2",
+		"typescript": "^5.7.2"
+	},
+	"packageManager": "pnpm@10.18.3"
+}

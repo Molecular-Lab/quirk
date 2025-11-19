@@ -1,0 +1,43 @@
+@import url("https://fonts.googleapis.com/css2?family=Poppins&display=swap");
+@import "@rabbitswap/ui/css";
+@import "@solana/wallet-adapter-react-ui/styles.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+}
+
+@layer components {
+	.liqChartZoomOverlay:active {
+		cursor: grabbing;
+	}
+
+	.liqChartAxis {
+		line {
+			color: #e7e7e7;
+		}
+
+		text {
+			color: #b4b4b4;
+			transform: translateY(5px);
+			font-size: 12px;
+			pointer-events: none;
+			user-select: none;
+		}
+	}
+}
+
+/* add the code bellow */
+@layer utilities {
+	/* Hide scrollbar for Chrome, Safari and Opera */
+	.no-scrollbar::-webkit-scrollbar {
+		display: none;
+	}
+	/* Hide scrollbar for IE, Edge and Firefox */
+	.no-scrollbar {
+		-ms-overflow-style: none; /* IE and Edge */
+		scrollbar-width: none; /* Firefox */
+	}
+}
