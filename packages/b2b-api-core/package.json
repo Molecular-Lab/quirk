@@ -1,0 +1,25 @@
+{
+    "name": "@proxify/b2b-api-core",
+    "version": "0.1.0",
+    "type": "module",
+    "main": "./index.ts",
+    "types": "./index.ts",
+    "scripts": {
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+    },
+    "dependencies": {
+        "@proxify/core": "workspace:*",
+        "@ts-rest/core": "catalog:",
+        "axios": "catalog:",
+        "zod": "catalog:"
+    },
+    "devDependencies": {
+        "@proxify/eslint-config-base": "workspace:*",
+        "@proxify/tsconfig": "workspace:*",
+        "@types/node": "^22.10.1",
+        "eslint": "catalog:",
+        "typescript": "catalog:"
+    }
+}

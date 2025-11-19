@@ -8,3 +8,4 @@ export * from "./postgres"
 
 // Old repositories moved to ./old/ for reference
 // - See ./old/ for deprecated implementations
+// NOTE: Old repositories have broken imports and are not exported

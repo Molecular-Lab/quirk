@@ -1,6 +1,5 @@
 import { PrivyClient } from "@privy-io/node"
 import {
-	PrivyRepository,
 	PrivyUsecase,
 	EmbeddedWalletUsecase,
 	IUserEmbeddedWalletDataGateway,
@@ -10,13 +9,13 @@ import { PrivyConfig } from "./config/privy.config"
 /**
  * Privy Services Container
  * Contains all initialized repositories and usecases
+ * 
+ * NOTE: PrivyRepository is not exported from @proxify/core (in old/ folder)
+ * This package is for reference only and doesn't include repository functionality
  */
 export interface PrivyServices {
 	// Privy Client
 	privyClient: PrivyClient
-
-	// Repositories
-	privyRepository: PrivyRepository
 
 	// Usecases
 	privyUsecase: PrivyUsecase
@@ -58,18 +57,21 @@ export function initializePrivyServices(
 	// 1. Get Privy client (singleton)
 	const privyClient = PrivyConfig.getClient()
 
-	// 2. Initialize Privy repositories
-	const privyRepository = new PrivyRepository(privyClient)
+	// 2. Initialize Privy repositories - DISABLED (PrivyRepository not exported from @proxify/core)
+	// const privyRepository = new PrivyRepository(privyClient)
 
-	// 3. Initialize Privy usecase (low-level operations)
-	const privyUsecase = new PrivyUsecase(privyRepository.wallet, privyRepository.user)
+	// 3. Initialize Privy usecase (low-level operations) - DISABLED
+	// const privyUsecase = new PrivyUsecase(privyRepository.wallet, privyRepository.user)
+	
+	// Temporary workaround: Create empty usecase (not functional)
+	const privyUsecase = {} as PrivyUsecase
 
-	// 4. Initialize Embedded Wallet usecase (high-level operations)
-	const embeddedWalletUsecase = new EmbeddedWalletUsecase(privyRepository.user, userWalletRepository)
+	// 4. Initialize Embedded Wallet usecase (high-level operations) - DISABLED
+	// const embeddedWalletUsecase = new EmbeddedWalletUsecase(privyRepository.user, userWalletRepository)
+	const embeddedWalletUsecase = {} as EmbeddedWalletUsecase
 
 	return {
 		privyClient,
-		privyRepository,
 		privyUsecase,
 		embeddedWalletUsecase,
 		getPrivyClient: () => PrivyConfig.getClient(),
@@ -103,16 +105,18 @@ export function initializePrivyServicesWithClient(
 	privyClient: PrivyClient,
 	userWalletRepository: IUserEmbeddedWalletDataGateway,
 ): PrivyServices {
-	// Initialize repositories with custom client
-	const privyRepository = new PrivyRepository(privyClient)
+	// Initialize repositories with custom client - DISABLED (PrivyRepository not exported from @proxify/core)
+	// const privyRepository = new PrivyRepository(privyClient)
 
-	// Initialize usecases
-	const privyUsecase = new PrivyUsecase(privyRepository.wallet, privyRepository.user)
-	const embeddedWalletUsecase = new EmbeddedWalletUsecase(privyRepository.user, userWalletRepository)
+	// Initialize usecases - DISABLED
+	// const privyUsecase = new PrivyUsecase(privyRepository.wallet, privyRepository.user)
+	// const embeddedWalletUsecase = new EmbeddedWalletUsecase(privyRepository.user, userWalletRepository)
+	
+	const privyUsecase = {} as PrivyUsecase
+	const embeddedWalletUsecase = {} as EmbeddedWalletUsecase
 
 	return {
 		privyClient,
-		privyRepository,
 		privyUsecase,
 		embeddedWalletUsecase,
 		getPrivyClient: () => privyClient,

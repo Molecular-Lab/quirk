@@ -20,8 +20,8 @@ export interface GetClientRow {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -85,8 +85,8 @@ export interface GetClientByProductIDRow {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -150,8 +150,8 @@ export interface GetClientByPrivyOrgIDRow {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -201,7 +201,7 @@ SELECT id, product_id, company_name, business_type, description, website_url, wa
 WHERE api_key_prefix = $1 LIMIT 1`;
 
 export interface GetClientByAPIKeyPrefixArgs {
-    apiKeyPrefix: string;
+    apiKeyPrefix: string | null;
 }
 
 export interface GetClientByAPIKeyPrefixRow {
@@ -215,8 +215,8 @@ export interface GetClientByAPIKeyPrefixRow {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -266,7 +266,7 @@ SELECT id, product_id, company_name, business_type, description, website_url, wa
 WHERE api_key_hash = $1 LIMIT 1`;
 
 export interface GetClientByAPIKeyHashArgs {
-    apiKeyHash: string;
+    apiKeyHash: string | null;
 }
 
 export interface GetClientByAPIKeyHashRow {
@@ -280,8 +280,8 @@ export interface GetClientByAPIKeyHashRow {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -347,8 +347,8 @@ export interface ListClientsRow {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -404,8 +404,8 @@ export interface ListActiveClientsRow {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -482,8 +482,8 @@ export interface CreateClientArgs {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -505,8 +505,8 @@ export interface CreateClientRow {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -590,8 +590,8 @@ export interface UpdateClientRow {
     walletManagedBy: string;
     privyOrganizationId: string;
     privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -645,8 +645,8 @@ WHERE id = $1`;
 
 export interface UpdateClientAPIKeyArgs {
     id: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
 }
 
 export async function updateClientAPIKey(sql: Sql, args: UpdateClientAPIKeyArgs): Promise<void> {

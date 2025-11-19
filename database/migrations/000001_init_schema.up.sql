@@ -26,8 +26,8 @@ CREATE TABLE client_organizations (
   privy_wallet_address VARCHAR(66) UNIQUE NOT NULL,
 
   -- API Credentials
-  api_key_hash VARCHAR(255) UNIQUE NOT NULL,
-  api_key_prefix VARCHAR(20) NOT NULL,
+  api_key_hash VARCHAR(255) UNIQUE,
+  api_key_prefix VARCHAR(20),
   webhook_urls TEXT[] DEFAULT '{}',
   webhook_secret VARCHAR(255),
 

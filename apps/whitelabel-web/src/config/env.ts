@@ -1,6 +1,6 @@
 /**
  * Environment Configuration
- * 
+ *
  * Loads and validates environment variables using Zod.
  * All environment variables are prefixed with VITE_ for Vite to expose them to the client.
  */
@@ -21,7 +21,7 @@ const envSchema = z.object({
 	USER_API_URL: z.string().url().optional(),
 	WS_URL: z.string().url().optional(),
 	CDN_URL: z.string().url().optional(),
-	
+
 	// Feature Flags
 	ENABLE_MIXPANEL: z
 		.string()
@@ -34,10 +34,10 @@ const envSchema = z.object({
 		.optional()
 		.transform((val) => val === "true")
 		.default("false"),
-	
+
 	// Blockchain Configuration
 	SOLANA_RPC_ENDPOINT: z.string().url().optional(),
-	
+
 	// Proxy Endpoints
 	OKX_PROXY_ENDPOINT: z.string().url().optional(),
 })
@@ -66,7 +66,7 @@ const parseEnv = () => {
 		if (error instanceof z.ZodError) {
 			console.error("❌ Environment validation failed:")
 			console.error(error.errors)
-			throw new Error(`Invalid environment variables: ${error.errors.map(e => e.message).join(", ")}`)
+			throw new Error(`Invalid environment variables: ${error.errors.map((e) => e.message).join(", ")}`)
 		}
 		throw error
 	}
@@ -74,10 +74,10 @@ const parseEnv = () => {
 
 /**
  * Validated and typed environment variables
- * 
+ *
  * @example
  * import { ENV } from './environment'
- * 
+ *
  * const appId = ENV.PRIVY_APP_ID
  * const apiUrl = ENV.API_URL
  */
