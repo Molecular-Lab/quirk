@@ -1,0 +1,34 @@
+{
+	"name": "@proxify/yield-engine",
+	"version": "0.1.0",
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"scripts": {
+		"dev": "tsc --watch",
+		"build": "tsc",
+		"test": "vitest",
+		"lint": "eslint .",
+		"lint:fix": "eslint . --fix",
+		"format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\""
+	},
+	"dependencies": {
+		"@aave-dao/aave-v3-origin": "^3.5.0",
+		"@aave/math-utils": "^1.29.7",
+		"@bgd-labs/aave-address-book": "^4.36.0",
+		"@morpho-org/blue-sdk": "^5.7.0",
+		"@morpho-org/blue-sdk-viem": "^4.1.2",
+		"bignumber.js": "^9.3.1",
+		"dayjs": "catalog:",
+		"viem": "^2.38.3",
+		"zod": "catalog:"
+	},
+	"devDependencies": {
+		"@proxify/eslint-config-base": "workspace:*",
+		"@proxify/tsconfig": "workspace:*",
+		"@types/node": "^22.10.1",
+		"eslint": "catalog:",
+		"typescript": "catalog:",
+		"vitest": "^2.1.8"
+	}
+}
