@@ -114,8 +114,8 @@ export function calculatePercentageDiff(oldValue: string, newValue: string): str
  * @returns Estimated gain in USD
  */
 export function calculateEstimatedGain(
-	amount: string,
-	apyPercent: string,
+	amount: string | number,
+	apyPercent: string | number,
 	durationDays: number = 30,
 ): string {
 	const amountBN = new BigNumber(amount)
