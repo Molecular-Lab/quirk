@@ -14,7 +14,11 @@ export const CreateClientDto = z.object({
 	description: z.string().optional(),
 	websiteUrl: z.string().url().optional(),
 	walletType: z.enum(["MANAGED", "USER_OWNED"]),
+	chain: z.string().optional(), // Optional chain for initial vault(s), defaults to "8453" (Base)
+	vaultsToCreate: z.enum(["usdc", "usdt", "both"]).optional(), // Which vaults to create, defaults to "both"
 	privyOrganizationId: z.string(),
+	privyWalletAddress: z.string().min(1), // ✅ Required - Wallet address from Privy
+	privyEmail: z.string().email().optional().nullable(), // ✅ Optional - Email from Privy
 });
 
 export const AddFundsDto = z.object({

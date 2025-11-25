@@ -1,7 +1,7 @@
 # Repository Layer Implementation - COMPLETE ✅
 
 ## Summary
-Successfully implemented **all 7 repositories** using 100% SQLC-generated code following the Cleverse pattern:
+Successfully implemented **all 7 repositories** using 100% SQLC-generated code following the Proxify pattern:
 **SQLC generates code → Repositories import/wrap → Services → API → React**
 
 ## ✅ Completed Repositories (7/7)
@@ -205,7 +205,7 @@ class DepositService {
 
 **100% SQLC Adoption** - Zero manual SQL queries! Every repository method uses type-safe SQLC-generated functions.
 
-**Pattern Compliance** - Exact implementation of Cleverse architecture:
+**Pattern Compliance** - Exact implementation of Proxify architecture:
 ```
 Database Schema
      ↓ (SQLC generates)
@@ -242,4 +242,4 @@ React Components
 
 **Status**: ✅ **READY FOR SERVICE LAYER** 
 **Quality**: 🏆 **100% Type-Safe with SQLC**
-**Architecture**: ✅ **Cleverse Pattern Compliant**
+**Architecture**: ✅ **Proxify Pattern Compliant**

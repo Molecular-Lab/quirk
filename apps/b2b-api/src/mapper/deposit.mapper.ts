@@ -11,28 +11,25 @@ export function mapDepositToDto(
 ) {
 	return {
 		id: deposit.id,
+		orderId: deposit.orderId,
+		depositType: "external" as const, // All B2B deposits are external
 		clientId: deposit.clientId,
 		userId: deposit.userId,
-		vaultId: vaultId || "", // Pass from router or leave empty if not available
 		amount: deposit.fiatAmount || "0",
-		sharesMinted: undefined, // Not stored in deposit_transactions table
 		status: mapDepositStatus(deposit.status),
-		transactionHash: undefined,
 		createdAt: deposit.createdAt.toISOString(),
+		completedAt: deposit.completedAt?.toISOString(),
 	};
 }
 
 export function mapDepositsToDto(
-	deposits: GetDepositByOrderIDRow[],
-	vaultIdMap?: Map<string, string> // Map of userId -> vaultId
+	deposits: GetDepositByOrderIDRow[]
 ) {
-	return deposits.map((d) => 
-		mapDepositToDto(d, vaultIdMap?.get(d.userId))
-	);
+	return deposits.map((d) => mapDepositToDto(d));
 }
 
-function mapDepositStatus(status: string): "PENDING" | "COMPLETED" | "FAILED" {
-	if (status === "completed") return "COMPLETED";
-	if (status === "failed") return "FAILED";
-	return "PENDING";
+function mapDepositStatus(status: string): "pending" | "completed" | "failed" {
+	if (status === "completed") return "completed";
+	if (status === "failed") return "failed";
+	return "pending";
 }

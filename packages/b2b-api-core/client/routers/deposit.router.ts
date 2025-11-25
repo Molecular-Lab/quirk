@@ -47,7 +47,7 @@ export class DepositRouter extends Router<typeof b2bContract> {
 	/**
 	 * Complete a deposit
 	 */
-	async completeDeposit(id: string, data: { transactionHash: string; blockNumber?: number }) {
+	async completeDeposit(id: string, data: { vaultId: string; transactionHash: string; blockNumber?: number }) {
 		const response = await this.client.deposit.complete({ params: { id }, body: data });
 		
 		if (response.status === 200) {

@@ -32,70 +32,29 @@ func (q *Queries) AddPendingDepositToVault(ctx context.Context, arg AddPendingDe
 	return err
 }
 
-const addSharesToUserVault = `-- name: AddSharesToUserVault :exec
-UPDATE end_user_vaults
-SET shares = $2,  -- new total shares
-    weighted_entry_index = $3,  -- recalculated weighted entry index
-    total_deposited = total_deposited + $4,  -- increment deposited amount
-    last_deposit_at = now(),
-    updated_at = now()
-WHERE id = $1
-`
-
-type AddSharesToUserVaultParams struct {
-	ID                 uuid.UUID      `db:"id"`
-	Shares             pgtype.Numeric `db:"shares"`
-	WeightedEntryIndex pgtype.Numeric `db:"weighted_entry_index"`
-	TotalDeposited     pgtype.Numeric `db:"total_deposited"`
-}
-
-// Add shares from a new deposit with weighted entry index update
-func (q *Queries) AddSharesToUserVault(ctx context.Context, arg AddSharesToUserVaultParams) error {
-	_, err := q.db.Exec(ctx, addSharesToUserVault,
-		arg.ID,
-		arg.Shares,
-		arg.WeightedEntryIndex,
-		arg.TotalDeposited,
-	)
-	return err
-}
-
-const burnSharesFromUserVault = `-- name: BurnSharesFromUserVault :exec
-UPDATE end_user_vaults
-SET shares = shares - $2,  -- shares to burn
-    total_withdrawn = total_withdrawn + $3,  -- withdrawal amount
-    last_withdrawal_at = now(),
-    updated_at = now()
-WHERE id = $1
-`
-
-type BurnSharesFromUserVaultParams struct {
-	ID             uuid.UUID      `db:"id"`
-	Shares         pgtype.Numeric `db:"shares"`
-	TotalWithdrawn pgtype.Numeric `db:"total_withdrawn"`
-}
-
-// Burn shares for withdrawal
-func (q *Queries) BurnSharesFromUserVault(ctx context.Context, arg BurnSharesFromUserVaultParams) error {
-	_, err := q.db.Exec(ctx, burnSharesFromUserVault, arg.ID, arg.Shares, arg.TotalWithdrawn)
-	return err
-}
-
 const createClientVault = `-- name: CreateClientVault :one
-INSERT INTO client_vaults (
-  client_id,
-  chain,
-  token_address,
-  token_symbol,
-  current_index,
-  total_shares,
-  pending_deposit_balance,
-  total_staked_balance,
-  cumulative_yield
-) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9
+WITH new_vault AS (
+  INSERT INTO client_vaults (
+    client_id,
+    chain,
+    token_address,
+    token_symbol,
+    current_index,
+    total_shares,
+    pending_deposit_balance,
+    total_staked_balance,
+    cumulative_yield
+  ) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
+  )
+  RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at
 )
-RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at
+SELECT 
+  nv.id, nv.client_id, nv.chain, nv.token_address, nv.token_symbol, nv.total_shares, nv.current_index, nv.last_index_update, nv.pending_deposit_balance, nv.total_staked_balance, nv.cumulative_yield, nv.apy_7d, nv.apy_30d, nv.strategies, nv.is_active, nv.created_at, nv.updated_at,
+  pa.privy_wallet_address as custodial_wallet_address
+FROM new_vault nv
+JOIN client_organizations co ON nv.client_id = co.id
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
 `
 
 type CreateClientVaultParams struct {
@@ -110,7 +69,28 @@ type CreateClientVaultParams struct {
 	CumulativeYield       pgtype.Numeric `db:"cumulative_yield"`
 }
 
-func (q *Queries) CreateClientVault(ctx context.Context, arg CreateClientVaultParams) (ClientVault, error) {
+type CreateClientVaultRow struct {
+	ID                     uuid.UUID          `db:"id"`
+	ClientID               uuid.UUID          `db:"client_id"`
+	Chain                  string             `db:"chain"`
+	TokenAddress           string             `db:"token_address"`
+	TokenSymbol            string             `db:"token_symbol"`
+	TotalShares            pgtype.Numeric     `db:"total_shares"`
+	CurrentIndex           pgtype.Numeric     `db:"current_index"`
+	LastIndexUpdate        pgtype.Timestamptz `db:"last_index_update"`
+	PendingDepositBalance  pgtype.Numeric     `db:"pending_deposit_balance"`
+	TotalStakedBalance     pgtype.Numeric     `db:"total_staked_balance"`
+	CumulativeYield        pgtype.Numeric     `db:"cumulative_yield"`
+	Apy7d                  pgtype.Numeric     `db:"apy_7d"`
+	Apy30d                 pgtype.Numeric     `db:"apy_30d"`
+	Strategies             []byte             `db:"strategies"`
+	IsActive               bool               `db:"is_active"`
+	CreatedAt              pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt              pgtype.Timestamptz `db:"updated_at"`
+	CustodialWalletAddress string             `db:"custodial_wallet_address"`
+}
+
+func (q *Queries) CreateClientVault(ctx context.Context, arg CreateClientVaultParams) (CreateClientVaultRow, error) {
 	row := q.db.QueryRow(ctx, createClientVault,
 		arg.ClientID,
 		arg.Chain,
@@ -122,7 +102,7 @@ func (q *Queries) CreateClientVault(ctx context.Context, arg CreateClientVaultPa
 		arg.TotalStakedBalance,
 		arg.CumulativeYield,
 	)
-	var i ClientVault
+	var i CreateClientVaultRow
 	err := row.Scan(
 		&i.ID,
 		&i.ClientID,
@@ -137,9 +117,11 @@ func (q *Queries) CreateClientVault(ctx context.Context, arg CreateClientVaultPa
 		&i.CumulativeYield,
 		&i.Apy7d,
 		&i.Apy30d,
+		&i.Strategies,
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CustodialWalletAddress,
 	)
 	return i, err
 }
@@ -148,52 +130,37 @@ const createEndUserVault = `-- name: CreateEndUserVault :one
 INSERT INTO end_user_vaults (
   end_user_id,
   client_id,
-  chain,
-  token_address,
-  token_symbol,
-  shares,
-  weighted_entry_index,
-  total_deposited
+  total_deposited,
+  weighted_entry_index
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
+  $1, $2, $3, $4
 )
-RETURNING id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at
+RETURNING id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at
 `
 
 type CreateEndUserVaultParams struct {
 	EndUserID          uuid.UUID      `db:"end_user_id"`
 	ClientID           uuid.UUID      `db:"client_id"`
-	Chain              string         `db:"chain"`
-	TokenAddress       string         `db:"token_address"`
-	TokenSymbol        string         `db:"token_symbol"`
-	Shares             pgtype.Numeric `db:"shares"`
-	WeightedEntryIndex pgtype.Numeric `db:"weighted_entry_index"`
 	TotalDeposited     pgtype.Numeric `db:"total_deposited"`
+	WeightedEntryIndex pgtype.Numeric `db:"weighted_entry_index"`
 }
 
+// Create vault on first deposit (lazy creation)
 func (q *Queries) CreateEndUserVault(ctx context.Context, arg CreateEndUserVaultParams) (EndUserVault, error) {
 	row := q.db.QueryRow(ctx, createEndUserVault,
 		arg.EndUserID,
 		arg.ClientID,
-		arg.Chain,
-		arg.TokenAddress,
-		arg.TokenSymbol,
-		arg.Shares,
-		arg.WeightedEntryIndex,
 		arg.TotalDeposited,
+		arg.WeightedEntryIndex,
 	)
 	var i EndUserVault
 	err := row.Scan(
 		&i.ID,
 		&i.EndUserID,
 		&i.ClientID,
-		&i.Chain,
-		&i.TokenAddress,
-		&i.TokenSymbol,
-		&i.Shares,
-		&i.WeightedEntryIndex,
 		&i.TotalDeposited,
 		&i.TotalWithdrawn,
+		&i.WeightedEntryIndex,
 		&i.LastDepositAt,
 		&i.LastWithdrawalAt,
 		&i.IsActive,
@@ -203,10 +170,54 @@ func (q *Queries) CreateEndUserVault(ctx context.Context, arg CreateEndUserVault
 	return i, err
 }
 
+const getClientSummary = `-- name: GetClientSummary :one
+
+SELECT
+  co.id,
+  co.product_id,
+  co.company_name,
+  COUNT(DISTINCT euv.end_user_id) AS total_users,
+  COALESCE(SUM(euv.total_deposited), 0) AS total_user_deposits,
+  COALESCE(SUM(euv.total_withdrawn), 0) AS total_user_withdrawals
+FROM client_organizations co
+LEFT JOIN end_user_vaults euv
+  ON co.id = euv.client_id
+  AND euv.is_active = true
+WHERE co.id = $1
+GROUP BY co.id
+`
+
+type GetClientSummaryRow struct {
+	ID                   uuid.UUID   `db:"id"`
+	ProductID            string      `db:"product_id"`
+	CompanyName          string      `db:"company_name"`
+	TotalUsers           int64       `db:"total_users"`
+	TotalUserDeposits    interface{} `db:"total_user_deposits"`
+	TotalUserWithdrawals interface{} `db:"total_user_withdrawals"`
+}
+
+// ============================================
+// VAULT ANALYTICS (SIMPLIFIED)
+// ============================================
+// Complete client summary (aggregated across all vaults)
+func (q *Queries) GetClientSummary(ctx context.Context, id uuid.UUID) (GetClientSummaryRow, error) {
+	row := q.db.QueryRow(ctx, getClientSummary, id)
+	var i GetClientSummaryRow
+	err := row.Scan(
+		&i.ID,
+		&i.ProductID,
+		&i.CompanyName,
+		&i.TotalUsers,
+		&i.TotalUserDeposits,
+		&i.TotalUserWithdrawals,
+	)
+	return i, err
+}
+
 const getClientVault = `-- name: GetClientVault :one
 
 
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at FROM client_vaults
 WHERE id = $1 LIMIT 1
 `
 
@@ -233,6 +244,7 @@ func (q *Queries) GetClientVault(ctx context.Context, id uuid.UUID) (ClientVault
 		&i.CumulativeYield,
 		&i.Apy7d,
 		&i.Apy30d,
+		&i.Strategies,
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
@@ -241,10 +253,15 @@ func (q *Queries) GetClientVault(ctx context.Context, id uuid.UUID) (ClientVault
 }
 
 const getClientVaultByToken = `-- name: GetClientVaultByToken :one
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
-WHERE client_id = $1
-  AND chain = $2
-  AND token_address = $3
+SELECT 
+  cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.is_active, cv.created_at, cv.updated_at,
+  pa.privy_wallet_address as custodial_wallet_address
+FROM client_vaults cv
+JOIN client_organizations co ON cv.client_id = co.id
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE cv.client_id = $1
+  AND cv.chain = $2
+  AND cv.token_address = $3
 LIMIT 1
 `
 
@@ -254,9 +271,30 @@ type GetClientVaultByTokenParams struct {
 	TokenAddress string    `db:"token_address"`
 }
 
-func (q *Queries) GetClientVaultByToken(ctx context.Context, arg GetClientVaultByTokenParams) (ClientVault, error) {
+type GetClientVaultByTokenRow struct {
+	ID                     uuid.UUID          `db:"id"`
+	ClientID               uuid.UUID          `db:"client_id"`
+	Chain                  string             `db:"chain"`
+	TokenAddress           string             `db:"token_address"`
+	TokenSymbol            string             `db:"token_symbol"`
+	TotalShares            pgtype.Numeric     `db:"total_shares"`
+	CurrentIndex           pgtype.Numeric     `db:"current_index"`
+	LastIndexUpdate        pgtype.Timestamptz `db:"last_index_update"`
+	PendingDepositBalance  pgtype.Numeric     `db:"pending_deposit_balance"`
+	TotalStakedBalance     pgtype.Numeric     `db:"total_staked_balance"`
+	CumulativeYield        pgtype.Numeric     `db:"cumulative_yield"`
+	Apy7d                  pgtype.Numeric     `db:"apy_7d"`
+	Apy30d                 pgtype.Numeric     `db:"apy_30d"`
+	Strategies             []byte             `db:"strategies"`
+	IsActive               bool               `db:"is_active"`
+	CreatedAt              pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt              pgtype.Timestamptz `db:"updated_at"`
+	CustodialWalletAddress string             `db:"custodial_wallet_address"`
+}
+
+func (q *Queries) GetClientVaultByToken(ctx context.Context, arg GetClientVaultByTokenParams) (GetClientVaultByTokenRow, error) {
 	row := q.db.QueryRow(ctx, getClientVaultByToken, arg.ClientID, arg.Chain, arg.TokenAddress)
-	var i ClientVault
+	var i GetClientVaultByTokenRow
 	err := row.Scan(
 		&i.ID,
 		&i.ClientID,
@@ -271,18 +309,25 @@ func (q *Queries) GetClientVaultByToken(ctx context.Context, arg GetClientVaultB
 		&i.CumulativeYield,
 		&i.Apy7d,
 		&i.Apy30d,
+		&i.Strategies,
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CustodialWalletAddress,
 	)
 	return i, err
 }
 
 const getClientVaultByTokenForUpdate = `-- name: GetClientVaultByTokenForUpdate :one
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
-WHERE client_id = $1
-  AND chain = $2
-  AND token_address = $3
+SELECT 
+  cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.is_active, cv.created_at, cv.updated_at,
+  pa.privy_wallet_address as custodial_wallet_address
+FROM client_vaults cv
+JOIN client_organizations co ON cv.client_id = co.id
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE cv.client_id = $1
+  AND cv.chain = $2
+  AND cv.token_address = $3
 FOR UPDATE
 LIMIT 1
 `
@@ -293,10 +338,31 @@ type GetClientVaultByTokenForUpdateParams struct {
 	TokenAddress string    `db:"token_address"`
 }
 
+type GetClientVaultByTokenForUpdateRow struct {
+	ID                     uuid.UUID          `db:"id"`
+	ClientID               uuid.UUID          `db:"client_id"`
+	Chain                  string             `db:"chain"`
+	TokenAddress           string             `db:"token_address"`
+	TokenSymbol            string             `db:"token_symbol"`
+	TotalShares            pgtype.Numeric     `db:"total_shares"`
+	CurrentIndex           pgtype.Numeric     `db:"current_index"`
+	LastIndexUpdate        pgtype.Timestamptz `db:"last_index_update"`
+	PendingDepositBalance  pgtype.Numeric     `db:"pending_deposit_balance"`
+	TotalStakedBalance     pgtype.Numeric     `db:"total_staked_balance"`
+	CumulativeYield        pgtype.Numeric     `db:"cumulative_yield"`
+	Apy7d                  pgtype.Numeric     `db:"apy_7d"`
+	Apy30d                 pgtype.Numeric     `db:"apy_30d"`
+	Strategies             []byte             `db:"strategies"`
+	IsActive               bool               `db:"is_active"`
+	CreatedAt              pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt              pgtype.Timestamptz `db:"updated_at"`
+	CustodialWalletAddress string             `db:"custodial_wallet_address"`
+}
+
 // Use in transactions to lock the vault row
-func (q *Queries) GetClientVaultByTokenForUpdate(ctx context.Context, arg GetClientVaultByTokenForUpdateParams) (ClientVault, error) {
+func (q *Queries) GetClientVaultByTokenForUpdate(ctx context.Context, arg GetClientVaultByTokenForUpdateParams) (GetClientVaultByTokenForUpdateRow, error) {
 	row := q.db.QueryRow(ctx, getClientVaultByTokenForUpdate, arg.ClientID, arg.Chain, arg.TokenAddress)
-	var i ClientVault
+	var i GetClientVaultByTokenForUpdateRow
 	err := row.Scan(
 		&i.ID,
 		&i.ClientID,
@@ -311,22 +377,27 @@ func (q *Queries) GetClientVaultByTokenForUpdate(ctx context.Context, arg GetCli
 		&i.CumulativeYield,
 		&i.Apy7d,
 		&i.Apy30d,
+		&i.Strategies,
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.CustodialWalletAddress,
 	)
 	return i, err
 }
 
 const getEndUserVault = `-- name: GetEndUserVault :one
 
-SELECT id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
 WHERE id = $1 LIMIT 1
 `
 
 // ============================================
-// END-USER VAULT OPERATIONS
+// END-USER VAULT OPERATIONS (SIMPLIFIED)
 // ============================================
+// ✅ ONE vault per user per client (no chain/token tracking)
+// Backend calculates client_growth_index from all client_vaults
+// User sees: total_deposited, current_value, yield
 func (q *Queries) GetEndUserVault(ctx context.Context, id uuid.UUID) (EndUserVault, error) {
 	row := q.db.QueryRow(ctx, getEndUserVault, id)
 	var i EndUserVault
@@ -334,13 +405,9 @@ func (q *Queries) GetEndUserVault(ctx context.Context, id uuid.UUID) (EndUserVau
 		&i.ID,
 		&i.EndUserID,
 		&i.ClientID,
-		&i.Chain,
-		&i.TokenAddress,
-		&i.TokenSymbol,
-		&i.Shares,
-		&i.WeightedEntryIndex,
 		&i.TotalDeposited,
 		&i.TotalWithdrawn,
+		&i.WeightedEntryIndex,
 		&i.LastDepositAt,
 		&i.LastWithdrawalAt,
 		&i.IsActive,
@@ -350,34 +417,29 @@ func (q *Queries) GetEndUserVault(ctx context.Context, id uuid.UUID) (EndUserVau
 	return i, err
 }
 
-const getEndUserVaultByToken = `-- name: GetEndUserVaultByToken :one
-SELECT id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
+const getEndUserVaultByClient = `-- name: GetEndUserVaultByClient :one
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
 WHERE end_user_id = $1
-  AND chain = $2
-  AND token_address = $3
+  AND client_id = $2
 LIMIT 1
 `
 
-type GetEndUserVaultByTokenParams struct {
-	EndUserID    uuid.UUID `db:"end_user_id"`
-	Chain        string    `db:"chain"`
-	TokenAddress string    `db:"token_address"`
+type GetEndUserVaultByClientParams struct {
+	EndUserID uuid.UUID `db:"end_user_id"`
+	ClientID  uuid.UUID `db:"client_id"`
 }
 
-func (q *Queries) GetEndUserVaultByToken(ctx context.Context, arg GetEndUserVaultByTokenParams) (EndUserVault, error) {
-	row := q.db.QueryRow(ctx, getEndUserVaultByToken, arg.EndUserID, arg.Chain, arg.TokenAddress)
+// Get user's vault for a specific client
+func (q *Queries) GetEndUserVaultByClient(ctx context.Context, arg GetEndUserVaultByClientParams) (EndUserVault, error) {
+	row := q.db.QueryRow(ctx, getEndUserVaultByClient, arg.EndUserID, arg.ClientID)
 	var i EndUserVault
 	err := row.Scan(
 		&i.ID,
 		&i.EndUserID,
 		&i.ClientID,
-		&i.Chain,
-		&i.TokenAddress,
-		&i.TokenSymbol,
-		&i.Shares,
-		&i.WeightedEntryIndex,
 		&i.TotalDeposited,
 		&i.TotalWithdrawn,
+		&i.WeightedEntryIndex,
 		&i.LastDepositAt,
 		&i.LastWithdrawalAt,
 		&i.IsActive,
@@ -387,228 +449,41 @@ func (q *Queries) GetEndUserVaultByToken(ctx context.Context, arg GetEndUserVaul
 	return i, err
 }
 
-const getEndUserVaultByTokenForUpdate = `-- name: GetEndUserVaultByTokenForUpdate :one
-SELECT id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
+const getEndUserVaultByClientForUpdate = `-- name: GetEndUserVaultByClientForUpdate :one
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
 WHERE end_user_id = $1
-  AND chain = $2
-  AND token_address = $3
+  AND client_id = $2
 FOR UPDATE
 LIMIT 1
 `
 
-type GetEndUserVaultByTokenForUpdateParams struct {
-	EndUserID    uuid.UUID `db:"end_user_id"`
-	Chain        string    `db:"chain"`
-	TokenAddress string    `db:"token_address"`
+type GetEndUserVaultByClientForUpdateParams struct {
+	EndUserID uuid.UUID `db:"end_user_id"`
+	ClientID  uuid.UUID `db:"client_id"`
 }
 
 // Use in transactions to lock the user vault row
-func (q *Queries) GetEndUserVaultByTokenForUpdate(ctx context.Context, arg GetEndUserVaultByTokenForUpdateParams) (EndUserVault, error) {
-	row := q.db.QueryRow(ctx, getEndUserVaultByTokenForUpdate, arg.EndUserID, arg.Chain, arg.TokenAddress)
+func (q *Queries) GetEndUserVaultByClientForUpdate(ctx context.Context, arg GetEndUserVaultByClientForUpdateParams) (EndUserVault, error) {
+	row := q.db.QueryRow(ctx, getEndUserVaultByClientForUpdate, arg.EndUserID, arg.ClientID)
 	var i EndUserVault
 	err := row.Scan(
 		&i.ID,
 		&i.EndUserID,
 		&i.ClientID,
-		&i.Chain,
-		&i.TokenAddress,
-		&i.TokenSymbol,
-		&i.Shares,
-		&i.WeightedEntryIndex,
 		&i.TotalDeposited,
 		&i.TotalWithdrawn,
+		&i.WeightedEntryIndex,
 		&i.LastDepositAt,
 		&i.LastWithdrawalAt,
 		&i.IsActive,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getEndUserVaultWithBalance = `-- name: GetEndUserVaultWithBalance :one
-SELECT
-  euv.id, euv.end_user_id, euv.client_id, euv.chain, euv.token_address, euv.token_symbol, euv.shares, euv.weighted_entry_index, euv.total_deposited, euv.total_withdrawn, euv.last_deposit_at, euv.last_withdrawal_at, euv.is_active, euv.created_at, euv.updated_at,
-  cv.current_index,
-  cv.token_symbol,
-  cv.apy_7d,
-  cv.apy_30d,
-  cv.total_staked_balance,
-  cv.pending_deposit_balance,
-  -- Effective balance = shares * current_index / 1e18
-  (euv.shares * cv.current_index / 1000000000000000000) AS effective_balance,
-  -- Yield earned = effective_balance - total_deposited
-  ((euv.shares * cv.current_index / 1000000000000000000) - euv.total_deposited) AS yield_earned
-FROM end_user_vaults euv
-JOIN client_vaults cv
-  ON euv.client_id = cv.client_id
-  AND euv.chain = cv.chain
-  AND euv.token_address = cv.token_address
-WHERE euv.end_user_id = $1
-  AND euv.chain = $2
-  AND euv.token_address = $3
-LIMIT 1
-`
-
-type GetEndUserVaultWithBalanceParams struct {
-	EndUserID    uuid.UUID `db:"end_user_id"`
-	Chain        string    `db:"chain"`
-	TokenAddress string    `db:"token_address"`
-}
-
-type GetEndUserVaultWithBalanceRow struct {
-	ID                    uuid.UUID          `db:"id"`
-	EndUserID             uuid.UUID          `db:"end_user_id"`
-	ClientID              uuid.UUID          `db:"client_id"`
-	Chain                 string             `db:"chain"`
-	TokenAddress          string             `db:"token_address"`
-	TokenSymbol           string             `db:"token_symbol"`
-	Shares                pgtype.Numeric     `db:"shares"`
-	WeightedEntryIndex    pgtype.Numeric     `db:"weighted_entry_index"`
-	TotalDeposited        pgtype.Numeric     `db:"total_deposited"`
-	TotalWithdrawn        pgtype.Numeric     `db:"total_withdrawn"`
-	LastDepositAt         pgtype.Timestamptz `db:"last_deposit_at"`
-	LastWithdrawalAt      pgtype.Timestamptz `db:"last_withdrawal_at"`
-	IsActive              bool               `db:"is_active"`
-	CreatedAt             pgtype.Timestamptz `db:"created_at"`
-	UpdatedAt             pgtype.Timestamptz `db:"updated_at"`
-	CurrentIndex          pgtype.Numeric     `db:"current_index"`
-	TokenSymbol_2         string             `db:"token_symbol_2"`
-	Apy7d                 pgtype.Numeric     `db:"apy_7d"`
-	Apy30d                pgtype.Numeric     `db:"apy_30d"`
-	TotalStakedBalance    pgtype.Numeric     `db:"total_staked_balance"`
-	PendingDepositBalance pgtype.Numeric     `db:"pending_deposit_balance"`
-	EffectiveBalance      int32              `db:"effective_balance"`
-	YieldEarned           int32              `db:"yield_earned"`
-}
-
-// Get single vault with balance calculation
-func (q *Queries) GetEndUserVaultWithBalance(ctx context.Context, arg GetEndUserVaultWithBalanceParams) (GetEndUserVaultWithBalanceRow, error) {
-	row := q.db.QueryRow(ctx, getEndUserVaultWithBalance, arg.EndUserID, arg.Chain, arg.TokenAddress)
-	var i GetEndUserVaultWithBalanceRow
-	err := row.Scan(
-		&i.ID,
-		&i.EndUserID,
-		&i.ClientID,
-		&i.Chain,
-		&i.TokenAddress,
-		&i.TokenSymbol,
-		&i.Shares,
-		&i.WeightedEntryIndex,
-		&i.TotalDeposited,
-		&i.TotalWithdrawn,
-		&i.LastDepositAt,
-		&i.LastWithdrawalAt,
-		&i.IsActive,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.CurrentIndex,
-		&i.TokenSymbol_2,
-		&i.Apy7d,
-		&i.Apy30d,
-		&i.TotalStakedBalance,
-		&i.PendingDepositBalance,
-		&i.EffectiveBalance,
-		&i.YieldEarned,
-	)
-	return i, err
-}
-
-const getTotalSharesForVault = `-- name: GetTotalSharesForVault :one
-SELECT COALESCE(SUM(shares), 0) AS total_user_shares
-FROM end_user_vaults
-WHERE client_id = $1
-  AND chain = $2
-  AND token_address = $3
-  AND is_active = true
-`
-
-type GetTotalSharesForVaultParams struct {
-	ClientID     uuid.UUID `db:"client_id"`
-	Chain        string    `db:"chain"`
-	TokenAddress string    `db:"token_address"`
-}
-
-// Verify invariant: sum of user shares == client vault total_shares
-func (q *Queries) GetTotalSharesForVault(ctx context.Context, arg GetTotalSharesForVaultParams) (interface{}, error) {
-	row := q.db.QueryRow(ctx, getTotalSharesForVault, arg.ClientID, arg.Chain, arg.TokenAddress)
-	var total_user_shares interface{}
-	err := row.Scan(&total_user_shares)
-	return total_user_shares, err
-}
-
-const getVaultSummary = `-- name: GetVaultSummary :one
-
-SELECT
-  cv.id,
-  cv.chain,
-  cv.token_symbol,
-  cv.current_index,
-  cv.pending_deposit_balance,
-  cv.total_staked_balance,
-  cv.cumulative_yield,
-  cv.apy_7d,
-  cv.apy_30d,
-  cv.total_shares,
-  cv.last_index_update,
-  COUNT(DISTINCT euv.end_user_id) AS total_users,
-  COALESCE(SUM(euv.total_deposited), 0) AS total_user_deposits,
-  COALESCE(SUM(euv.total_withdrawn), 0) AS total_user_withdrawals
-FROM client_vaults cv
-LEFT JOIN end_user_vaults euv
-  ON cv.client_id = euv.client_id
-  AND cv.chain = euv.chain
-  AND cv.token_address = euv.token_address
-  AND euv.is_active = true
-WHERE cv.id = $1
-GROUP BY cv.id
-`
-
-type GetVaultSummaryRow struct {
-	ID                    uuid.UUID          `db:"id"`
-	Chain                 string             `db:"chain"`
-	TokenSymbol           string             `db:"token_symbol"`
-	CurrentIndex          pgtype.Numeric     `db:"current_index"`
-	PendingDepositBalance pgtype.Numeric     `db:"pending_deposit_balance"`
-	TotalStakedBalance    pgtype.Numeric     `db:"total_staked_balance"`
-	CumulativeYield       pgtype.Numeric     `db:"cumulative_yield"`
-	Apy7d                 pgtype.Numeric     `db:"apy_7d"`
-	Apy30d                pgtype.Numeric     `db:"apy_30d"`
-	TotalShares           pgtype.Numeric     `db:"total_shares"`
-	LastIndexUpdate       pgtype.Timestamptz `db:"last_index_update"`
-	TotalUsers            int64              `db:"total_users"`
-	TotalUserDeposits     interface{}        `db:"total_user_deposits"`
-	TotalUserWithdrawals  interface{}        `db:"total_user_withdrawals"`
-}
-
-// ============================================
-// VAULT ANALYTICS
-// ============================================
-// Complete vault summary for a client
-func (q *Queries) GetVaultSummary(ctx context.Context, id uuid.UUID) (GetVaultSummaryRow, error) {
-	row := q.db.QueryRow(ctx, getVaultSummary, id)
-	var i GetVaultSummaryRow
-	err := row.Scan(
-		&i.ID,
-		&i.Chain,
-		&i.TokenSymbol,
-		&i.CurrentIndex,
-		&i.PendingDepositBalance,
-		&i.TotalStakedBalance,
-		&i.CumulativeYield,
-		&i.Apy7d,
-		&i.Apy30d,
-		&i.TotalShares,
-		&i.LastIndexUpdate,
-		&i.TotalUsers,
-		&i.TotalUserDeposits,
-		&i.TotalUserWithdrawals,
 	)
 	return i, err
 }
 
 const listClientVaults = `-- name: ListClientVaults :many
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at FROM client_vaults
 WHERE client_id = $1
 ORDER BY created_at DESC
 `
@@ -636,6 +511,7 @@ func (q *Queries) ListClientVaults(ctx context.Context, clientID uuid.UUID) ([]C
 			&i.CumulativeYield,
 			&i.Apy7d,
 			&i.Apy30d,
+			&i.Strategies,
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -651,7 +527,7 @@ func (q *Queries) ListClientVaults(ctx context.Context, clientID uuid.UUID) ([]C
 }
 
 const listClientVaultsPendingStake = `-- name: ListClientVaultsPendingStake :many
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at FROM client_vaults
 WHERE pending_deposit_balance >= $1  -- minimum threshold (e.g., 10000)
   AND is_active = true
 ORDER BY pending_deposit_balance DESC
@@ -681,6 +557,7 @@ func (q *Queries) ListClientVaultsPendingStake(ctx context.Context, pendingDepos
 			&i.CumulativeYield,
 			&i.Apy7d,
 			&i.Apy30d,
+			&i.Strategies,
 			&i.IsActive,
 			&i.CreatedAt,
 			&i.UpdatedAt,
@@ -696,7 +573,7 @@ func (q *Queries) ListClientVaultsPendingStake(ctx context.Context, pendingDepos
 }
 
 const listEndUserVaults = `-- name: ListEndUserVaults :many
-SELECT id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
 WHERE end_user_id = $1
 ORDER BY created_at DESC
 `
@@ -714,13 +591,9 @@ func (q *Queries) ListEndUserVaults(ctx context.Context, endUserID uuid.UUID) ([
 			&i.ID,
 			&i.EndUserID,
 			&i.ClientID,
-			&i.Chain,
-			&i.TokenAddress,
-			&i.TokenSymbol,
-			&i.Shares,
-			&i.WeightedEntryIndex,
 			&i.TotalDeposited,
 			&i.TotalWithdrawn,
+			&i.WeightedEntryIndex,
 			&i.LastDepositAt,
 			&i.LastWithdrawalAt,
 			&i.IsActive,
@@ -737,146 +610,54 @@ func (q *Queries) ListEndUserVaults(ctx context.Context, endUserID uuid.UUID) ([
 	return items, nil
 }
 
-const listEndUserVaultsWithBalance = `-- name: ListEndUserVaultsWithBalance :many
-SELECT
-  euv.id, euv.end_user_id, euv.client_id, euv.chain, euv.token_address, euv.token_symbol, euv.shares, euv.weighted_entry_index, euv.total_deposited, euv.total_withdrawn, euv.last_deposit_at, euv.last_withdrawal_at, euv.is_active, euv.created_at, euv.updated_at,
-  cv.current_index,
-  cv.token_symbol,
-  -- Effective balance = shares * current_index / 1e18
-  (euv.shares * cv.current_index / 1000000000000000000) AS effective_balance,
-  -- Yield earned = effective_balance - total_deposited
-  ((euv.shares * cv.current_index / 1000000000000000000) - euv.total_deposited) AS yield_earned
-FROM end_user_vaults euv
-JOIN client_vaults cv
-  ON euv.client_id = cv.client_id
-  AND euv.chain = cv.chain
-  AND euv.token_address = cv.token_address
-WHERE euv.end_user_id = $1
-  AND euv.is_active = true
-ORDER BY effective_balance DESC
-`
-
-type ListEndUserVaultsWithBalanceRow struct {
-	ID                 uuid.UUID          `db:"id"`
-	EndUserID          uuid.UUID          `db:"end_user_id"`
-	ClientID           uuid.UUID          `db:"client_id"`
-	Chain              string             `db:"chain"`
-	TokenAddress       string             `db:"token_address"`
-	TokenSymbol        string             `db:"token_symbol"`
-	Shares             pgtype.Numeric     `db:"shares"`
-	WeightedEntryIndex pgtype.Numeric     `db:"weighted_entry_index"`
-	TotalDeposited     pgtype.Numeric     `db:"total_deposited"`
-	TotalWithdrawn     pgtype.Numeric     `db:"total_withdrawn"`
-	LastDepositAt      pgtype.Timestamptz `db:"last_deposit_at"`
-	LastWithdrawalAt   pgtype.Timestamptz `db:"last_withdrawal_at"`
-	IsActive           bool               `db:"is_active"`
-	CreatedAt          pgtype.Timestamptz `db:"created_at"`
-	UpdatedAt          pgtype.Timestamptz `db:"updated_at"`
-	CurrentIndex       pgtype.Numeric     `db:"current_index"`
-	TokenSymbol_2      string             `db:"token_symbol_2"`
-	EffectiveBalance   int32              `db:"effective_balance"`
-	YieldEarned        int32              `db:"yield_earned"`
-}
-
-// Get user vaults with effective balance calculation
-func (q *Queries) ListEndUserVaultsWithBalance(ctx context.Context, endUserID uuid.UUID) ([]ListEndUserVaultsWithBalanceRow, error) {
-	rows, err := q.db.Query(ctx, listEndUserVaultsWithBalance, endUserID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListEndUserVaultsWithBalanceRow
-	for rows.Next() {
-		var i ListEndUserVaultsWithBalanceRow
-		if err := rows.Scan(
-			&i.ID,
-			&i.EndUserID,
-			&i.ClientID,
-			&i.Chain,
-			&i.TokenAddress,
-			&i.TokenSymbol,
-			&i.Shares,
-			&i.WeightedEntryIndex,
-			&i.TotalDeposited,
-			&i.TotalWithdrawn,
-			&i.LastDepositAt,
-			&i.LastWithdrawalAt,
-			&i.IsActive,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-			&i.CurrentIndex,
-			&i.TokenSymbol_2,
-			&i.EffectiveBalance,
-			&i.YieldEarned,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listTopUsersByBalance = `-- name: ListTopUsersByBalance :many
+const listTopUsersByDeposit = `-- name: ListTopUsersByDeposit :many
 SELECT
   euv.end_user_id,
   eu.user_id,
-  euv.shares,
-  euv.weighted_entry_index,
   euv.total_deposited,
   euv.total_withdrawn,
-  (euv.shares * cv.current_index / 1000000000000000000) AS effective_balance,
-  ((euv.shares * cv.current_index / 1000000000000000000) - euv.total_deposited) AS yield_earned
+  euv.weighted_entry_index,
+  euv.last_deposit_at
 FROM end_user_vaults euv
 JOIN end_users eu ON euv.end_user_id = eu.id
-JOIN client_vaults cv
-  ON euv.client_id = cv.client_id
-  AND euv.chain = cv.chain
-  AND euv.token_address = cv.token_address
-WHERE cv.id = $1
+WHERE euv.client_id = $1
   AND euv.is_active = true
-  AND euv.shares > 0
-ORDER BY effective_balance DESC
+  AND euv.total_deposited > 0
+ORDER BY euv.total_deposited DESC
 LIMIT $2
 `
 
-type ListTopUsersByBalanceParams struct {
-	ID    uuid.UUID `db:"id"`
-	Limit int32     `db:"limit"`
+type ListTopUsersByDepositParams struct {
+	ClientID uuid.UUID `db:"client_id"`
+	Limit    int32     `db:"limit"`
 }
 
-type ListTopUsersByBalanceRow struct {
-	EndUserID          uuid.UUID      `db:"end_user_id"`
-	UserID             string         `db:"user_id"`
-	Shares             pgtype.Numeric `db:"shares"`
-	WeightedEntryIndex pgtype.Numeric `db:"weighted_entry_index"`
-	TotalDeposited     pgtype.Numeric `db:"total_deposited"`
-	TotalWithdrawn     pgtype.Numeric `db:"total_withdrawn"`
-	EffectiveBalance   int32          `db:"effective_balance"`
-	YieldEarned        int32          `db:"yield_earned"`
+type ListTopUsersByDepositRow struct {
+	EndUserID          uuid.UUID          `db:"end_user_id"`
+	UserID             string             `db:"user_id"`
+	TotalDeposited     pgtype.Numeric     `db:"total_deposited"`
+	TotalWithdrawn     pgtype.Numeric     `db:"total_withdrawn"`
+	WeightedEntryIndex pgtype.Numeric     `db:"weighted_entry_index"`
+	LastDepositAt      pgtype.Timestamptz `db:"last_deposit_at"`
 }
 
-// Get top users by effective balance for a vault
-func (q *Queries) ListTopUsersByBalance(ctx context.Context, arg ListTopUsersByBalanceParams) ([]ListTopUsersByBalanceRow, error) {
-	rows, err := q.db.Query(ctx, listTopUsersByBalance, arg.ID, arg.Limit)
+// Get top users by total deposited for a client
+func (q *Queries) ListTopUsersByDeposit(ctx context.Context, arg ListTopUsersByDepositParams) ([]ListTopUsersByDepositRow, error) {
+	rows, err := q.db.Query(ctx, listTopUsersByDeposit, arg.ClientID, arg.Limit)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListTopUsersByBalanceRow
+	var items []ListTopUsersByDepositRow
 	for rows.Next() {
-		var i ListTopUsersByBalanceRow
+		var i ListTopUsersByDepositRow
 		if err := rows.Scan(
 			&i.EndUserID,
 			&i.UserID,
-			&i.Shares,
-			&i.WeightedEntryIndex,
 			&i.TotalDeposited,
 			&i.TotalWithdrawn,
-			&i.EffectiveBalance,
-			&i.YieldEarned,
+			&i.WeightedEntryIndex,
+			&i.LastDepositAt,
 		); err != nil {
 			return nil, err
 		}
@@ -972,5 +753,45 @@ func (q *Queries) UpdateClientVaultIndex(ctx context.Context, arg UpdateClientVa
 		arg.CumulativeYield,
 		arg.TotalStakedBalance,
 	)
+	return err
+}
+
+const updateEndUserVaultDeposit = `-- name: UpdateEndUserVaultDeposit :exec
+UPDATE end_user_vaults
+SET total_deposited = total_deposited + $2,  -- Add deposit amount
+    weighted_entry_index = $3,  -- Recalculate weighted entry index
+    last_deposit_at = now(),
+    updated_at = now()
+WHERE id = $1
+`
+
+type UpdateEndUserVaultDepositParams struct {
+	ID                 uuid.UUID      `db:"id"`
+	TotalDeposited     pgtype.Numeric `db:"total_deposited"`
+	WeightedEntryIndex pgtype.Numeric `db:"weighted_entry_index"`
+}
+
+// Update vault on deposit (DCA support with weighted entry index)
+func (q *Queries) UpdateEndUserVaultDeposit(ctx context.Context, arg UpdateEndUserVaultDepositParams) error {
+	_, err := q.db.Exec(ctx, updateEndUserVaultDeposit, arg.ID, arg.TotalDeposited, arg.WeightedEntryIndex)
+	return err
+}
+
+const updateEndUserVaultWithdrawal = `-- name: UpdateEndUserVaultWithdrawal :exec
+UPDATE end_user_vaults
+SET total_withdrawn = total_withdrawn + $2,  -- Add withdrawal amount
+    last_withdrawal_at = now(),
+    updated_at = now()
+WHERE id = $1
+`
+
+type UpdateEndUserVaultWithdrawalParams struct {
+	ID             uuid.UUID      `db:"id"`
+	TotalWithdrawn pgtype.Numeric `db:"total_withdrawn"`
+}
+
+// Update vault on withdrawal
+func (q *Queries) UpdateEndUserVaultWithdrawal(ctx context.Context, arg UpdateEndUserVaultWithdrawalParams) error {
+	_, err := q.db.Exec(ctx, updateEndUserVaultWithdrawal, arg.ID, arg.TotalWithdrawn)
 	return err
 }

@@ -26,4 +26,4 @@ else
 fi
 
 # Run the Vite build
-pnpm build --filter=@rabbitswap/interface
+pnpm build --filter=@proxify/interface

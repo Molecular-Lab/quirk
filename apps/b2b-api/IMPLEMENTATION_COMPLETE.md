@@ -2,7 +2,7 @@
 
 **Date**: November 19, 2025  
 **Project**: apps/b2b-api-new  
-**Architecture**: Cleverse Pattern with ts-rest
+**Architecture**: Proxify Pattern with ts-rest
 
 ---
 
@@ -271,4 +271,4 @@ Some endpoints have simplified implementations that may need enhancement:
 
 ✨ **Full B2B API Implementation Complete!**
 
-From 0% to 100% coverage following Cleverse architecture pattern with type-safe ts-rest contracts.
+From 0% to 100% coverage following Proxify architecture pattern with type-safe ts-rest contracts.

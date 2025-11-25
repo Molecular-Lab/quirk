@@ -43,7 +43,7 @@ export const ProtocolStats: React.FC = () => {
 					}
 					subtitle={formattedDate}
 					value={currentTvlUsd}
-					link="https://defillama.com/protocol/rabbit-swap#tvl-charts"
+					link="https://defillama.com/protocol/proxify-swap#tvl-charts"
 					isLoading={isTvlLoading}
 				/>
 				<ProtocolStatCard

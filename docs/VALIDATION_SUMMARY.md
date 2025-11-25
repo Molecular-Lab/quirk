@@ -65,7 +65,7 @@
 ├─ Clean Architecture (entity → repository → usecase)
 ├─ Type-safe (Zod validation + TypeScript)
 ├─ Working test API (5 endpoints, Express.js)
-└─ Production-ready patterns (from Cleverse monorepo)
+└─ Production-ready patterns (from Proxify monorepo)
 
 Estimated Completion: 60% of Phase 1 MVP
 ```

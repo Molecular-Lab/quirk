@@ -1,4 +1,4 @@
-import { APIClient, ArkenClient } from "@rabbitswap/api-core/client"
+import { APIClient, ArkenClient } from "@proxify/api-core/client"
 
 import { axiosClient } from "@/config/axios"
 

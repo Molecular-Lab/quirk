@@ -9,7 +9,7 @@ import { safeParse } from "../../utils/safe-parse"
 /**
  * Privy Usecase
  * Contains business logic for Privy operations
- * Following Clean Architecture pattern from Cleverse
+ * Following Clean Architecture pattern from Proxify
  */
 export class PrivyUsecase {
 	constructor(

@@ -1,10 +1,10 @@
 # @proxify/database
 
-Type-safe database layer using SQLC (Cleverse Pattern).
+Type-safe database layer using SQLC (Proxify Pattern).
 
 ## 🎨 Architecture Pattern
 
-This package follows the **Cleverse TypeScript pattern** with clean separation:
+This package follows the **Proxify TypeScript pattern** with clean separation:
 
 ```
 SQLC Generated (Don't Edit)  →  Repository Layer (Your Code)  →  Service Layer
@@ -512,7 +512,7 @@ pnpm add postgres bignumber.js
 pnpm add -D @types/pg
 ```
 
-## 🎯 Key Cleverse Patterns
+## 🎯 Key Proxify Patterns
 
 ### ✅ Pattern 1: SQLC Does the Heavy Lifting
 
@@ -750,7 +750,7 @@ class VaultRepository {
 
 ---
 
-**This pattern is production-proven by Cleverse and provides:**
+**This pattern is production-proven by Proxify and provides:**
 
 ✅ **Type Safety** - Catch errors at compile time  
 ✅ **Clean Architecture** - Clear separation of concerns  

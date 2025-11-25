@@ -9,7 +9,7 @@ import { z } from "zod";
 // ============================================
 
 export const CreateUserDto = z.object({
-	clientId: z.string().uuid(),
+	clientId: z.string(), // ✅ Accept both productId (prod_xxx) and UUID
 	clientUserId: z.string(),
 	email: z.string().email().optional(),
 	walletAddress: z.string().optional(),
@@ -32,7 +32,16 @@ export const UserDto = z.object({
 	walletAddress: z.string().nullable(),
 	isActive: z.boolean(),
 	createdAt: z.string(),
-	updatedAt: z.string(),
+	updatedAt: z.string().optional(),
+	vaults: z.array(z.object({
+		vaultId: z.string(),
+		chain: z.string(),
+		tokenSymbol: z.string(),
+		tokenAddress: z.string(),
+		shares: z.string(),
+		effectiveBalance: z.string(),
+		yieldEarned: z.string(),
+	})).optional(), // ✅ Added vaults array to response
 });
 
 export const VaultPositionDto = z.object({

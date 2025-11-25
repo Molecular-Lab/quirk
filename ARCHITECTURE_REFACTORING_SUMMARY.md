@@ -2,7 +2,7 @@
 
 ## 🎯 Goal Achieved
 
-Refactored `packages/b2b-api-core` to **exactly match** the Cleverse pattern from `packages/api-core`.
+Refactored `packages/b2b-api-core` to **exactly match** the Proxify pattern from `packages/api-core`.
 
 ---
 
@@ -21,7 +21,7 @@ packages/b2b-api-core/
 ❌ NO dto/ layer
 ❌ NO entity/ layer
 ❌ Schemas defined inline in contracts
-❌ Not following Cleverse pattern
+❌ Not following Proxify pattern
 ```
 
 ### After Refactoring ✅
@@ -53,7 +53,7 @@ packages/b2b-api-core/
 ├── query-keys.ts       # React Query keys (unchanged)
 └── index.ts            # Exports all layers
 
-✅ Follows exact Cleverse pattern
+✅ Follows exact Proxify pattern
 ✅ Matches api-core structure
 ✅ Runtime validation with Zod
 ✅ Shared DTOs across client/server
@@ -494,7 +494,7 @@ apps/whitelabel-web/         ← Frontend uses client
 
 ## 🎉 Summary
 
-**packages/b2b-api-core** now follows the **exact Cleverse pattern** and is ready to be used in:
+**packages/b2b-api-core** now follows the **exact Proxify pattern** and is ready to be used in:
 1. ✅ Frontend (whitelabel-web) - Import B2BAPIClient
 2. ✅ Backend (b2b-api-service) - Implement contracts
 3. ✅ Mobile apps - Use TypeScript types

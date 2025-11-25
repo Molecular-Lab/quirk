@@ -1,5 +1,5 @@
 /**
- * B2B API Server - NEW Cleverse Architecture Implementation
+ * B2B API Server - NEW Proxify Architecture Implementation
  * 
  * Architecture:
  * 1. DTO Layer (@proxify/b2b-api-core) - API contracts with Zod validation
@@ -15,6 +15,7 @@ import postgres from "postgres";
 import { initServer } from "@ts-rest/express";
 import {
 	ClientRepository,
+	PrivyAccountRepository,
 	VaultRepository,
 	UserRepository,
 	DepositRepository,
@@ -26,6 +27,7 @@ import {
 	B2BDepositUseCase,
 	B2BWithdrawalUseCase,
 	B2BUserVaultUseCase,
+	ClientGrowthIndexService, // ✅ NEW: Client growth index calculation
 } from "@proxify/core";
 import { b2bContract } from "@proxify/b2b-api-core";
 import { createExpressEndpoints } from "@ts-rest/express";
@@ -38,7 +40,9 @@ import { UserService } from "./service/user.service";
 import { DepositService } from "./service/deposit.service";
 import { WithdrawalService } from "./service/withdrawal.service";
 import { UserVaultService } from "./service/user-vault.service";
+import { PrivyAccountService } from "./service/privy-account.service";
 import { createMainRouter } from "./router";
+import { apiKeyAuth } from "./middleware/apiKeyAuth";
 
 const app = express();
 
@@ -62,6 +66,7 @@ async function main() {
 
 	// 2. Initialize Repositories
 	const clientRepository = new ClientRepository(sql);
+	const privyAccountRepository = new PrivyAccountRepository(sql);
 	const vaultRepository = new VaultRepository(sql);
 	const userRepository = new UserRepository(sql);
 	const depositRepository = new DepositRepository(sql);
@@ -71,21 +76,37 @@ async function main() {
 	logger.info("✅ Repositories initialized");
 
 	// 3. Initialize UseCases
-	const clientUseCase = new B2BClientUseCase(clientRepository, auditRepository);
+	const clientUseCase = new B2BClientUseCase(
+		clientRepository,
+		privyAccountRepository,
+		auditRepository,
+		vaultRepository // ✅ Added for strategy configuration
+	);
 	const vaultUseCase = new B2BVaultUseCase(vaultRepository, auditRepository);
-	const userUseCase = new B2BUserUseCase(userRepository, auditRepository);
+	const userUseCase = new B2BUserUseCase(
+		userRepository,
+		vaultRepository,
+		clientRepository, // ✅ Added for productId → clientId resolution
+		auditRepository
+	);
+
+	// ✅ Initialize ClientGrowthIndexService for simplified vault architecture
+	const clientGrowthIndexService = new ClientGrowthIndexService(vaultRepository);
+
 	const depositUseCase = new B2BDepositUseCase(
 		depositRepository,
 		clientRepository,
 		vaultRepository,
 		userRepository,
-		auditRepository
+		auditRepository,
+		clientGrowthIndexService // ✅ NEW: Client growth index calculation
 	);
 	const withdrawalUseCase = new B2BWithdrawalUseCase(
 		withdrawalRepository,
 		vaultRepository,
 		userRepository,
-		auditRepository
+		auditRepository,
+		clientGrowthIndexService // ✅ NEW: Client growth index calculation
 	);
 	const userVaultUseCase = new B2BUserVaultUseCase(
 		vaultRepository,
@@ -102,6 +123,7 @@ async function main() {
 	const depositService = new DepositService(depositUseCase);
 	const withdrawalService = new WithdrawalService(withdrawalUseCase);
 	const userVaultService = new UserVaultService(userVaultUseCase);
+	const privyAccountService = new PrivyAccountService(privyAccountRepository);
 
 	logger.info("✅ Services initialized");
 
@@ -116,6 +138,7 @@ async function main() {
 		depositService,
 		withdrawalService,
 		userVaultService,
+		privyAccountService,
 	});
 
 	logger.info("✅ Routers created");
@@ -127,7 +150,7 @@ async function main() {
 	app.use((req, res, next) => {
 		res.header("Access-Control-Allow-Origin", "*"); // In production, set specific origin
 		res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
-		res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
+		res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key"); // ✅ Added x-api-key
 		res.header("Access-Control-Max-Age", "86400"); // 24 hours
 		
 		// Handle preflight requests
@@ -153,6 +176,15 @@ async function main() {
 		});
 		next();
 	});
+
+	// API Key Authentication for protected routes (FLOW 3-9)
+	// Apply to all /api/v1/* routes EXCEPT client registration
+	app.use("/api/v1/users*", apiKeyAuth(clientUseCase));
+	app.use("/api/v1/deposits*", apiKeyAuth(clientUseCase));
+	app.use("/api/v1/withdrawals*", apiKeyAuth(clientUseCase));
+	app.use("/api/v1/vaults*", apiKeyAuth(clientUseCase));
+	
+	logger.info("✅ API Key authentication middleware applied to protected routes");
 
 	// 8. Mount ts-rest endpoints
 	createExpressEndpoints(b2bContract, router, app, {

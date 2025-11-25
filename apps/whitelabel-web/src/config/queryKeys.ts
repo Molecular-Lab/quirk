@@ -4,11 +4,19 @@
  */
 
 export const B2BQueryKeys = {
+	// Privy Account endpoints
+	privyAccount: {
+		get: (privyOrganizationId: string | undefined) => ["b2b", "privy-account", privyOrganizationId] as const,
+		create: () => ["b2b", "privy-account", "create"] as const,
+	},
+
 	// Client endpoints
 	client: {
 		register: () => ["b2b", "client", "register"] as const,
 		profile: (clientId: string | undefined) => ["b2b", "client", "profile", clientId] as const,
 		strategies: (clientId: string | undefined) => ["b2b", "client", "strategies", clientId] as const,
+		listByPrivyId: (privyOrganizationId: string | undefined) =>
+			["b2b", "client", "privy", privyOrganizationId] as const,
 	},
 
 	// User endpoints

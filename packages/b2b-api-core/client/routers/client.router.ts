@@ -17,6 +17,8 @@ export class ClientRouter extends Router<typeof b2bContract> {
 		websiteUrl?: string;
 		walletType: "MANAGED" | "USER_OWNED";
 		privyOrganizationId: string;
+		privyWalletAddress: string;
+		privyEmail?: string | null;
 	}) {
 		const response = await this.client.client.create({ body: data });
 		
@@ -60,6 +62,23 @@ export class ClientRouter extends Router<typeof b2bContract> {
 		}
 		
 		throw new APIError(response.status, "Failed to get client");
+	}
+
+	/**
+	 * List all clients by Privy Organization ID
+	 */
+	async listClientsByPrivyOrgId(privyOrganizationId: string) {
+		const response = await this.client.client.listByPrivyOrgId({ params: { privyOrganizationId } });
+		
+		if (response.status === 200) {
+			return response.body;
+		}
+		
+		if (response.status === 404) {
+			return [];
+		}
+		
+		throw new APIError(response.status, "Failed to list clients");
 	}
 
 	/**

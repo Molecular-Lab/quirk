@@ -30,6 +30,22 @@ export class ClientService {
 	}
 
 	/**
+	 * Regenerate API key for existing client
+	 * ⚠️ Returns new API key (shown only once!)
+	 * ⚠️ Invalidates old API key immediately
+	 */
+	async regenerateApiKey(productId: string) {
+		return await this.clientUseCase.regenerateApiKey(productId);
+	}
+
+	/**
+	 * Get all clients by Privy Organization ID
+	 */
+	async getClientsByPrivyOrgId(privyOrganizationId: string) {
+		return await this.clientUseCase.getClientsByPrivyOrgId(privyOrganizationId);
+	}
+
+	/**
 	 * Get client balance
 	 */
 	async getClientBalance(clientId: string) {
@@ -62,5 +78,20 @@ export class ClientService {
 	 */
 	async deductReservedFunds(request: DeductReservedRequest) {
 		return await this.clientUseCase.deductReserved(request);
+	}
+
+	/**
+	 * Configure vault strategies (FLOW 2)
+	 */
+	async configureStrategies(
+		productId: string,
+		data: {
+			chain: string;
+			tokenAddress: string;
+			tokenSymbol?: string;
+			strategies: Array<{ category: string; target: number }>;
+		}
+	) {
+		return await this.clientUseCase.configureStrategies(productId, data);
 	}
 }

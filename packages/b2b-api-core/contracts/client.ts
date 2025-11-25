@@ -54,6 +54,34 @@ export const clientContract = c.router({
 		summary: "Get client by product ID",
 	},
 
+	// List all clients by Privy Organization ID
+	listByPrivyOrgId: {
+		method: "GET",
+		path: "/clients/privy/:privyOrganizationId",
+		responses: {
+			200: z.array(ClientDto),
+			404: ErrorResponseDto,
+		},
+		summary: "List all client organizations for a Privy user",
+	},
+
+	// Regenerate API key for existing client
+	regenerateApiKey: {
+		method: "POST",
+		path: "/clients/product/:productId/regenerate-api-key",
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				api_key: z.string(),
+				productId: z.string(),
+				message: z.string(),
+			}),
+			400: ErrorResponseDto,
+		},
+		body: z.object({}), // No body required, productId in path
+		summary: "Regenerate API key for client (invalidates old key immediately)",
+	},
+
 	// Get client balance
 	getBalance: {
 		method: "GET",
@@ -111,5 +139,27 @@ export const clientContract = c.router({
 		},
 		body: DeductReservedDto,
 		summary: "Deduct from reserved balance",
+	},
+
+	// Configure vault strategies (FLOW 2)
+	configureStrategies: {
+		method: "POST",
+		path: "/products/:productId/strategies",
+		responses: {
+			200: SuccessResponseDto,
+			400: ErrorResponseDto,
+		},
+		body: z.object({
+			chain: z.string(),
+			token_address: z.string(),
+			token_symbol: z.string().optional(),
+			strategies: z.array(
+				z.object({
+					category: z.enum(["lending", "lp", "staking"]),
+					target: z.number().min(0).max(100),
+				}),
+			),
+		}),
+		summary: "Configure DeFi strategy allocation for client vault (by productId)",
 	},
 });

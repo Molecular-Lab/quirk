@@ -9,7 +9,7 @@ import { z } from "zod";
 const c = initContract();
 
 const CreateWithdrawalSchema = z.object({
-	clientId: z.string(),
+	clientId: z.string().optional(), // ✅ Optional - extracted from API key auth
 	userId: z.string(),
 	vaultId: z.string(),
 	amount: z.string(),

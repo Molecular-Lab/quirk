@@ -11,9 +11,9 @@ import {
 	SheetContent,
 	SheetContentProps,
 	SheetProps,
-} from "@rabbitswap/ui/basic"
-import { useBreakpoints } from "@rabbitswap/ui/hooks"
-import { cn } from "@rabbitswap/ui/utils"
+} from "@proxify/ui/basic"
+import { useBreakpoints } from "@proxify/ui/hooks"
+import { cn } from "@proxify/ui/utils"
 
 import { useAccountDrawer } from "@/hooks/useAccountDrawer"
 

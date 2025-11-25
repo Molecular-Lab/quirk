@@ -1,6 +1,6 @@
-# B2B API - NEW Cleverse Architecture Implementation
+# B2B API - NEW Proxify Architecture Implementation
 
-This is a **NEW**, clean implementation of the B2B API using the Cleverse pattern, matching the architecture in `apps/api`.
+This is a **NEW**, clean implementation of the B2B API using the Proxify pattern, matching the architecture in `apps/api`.
 
 ## 🏗️ Architecture
 
@@ -168,7 +168,7 @@ curl http://localhost:3001/api/v1/clients/product/prod_123
 | **Type Safety** | Partial | 100% |
 | **Contracts** | None | Shared with frontend |
 | **Service Layer** | Inline in controllers | Separate services/ |
-| **Pattern** | Custom | Cleverse (industry standard) |
+| **Pattern** | Custom | Proxify (industry standard) |
 
 ## ✅ Benefits
 
@@ -216,5 +216,5 @@ This mapping layer needs to be designed based on your business requirements.
 ## 📚 References
 
 - [ts-rest Documentation](https://ts-rest.com/)
-- [Cleverse Architecture Pattern](../api/README.md)
+- [Proxify Architecture Pattern](../api/README.md)
 - [B2B API Core](../../packages/b2b-api-core/README.md)

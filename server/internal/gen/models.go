@@ -43,28 +43,23 @@ type ClientBalance struct {
 	UpdatedAt   pgtype.Timestamptz `db:"updated_at"`
 }
 
-// Product owners (clients) who integrate Proxify into their platforms
+// Product organizations - multiple per Privy user (e.g., GrabPay, GrabFood). References privy_accounts for identity.
 type ClientOrganization struct {
 	ID uuid.UUID `db:"id"`
-	// Unique product identifier
+	// Foreign key to privy_accounts (one user can have many organizations)
+	PrivyAccountID uuid.UUID `db:"privy_account_id"`
+	// Primary public identifier for API operations (e.g., prod_abc123)
 	ProductID   string `db:"product_id"`
 	CompanyName string `db:"company_name"`
 	// ecommerce, streaming, gaming, freelance, saas, other
-	BusinessType string  `db:"business_type"`
-	Description  *string `db:"description"`
-	WebsiteUrl   *string `db:"website_url"`
-	// custodial | non-custodial
-	WalletType string `db:"wallet_type"`
-	// proxify | client
-	WalletManagedBy     string `db:"wallet_managed_by"`
-	PrivyOrganizationID string `db:"privy_organization_id"`
-	// Master wallet for client operations
-	PrivyWalletAddress string   `db:"privy_wallet_address"`
-	ApiKeyHash         *string  `db:"api_key_hash"`
-	ApiKeyPrefix       *string  `db:"api_key_prefix"`
-	WebhookUrls        []string `db:"webhook_urls"`
-	WebhookSecret      *string  `db:"webhook_secret"`
-	CustomStrategy     []byte   `db:"custom_strategy"`
+	BusinessType   string   `db:"business_type"`
+	Description    *string  `db:"description"`
+	WebsiteUrl     *string  `db:"website_url"`
+	ApiKeyHash     *string  `db:"api_key_hash"`
+	ApiKeyPrefix   *string  `db:"api_key_prefix"`
+	WebhookUrls    []string `db:"webhook_urls"`
+	WebhookSecret  *string  `db:"webhook_secret"`
+	CustomStrategy []byte   `db:"custom_strategy"`
 	// Percent of yield given to end users (e.g., 90.00)
 	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
 	IsActive            bool               `db:"is_active"`
@@ -90,13 +85,15 @@ type ClientVault struct {
 	// Deposits waiting to be batched and staked
 	PendingDepositBalance pgtype.Numeric `db:"pending_deposit_balance"`
 	// Total amount deployed to DeFi protocols
-	TotalStakedBalance pgtype.Numeric     `db:"total_staked_balance"`
-	CumulativeYield    pgtype.Numeric     `db:"cumulative_yield"`
-	Apy7d              pgtype.Numeric     `db:"apy_7d"`
-	Apy30d             pgtype.Numeric     `db:"apy_30d"`
-	IsActive           bool               `db:"is_active"`
-	CreatedAt          pgtype.Timestamptz `db:"created_at"`
-	UpdatedAt          pgtype.Timestamptz `db:"updated_at"`
+	TotalStakedBalance pgtype.Numeric `db:"total_staked_balance"`
+	CumulativeYield    pgtype.Numeric `db:"cumulative_yield"`
+	Apy7d              pgtype.Numeric `db:"apy_7d"`
+	Apy30d             pgtype.Numeric `db:"apy_30d"`
+	// DeFi strategy allocation as JSONB array: [{"category":"lending","target":70,"isActive":true},{"category":"lp","target":20,"isActive":true}]. Sum of targets should equal 100.
+	Strategies []byte             `db:"strategies"`
+	IsActive   bool               `db:"is_active"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `db:"updated_at"`
 }
 
 // Tracks fund allocations to DeFi protocols
@@ -186,26 +183,36 @@ type EndUser struct {
 	UpdatedAt         pgtype.Timestamptz `db:"updated_at"`
 }
 
-// Individual user vault positions using share-based accounting
+// Simplified user vault positions - ONE vault per user per client (backend manages multi-chain/token)
 type EndUserVault struct {
-	ID           uuid.UUID `db:"id"`
-	EndUserID    uuid.UUID `db:"end_user_id"`
-	ClientID     uuid.UUID `db:"client_id"`
-	Chain        string    `db:"chain"`
-	TokenAddress string    `db:"token_address"`
-	TokenSymbol  string    `db:"token_symbol"`
-	// Normalized balance units (effective_balance = shares * current_index / 1e18)
-	Shares pgtype.Numeric `db:"shares"`
-	// Weighted average entry index (handles DCA deposits)
-	WeightedEntryIndex pgtype.Numeric `db:"weighted_entry_index"`
-	// Cumulative deposit amount (for yield calculation)
-	TotalDeposited   pgtype.Numeric     `db:"total_deposited"`
-	TotalWithdrawn   pgtype.Numeric     `db:"total_withdrawn"`
-	LastDepositAt    pgtype.Timestamptz `db:"last_deposit_at"`
-	LastWithdrawalAt pgtype.Timestamptz `db:"last_withdrawal_at"`
-	IsActive         bool               `db:"is_active"`
-	CreatedAt        pgtype.Timestamptz `db:"created_at"`
-	UpdatedAt        pgtype.Timestamptz `db:"updated_at"`
+	ID        uuid.UUID `db:"id"`
+	EndUserID uuid.UUID `db:"end_user_id"`
+	ClientID  uuid.UUID `db:"client_id"`
+	// Cumulative fiat deposit amount across ALL chains/tokens
+	TotalDeposited pgtype.Numeric `db:"total_deposited"`
+	// Cumulative fiat withdrawal amount across ALL chains/tokens
+	TotalWithdrawn pgtype.Numeric `db:"total_withdrawn"`
+	// Formula: current_value = total_deposited × (client_growth_index / weighted_entry_index)
+	WeightedEntryIndex pgtype.Numeric     `db:"weighted_entry_index"`
+	LastDepositAt      pgtype.Timestamptz `db:"last_deposit_at"`
+	LastWithdrawalAt   pgtype.Timestamptz `db:"last_withdrawal_at"`
+	IsActive           bool               `db:"is_active"`
+	CreatedAt          pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt          pgtype.Timestamptz `db:"updated_at"`
+}
+
+// One row per Privy user (identity layer). One user can create multiple organizations.
+type PrivyAccount struct {
+	ID uuid.UUID `db:"id"`
+	// Privy user ID (unique per user, e.g., clb_abc123)
+	PrivyOrganizationID string `db:"privy_organization_id"`
+	// Privy custodial wallet address (shared across all organizations for this user)
+	PrivyWalletAddress string  `db:"privy_wallet_address"`
+	PrivyEmail         *string `db:"privy_email"`
+	// MANAGED (Privy custodial) | USER_OWNED (user-managed wallet)
+	WalletType string             `db:"wallet_type"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `db:"updated_at"`
 }
 
 // Reference table for supported DeFi protocol integrations across chains
@@ -221,18 +228,6 @@ type SupportedDefiProtocol struct {
 	IsActive  bool               `db:"is_active"`
 	CreatedAt pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt pgtype.Timestamptz `db:"updated_at"`
-}
-
-// Declares the desired allocation per category for a client vault
-type VaultStrategy struct {
-	ID            uuid.UUID `db:"id"`
-	ClientVaultID uuid.UUID `db:"client_vault_id"`
-	// lending | lp | staking | arbitrage
-	Category string `db:"category"`
-	// Percentage of vault allocated to this category (e.g., 50.00)
-	TargetPercent pgtype.Numeric     `db:"target_percent"`
-	CreatedAt     pgtype.Timestamptz `db:"created_at"`
-	UpdatedAt     pgtype.Timestamptz `db:"updated_at"`
 }
 
 // Queue for withdrawals requiring DeFi unstaking

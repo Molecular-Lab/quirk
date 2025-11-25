@@ -1,5 +1,5 @@
 {
-	"name": "@rabbitswap/interface",
+	"name": "@proxify/interface",
 	"description": "RabbitSwap Interface",
 	"private": true,
 	"version": "0.0.0",

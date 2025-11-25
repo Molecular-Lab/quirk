@@ -14,8 +14,18 @@ export function createWithdrawalRouter(
 ) {
 	return s.router(b2bContract.withdrawal, {
 		// POST /withdrawals - Request withdrawal
-		create: async ({ body }) => {
+		create: async ({ body, req }) => {
 			try {
+				// ✅ Extract clientId from authenticated request (set by API key middleware)
+				const clientId = (req as any).client?.id;
+				if (!clientId) {
+					logger.error("Client ID missing from authenticated request");
+					return {
+						status: 401 as const,
+						body: { error: "Authentication failed - client ID not found" },
+					};
+				}
+
 				// Parse vaultId from request body to extract chain and tokenAddress
 				// Format: "base-0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 				const [chain, tokenAddress] = body.vaultId.split("-");
@@ -27,8 +37,10 @@ export function createWithdrawalRouter(
 					};
 				}
 
+				logger.info("Requesting withdrawal", { clientId, userId: body.userId, vaultId: body.vaultId, amount: body.amount });
+
 				const withdrawal = await withdrawalService.requestWithdrawal({
-					clientId: body.clientId,
+					clientId, // ✅ Use clientId from authenticated request
 					userId: body.userId,
 					chain: chain, // From vaultId
 					tokenAddress: tokenAddress, // From vaultId
