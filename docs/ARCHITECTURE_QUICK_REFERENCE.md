@@ -1,4 +1,4 @@
-# Cleverse Clean Architecture - Quick Reference Guide
+# Proxify Clean Architecture - Quick Reference Guide
 
 ## The 5-Layer Pattern (Used in Production)
 
@@ -18,7 +18,7 @@ HTTP Request
 
 ---
 
-## Real Examples from Cleverse
+## Real Examples from Proxify
 
 ### Pattern 1: Simple Data Fetch (Starbase Star Packages)
 

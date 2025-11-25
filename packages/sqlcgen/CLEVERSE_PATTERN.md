@@ -1,4 +1,4 @@
-# 🎨 Cleverse TypeScript Pattern with SQLC
+# 🎨 Proxify Pattern with SQLC
 
 This document explains how we use SQLC-generated TypeScript code with the **Cleverse architecture pattern** for production-grade type safety and clean separation of concerns.
 

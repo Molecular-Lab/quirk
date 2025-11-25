@@ -2,7 +2,7 @@ import axios, { type AxiosInstance, type AxiosError } from 'axios'
 
 /**
  * API Client Configuration
- * Follows Cleverse pattern for centralized API management
+ * Follows Proxify pattern for centralized API management
  */
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'

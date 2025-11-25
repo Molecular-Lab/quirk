@@ -110,6 +110,61 @@ db-clean: ## Remove all database data (Docker volumes)
 		echo "$(COLOR_YELLOW)❌ Cancelled$(COLOR_RESET)"; \
 	fi
 
+db-cleanup-all: ## Complete database cleanup (drop DB, remove volumes, restart fresh)
+	@echo "$(COLOR_RED)$(COLOR_BOLD)⚠️  WARNING: This will COMPLETELY WIPE ALL DATABASE DATA!$(COLOR_RESET)"
+	@echo "$(COLOR_YELLOW)This will:$(COLOR_RESET)"
+	@echo "  1. Stop PostgreSQL container"
+	@echo "  2. Remove all database volumes"
+	@echo "  3. Start fresh PostgreSQL container"
+	@echo "  4. Run all migrations"
+	@echo ""
+	@read -p "Are you absolutely sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo "$(COLOR_YELLOW)🛑 Stopping PostgreSQL...$(COLOR_RESET)"; \
+		docker-compose down postgres 2>/dev/null || true; \
+		echo "$(COLOR_YELLOW)🗑️  Removing all volumes...$(COLOR_RESET)"; \
+		docker-compose down -v 2>/dev/null || true; \
+		docker volume rm proxify_postgres_data 2>/dev/null || true; \
+		echo "$(COLOR_GREEN)🐘 Starting fresh PostgreSQL...$(COLOR_RESET)"; \
+		$(MAKE) db-start; \
+		echo "$(COLOR_GREEN)🔄 Running migrations...$(COLOR_RESET)"; \
+		$(MAKE) migrate-up; \
+		echo ""; \
+		echo "$(COLOR_GREEN)$(COLOR_BOLD)✅ Database completely cleaned and recreated!$(COLOR_RESET)"; \
+		echo "$(COLOR_CYAN)Next steps:$(COLOR_RESET)"; \
+		echo "  - Run: make seed-protocols"; \
+		echo "  - Run: make seed-test-client"; \
+		echo "  - Or:  make seed-all"; \
+	else \
+		echo "$(COLOR_YELLOW)❌ Cancelled$(COLOR_RESET)"; \
+	fi
+
+db-truncate-all: ## Truncate all tables (keeps schema, removes data)
+	@echo "$(COLOR_YELLOW)⚠️  WARNING: This will delete all data from all tables!$(COLOR_RESET)"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo "$(COLOR_YELLOW)🗑️  Truncating all tables...$(COLOR_RESET)"; \
+		docker exec -i proxify-postgres psql -U $(DB_USER) -d $(DB_NAME) -c "\
+			TRUNCATE TABLE \
+				audit_logs, \
+				withdrawal_queue, \
+				withdrawal_transactions, \
+				deposit_transactions, \
+				end_user_vaults, \
+				end_users, \
+				vault_strategies, \
+				client_vaults, \
+				client_organizations, \
+				supported_defi_protocols, \
+				privy_accounts \
+			RESTART IDENTITY CASCADE;"; \
+		echo "$(COLOR_GREEN)✅ All tables truncated!$(COLOR_RESET)"; \
+	else \
+		echo "$(COLOR_YELLOW)❌ Cancelled$(COLOR_RESET)"; \
+	fi
+
 db-pgadmin: ## Start pgAdmin web interface
 	@echo "$(COLOR_GREEN)🌐 Starting pgAdmin...$(COLOR_RESET)"
 	@docker-compose up -d pgadmin

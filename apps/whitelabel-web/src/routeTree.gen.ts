@@ -18,6 +18,7 @@ import { Route as DashboardMarketRouteImport } from './routes/dashboard/market'
 import { Route as DashboardIntegrationRouteImport } from './routes/dashboard/integration'
 import { Route as DashboardExploreRouteImport } from './routes/dashboard/explore'
 import { Route as DashboardDocsRouteImport } from './routes/dashboard/docs'
+import { Route as DashboardApiTestingRouteImport } from './routes/dashboard/api-testing'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
 import { Route as DashboardSettingsIndexRouteImport } from './routes/dashboard/settings/index'
 import { Route as DashboardPortfoliosIndexRouteImport } from './routes/dashboard/portfolios/index'
@@ -71,6 +72,11 @@ const DashboardDocsRoute = DashboardDocsRouteImport.update({
   path: '/docs',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardApiTestingRoute = DashboardApiTestingRouteImport.update({
+  id: '/api-testing',
+  path: '/api-testing',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/api-testing': typeof DashboardApiTestingRoute
   '/dashboard/docs': typeof DashboardDocsRoute
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
@@ -134,6 +141,7 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/api-testing': typeof DashboardApiTestingRoute
   '/dashboard/docs': typeof DashboardDocsRoute
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
@@ -153,6 +161,7 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
+  '/dashboard/api-testing': typeof DashboardApiTestingRoute
   '/dashboard/docs': typeof DashboardDocsRoute
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
@@ -173,6 +182,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard/analytics'
+    | '/dashboard/api-testing'
     | '/dashboard/docs'
     | '/dashboard/explore'
     | '/dashboard/integration'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard/analytics'
+    | '/dashboard/api-testing'
     | '/dashboard/docs'
     | '/dashboard/explore'
     | '/dashboard/integration'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/dashboard/analytics'
+    | '/dashboard/api-testing'
     | '/dashboard/docs'
     | '/dashboard/explore'
     | '/dashboard/integration'
@@ -293,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardDocsRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/api-testing': {
+      id: '/dashboard/api-testing'
+      path: '/api-testing'
+      fullPath: '/dashboard/api-testing'
+      preLoaderRoute: typeof DashboardApiTestingRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/analytics': {
       id: '/dashboard/analytics'
       path: '/analytics'
@@ -347,6 +366,7 @@ declare module '@tanstack/react-router' {
 
 interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
+  DashboardApiTestingRoute: typeof DashboardApiTestingRoute
   DashboardDocsRoute: typeof DashboardDocsRoute
   DashboardExploreRoute: typeof DashboardExploreRoute
   DashboardIntegrationRoute: typeof DashboardIntegrationRoute
@@ -362,6 +382,7 @@ interface DashboardRouteChildren {
 
 const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
+  DashboardApiTestingRoute: DashboardApiTestingRoute,
   DashboardDocsRoute: DashboardDocsRoute,
   DashboardExploreRoute: DashboardExploreRoute,
   DashboardIntegrationRoute: DashboardIntegrationRoute,

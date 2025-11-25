@@ -1,0 +1,28 @@
+steps:
+  # Build the container image using kaniko
+  - name: "gcr.io/kaniko-project/executor:latest"
+    args:
+      - --dockerfile=apps/api/Dockerfile
+      - --destination=us-central1-docker.pkg.dev/upshot-423406/docker/backend:dex-$TAG_NAME
+      - --cache=true
+      - --cache-ttl=168h
+  # Deploy container image to Cloud Run
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk"
+    entrypoint: gcloud
+    args:
+      [
+        "beta",
+        "run",
+        "deploy",
+        "backend-dex-api-dev",
+        "--image",
+        "us-central1-docker.pkg.dev/upshot-423406/docker/backend:dex-$TAG_NAME",
+        "--region",
+        "us-central1",
+        "--network",
+        "default",
+        "--subnet",
+        "default",
+      ]
+options:
+  logging: CLOUD_LOGGING_ONLY

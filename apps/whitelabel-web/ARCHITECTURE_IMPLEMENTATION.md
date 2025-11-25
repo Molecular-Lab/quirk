@@ -1,4 +1,4 @@
-# Whitelabel Web - Cleverse Architecture Implementation
+# Whitelabel Web - Proxify Architecture Implementation
 
 **Status:** 🚧 In Progress (70% Complete)
 **Date:** November 16, 2025
@@ -126,7 +126,7 @@ pnpm remove react-router-dom
 
 ---
 
-## 📐 Architecture Pattern (Cleverse)
+## 📐 Architecture Pattern (Proxify)
 
 ### Data Flow:
 ```

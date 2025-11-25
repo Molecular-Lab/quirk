@@ -1,5 +1,5 @@
 /**
- * Withdrawal Repository - Cleverse Pattern
+ * Withdrawal Repository - Proxify Pattern
  * ✅ SQLC-generated queries from database/queries/withdrawal.sql
  */
 

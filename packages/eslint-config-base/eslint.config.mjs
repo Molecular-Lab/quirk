@@ -125,7 +125,7 @@ export default [
 							position: "before",
 						},
 						{
-							pattern: "@alphatrace/**",
+							pattern: "@Proxify Analytics/**",
 							group: "internal",
 							position: "before",
 						},

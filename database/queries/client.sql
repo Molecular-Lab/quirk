@@ -3,48 +3,98 @@
 -- ============================================
 
 -- name: GetClient :one
-SELECT * FROM client_organizations
-WHERE id = $1 LIMIT 1;
+SELECT
+  co.*,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.id = $1
+LIMIT 1;
 
 -- name: GetClientByProductID :one
-SELECT * FROM client_organizations
-WHERE product_id = $1 LIMIT 1;
+SELECT
+  co.*,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.product_id = $1
+LIMIT 1;
 
--- name: GetClientByPrivyOrgID :one
-SELECT * FROM client_organizations
-WHERE privy_organization_id = $1 LIMIT 1;
+-- name: GetClientsByPrivyOrgID :many
+SELECT
+  co.*,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE pa.privy_organization_id = $1;
 
 -- name: GetClientByAPIKeyPrefix :one
 -- For API key validation (then verify hash)
-SELECT * FROM client_organizations
-WHERE api_key_prefix = $1 LIMIT 1;
+SELECT
+  co.*,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.api_key_prefix = $1
+LIMIT 1;
 
 -- name: GetClientByAPIKeyHash :one
 -- Direct lookup by API key hash
-SELECT * FROM client_organizations
-WHERE api_key_hash = $1 LIMIT 1;
+SELECT
+  co.*,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.api_key_hash = $1
+LIMIT 1;
 
 -- name: ListClients :many
-SELECT * FROM client_organizations
-ORDER BY created_at DESC
+SELECT
+  co.*,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+ORDER BY co.created_at DESC
 LIMIT $1 OFFSET $2;
 
 -- name: ListActiveClients :many
-SELECT * FROM client_organizations
-WHERE is_active = true
-ORDER BY created_at DESC;
+SELECT
+  co.*,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.is_active = true
+ORDER BY co.created_at DESC;
 
 -- name: CreateClient :one
 INSERT INTO client_organizations (
+  privy_account_id,
   product_id,
   company_name,
   business_type,
   description,
   website_url,
-  wallet_type,
-  wallet_managed_by,
-  privy_organization_id,
-  privy_wallet_address,
   api_key_hash,
   api_key_prefix,
   webhook_urls,
@@ -57,7 +107,7 @@ INSERT INTO client_organizations (
   is_sandbox
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16, $17, $18, $19
+  $11, $12, $13, $14, $15, $16
 )
 RETURNING *;
 

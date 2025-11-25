@@ -1,7 +1,7 @@
 # API Service Architecture Plan
 
 ## Overview
-Following **Cleverse Pattern** from reference apps (`old-ref-privy-api-test` & `old-ref-contract-executor`)
+Following **Standard Pattern** from reference apps (`old-ref-privy-api-test` & `old-ref-contract-executor`)
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐

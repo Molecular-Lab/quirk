@@ -2,7 +2,7 @@
 
 **Location:** `packages/core/repository/postgres/`
 
-This folder contains PostgreSQL repositories following the **Cleverse Pattern** for the B2B platform.
+This folder contains PostgreSQL repositories following the **Proxify Pattern** for the B2B platform.
 
 ## 📂 Structure
 
@@ -165,7 +165,7 @@ interface ClientVault {
 - **SQLC Configuration:** `sqlc.yaml`
 - **Database Schema:** `database/migrations/`
 - **SQL Queries:** `database/queries/`
-- **Cleverse Pattern:** `packages/database/CLEVERSE_PATTERN.md`
+- **Proxify Pattern:** `packages/database/CLEVERSE_PATTERN.md`
 - **Architecture:** `packages/database/README.md`
 
 ## 🚀 Next Steps
@@ -200,4 +200,4 @@ interface ClientVault {
 
 ---
 
-**This follows the production-proven Cleverse pattern!** 🎉
+**This follows the production-proven Proxify pattern!** 🎉

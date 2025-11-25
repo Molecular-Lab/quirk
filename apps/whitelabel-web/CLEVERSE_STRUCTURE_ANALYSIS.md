@@ -1,6 +1,6 @@
-# Cleverse Production Structure Analysis
+# Proxify Production Structure Analysis
 
-**Reference:** `/Users/wtshai/Work/Cleverse/rabbitswap-interface/apps/web`
+**Reference:** `/Users/wtshai/Work/Proxify/rabbitswap-interface/apps/web`
 
 ---
 
@@ -383,7 +383,7 @@ mkdir -p src/config/queryKey
 3. **Type-safe queries** - centralized query keys
 4. **Lighter state** - Zustand vs Redux
 5. **Faster builds** - SWC instead of Babel
-6. **Production-proven** - same structure as Cleverse production apps
+6. **Production-proven** - same structure as Proxify production apps
 
 ---
 

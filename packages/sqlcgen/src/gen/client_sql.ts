@@ -2,8 +2,16 @@ import { Sql } from "postgres";
 
 export const getClientQuery = `-- name: GetClient :one
 
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE id = $1 LIMIT 1`;
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.id = $1
+LIMIT 1`;
 
 export interface GetClientArgs {
     id: string;
@@ -11,17 +19,14 @@ export interface GetClientArgs {
 
 export interface GetClientRow {
     id: string;
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -32,6 +37,10 @@ export interface GetClientRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    privyOrganizationId: string;
+    privyWalletAddress: string;
+    privyEmail: string | null;
+    privyWalletType: string;
 }
 
 export async function getClient(sql: Sql, args: GetClientArgs): Promise<GetClientRow | null> {
@@ -42,33 +51,42 @@ export async function getClient(sql: Sql, args: GetClientArgs): Promise<GetClien
     const row = rows[0];
     return {
         id: row[0],
-        productId: row[1],
-        companyName: row[2],
-        businessType: row[3],
-        description: row[4],
-        websiteUrl: row[5],
-        walletType: row[6],
-        walletManagedBy: row[7],
-        privyOrganizationId: row[8],
-        privyWalletAddress: row[9],
-        apiKeyHash: row[10],
-        apiKeyPrefix: row[11],
-        webhookUrls: row[12],
-        webhookSecret: row[13],
-        customStrategy: row[14],
-        endUserYieldPortion: row[15],
-        isActive: row[16],
-        isSandbox: row[17],
-        platformFee: row[18],
-        performanceFee: row[19],
-        createdAt: row[20],
-        updatedAt: row[21]
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        endUserYieldPortion: row[12],
+        isActive: row[13],
+        isSandbox: row[14],
+        platformFee: row[15],
+        performanceFee: row[16],
+        createdAt: row[17],
+        updatedAt: row[18],
+        privyOrganizationId: row[19],
+        privyWalletAddress: row[20],
+        privyEmail: row[21],
+        privyWalletType: row[22]
     };
 }
 
 export const getClientByProductIDQuery = `-- name: GetClientByProductID :one
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE product_id = $1 LIMIT 1`;
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.product_id = $1
+LIMIT 1`;
 
 export interface GetClientByProductIDArgs {
     productId: string;
@@ -76,17 +94,14 @@ export interface GetClientByProductIDArgs {
 
 export interface GetClientByProductIDRow {
     id: string;
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -97,6 +112,10 @@ export interface GetClientByProductIDRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    privyOrganizationId: string;
+    privyWalletAddress: string;
+    privyEmail: string | null;
+    privyWalletType: string;
 }
 
 export async function getClientByProductID(sql: Sql, args: GetClientByProductIDArgs): Promise<GetClientByProductIDRow | null> {
@@ -107,51 +126,56 @@ export async function getClientByProductID(sql: Sql, args: GetClientByProductIDA
     const row = rows[0];
     return {
         id: row[0],
-        productId: row[1],
-        companyName: row[2],
-        businessType: row[3],
-        description: row[4],
-        websiteUrl: row[5],
-        walletType: row[6],
-        walletManagedBy: row[7],
-        privyOrganizationId: row[8],
-        privyWalletAddress: row[9],
-        apiKeyHash: row[10],
-        apiKeyPrefix: row[11],
-        webhookUrls: row[12],
-        webhookSecret: row[13],
-        customStrategy: row[14],
-        endUserYieldPortion: row[15],
-        isActive: row[16],
-        isSandbox: row[17],
-        platformFee: row[18],
-        performanceFee: row[19],
-        createdAt: row[20],
-        updatedAt: row[21]
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        endUserYieldPortion: row[12],
+        isActive: row[13],
+        isSandbox: row[14],
+        platformFee: row[15],
+        performanceFee: row[16],
+        createdAt: row[17],
+        updatedAt: row[18],
+        privyOrganizationId: row[19],
+        privyWalletAddress: row[20],
+        privyEmail: row[21],
+        privyWalletType: row[22]
     };
 }
 
-export const getClientByPrivyOrgIDQuery = `-- name: GetClientByPrivyOrgID :one
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE privy_organization_id = $1 LIMIT 1`;
+export const getClientsByPrivyOrgIDQuery = `-- name: GetClientsByPrivyOrgID :many
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE pa.privy_organization_id = $1`;
 
-export interface GetClientByPrivyOrgIDArgs {
+export interface GetClientsByPrivyOrgIDArgs {
     privyOrganizationId: string;
 }
 
-export interface GetClientByPrivyOrgIDRow {
+export interface GetClientsByPrivyOrgIDRow {
     id: string;
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -162,61 +186,66 @@ export interface GetClientByPrivyOrgIDRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    privyOrganizationId: string;
+    privyWalletAddress: string;
+    privyEmail: string | null;
+    privyWalletType: string;
 }
 
-export async function getClientByPrivyOrgID(sql: Sql, args: GetClientByPrivyOrgIDArgs): Promise<GetClientByPrivyOrgIDRow | null> {
-    const rows = await sql.unsafe(getClientByPrivyOrgIDQuery, [args.privyOrganizationId]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
+export async function getClientsByPrivyOrgID(sql: Sql, args: GetClientsByPrivyOrgIDArgs): Promise<GetClientsByPrivyOrgIDRow[]> {
+    return (await sql.unsafe(getClientsByPrivyOrgIDQuery, [args.privyOrganizationId]).values()).map(row => ({
         id: row[0],
-        productId: row[1],
-        companyName: row[2],
-        businessType: row[3],
-        description: row[4],
-        websiteUrl: row[5],
-        walletType: row[6],
-        walletManagedBy: row[7],
-        privyOrganizationId: row[8],
-        privyWalletAddress: row[9],
-        apiKeyHash: row[10],
-        apiKeyPrefix: row[11],
-        webhookUrls: row[12],
-        webhookSecret: row[13],
-        customStrategy: row[14],
-        endUserYieldPortion: row[15],
-        isActive: row[16],
-        isSandbox: row[17],
-        platformFee: row[18],
-        performanceFee: row[19],
-        createdAt: row[20],
-        updatedAt: row[21]
-    };
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        endUserYieldPortion: row[12],
+        isActive: row[13],
+        isSandbox: row[14],
+        platformFee: row[15],
+        performanceFee: row[16],
+        createdAt: row[17],
+        updatedAt: row[18],
+        privyOrganizationId: row[19],
+        privyWalletAddress: row[20],
+        privyEmail: row[21],
+        privyWalletType: row[22]
+    }));
 }
 
 export const getClientByAPIKeyPrefixQuery = `-- name: GetClientByAPIKeyPrefix :one
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE api_key_prefix = $1 LIMIT 1`;
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.api_key_prefix = $1
+LIMIT 1`;
 
 export interface GetClientByAPIKeyPrefixArgs {
-    apiKeyPrefix: string;
+    apiKeyPrefix: string | null;
 }
 
 export interface GetClientByAPIKeyPrefixRow {
     id: string;
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -227,6 +256,10 @@ export interface GetClientByAPIKeyPrefixRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    privyOrganizationId: string;
+    privyWalletAddress: string;
+    privyEmail: string | null;
+    privyWalletType: string;
 }
 
 export async function getClientByAPIKeyPrefix(sql: Sql, args: GetClientByAPIKeyPrefixArgs): Promise<GetClientByAPIKeyPrefixRow | null> {
@@ -237,51 +270,57 @@ export async function getClientByAPIKeyPrefix(sql: Sql, args: GetClientByAPIKeyP
     const row = rows[0];
     return {
         id: row[0],
-        productId: row[1],
-        companyName: row[2],
-        businessType: row[3],
-        description: row[4],
-        websiteUrl: row[5],
-        walletType: row[6],
-        walletManagedBy: row[7],
-        privyOrganizationId: row[8],
-        privyWalletAddress: row[9],
-        apiKeyHash: row[10],
-        apiKeyPrefix: row[11],
-        webhookUrls: row[12],
-        webhookSecret: row[13],
-        customStrategy: row[14],
-        endUserYieldPortion: row[15],
-        isActive: row[16],
-        isSandbox: row[17],
-        platformFee: row[18],
-        performanceFee: row[19],
-        createdAt: row[20],
-        updatedAt: row[21]
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        endUserYieldPortion: row[12],
+        isActive: row[13],
+        isSandbox: row[14],
+        platformFee: row[15],
+        performanceFee: row[16],
+        createdAt: row[17],
+        updatedAt: row[18],
+        privyOrganizationId: row[19],
+        privyWalletAddress: row[20],
+        privyEmail: row[21],
+        privyWalletType: row[22]
     };
 }
 
 export const getClientByAPIKeyHashQuery = `-- name: GetClientByAPIKeyHash :one
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE api_key_hash = $1 LIMIT 1`;
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.api_key_hash = $1
+LIMIT 1`;
 
 export interface GetClientByAPIKeyHashArgs {
-    apiKeyHash: string;
+    apiKeyHash: string | null;
 }
 
 export interface GetClientByAPIKeyHashRow {
     id: string;
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -292,6 +331,10 @@ export interface GetClientByAPIKeyHashRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    privyOrganizationId: string;
+    privyWalletAddress: string;
+    privyEmail: string | null;
+    privyWalletType: string;
 }
 
 export async function getClientByAPIKeyHash(sql: Sql, args: GetClientByAPIKeyHashArgs): Promise<GetClientByAPIKeyHashRow | null> {
@@ -302,33 +345,41 @@ export async function getClientByAPIKeyHash(sql: Sql, args: GetClientByAPIKeyHas
     const row = rows[0];
     return {
         id: row[0],
-        productId: row[1],
-        companyName: row[2],
-        businessType: row[3],
-        description: row[4],
-        websiteUrl: row[5],
-        walletType: row[6],
-        walletManagedBy: row[7],
-        privyOrganizationId: row[8],
-        privyWalletAddress: row[9],
-        apiKeyHash: row[10],
-        apiKeyPrefix: row[11],
-        webhookUrls: row[12],
-        webhookSecret: row[13],
-        customStrategy: row[14],
-        endUserYieldPortion: row[15],
-        isActive: row[16],
-        isSandbox: row[17],
-        platformFee: row[18],
-        performanceFee: row[19],
-        createdAt: row[20],
-        updatedAt: row[21]
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        endUserYieldPortion: row[12],
+        isActive: row[13],
+        isSandbox: row[14],
+        platformFee: row[15],
+        performanceFee: row[16],
+        createdAt: row[17],
+        updatedAt: row[18],
+        privyOrganizationId: row[19],
+        privyWalletAddress: row[20],
+        privyEmail: row[21],
+        privyWalletType: row[22]
     };
 }
 
 export const listClientsQuery = `-- name: ListClients :many
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-ORDER BY created_at DESC
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+ORDER BY co.created_at DESC
 LIMIT $1 OFFSET $2`;
 
 export interface ListClientsArgs {
@@ -338,17 +389,14 @@ export interface ListClientsArgs {
 
 export interface ListClientsRow {
     id: string;
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -359,53 +407,62 @@ export interface ListClientsRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    privyOrganizationId: string;
+    privyWalletAddress: string;
+    privyEmail: string | null;
+    privyWalletType: string;
 }
 
 export async function listClients(sql: Sql, args: ListClientsArgs): Promise<ListClientsRow[]> {
     return (await sql.unsafe(listClientsQuery, [args.limit, args.offset]).values()).map(row => ({
         id: row[0],
-        productId: row[1],
-        companyName: row[2],
-        businessType: row[3],
-        description: row[4],
-        websiteUrl: row[5],
-        walletType: row[6],
-        walletManagedBy: row[7],
-        privyOrganizationId: row[8],
-        privyWalletAddress: row[9],
-        apiKeyHash: row[10],
-        apiKeyPrefix: row[11],
-        webhookUrls: row[12],
-        webhookSecret: row[13],
-        customStrategy: row[14],
-        endUserYieldPortion: row[15],
-        isActive: row[16],
-        isSandbox: row[17],
-        platformFee: row[18],
-        performanceFee: row[19],
-        createdAt: row[20],
-        updatedAt: row[21]
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        endUserYieldPortion: row[12],
+        isActive: row[13],
+        isSandbox: row[14],
+        platformFee: row[15],
+        performanceFee: row[16],
+        createdAt: row[17],
+        updatedAt: row[18],
+        privyOrganizationId: row[19],
+        privyWalletAddress: row[20],
+        privyEmail: row[21],
+        privyWalletType: row[22]
     }));
 }
 
 export const listActiveClientsQuery = `-- name: ListActiveClients :many
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE is_active = true
-ORDER BY created_at DESC`;
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.is_active = true
+ORDER BY co.created_at DESC`;
 
 export interface ListActiveClientsRow {
     id: string;
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -416,46 +473,48 @@ export interface ListActiveClientsRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    privyOrganizationId: string;
+    privyWalletAddress: string;
+    privyEmail: string | null;
+    privyWalletType: string;
 }
 
 export async function listActiveClients(sql: Sql): Promise<ListActiveClientsRow[]> {
     return (await sql.unsafe(listActiveClientsQuery, []).values()).map(row => ({
         id: row[0],
-        productId: row[1],
-        companyName: row[2],
-        businessType: row[3],
-        description: row[4],
-        websiteUrl: row[5],
-        walletType: row[6],
-        walletManagedBy: row[7],
-        privyOrganizationId: row[8],
-        privyWalletAddress: row[9],
-        apiKeyHash: row[10],
-        apiKeyPrefix: row[11],
-        webhookUrls: row[12],
-        webhookSecret: row[13],
-        customStrategy: row[14],
-        endUserYieldPortion: row[15],
-        isActive: row[16],
-        isSandbox: row[17],
-        platformFee: row[18],
-        performanceFee: row[19],
-        createdAt: row[20],
-        updatedAt: row[21]
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        endUserYieldPortion: row[12],
+        isActive: row[13],
+        isSandbox: row[14],
+        platformFee: row[15],
+        performanceFee: row[16],
+        createdAt: row[17],
+        updatedAt: row[18],
+        privyOrganizationId: row[19],
+        privyWalletAddress: row[20],
+        privyEmail: row[21],
+        privyWalletType: row[22]
     }));
 }
 
 export const createClientQuery = `-- name: CreateClient :one
 INSERT INTO client_organizations (
+  privy_account_id,
   product_id,
   company_name,
   business_type,
   description,
   website_url,
-  wallet_type,
-  wallet_managed_by,
-  privy_organization_id,
-  privy_wallet_address,
   api_key_hash,
   api_key_prefix,
   webhook_urls,
@@ -468,22 +527,19 @@ INSERT INTO client_organizations (
   is_sandbox
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16, $17, $18, $19
+  $11, $12, $13, $14, $15, $16
 )
-RETURNING id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at`;
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at`;
 
 export interface CreateClientArgs {
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -496,17 +552,14 @@ export interface CreateClientArgs {
 
 export interface CreateClientRow {
     id: string;
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -520,34 +573,31 @@ export interface CreateClientRow {
 }
 
 export async function createClient(sql: Sql, args: CreateClientArgs): Promise<CreateClientRow | null> {
-    const rows = await sql.unsafe(createClientQuery, [args.productId, args.companyName, args.businessType, args.description, args.websiteUrl, args.walletType, args.walletManagedBy, args.privyOrganizationId, args.privyWalletAddress, args.apiKeyHash, args.apiKeyPrefix, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee, args.isActive, args.isSandbox]).values();
+    const rows = await sql.unsafe(createClientQuery, [args.privyAccountId, args.productId, args.companyName, args.businessType, args.description, args.websiteUrl, args.apiKeyHash, args.apiKeyPrefix, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee, args.isActive, args.isSandbox]).values();
     if (rows.length !== 1) {
         return null;
     }
     const row = rows[0];
     return {
         id: row[0],
-        productId: row[1],
-        companyName: row[2],
-        businessType: row[3],
-        description: row[4],
-        websiteUrl: row[5],
-        walletType: row[6],
-        walletManagedBy: row[7],
-        privyOrganizationId: row[8],
-        privyWalletAddress: row[9],
-        apiKeyHash: row[10],
-        apiKeyPrefix: row[11],
-        webhookUrls: row[12],
-        webhookSecret: row[13],
-        customStrategy: row[14],
-        endUserYieldPortion: row[15],
-        isActive: row[16],
-        isSandbox: row[17],
-        platformFee: row[18],
-        performanceFee: row[19],
-        createdAt: row[20],
-        updatedAt: row[21]
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        endUserYieldPortion: row[12],
+        isActive: row[13],
+        isSandbox: row[14],
+        platformFee: row[15],
+        performanceFee: row[16],
+        createdAt: row[17],
+        updatedAt: row[18]
     };
 }
 
@@ -564,7 +614,7 @@ SET company_name = COALESCE($2, company_name),
     performance_fee = COALESCE($10, performance_fee),
     updated_at = now()
 WHERE id = $1
-RETURNING id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at`;
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at`;
 
 export interface UpdateClientArgs {
     id: string;
@@ -581,17 +631,14 @@ export interface UpdateClientArgs {
 
 export interface UpdateClientRow {
     id: string;
+    privyAccountId: string;
     productId: string;
     companyName: string;
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    walletType: string;
-    walletManagedBy: string;
-    privyOrganizationId: string;
-    privyWalletAddress: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -612,27 +659,24 @@ export async function updateClient(sql: Sql, args: UpdateClientArgs): Promise<Up
     const row = rows[0];
     return {
         id: row[0],
-        productId: row[1],
-        companyName: row[2],
-        businessType: row[3],
-        description: row[4],
-        websiteUrl: row[5],
-        walletType: row[6],
-        walletManagedBy: row[7],
-        privyOrganizationId: row[8],
-        privyWalletAddress: row[9],
-        apiKeyHash: row[10],
-        apiKeyPrefix: row[11],
-        webhookUrls: row[12],
-        webhookSecret: row[13],
-        customStrategy: row[14],
-        endUserYieldPortion: row[15],
-        isActive: row[16],
-        isSandbox: row[17],
-        platformFee: row[18],
-        performanceFee: row[19],
-        createdAt: row[20],
-        updatedAt: row[21]
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        endUserYieldPortion: row[12],
+        isActive: row[13],
+        isSandbox: row[14],
+        platformFee: row[15],
+        performanceFee: row[16],
+        createdAt: row[17],
+        updatedAt: row[18]
     };
 }
 
@@ -645,8 +689,8 @@ WHERE id = $1`;
 
 export interface UpdateClientAPIKeyArgs {
     id: string;
-    apiKeyHash: string;
-    apiKeyPrefix: string;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
 }
 
 export async function updateClientAPIKey(sql: Sql, args: UpdateClientAPIKeyArgs): Promise<void> {

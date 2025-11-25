@@ -1,6 +1,6 @@
-# LAAC Implementation Roadmap - Based on Cleverse Architecture
+# LAAC Implementation Roadmap - Based on Proxify Architecture
 
-This document maps Cleverse patterns to LAAC-specific implementation.
+This document maps Proxify patterns to LAAC-specific implementation.
 
 ## Recommended Monorepo Structure for LAAC
 
@@ -696,10 +696,10 @@ export async function createApp() {
 
 ---
 
-## Key Differences from Cleverse
+## Key Differences from Proxify
 
 1. **Multi-protocol support**: LAAC must support Aave, Compound, Curve simultaneously
-2. **Oracle aggregation**: Cleverse uses single data source; LAAC aggregates from multiple
+2. **Oracle aggregation**: Proxify uses single data source; LAAC aggregates from multiple
 3. **TVL caps**: Phase 1 has $500k cap that must be enforced in UseCase
 4. **Manual oracle**: Phase 1 uses manual price updates; UseCase must handle this
 
