@@ -1,8 +1,8 @@
-# B2B API Core - Cleverse Architecture Implementation
+# B2B API Core - Proxify Architecture Implementation
 
 ## ✅ Refactoring Complete!
 
-The `b2b-api-core` package now follows the **exact Cleverse pattern** from `api-core`.
+The `b2b-api-core` package now follows the **exact Proxify pattern** from `api-core`.
 
 ---
 
@@ -64,7 +64,7 @@ export const clientContract = c.router({
 });
 ```
 
-### After (Cleverse Pattern) ✅
+### After (Proxify Pattern) ✅
 ```typescript
 // ✅ Zod schemas in dto/
 // dto/client.ts
@@ -178,7 +178,7 @@ export class ClientRouter extends Router<typeof b2bContract> {
 
 ---
 
-## 🎯 Matches Cleverse Pattern
+## 🎯 Matches Proxify Pattern
 
 | Layer | api-core | b2b-api-core | Match |
 |-------|----------|--------------|-------|
@@ -224,7 +224,7 @@ const { data } = useQuery({
 1. ✅ **Runtime Validation**: Zod validates all API requests/responses
 2. ✅ **Type Safety**: Full TypeScript support with auto-complete
 3. ✅ **Shared Contracts**: Frontend and backend use same types
-4. ✅ **Better DX**: Matches industry-standard Cleverse pattern
+4. ✅ **Better DX**: Matches industry-standard Proxify pattern
 5. ✅ **Testable**: Easy to mock and test
 
 ---

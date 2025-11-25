@@ -24,7 +24,7 @@ export default {
           900: '#00553D',
         },
 
-        // Production-grade grays (Cleverse/debut pattern)
+        // Production-grade grays (Standard pattern)
         gray: {
           DEFAULT: '#F2F2F2',
           25: '#F2F2F2',

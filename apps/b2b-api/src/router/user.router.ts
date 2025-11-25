@@ -5,27 +5,55 @@
 import type { initServer } from "@ts-rest/express";
 import { b2bContract } from "@proxify/b2b-api-core";
 import type { UserService } from "../service/user.service";
+import type { UserVaultService } from "../service/user-vault.service";
 import { mapUserToDto, mapUsersToDto, mapUserPortfolioToDto } from "../mapper/user.mapper";
 import { logger } from "../logger";
 
 export const createUserRouter = (
 	s: ReturnType<typeof initServer>,
-	userService: UserService
+	userService: UserService,
+	userVaultService: UserVaultService // ✅ Added to fetch vaults
 ) => {
 	return s.router(b2bContract.user, {
 		// POST /users - Get or create user
 		getOrCreate: async ({ body }) => {
 			try {
 				const user = await userService.getOrCreateUser({
-					clientId: body.clientId,
+					clientId: body.clientId, // ✅ Can be productId or UUID
 					userId: body.clientUserId,
-					userType: "individual", // Default
+					userType: "custodial", // ✅ B2B escrow - we manage custodial wallets
 					userWalletAddress: body.walletAddress,
 				});
 
+				// ✅ Fetch user's vaults to return in response
+				let vaults: any[] = [];
+				try {
+					const portfolio = await userVaultService.getUserPortfolio(user.userId, user.clientId);
+					if (portfolio) {
+						vaults = portfolio.vaults.map((v: any) => ({
+							vaultId: v.vaultId || "", // Use vault ID if available
+							chain: v.chain,
+							tokenSymbol: v.tokenSymbol,
+							tokenAddress: v.tokenAddress,
+							shares: v.shares,
+							effectiveBalance: v.effectiveBalance,
+							yieldEarned: v.yieldEarned,
+						}));
+					}
+				} catch (vaultError) {
+					logger.warn("Failed to fetch user vaults, returning user without vaults", { 
+						userId: user.id, 
+						error: vaultError 
+					});
+					// Continue without vaults - non-critical
+				}
+
 				return {
 					status: 200 as const,
-					body: mapUserToDto(user),
+					body: {
+						...mapUserToDto(user),
+						vaults, // ✅ Include vaults in response
+					},
 				};
 			} catch (error) {
 				logger.error("Failed to get or create user", { error, body });
@@ -138,6 +166,88 @@ export const createUserRouter = (
 				return {
 					status: 404 as const,
 					body: { error: "Portfolio not found" },
+				};
+			}
+		},
+
+		// GET /users/:userId/balance - Simplified balance (with chain/token filter)
+		getBalance: async ({ params, query }) => {
+			try {
+				logger.info("Getting user balance", { userId: params.userId, query });
+
+				// Get portfolio (simplified - aggregated totals, no multi-chain)
+				const portfolio = await userService.getUserPortfolio(params.userId);
+
+				if (!portfolio) {
+					return {
+						status: 404 as const,
+						body: { error: "User not found" },
+					};
+				}
+
+				// ✅ SIMPLIFIED: One vault per user per client, no chain/token filtering
+				// All balances are aggregated across chains internally
+				// Calculate APY (simplified - would need time-based calculation in production)
+				const apy = "0"; // TODO: Calculate from vault growth index
+
+				return {
+					status: 200 as const,
+					body: {
+						balance: portfolio.totalEffectiveBalance || "0",
+						currency: "USD", // Fiat-equivalent value
+						yield_earned: portfolio.totalYieldEarned || "0",
+						apy: apy,
+						status: "active", // TODO: Get from vault status
+						shares: "0", // Removed in simplified architecture
+						entry_index: "1000000000000000000", // Default 1.0
+						current_index: "1000000000000000000", // TODO: Get from client growth index
+					},
+				};
+			} catch (error) {
+				logger.error("Failed to get user balance", { error, userId: params.userId });
+				return {
+					status: 404 as const,
+					body: { error: "Balance not found" },
+				};
+			}
+		},
+
+		// GET /users/:userId/vaults - List all user vaults
+		listVaults: async ({ params }) => {
+			try {
+				logger.info("Listing user vaults", { userId: params.userId });
+
+				// Get portfolio (simplified - aggregated totals)
+				const portfolio = await userService.getUserPortfolio(params.userId);
+
+				if (!portfolio) {
+					return {
+						status: 404 as const,
+						body: { error: "User not found" },
+					};
+				}
+
+				// ✅ SIMPLIFIED: ONE vault per user per client
+				// Return aggregated totals as a single "virtual" vault
+				const vaults = [{
+					chain: "aggregated", // All chains aggregated
+					token: "USD", // Fiat-equivalent
+					balance: portfolio.totalEffectiveBalance || "0",
+					yield_earned: portfolio.totalYieldEarned || "0",
+					apy: "0", // TODO: Calculate from client growth index
+					shares: "0", // Removed in simplified architecture
+					status: "active",
+				}];
+
+				return {
+					status: 200 as const,
+					body: { vaults },
+				};
+			} catch (error) {
+				logger.error("Failed to list user vaults", { error, userId: params.userId });
+				return {
+					status: 404 as const,
+					body: { error: "Vaults not found" },
 				};
 			}
 		},

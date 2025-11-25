@@ -357,7 +357,7 @@ export class ClientMapper {
 
 ### ✅ Good News
 - **b2b-api-core is 100% complete** - All contracts, DTOs, and client SDK ready
-- **Architecture is solid** - Cleverse pattern properly implemented
+- **Architecture is solid** - Proxify pattern properly implemented
 - **Foundation is working** - 4 GET endpoints proven to work
 - **Database layer exists** - All SQLC queries and use cases implemented
 

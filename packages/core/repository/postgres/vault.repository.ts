@@ -1,5 +1,5 @@
 /**
- * Vault Repository - Cleverse Pattern
+ * Vault Repository - Proxify Pattern
  * 
  * ✅ Wraps SQLC-generated queries
  * ✅ BigNumber for precision
@@ -21,20 +21,21 @@ import {
   addPendingDepositToVault,
   movePendingToStaked,
   reduceStakedBalance,
-  // End User Vault Queries
+  // End User Vault Queries (✅ SIMPLIFIED - no multi-chain)
   getEndUserVault,
-  getEndUserVaultByToken,
-  getEndUserVaultByTokenForUpdate,
-  getEndUserVaultWithBalance,
+  getEndUserVaultByClient,
+  getEndUserVaultByClientForUpdate,
   listEndUserVaults,
-  listEndUserVaultsWithBalance,
   createEndUserVault,
-  addSharesToUserVault,
-  burnSharesFromUserVault,
-  // Analytics
-  getTotalSharesForVault,
-  getVaultSummary,
-  listTopUsersByBalance,
+  updateEndUserVaultDeposit,
+  updateEndUserVaultWithdrawal,
+  // Analytics (✅ SIMPLIFIED)
+  getClientSummary,
+  listTopUsersByDeposit,
+  // Vault Strategies
+  upsertVaultStrategy,
+  getVaultStrategies,
+  deleteAllVaultStrategies,
   // Types
   type GetClientVaultRow,
   type GetClientVaultByTokenRow,
@@ -44,16 +45,13 @@ import {
   type CreateClientVaultArgs,
   type CreateClientVaultRow,
   type GetEndUserVaultRow,
-  type GetEndUserVaultByTokenRow,
-  type GetEndUserVaultByTokenForUpdateRow,
-  type GetEndUserVaultWithBalanceRow,
+  type GetEndUserVaultByClientRow,
+  type GetEndUserVaultByClientForUpdateRow,
   type ListEndUserVaultsRow,
-  type ListEndUserVaultsWithBalanceRow,
   type CreateEndUserVaultArgs,
   type CreateEndUserVaultRow,
-  type GetTotalSharesForVaultRow,
-  type GetVaultSummaryRow,
-  type ListTopUsersByBalanceRow,
+  type GetClientSummaryRow,
+  type ListTopUsersByDepositRow,
 } from '@proxify/sqlcgen';
 
 export class VaultRepository {
@@ -122,96 +120,212 @@ export class VaultRepository {
     await reduceStakedBalance(this.sql, { id, totalStakedBalance, totalShares });
   }
 
-  // End User Vaults
+  // End User Vaults (✅ SIMPLIFIED - no multi-chain)
   async getEndUserVaultById(id: string): Promise<GetEndUserVaultRow | null> {
     return await getEndUserVault(this.sql, { id });
   }
 
-  async getEndUserVault(
+  /**
+   * Get user vault for a specific client (simplified - no chain/token)
+   * ONE vault per user per client
+   */
+  async getEndUserVaultByClient(
     endUserId: string,
-    chain: string,
-    tokenAddress: string
-  ): Promise<GetEndUserVaultByTokenRow | null> {
-    return await getEndUserVaultByToken(this.sql, { endUserId, chain, tokenAddress });
+    clientId: string
+  ): Promise<GetEndUserVaultByClientRow | null> {
+    return await getEndUserVaultByClient(this.sql, { endUserId, clientId });
   }
 
-  async getEndUserVaultForUpdate(
+  /**
+   * Get user vault for update (with row lock)
+   */
+  async getEndUserVaultByClientForUpdate(
     endUserId: string,
-    chain: string,
-    tokenAddress: string
-  ): Promise<GetEndUserVaultByTokenForUpdateRow | null> {
-    return await getEndUserVaultByTokenForUpdate(this.sql, { endUserId, chain, tokenAddress });
+    clientId: string
+  ): Promise<GetEndUserVaultByClientForUpdateRow | null> {
+    return await getEndUserVaultByClientForUpdate(this.sql, { endUserId, clientId });
   }
 
-  async getEndUserVaultWithBalance(
-    endUserId: string,
-    chain: string,
-    tokenAddress: string
-  ): Promise<GetEndUserVaultWithBalanceRow | null> {
-    return await getEndUserVaultWithBalance(this.sql, { endUserId, chain, tokenAddress });
-  }
-
+  /**
+   * List all vaults for a user
+   */
   async listEndUserVaults(endUserId: string): Promise<ListEndUserVaultsRow[]> {
     return await listEndUserVaults(this.sql, { endUserId });
   }
 
-  async listEndUserVaultsWithBalance(endUserId: string): Promise<ListEndUserVaultsWithBalanceRow[]> {
-    return await listEndUserVaultsWithBalance(this.sql, { endUserId });
-  }
-
+  /**
+   * Create user vault (lazy creation on first deposit)
+   */
   async createEndUserVault(params: CreateEndUserVaultArgs): Promise<CreateEndUserVaultRow | null> {
     return await createEndUserVault(this.sql, params);
   }
 
-  async addShares(id: string, shares: string, weightedEntryIndex: string, totalDeposited: string): Promise<void> {
-    await addSharesToUserVault(this.sql, { id, shares, weightedEntryIndex, totalDeposited });
+  /**
+   * Update vault on deposit (DCA support with weighted entry index)
+   */
+  async updateVaultDeposit(
+    id: string,
+    depositAmount: string,
+    newWeightedEntryIndex: string
+  ): Promise<void> {
+    await updateEndUserVaultDeposit(this.sql, {
+      id,
+      totalDeposited: depositAmount,
+      weightedEntryIndex: newWeightedEntryIndex,
+    });
   }
 
-  async burnShares(id: string, shares: string, totalWithdrawn: string): Promise<void> {
-    await burnSharesFromUserVault(this.sql, { id, shares, totalWithdrawn });
+  /**
+   * Update vault on withdrawal
+   */
+  async updateVaultWithdrawal(id: string, withdrawalAmount: string): Promise<void> {
+    await updateEndUserVaultWithdrawal(this.sql, {
+      id,
+      totalWithdrawn: withdrawalAmount,
+    });
   }
 
-  // Analytics
-  async getTotalShares(clientId: string, chain: string, tokenAddress: string): Promise<GetTotalSharesForVaultRow | null> {
-    return await getTotalSharesForVault(this.sql, { clientId, chain, tokenAddress });
+  // Analytics (✅ SIMPLIFIED)
+  async getClientSummary(clientId: string): Promise<GetClientSummaryRow | null> {
+    return await getClientSummary(this.sql, { id: clientId });
   }
 
-  async getVaultSummary(id: string): Promise<GetVaultSummaryRow | null> {
-    return await getVaultSummary(this.sql, { id });
+  async listTopUsersByDeposit(clientId: string, limit: string): Promise<ListTopUsersByDepositRow[]> {
+    return await listTopUsersByDeposit(this.sql, { clientId, limit });
   }
 
-  async listTopUsers(id: string, limit: string): Promise<ListTopUsersByBalanceRow[]> {
-    return await listTopUsersByBalance(this.sql, { id, limit });
+  // BigNumber calculations (✅ SIMPLIFIED - no shares)
+
+  /**
+   * Calculate user's current value based on client growth index
+   * Formula: current_value = total_deposited × (client_growth_index / entry_index)
+   */
+  calculateUserCurrentValue(
+    totalDeposited: string,
+    entryIndex: string,
+    clientGrowthIndex: string
+  ): string {
+    const deposited = new BigNumber(totalDeposited);
+    const entry = new BigNumber(entryIndex);
+    const current = new BigNumber(clientGrowthIndex);
+
+    if (entry.isZero()) return '0';
+
+    return deposited
+      .multipliedBy(current)
+      .dividedBy(entry)
+      .decimalPlaces(18, BigNumber.ROUND_DOWN)
+      .toString();
   }
 
-  // BigNumber calculations
-  calculateSharesForDeposit(depositAmount: string, currentIndex: string): string {
-    const amount = new BigNumber(depositAmount);
-    const index = new BigNumber(currentIndex);
-    return amount.multipliedBy('1000000000000000000').dividedBy(index).integerValue(BigNumber.ROUND_DOWN).toString();
+  /**
+   * Calculate user's yield earned
+   * Formula: yield = current_value - total_deposited
+   */
+  calculateUserYield(
+    totalDeposited: string,
+    entryIndex: string,
+    clientGrowthIndex: string
+  ): string {
+    const currentValue = new BigNumber(
+      this.calculateUserCurrentValue(totalDeposited, entryIndex, clientGrowthIndex)
+    );
+    const deposited = new BigNumber(totalDeposited);
+    const yield_ = currentValue.minus(deposited);
+
+    return yield_.isNegative() ? '0' : yield_.decimalPlaces(18, BigNumber.ROUND_DOWN).toString();
   }
 
-  calculateAmountForShares(shares: string, currentIndex: string): string {
-    const sharesNum = new BigNumber(shares);
-    const index = new BigNumber(currentIndex);
-    return sharesNum.multipliedBy(index).dividedBy('1000000000000000000').integerValue(BigNumber.ROUND_DOWN).toString();
+  /**
+   * Calculate weighted entry index for DCA deposits
+   * Formula: new_weighted_index = (old_deposited × old_index + new_deposited × current_index) / (old_deposited + new_deposited)
+   */
+  calculateWeightedEntryIndex(
+    oldTotalDeposited: string,
+    oldWeightedIndex: string,
+    newDepositAmount: string,
+    clientGrowthIndex: string
+  ): string {
+    const oldDeposited = new BigNumber(oldTotalDeposited);
+    const oldIndex = new BigNumber(oldWeightedIndex);
+    const newDeposit = new BigNumber(newDepositAmount);
+    const currentIndex = new BigNumber(clientGrowthIndex);
+
+    // First deposit
+    if (oldDeposited.isZero()) {
+      return currentIndex.toString();
+    }
+
+    // DCA: weighted average
+    const oldWeight = oldDeposited.multipliedBy(oldIndex);
+    const newWeight = newDeposit.multipliedBy(currentIndex);
+    const totalDeposited = oldDeposited.plus(newDeposit);
+
+    return oldWeight
+      .plus(newWeight)
+      .dividedBy(totalDeposited)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .toString();
   }
 
+  /**
+   * Calculate new vault index after yield accrual
+   * Formula: new_index = old_index × (staked + yield) / staked
+   */
   calculateNewIndex(oldIndex: string, totalStaked: string, yieldAmount: string): string {
     const index = new BigNumber(oldIndex);
     const staked = new BigNumber(totalStaked);
     const yield_ = new BigNumber(yieldAmount);
     if (staked.isZero()) return oldIndex;
-    return index.multipliedBy(staked.plus(yield_)).dividedBy(staked).integerValue(BigNumber.ROUND_DOWN).toString();
+    return index
+      .multipliedBy(staked.plus(yield_))
+      .dividedBy(staked)
+      .integerValue(BigNumber.ROUND_DOWN)
+      .toString();
   }
 
-  calculateUserYield(shares: string, entryIndex: string, currentIndex: string): string {
-    const sharesNum = new BigNumber(shares);
-    const entry = new BigNumber(entryIndex);
-    const current = new BigNumber(currentIndex);
-    const originalDeposit = sharesNum.multipliedBy(entry).dividedBy('1000000000000000000');
-    const currentBalance = sharesNum.multipliedBy(current).dividedBy('1000000000000000000');
-    const yield_ = currentBalance.minus(originalDeposit).integerValue(BigNumber.ROUND_DOWN);
-    return yield_.isNegative() ? '0' : yield_.toString();
+  // Vault Strategies (JSONB)
+  async updateVaultStrategies(
+    clientVaultId: string,
+    strategies: Array<{ category: string; target: number; isActive?: boolean }>
+  ) {
+    // Convert strategies to JSONB format
+    const strategiesJson = JSON.stringify(strategies);
+    
+    await this.sql`
+      UPDATE client_vaults
+      SET strategies = ${strategiesJson}::jsonb,
+          updated_at = now()
+      WHERE id = ${clientVaultId}
+    `;
+  }
+
+  async getVaultWithStrategies(clientVaultId: string) {
+    const [vault] = await this.sql<Array<GetClientVaultRow & { strategies: any }>>`
+      SELECT * FROM client_vaults
+      WHERE id = ${clientVaultId}
+    `;
+    return vault || null;
+  }
+
+  // Legacy methods (deprecated after migration to JSONB)
+  async upsertVaultStrategy(
+    clientVaultId: string,
+    category: string,
+    targetPercent: number
+  ) {
+    return await upsertVaultStrategy(this.sql, {
+      clientVaultId,
+      category,
+      targetPercent: targetPercent.toString(),
+    });
+  }
+
+  async getVaultStrategies(clientVaultId: string) {
+    return await getVaultStrategies(this.sql, { clientVaultId });
+  }
+
+  async deleteAllVaultStrategies(clientVaultId: string) {
+    await deleteAllVaultStrategies(this.sql, { clientVaultId });
   }
 }

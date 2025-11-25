@@ -135,7 +135,7 @@ export * from './audit_sql';
 
 ---
 
-## Comparison: Current vs Cleverse Pattern
+## Comparison: Current vs Proxify Pattern
 
 ### Current Implementation:
 ```
@@ -150,7 +150,7 @@ packages/sqlcgen/src/gen/*.ts  ← ❌ Generated but IGNORED
 packages/core/repository/postgres/*.ts  ← ❌ Write raw SQL manually
 ```
 
-### Cleverse Pattern (CORRECT):
+### Proxify Pattern (CORRECT):
 ```
 Database Queries (database/queries/*.sql)
          ↓
@@ -173,7 +173,7 @@ React Components
 
 ## Root Cause
 
-The repositories were created **before** understanding how to properly import and use SQLC-generated code. They implement a **custom repository pattern** instead of the **Cleverse SQLC wrapper pattern**.
+The repositories were created **before** understanding how to properly import and use SQLC-generated code. They implement a **custom repository pattern** instead of the **Proxify SQLC wrapper pattern**.
 
 ---
 
@@ -197,7 +197,7 @@ async getById(id: string) {
 ```
 
 **Pros:**
-- ✅ True Cleverse pattern
+- ✅ True Proxify pattern
 - ✅ Type safety from SQLC
 - ✅ No manual SQL
 - ✅ Automatic updates when SQL changes
@@ -215,7 +215,7 @@ Keep current repositories, but they don't use SQLC at all.
 - ❌ Defeats SQLC purpose
 - ❌ No type safety
 - ❌ Manual SQL maintenance
-- ❌ Not Cleverse pattern
+- ❌ Not Proxify pattern
 
 ---
 

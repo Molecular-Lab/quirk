@@ -1,5 +1,5 @@
 /**
- * Repository Layer Exports - Cleverse Pattern
+ * Repository Layer Exports - Proxify Pattern
  * 
  * All repositories use 100% SQLC-generated type-safe queries.
  * Import repositories from this index for clean service layer integration.
@@ -38,6 +38,7 @@
 
 // Repository Classes
 export { ClientRepository } from './client.repository';
+export { PrivyAccountRepository } from '../privy-account.repository';
 export { VaultRepository } from './vault.repository';
 export { DepositRepository } from './deposit.repository';
 export { WithdrawalRepository } from './withdrawal.repository';

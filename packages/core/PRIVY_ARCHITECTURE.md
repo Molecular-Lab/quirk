@@ -1,7 +1,7 @@
 # Privy Clean Architecture Implementation
 
 **Location:** `@proxify/core`
-**Pattern:** Clean Architecture (Cleverse-style)
+**Pattern:** Clean Architecture (Proxify-style)
 **Status:** ✅ Complete
 
 ---
@@ -418,4 +418,4 @@ app.post("/api/v1/users", async (req, res) => {
 
 **Last Updated:** 2025-11-12
 **Status:** Production-Ready
-**Pattern:** Clean Architecture (Cleverse-inspired)
+**Pattern:** Clean Architecture (Proxify-inspired)

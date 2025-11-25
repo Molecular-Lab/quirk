@@ -2,7 +2,7 @@
 
 ## ✅ Package Status: COMPLETE
 
-The `@proxify/b2b-api-core` package has been successfully refactored to follow the **Cleverse pattern** exactly as implemented in `@proxify/api-core`.
+The `@proxify/b2b-api-core` package has been successfully refactored to follow the **Proxify pattern** exactly as implemented in `@proxify/api-core`.
 
 ---
 
@@ -248,9 +248,9 @@ packages/b2b-api-core/
 
 ---
 
-## 🎯 Cleverse Pattern Compliance
+## 🎯 Proxify Pattern Compliance
 
-| Aspect | Cleverse Pattern | b2b-api-core | Status |
+| Aspect | Proxify Pattern | b2b-api-core | Status |
 |--------|------------------|--------------|--------|
 | **DTO Layer** | Separate dto/ folder with Zod schemas | ✅ dto/ with 7 files | ✅ MATCH |
 | **Entity Layer** | entity/ with pure types | ✅ entity/index.ts | ✅ MATCH |
@@ -259,7 +259,7 @@ packages/b2b-api-core/
 | **Query Keys** | Factory pattern for React Query | ✅ b2bQueryKeys factory | ✅ MATCH |
 | **Exports** | Export all layers from index | ✅ index.ts exports all | ✅ MATCH |
 
-**Result:** 100% Cleverse Pattern Compliance ✅
+**Result:** 100% Proxify Pattern Compliance ✅
 
 ---
 
@@ -447,7 +447,7 @@ pnpm build
 
 The `@proxify/b2b-api-core` package is **production-ready** and follows industry best practices:
 
-- ✅ **Cleverse Pattern** implemented 100%
+- ✅ **Proxify Pattern** implemented 100%
 - ✅ **Type Safety** with TypeScript + Zod
 - ✅ **35 endpoints** fully defined
 - ✅ **6 domain routers** implemented

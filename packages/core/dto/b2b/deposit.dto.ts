@@ -25,6 +25,7 @@ export interface CompleteDepositRequest {
   proxifyFee: string;
   networkFee: string;
   totalFees: string;
+  transactionHash?: string;  // Optional: On-chain transaction hash for verification
 }
 
 export interface FailDepositRequest {

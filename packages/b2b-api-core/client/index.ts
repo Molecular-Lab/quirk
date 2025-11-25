@@ -9,6 +9,7 @@ import { b2bContract } from "../contracts";
 import { initRawAPIClient, type RawAPIClient } from "./rawClient";
 import { ClientRouter } from "./routers/client.router";
 import { DepositRouter } from "./routers/deposit.router";
+import { PrivyAccountRouter } from "./routers/privy-account.router";
 import { UserRouter } from "./routers/user.router";
 import { UserVaultRouter } from "./routers/user-vault.router";
 import { VaultRouter } from "./routers/vault.router";
@@ -28,6 +29,7 @@ export class B2BAPIClient {
 	userVault: UserVaultRouter;
 	deposit: DepositRouter;
 	withdrawal: WithdrawalRouter;
+	privyAccount: PrivyAccountRouter;
 
 	constructor(axios: AxiosInstance, config: B2BAPIClientConfig) {
 		this.rawClient = initRawAPIClient(axios, config.apiUrl, b2bContract);
@@ -39,6 +41,7 @@ export class B2BAPIClient {
 		this.userVault = new UserVaultRouter(this.rawClient);
 		this.deposit = new DepositRouter(this.rawClient);
 		this.withdrawal = new WithdrawalRouter(this.rawClient);
+		this.privyAccount = new PrivyAccountRouter(this.rawClient);
 	}
 }
 
@@ -51,3 +54,4 @@ export * from "./routers/user.router";
 export * from "./routers/user-vault.router";
 export * from "./routers/deposit.router";
 export * from "./routers/withdrawal.router";
+export * from "./routers/privy-account.router";

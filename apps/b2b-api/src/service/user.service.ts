@@ -10,7 +10,7 @@ export class UserService {
 	async getOrCreateUser(request: {
 		clientId: string;
 		userId: string;
-		userType: "individual" | "business";
+		userType: "custodial" | "non-custodial";
 		userWalletAddress?: string;
 	}) {
 		return await this.userUseCase.getOrCreateUser(request);

@@ -44,15 +44,12 @@ func (q *Queries) AddToAvailableBalance(ctx context.Context, arg AddToAvailableB
 
 const createClient = `-- name: CreateClient :one
 INSERT INTO client_organizations (
+  privy_account_id,
   product_id,
   company_name,
   business_type,
   description,
   website_url,
-  wallet_type,
-  wallet_managed_by,
-  privy_organization_id,
-  privy_wallet_address,
   api_key_hash,
   api_key_prefix,
   webhook_urls,
@@ -65,21 +62,18 @@ INSERT INTO client_organizations (
   is_sandbox
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16, $17, $18, $19
+  $11, $12, $13, $14, $15, $16
 )
-RETURNING id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at
 `
 
 type CreateClientParams struct {
+	PrivyAccountID      uuid.UUID      `db:"privy_account_id"`
 	ProductID           string         `db:"product_id"`
 	CompanyName         string         `db:"company_name"`
 	BusinessType        string         `db:"business_type"`
 	Description         *string        `db:"description"`
 	WebsiteUrl          *string        `db:"website_url"`
-	WalletType          string         `db:"wallet_type"`
-	WalletManagedBy     string         `db:"wallet_managed_by"`
-	PrivyOrganizationID string         `db:"privy_organization_id"`
-	PrivyWalletAddress  string         `db:"privy_wallet_address"`
 	ApiKeyHash          *string        `db:"api_key_hash"`
 	ApiKeyPrefix        *string        `db:"api_key_prefix"`
 	WebhookUrls         []string       `db:"webhook_urls"`
@@ -94,15 +88,12 @@ type CreateClientParams struct {
 
 func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (ClientOrganization, error) {
 	row := q.db.QueryRow(ctx, createClient,
+		arg.PrivyAccountID,
 		arg.ProductID,
 		arg.CompanyName,
 		arg.BusinessType,
 		arg.Description,
 		arg.WebsiteUrl,
-		arg.WalletType,
-		arg.WalletManagedBy,
-		arg.PrivyOrganizationID,
-		arg.PrivyWalletAddress,
 		arg.ApiKeyHash,
 		arg.ApiKeyPrefix,
 		arg.WebhookUrls,
@@ -117,15 +108,12 @@ func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (Cli
 	var i ClientOrganization
 	err := row.Scan(
 		&i.ID,
+		&i.PrivyAccountID,
 		&i.ProductID,
 		&i.CompanyName,
 		&i.BusinessType,
 		&i.Description,
 		&i.WebsiteUrl,
-		&i.WalletType,
-		&i.WalletManagedBy,
-		&i.PrivyOrganizationID,
-		&i.PrivyWalletAddress,
 		&i.ApiKeyHash,
 		&i.ApiKeyPrefix,
 		&i.WebhookUrls,
@@ -244,27 +232,58 @@ func (q *Queries) DeleteClient(ctx context.Context, id uuid.UUID) error {
 
 const getClient = `-- name: GetClient :one
 
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE id = $1 LIMIT 1
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.id = $1
+LIMIT 1
 `
+
+type GetClientRow struct {
+	ID                  uuid.UUID          `db:"id"`
+	PrivyAccountID      uuid.UUID          `db:"privy_account_id"`
+	ProductID           string             `db:"product_id"`
+	CompanyName         string             `db:"company_name"`
+	BusinessType        string             `db:"business_type"`
+	Description         *string            `db:"description"`
+	WebsiteUrl          *string            `db:"website_url"`
+	ApiKeyHash          *string            `db:"api_key_hash"`
+	ApiKeyPrefix        *string            `db:"api_key_prefix"`
+	WebhookUrls         []string           `db:"webhook_urls"`
+	WebhookSecret       *string            `db:"webhook_secret"`
+	CustomStrategy      []byte             `db:"custom_strategy"`
+	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
+	IsActive            bool               `db:"is_active"`
+	IsSandbox           bool               `db:"is_sandbox"`
+	PlatformFee         pgtype.Numeric     `db:"platform_fee"`
+	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	PrivyOrganizationID string             `db:"privy_organization_id"`
+	PrivyWalletAddress  string             `db:"privy_wallet_address"`
+	PrivyEmail          *string            `db:"privy_email"`
+	PrivyWalletType     string             `db:"privy_wallet_type"`
+}
 
 // ============================================
 // CLIENT ORGANIZATION QUERIES
 // ============================================
-func (q *Queries) GetClient(ctx context.Context, id uuid.UUID) (ClientOrganization, error) {
+func (q *Queries) GetClient(ctx context.Context, id uuid.UUID) (GetClientRow, error) {
 	row := q.db.QueryRow(ctx, getClient, id)
-	var i ClientOrganization
+	var i GetClientRow
 	err := row.Scan(
 		&i.ID,
+		&i.PrivyAccountID,
 		&i.ProductID,
 		&i.CompanyName,
 		&i.BusinessType,
 		&i.Description,
 		&i.WebsiteUrl,
-		&i.WalletType,
-		&i.WalletManagedBy,
-		&i.PrivyOrganizationID,
-		&i.PrivyWalletAddress,
 		&i.ApiKeyHash,
 		&i.ApiKeyPrefix,
 		&i.WebhookUrls,
@@ -277,6 +296,10 @@ func (q *Queries) GetClient(ctx context.Context, id uuid.UUID) (ClientOrganizati
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PrivyOrganizationID,
+		&i.PrivyWalletAddress,
+		&i.PrivyEmail,
+		&i.PrivyWalletType,
 	)
 	return i, err
 }
@@ -331,25 +354,56 @@ func (q *Queries) GetClientBalanceForUpdate(ctx context.Context, clientID uuid.U
 }
 
 const getClientByAPIKeyHash = `-- name: GetClientByAPIKeyHash :one
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE api_key_hash = $1 LIMIT 1
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.api_key_hash = $1
+LIMIT 1
 `
 
+type GetClientByAPIKeyHashRow struct {
+	ID                  uuid.UUID          `db:"id"`
+	PrivyAccountID      uuid.UUID          `db:"privy_account_id"`
+	ProductID           string             `db:"product_id"`
+	CompanyName         string             `db:"company_name"`
+	BusinessType        string             `db:"business_type"`
+	Description         *string            `db:"description"`
+	WebsiteUrl          *string            `db:"website_url"`
+	ApiKeyHash          *string            `db:"api_key_hash"`
+	ApiKeyPrefix        *string            `db:"api_key_prefix"`
+	WebhookUrls         []string           `db:"webhook_urls"`
+	WebhookSecret       *string            `db:"webhook_secret"`
+	CustomStrategy      []byte             `db:"custom_strategy"`
+	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
+	IsActive            bool               `db:"is_active"`
+	IsSandbox           bool               `db:"is_sandbox"`
+	PlatformFee         pgtype.Numeric     `db:"platform_fee"`
+	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	PrivyOrganizationID string             `db:"privy_organization_id"`
+	PrivyWalletAddress  string             `db:"privy_wallet_address"`
+	PrivyEmail          *string            `db:"privy_email"`
+	PrivyWalletType     string             `db:"privy_wallet_type"`
+}
+
 // Direct lookup by API key hash
-func (q *Queries) GetClientByAPIKeyHash(ctx context.Context, apiKeyHash *string) (ClientOrganization, error) {
+func (q *Queries) GetClientByAPIKeyHash(ctx context.Context, apiKeyHash *string) (GetClientByAPIKeyHashRow, error) {
 	row := q.db.QueryRow(ctx, getClientByAPIKeyHash, apiKeyHash)
-	var i ClientOrganization
+	var i GetClientByAPIKeyHashRow
 	err := row.Scan(
 		&i.ID,
+		&i.PrivyAccountID,
 		&i.ProductID,
 		&i.CompanyName,
 		&i.BusinessType,
 		&i.Description,
 		&i.WebsiteUrl,
-		&i.WalletType,
-		&i.WalletManagedBy,
-		&i.PrivyOrganizationID,
-		&i.PrivyWalletAddress,
 		&i.ApiKeyHash,
 		&i.ApiKeyPrefix,
 		&i.WebhookUrls,
@@ -362,65 +416,65 @@ func (q *Queries) GetClientByAPIKeyHash(ctx context.Context, apiKeyHash *string)
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PrivyOrganizationID,
+		&i.PrivyWalletAddress,
+		&i.PrivyEmail,
+		&i.PrivyWalletType,
 	)
 	return i, err
 }
 
 const getClientByAPIKeyPrefix = `-- name: GetClientByAPIKeyPrefix :one
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE api_key_prefix = $1 LIMIT 1
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.api_key_prefix = $1
+LIMIT 1
 `
 
-// For API key validation (then verify hash)
-func (q *Queries) GetClientByAPIKeyPrefix(ctx context.Context, apiKeyPrefix *string) (ClientOrganization, error) {
-	row := q.db.QueryRow(ctx, getClientByAPIKeyPrefix, apiKeyPrefix)
-	var i ClientOrganization
-	err := row.Scan(
-		&i.ID,
-		&i.ProductID,
-		&i.CompanyName,
-		&i.BusinessType,
-		&i.Description,
-		&i.WebsiteUrl,
-		&i.WalletType,
-		&i.WalletManagedBy,
-		&i.PrivyOrganizationID,
-		&i.PrivyWalletAddress,
-		&i.ApiKeyHash,
-		&i.ApiKeyPrefix,
-		&i.WebhookUrls,
-		&i.WebhookSecret,
-		&i.CustomStrategy,
-		&i.EndUserYieldPortion,
-		&i.IsActive,
-		&i.IsSandbox,
-		&i.PlatformFee,
-		&i.PerformanceFee,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+type GetClientByAPIKeyPrefixRow struct {
+	ID                  uuid.UUID          `db:"id"`
+	PrivyAccountID      uuid.UUID          `db:"privy_account_id"`
+	ProductID           string             `db:"product_id"`
+	CompanyName         string             `db:"company_name"`
+	BusinessType        string             `db:"business_type"`
+	Description         *string            `db:"description"`
+	WebsiteUrl          *string            `db:"website_url"`
+	ApiKeyHash          *string            `db:"api_key_hash"`
+	ApiKeyPrefix        *string            `db:"api_key_prefix"`
+	WebhookUrls         []string           `db:"webhook_urls"`
+	WebhookSecret       *string            `db:"webhook_secret"`
+	CustomStrategy      []byte             `db:"custom_strategy"`
+	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
+	IsActive            bool               `db:"is_active"`
+	IsSandbox           bool               `db:"is_sandbox"`
+	PlatformFee         pgtype.Numeric     `db:"platform_fee"`
+	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	PrivyOrganizationID string             `db:"privy_organization_id"`
+	PrivyWalletAddress  string             `db:"privy_wallet_address"`
+	PrivyEmail          *string            `db:"privy_email"`
+	PrivyWalletType     string             `db:"privy_wallet_type"`
 }
 
-const getClientByPrivyOrgID = `-- name: GetClientByPrivyOrgID :one
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE privy_organization_id = $1 LIMIT 1
-`
-
-func (q *Queries) GetClientByPrivyOrgID(ctx context.Context, privyOrganizationID string) (ClientOrganization, error) {
-	row := q.db.QueryRow(ctx, getClientByPrivyOrgID, privyOrganizationID)
-	var i ClientOrganization
+// For API key validation (then verify hash)
+func (q *Queries) GetClientByAPIKeyPrefix(ctx context.Context, apiKeyPrefix *string) (GetClientByAPIKeyPrefixRow, error) {
+	row := q.db.QueryRow(ctx, getClientByAPIKeyPrefix, apiKeyPrefix)
+	var i GetClientByAPIKeyPrefixRow
 	err := row.Scan(
 		&i.ID,
+		&i.PrivyAccountID,
 		&i.ProductID,
 		&i.CompanyName,
 		&i.BusinessType,
 		&i.Description,
 		&i.WebsiteUrl,
-		&i.WalletType,
-		&i.WalletManagedBy,
-		&i.PrivyOrganizationID,
-		&i.PrivyWalletAddress,
 		&i.ApiKeyHash,
 		&i.ApiKeyPrefix,
 		&i.WebhookUrls,
@@ -433,29 +487,64 @@ func (q *Queries) GetClientByPrivyOrgID(ctx context.Context, privyOrganizationID
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PrivyOrganizationID,
+		&i.PrivyWalletAddress,
+		&i.PrivyEmail,
+		&i.PrivyWalletType,
 	)
 	return i, err
 }
 
 const getClientByProductID = `-- name: GetClientByProductID :one
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE product_id = $1 LIMIT 1
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.product_id = $1
+LIMIT 1
 `
 
-func (q *Queries) GetClientByProductID(ctx context.Context, productID string) (ClientOrganization, error) {
+type GetClientByProductIDRow struct {
+	ID                  uuid.UUID          `db:"id"`
+	PrivyAccountID      uuid.UUID          `db:"privy_account_id"`
+	ProductID           string             `db:"product_id"`
+	CompanyName         string             `db:"company_name"`
+	BusinessType        string             `db:"business_type"`
+	Description         *string            `db:"description"`
+	WebsiteUrl          *string            `db:"website_url"`
+	ApiKeyHash          *string            `db:"api_key_hash"`
+	ApiKeyPrefix        *string            `db:"api_key_prefix"`
+	WebhookUrls         []string           `db:"webhook_urls"`
+	WebhookSecret       *string            `db:"webhook_secret"`
+	CustomStrategy      []byte             `db:"custom_strategy"`
+	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
+	IsActive            bool               `db:"is_active"`
+	IsSandbox           bool               `db:"is_sandbox"`
+	PlatformFee         pgtype.Numeric     `db:"platform_fee"`
+	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	PrivyOrganizationID string             `db:"privy_organization_id"`
+	PrivyWalletAddress  string             `db:"privy_wallet_address"`
+	PrivyEmail          *string            `db:"privy_email"`
+	PrivyWalletType     string             `db:"privy_wallet_type"`
+}
+
+func (q *Queries) GetClientByProductID(ctx context.Context, productID string) (GetClientByProductIDRow, error) {
 	row := q.db.QueryRow(ctx, getClientByProductID, productID)
-	var i ClientOrganization
+	var i GetClientByProductIDRow
 	err := row.Scan(
 		&i.ID,
+		&i.PrivyAccountID,
 		&i.ProductID,
 		&i.CompanyName,
 		&i.BusinessType,
 		&i.Description,
 		&i.WebsiteUrl,
-		&i.WalletType,
-		&i.WalletManagedBy,
-		&i.PrivyOrganizationID,
-		&i.PrivyWalletAddress,
 		&i.ApiKeyHash,
 		&i.ApiKeyPrefix,
 		&i.WebhookUrls,
@@ -468,6 +557,10 @@ func (q *Queries) GetClientByProductID(ctx context.Context, productID string) (C
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PrivyOrganizationID,
+		&i.PrivyWalletAddress,
+		&i.PrivyEmail,
+		&i.PrivyWalletType,
 	)
 	return i, err
 }
@@ -539,32 +632,61 @@ func (q *Queries) GetClientStats(ctx context.Context, id uuid.UUID) (GetClientSt
 	return i, err
 }
 
-const listActiveClients = `-- name: ListActiveClients :many
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-WHERE is_active = true
-ORDER BY created_at DESC
+const getClientsByPrivyOrgID = `-- name: GetClientsByPrivyOrgID :many
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE pa.privy_organization_id = $1
 `
 
-func (q *Queries) ListActiveClients(ctx context.Context) ([]ClientOrganization, error) {
-	rows, err := q.db.Query(ctx, listActiveClients)
+type GetClientsByPrivyOrgIDRow struct {
+	ID                  uuid.UUID          `db:"id"`
+	PrivyAccountID      uuid.UUID          `db:"privy_account_id"`
+	ProductID           string             `db:"product_id"`
+	CompanyName         string             `db:"company_name"`
+	BusinessType        string             `db:"business_type"`
+	Description         *string            `db:"description"`
+	WebsiteUrl          *string            `db:"website_url"`
+	ApiKeyHash          *string            `db:"api_key_hash"`
+	ApiKeyPrefix        *string            `db:"api_key_prefix"`
+	WebhookUrls         []string           `db:"webhook_urls"`
+	WebhookSecret       *string            `db:"webhook_secret"`
+	CustomStrategy      []byte             `db:"custom_strategy"`
+	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
+	IsActive            bool               `db:"is_active"`
+	IsSandbox           bool               `db:"is_sandbox"`
+	PlatformFee         pgtype.Numeric     `db:"platform_fee"`
+	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	PrivyOrganizationID string             `db:"privy_organization_id"`
+	PrivyWalletAddress  string             `db:"privy_wallet_address"`
+	PrivyEmail          *string            `db:"privy_email"`
+	PrivyWalletType     string             `db:"privy_wallet_type"`
+}
+
+func (q *Queries) GetClientsByPrivyOrgID(ctx context.Context, privyOrganizationID string) ([]GetClientsByPrivyOrgIDRow, error) {
+	rows, err := q.db.Query(ctx, getClientsByPrivyOrgID, privyOrganizationID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ClientOrganization
+	var items []GetClientsByPrivyOrgIDRow
 	for rows.Next() {
-		var i ClientOrganization
+		var i GetClientsByPrivyOrgIDRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.PrivyAccountID,
 			&i.ProductID,
 			&i.CompanyName,
 			&i.BusinessType,
 			&i.Description,
 			&i.WebsiteUrl,
-			&i.WalletType,
-			&i.WalletManagedBy,
-			&i.PrivyOrganizationID,
-			&i.PrivyWalletAddress,
 			&i.ApiKeyHash,
 			&i.ApiKeyPrefix,
 			&i.WebhookUrls,
@@ -577,6 +699,93 @@ func (q *Queries) ListActiveClients(ctx context.Context) ([]ClientOrganization, 
 			&i.PerformanceFee,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.PrivyOrganizationID,
+			&i.PrivyWalletAddress,
+			&i.PrivyEmail,
+			&i.PrivyWalletType,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listActiveClients = `-- name: ListActiveClients :many
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.is_active = true
+ORDER BY co.created_at DESC
+`
+
+type ListActiveClientsRow struct {
+	ID                  uuid.UUID          `db:"id"`
+	PrivyAccountID      uuid.UUID          `db:"privy_account_id"`
+	ProductID           string             `db:"product_id"`
+	CompanyName         string             `db:"company_name"`
+	BusinessType        string             `db:"business_type"`
+	Description         *string            `db:"description"`
+	WebsiteUrl          *string            `db:"website_url"`
+	ApiKeyHash          *string            `db:"api_key_hash"`
+	ApiKeyPrefix        *string            `db:"api_key_prefix"`
+	WebhookUrls         []string           `db:"webhook_urls"`
+	WebhookSecret       *string            `db:"webhook_secret"`
+	CustomStrategy      []byte             `db:"custom_strategy"`
+	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
+	IsActive            bool               `db:"is_active"`
+	IsSandbox           bool               `db:"is_sandbox"`
+	PlatformFee         pgtype.Numeric     `db:"platform_fee"`
+	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	PrivyOrganizationID string             `db:"privy_organization_id"`
+	PrivyWalletAddress  string             `db:"privy_wallet_address"`
+	PrivyEmail          *string            `db:"privy_email"`
+	PrivyWalletType     string             `db:"privy_wallet_type"`
+}
+
+func (q *Queries) ListActiveClients(ctx context.Context) ([]ListActiveClientsRow, error) {
+	rows, err := q.db.Query(ctx, listActiveClients)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveClientsRow
+	for rows.Next() {
+		var i ListActiveClientsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.PrivyAccountID,
+			&i.ProductID,
+			&i.CompanyName,
+			&i.BusinessType,
+			&i.Description,
+			&i.WebsiteUrl,
+			&i.ApiKeyHash,
+			&i.ApiKeyPrefix,
+			&i.WebhookUrls,
+			&i.WebhookSecret,
+			&i.CustomStrategy,
+			&i.EndUserYieldPortion,
+			&i.IsActive,
+			&i.IsSandbox,
+			&i.PlatformFee,
+			&i.PerformanceFee,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.PrivyOrganizationID,
+			&i.PrivyWalletAddress,
+			&i.PrivyEmail,
+			&i.PrivyWalletType,
 		); err != nil {
 			return nil, err
 		}
@@ -589,8 +798,15 @@ func (q *Queries) ListActiveClients(ctx context.Context) ([]ClientOrganization, 
 }
 
 const listClients = `-- name: ListClients :many
-SELECT id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at FROM client_organizations
-ORDER BY created_at DESC
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  pa.privy_organization_id,
+  pa.privy_wallet_address,
+  pa.privy_email,
+  pa.wallet_type AS privy_wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+ORDER BY co.created_at DESC
 LIMIT $1 OFFSET $2
 `
 
@@ -599,26 +815,49 @@ type ListClientsParams struct {
 	Offset int32 `db:"offset"`
 }
 
-func (q *Queries) ListClients(ctx context.Context, arg ListClientsParams) ([]ClientOrganization, error) {
+type ListClientsRow struct {
+	ID                  uuid.UUID          `db:"id"`
+	PrivyAccountID      uuid.UUID          `db:"privy_account_id"`
+	ProductID           string             `db:"product_id"`
+	CompanyName         string             `db:"company_name"`
+	BusinessType        string             `db:"business_type"`
+	Description         *string            `db:"description"`
+	WebsiteUrl          *string            `db:"website_url"`
+	ApiKeyHash          *string            `db:"api_key_hash"`
+	ApiKeyPrefix        *string            `db:"api_key_prefix"`
+	WebhookUrls         []string           `db:"webhook_urls"`
+	WebhookSecret       *string            `db:"webhook_secret"`
+	CustomStrategy      []byte             `db:"custom_strategy"`
+	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
+	IsActive            bool               `db:"is_active"`
+	IsSandbox           bool               `db:"is_sandbox"`
+	PlatformFee         pgtype.Numeric     `db:"platform_fee"`
+	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at"`
+	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	PrivyOrganizationID string             `db:"privy_organization_id"`
+	PrivyWalletAddress  string             `db:"privy_wallet_address"`
+	PrivyEmail          *string            `db:"privy_email"`
+	PrivyWalletType     string             `db:"privy_wallet_type"`
+}
+
+func (q *Queries) ListClients(ctx context.Context, arg ListClientsParams) ([]ListClientsRow, error) {
 	rows, err := q.db.Query(ctx, listClients, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ClientOrganization
+	var items []ListClientsRow
 	for rows.Next() {
-		var i ClientOrganization
+		var i ListClientsRow
 		if err := rows.Scan(
 			&i.ID,
+			&i.PrivyAccountID,
 			&i.ProductID,
 			&i.CompanyName,
 			&i.BusinessType,
 			&i.Description,
 			&i.WebsiteUrl,
-			&i.WalletType,
-			&i.WalletManagedBy,
-			&i.PrivyOrganizationID,
-			&i.PrivyWalletAddress,
 			&i.ApiKeyHash,
 			&i.ApiKeyPrefix,
 			&i.WebhookUrls,
@@ -631,6 +870,10 @@ func (q *Queries) ListClients(ctx context.Context, arg ListClientsParams) ([]Cli
 			&i.PerformanceFee,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.PrivyOrganizationID,
+			&i.PrivyWalletAddress,
+			&i.PrivyEmail,
+			&i.PrivyWalletType,
 		); err != nil {
 			return nil, err
 		}
@@ -697,7 +940,7 @@ SET company_name = COALESCE($2, company_name),
     performance_fee = COALESCE($10, performance_fee),
     updated_at = now()
 WHERE id = $1
-RETURNING id, product_id, company_name, business_type, description, website_url, wallet_type, wallet_managed_by, privy_organization_id, privy_wallet_address, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at
 `
 
 type UpdateClientParams struct {
@@ -729,15 +972,12 @@ func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Cli
 	var i ClientOrganization
 	err := row.Scan(
 		&i.ID,
+		&i.PrivyAccountID,
 		&i.ProductID,
 		&i.CompanyName,
 		&i.BusinessType,
 		&i.Description,
 		&i.WebsiteUrl,
-		&i.WalletType,
-		&i.WalletManagedBy,
-		&i.PrivyOrganizationID,
-		&i.PrivyWalletAddress,
 		&i.ApiKeyHash,
 		&i.ApiKeyPrefix,
 		&i.WebhookUrls,

@@ -2,7 +2,7 @@
 
 ## ✅ What Was Created
 
-A **NEW** implementation in `apps/b2b-api-new/` that follows the **Cleverse pattern** exactly like `apps/api`.
+A **NEW** implementation in `apps/b2b-api-new/` that follows the **Proxify pattern** exactly like `apps/api`.
 
 ## 📁 New Project Structure
 
@@ -35,7 +35,7 @@ Controller → Router (Express) → UseCase → Repository
 - No type-safe contracts
 - Manual validation
 - No shared types with frontend
-- Not following Cleverse pattern
+- Not following Proxify pattern
 
 ### NEW (apps/b2b-api-new/) ✅
 
@@ -55,7 +55,7 @@ Repository (@proxify/sqlcgen)
 - ✅ 100% type-safe with ts-rest
 - ✅ Automatic Zod validation
 - ✅ Shared contracts with frontend
-- ✅ Follows Cleverse pattern (matches apps/api)
+- ✅ Follows Proxify pattern (matches apps/api)
 - ✅ Uses @proxify/b2b-api-core package
 
 ## 📊 Implementation Status
@@ -217,7 +217,7 @@ Add integration tests using the `B2BAPIClient` from `@proxify/b2b-api-core`.
 
 ## 🎉 Summary
 
-- ✅ Created **NEW** implementation following Cleverse pattern
+- ✅ Created **NEW** implementation following Proxify pattern
 - ✅ Matches `apps/api` architecture exactly
 - ✅ Uses `@proxify/b2b-api-core` for contracts
 - ✅ Type-safe with ts-rest + Zod

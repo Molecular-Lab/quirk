@@ -1,5 +1,5 @@
 /**
- * Deposit Repository - Cleverse Pattern
+ * Deposit Repository - Proxify Pattern
  * ✅ SQLC-generated queries from database/queries/deposit.sql
  */
 

@@ -4,6 +4,8 @@
  */
 
 import type { UserRepository } from '../../repository/postgres/end_user.repository';
+import type { VaultRepository } from '../../repository/postgres/vault.repository';
+import type { ClientRepository } from '../../repository/postgres/client.repository';
 import type { AuditRepository } from '../../repository/postgres/audit.repository';
 import type {
   GetEndUserRow,
@@ -23,17 +25,34 @@ import type {
 export class B2BUserUseCase {
   constructor(
     private readonly userRepository: UserRepository,
+    private readonly vaultRepository: VaultRepository,
+    private readonly clientRepository: ClientRepository,
     private readonly auditRepository: AuditRepository
   ) {}
 
   /**
    * Get or create end-user (idempotent)
    * Used when processing deposits/withdrawals
+   * Auto-creates end_user_vaults for all client_vaults on first creation
    */
   async getOrCreateUser(request: CreateUserRequest): Promise<GetEndUserRow> {
+    // Resolve productId to client UUID if needed
+    // The request.clientId might be a productId (e.g., "prod_abc123") or a UUID
+    let clientId = request.clientId;
+    
+    // Check if it's a productId (starts with "prod_")
+    if (request.clientId.startsWith('prod_')) {
+      const client = await this.clientRepository.getByProductId(request.clientId);
+      if (!client) {
+        throw new Error(`Client not found with productId: ${request.clientId}`);
+      }
+      clientId = client.id; // Use the actual UUID
+      console.log(`[User Creation] Resolved productId ${request.clientId} to clientId ${clientId}`);
+    }
+
     // Check if user exists
     const existing = await this.userRepository.getByClientAndUserId(
-      request.clientId,
+      clientId,
       request.userId
     );
 
@@ -43,15 +62,41 @@ export class B2BUserUseCase {
 
     // Create new user
     const user = await this.userRepository.getOrCreate(
-      request.clientId,
+      clientId,
       request.userId,
       request.userType,
       request.userWalletAddress
     );
 
+    // ✅ Create end_user_vault on registration (simplified - one vault per client)
+    // This creates a single vault entry for this user under this client
+    // The vault will be populated with deposits later (FLOW 4)
+    try {
+      // Check if vault already exists (in case of race condition)
+      const existingVault = await this.vaultRepository.getEndUserVaultByClient(
+        user.id,
+        clientId
+      );
+
+      if (!existingVault) {
+        await this.vaultRepository.createEndUserVault({
+          endUserId: user.id,
+          clientId: clientId,
+          totalDeposited: '0',
+          weightedEntryIndex: '1000000000000000000', // Default: 1.0
+        });
+        console.log(`[User Creation] Created end-user vault for ${request.userId}`);
+      } else {
+        console.log(`[User Creation] End-user vault already exists for ${request.userId}`);
+      }
+    } catch (vaultError) {
+      console.error(`[User Creation] Failed to create vault for ${request.userId}:`, vaultError);
+      // Don't fail user creation if vault creation fails - they can deposit later
+    }
+
     // Audit log
     await this.auditRepository.create({
-      clientId: request.clientId,
+      clientId: clientId,
       userId: user.id,
       actorType: 'client',
       action: 'user_created',

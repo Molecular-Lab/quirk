@@ -1,5 +1,5 @@
 /**
- * End User Repository - Cleverse Pattern  
+ * End User Repository - Proxify Pattern  
  * ✅ SQLC-generated queries from database/queries/end_user.sql
  */
 

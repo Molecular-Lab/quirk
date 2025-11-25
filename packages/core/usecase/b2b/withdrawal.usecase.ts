@@ -1,18 +1,19 @@
 /**
  * B2B Withdrawal UseCase
  * Manages withdrawal requests and processing (FLOW 8)
- * 
- * ARCHITECTURE:
+ *
+ * ✅ SIMPLIFIED ARCHITECTURE:
  * - withdrawal_transactions: FIAT withdrawal (to bank/card) - tracked by payment gateway
  * - withdrawal_queue: CRYPTO unstaking (from DeFi protocols) - executed by DeFi layer
- * - end_user_vaults: Shares burned when withdrawal requested
- * 
- * FLOW:
- * 1. Validate user balance (shares × index / 1e18)
- * 2. Calculate shares to burn
- * 3. Create withdrawal_transaction (FIAT)
- * 4. Create withdrawal_queue (CRYPTO unstaking plan)
- * 5. Burn shares from end_user_vault
+ * - end_user_vaults: Track total_withdrawn (NO SHARES - fiat-based tracking)
+ *
+ * ✅ SIMPLIFIED FLOW:
+ * 1. Calculate client growth index (weighted average across all vaults)
+ * 2. Calculate user current value (total_deposited × client_growth_index / entry_index)
+ * 3. Validate withdrawal amount against current value
+ * 4. Create withdrawal_transaction (FIAT)
+ * 5. Create withdrawal_queue (CRYPTO unstaking plan)
+ * 6. Update end_user_vault.total_withdrawn
  */
 
 import type { WithdrawalRepository } from '../../repository/postgres/withdrawal.repository';
@@ -33,20 +34,31 @@ import type {
   FailWithdrawalRequest,
   GetWithdrawalStatsRequest,
 } from '../../dto/b2b';
+import { ClientGrowthIndexService } from '../../service/client-growth-index.service';
+import BigNumber from 'bignumber.js';
 
 export class B2BWithdrawalUseCase {
   constructor(
     private readonly withdrawalRepository: WithdrawalRepository,
     private readonly vaultRepository: VaultRepository,
     private readonly userRepository: UserRepository,
-    private readonly auditRepository: AuditRepository
+    private readonly auditRepository: AuditRepository,
+    private readonly clientGrowthIndexService: ClientGrowthIndexService
   ) {}
 
   /**
-   * Request withdrawal (FLOW 8)
+   * Request withdrawal (FLOW 8 - SIMPLIFIED)
+   *
+   * ✅ NEW FLOW:
+   * 1. Calculate client growth index (weighted average across all vaults)
+   * 2. Calculate user current value (total_deposited × client_growth_index / entry_index)
+   * 3. Validate withdrawal amount against current value
+   * 4. Create withdrawal_transaction (FIAT)
+   * 5. Create withdrawal_queue (CRYPTO unstaking plan)
+   * 6. Update end_user_vault.total_withdrawn
    */
   async requestWithdrawal(request: CreateWithdrawalRequest): Promise<WithdrawalResponse> {
-    const { clientId, userId, chain, tokenAddress, amount, orderId, destinationType, destinationDetails } = request;
+    const { clientId, userId, amount, orderId, destinationType, destinationDetails } = request;
 
     // Get end_user
     const endUser = await this.userRepository.getByClientAndUserId(clientId, userId);
@@ -54,37 +66,53 @@ export class B2BWithdrawalUseCase {
       throw new Error(`User not found: ${userId}`);
     }
 
-    // Get end_user_vault
-    const userVault = await this.vaultRepository.getEndUserVaultForUpdate(endUser.id, chain, tokenAddress);
+    // ✅ STEP 1: Calculate client growth index (weighted average across all client vaults)
+    const clientGrowthIndex = await this.clientGrowthIndexService.calculateClientGrowthIndex(clientId);
+
+    console.log('[Withdrawal] Client Growth Index:', {
+      clientId,
+      growthIndex: clientGrowthIndex,
+      growthIndexDecimal: new BigNumber(clientGrowthIndex).dividedBy('1e18').toString(),
+    });
+
+    // ✅ STEP 2: Get end_user_vault (simplified - no chain/token, just clientId)
+    const userVault = await this.vaultRepository.getEndUserVaultByClientForUpdate(endUser.id, clientId);
     if (!userVault) {
-      throw new Error(`User has no vault for ${tokenAddress}`);
+      throw new Error(`User has no vault for client ${clientId}`);
     }
 
-    // Get client vault for current index
-    const clientVault = await this.vaultRepository.getClientVault(clientId, chain, tokenAddress);
-    if (!clientVault) {
-      throw new Error(`Client vault not found`);
+    // ✅ STEP 3: Calculate user current value
+    const currentValue = new BigNumber(
+      this.vaultRepository.calculateUserCurrentValue(
+        userVault.totalDeposited,
+        userVault.weightedEntryIndex,
+        clientGrowthIndex
+      )
+    );
+
+    const withdrawalAmount = new BigNumber(amount);
+
+    console.log('[Withdrawal] Balance Check:', {
+      userId: endUser.id,
+      totalDeposited: userVault.totalDeposited,
+      entryIndex: userVault.weightedEntryIndex,
+      entryIndexDecimal: new BigNumber(userVault.weightedEntryIndex).dividedBy('1e18').toString(),
+      currentValue: currentValue.toString(),
+      requestedAmount: withdrawalAmount.toString(),
+    });
+
+    // ✅ STEP 4: Validate balance
+    if (withdrawalAmount.isGreaterThan(currentValue)) {
+      throw new Error(
+        `Insufficient balance. Requested: ${amount}, Available: ${currentValue.toString()}`
+      );
     }
 
-    // Calculate effective balance
-    const shares = BigInt(userVault.shares);
-    const currentIndex = BigInt(clientVault.currentIndex);
-    const effectiveBalance = (shares * currentIndex) / BigInt(1e18);
-    const withdrawalAmount = BigInt(amount);
-
-    // Validate balance
-    if (withdrawalAmount > effectiveBalance) {
-      throw new Error(`Insufficient balance. Requested: ${amount}, Available: ${effectiveBalance.toString()}`);
-    }
-
-    // Calculate shares to burn
-    const sharesToBurn = (withdrawalAmount * shares) / effectiveBalance;
-
-    // Create FIAT withdrawal transaction
+    // ✅ STEP 5: Create FIAT withdrawal transaction
     const withdrawal = await this.withdrawalRepository.create({
       orderId,
       clientId,
-      userId,
+      userId: endUser.id,
       requestedAmount: amount,
       currency: 'USD',
       destinationType,
@@ -96,30 +124,24 @@ export class B2BWithdrawalUseCase {
       throw new Error('Failed to create withdrawal');
     }
 
-    // Create CRYPTO withdrawal queue (DeFi unstaking)
+    // ✅ STEP 6: Create CRYPTO withdrawal queue (DeFi unstaking)
     await this.createWithdrawalQueue(
       clientId,
       withdrawal.id,
       userVault.id,
-      sharesToBurn.toString(),
-      amount
+      amount // Withdrawal amount (fiat-based, no shares)
     );
 
-    // Burn shares
-    const newTotalWithdrawn = BigInt(userVault.totalWithdrawn) + withdrawalAmount;
-    await this.vaultRepository.burnShares(
-      userVault.id,
-      sharesToBurn.toString(),
-      newTotalWithdrawn.toString()
-    );
+    // ✅ STEP 7: Update end_user_vault.total_withdrawn
+    await this.vaultRepository.updateVaultWithdrawal(userVault.id, withdrawalAmount.toString());
 
-    // Update user timestamp
+    // ✅ STEP 8: Update user timestamp
     await this.userRepository.updateWithdrawalTimestamp(endUser.id);
 
     // Audit
     await this.auditRepository.create({
       clientId,
-      userId,
+      userId: endUser.id,
       actorType: 'user',
       action: 'withdrawal_request',
       resourceType: 'withdrawal_transaction',
@@ -127,12 +149,19 @@ export class B2BWithdrawalUseCase {
       description: `Withdrawal: ${amount} USD`,
       metadata: {
         amount,
-        sharesBurned: sharesToBurn.toString(),
-        chain,
-        tokenAddress,
+        currentValue: currentValue.toString(),
+        clientGrowthIndex,
+        clientGrowthIndexDecimal: new BigNumber(clientGrowthIndex).dividedBy('1e18').toString(),
       },
       ipAddress: null,
       userAgent: null,
+    });
+
+    console.log('[Withdrawal] ✅ Withdrawal request created:', {
+      orderId,
+      userId: endUser.id,
+      clientId,
+      amount,
     });
 
     return this.mapToResponse(withdrawal);
@@ -236,12 +265,12 @@ export class B2BWithdrawalUseCase {
 
   /**
    * Create withdrawal queue (crypto unstaking plan)
+   * ✅ SIMPLIFIED: No shares tracking, just fiat amounts
    */
   private async createWithdrawalQueue(
     clientId: string,
     withdrawalTransactionId: string,
     endUserVaultId: string,
-    sharesToBurn: string,
     estimatedAmount: string
   ): Promise<void> {
     // TODO: Query vault_protocol_balances to determine optimal unstaking
@@ -249,7 +278,7 @@ export class B2BWithdrawalUseCase {
       clientId,
       withdrawalTransactionId,
       endUserVaultId,
-      sharesToBurn,
+      sharesToBurn: '0', // ✅ No shares in simplified architecture
       estimatedAmount,
       protocolsToUnstake: null,
       priority: 1,

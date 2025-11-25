@@ -3,9 +3,9 @@ import { useEffect, useState } from "react"
 import { useDisconnect } from "@particle-network/connectkit"
 import { LogOut, SettingsIcon } from "lucide-react"
 
-import { Button, ScrollArea, SheetTitle, Tabs, TabsContent, TabsList, TabsTrigger } from "@rabbitswap/ui/basic"
-import { Spinner } from "@rabbitswap/ui/icons"
-import { cn } from "@rabbitswap/ui/utils"
+import { Button, ScrollArea, SheetTitle, Tabs, TabsContent, TabsList, TabsTrigger } from "@proxify/ui/basic"
+import { Spinner } from "@proxify/ui/icons"
+import { cn } from "@proxify/ui/utils"
 
 import { MyNetWorth } from "@/components/AccountDrawer/DrawerOption/MyBalance"
 import { ReceiveBox } from "@/components/AccountDrawer/DrawerOption/ReceiveBox"

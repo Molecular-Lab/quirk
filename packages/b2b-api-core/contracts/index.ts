@@ -7,6 +7,7 @@ import { initContract } from "@ts-rest/core";
 
 import { clientContract } from "./client";
 import { depositContract } from "./deposit";
+import { privyAccountContract } from "./privy-account";
 import { userContract } from "./user";
 import { userVaultContract } from "./user-vault";
 import { vaultContract } from "./vault";
@@ -22,6 +23,7 @@ export const b2bContract = c.router(
 		userVault: userVaultContract,
 		deposit: depositContract,
 		withdrawal: withdrawalContract,
+		privyAccount: privyAccountContract,
 	},
 	{
 		pathPrefix: "/api/v1",
@@ -34,3 +36,4 @@ export * from "./user";
 export * from "./user-vault";
 export * from "./deposit";
 export * from "./withdrawal";
+export * from "./privy-account";

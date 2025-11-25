@@ -97,4 +97,49 @@ export const userContract = c.router({
 		},
 		summary: "Get user portfolio across all vaults",
 	},
+
+	// Get user balance (simplified - filters by chain/token)
+	getBalance: {
+		method: "GET",
+		path: "/users/:userId/balance",
+		query: z.object({
+			chain: z.string().optional(),
+			token: z.string().optional(),
+		}),
+		responses: {
+			200: z.object({
+				balance: z.string(),
+				currency: z.string(),
+				yield_earned: z.string(),
+				apy: z.string(),
+				status: z.string(),
+				shares: z.string(),
+				entry_index: z.string(),
+				current_index: z.string(),
+			}),
+			404: z.object({ error: z.string() }),
+		},
+		summary: "Get user balance for specific vault (filtered by chain/token)",
+	},
+
+	// List user vaults
+	listVaults: {
+		method: "GET",
+		path: "/users/:userId/vaults",
+		responses: {
+			200: z.object({
+				vaults: z.array(z.object({
+					chain: z.string(),
+					token: z.string(),
+					balance: z.string(),
+					yield_earned: z.string(),
+					apy: z.string(),
+					shares: z.string(),
+					status: z.string(),
+				})),
+			}),
+			404: z.object({ error: z.string() }),
+		},
+		summary: "List all vaults for a user across chains/tokens",
+	},
 });

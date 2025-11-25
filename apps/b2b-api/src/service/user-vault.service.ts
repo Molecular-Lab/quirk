@@ -22,6 +22,19 @@ export class UserVaultService {
 	}
 
 	/**
+	 * Get user's portfolio (all vaults with balances)
+	 */
+	async getUserPortfolio(userId: string, clientId: string) {
+		try {
+			const portfolio = await this.userVaultUseCase.getUserPortfolio(userId, clientId);
+			return portfolio;
+		} catch (error) {
+			logger.error("Failed to get user portfolio", { error, userId, clientId });
+			throw error;
+		}
+	}
+
+	/**
 	 * List all users in a vault
 	 */
 	async listVaultUsers(clientId: string, chain: string, tokenAddress: string, limit: number) {

@@ -1,4 +1,4 @@
-import { Skeleton } from "@rabbitswap/ui/basic"
+import { Skeleton } from "@proxify/ui/basic"
 
 export const AccountDrawerTabSkeleton: React.FC = () => {
 	return (

@@ -2,7 +2,7 @@
 
 ## What We Built
 
-A production-ready B2B API service with **100% type-safe PostgreSQL integration** using the **Cleverse Pattern**.
+A production-ready B2B API service with **100% type-safe PostgreSQL integration** using the **Proxify Pattern**.
 
 ---
 
@@ -308,7 +308,7 @@ await fetch(client.webhookUrls[0], {
 ## 🎉 Conclusion
 
 You now have a **production-ready B2B API service** with:
-- Clean architecture following the Cleverse pattern
+- Clean architecture following the Proxify pattern
 - 100% type-safe database operations via SQLC
 - Complete client and deposit management
 - Audit trail for all operations

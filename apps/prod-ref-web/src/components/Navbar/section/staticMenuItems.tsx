@@ -115,7 +115,7 @@ export const staticMenuItems: MenuItem[] = [
 				menus: [
 					{
 						linkType: "external",
-						to: "https://defillama.com/protocol/rabbit-swap#information",
+						to: "https://defillama.com/protocol/proxify-swap#information",
 						label: "Defillama",
 					},
 				],

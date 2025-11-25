@@ -1,5 +1,5 @@
 /**
- * DeFi Protocol Repository - Cleverse Pattern
+ * DeFi Protocol Repository - Proxify Pattern
  * ✅ SQLC-generated queries from database/queries/defi.sql
  */
 
@@ -18,15 +18,11 @@ import {
   activateProtocol,
   deactivateProtocol,
   deleteProtocol,
-  // Vault Strategy Queries
-  getVaultStrategy,
-  getVaultStrategyByCategory,
-  listVaultStrategies,
+  // Vault Strategy Queries (from vault_strategies_sql.ts)
+  getVaultStrategies,
   createVaultStrategy,
   upsertVaultStrategy,
-  updateVaultStrategy,
-  deleteVaultStrategy,
-  deleteVaultStrategiesByVault,
+  deleteAllVaultStrategies,
   // Allocation Queries
   getAllocation,
   getAllocationForUpdate,
@@ -62,15 +58,14 @@ import {
   type CreateProtocolRow,
   type UpdateProtocolArgs,
   type UpdateProtocolRow,
-  type GetVaultStrategyRow,
-  type GetVaultStrategyByCategoryRow,
-  type ListVaultStrategiesRow,
+  // Vault Strategy Types
+  type GetVaultStrategiesRow,
   type CreateVaultStrategyArgs,
   type CreateVaultStrategyRow,
   type UpsertVaultStrategyArgs,
   type UpsertVaultStrategyRow,
-  type UpdateVaultStrategyArgs,
-  type UpdateVaultStrategyRow,
+  type DeleteAllVaultStrategiesArgs,
+  // Allocation Types
   type GetAllocationRow,
   type GetAllocationForUpdateRow,
   type GetAllocationByVaultAndProtocolRow,
@@ -140,17 +135,9 @@ export class DefiRepository {
     await deleteProtocol(this.sql, { id });
   }
 
-  // Vault Strategy operations
-  async getStrategy(id: string): Promise<GetVaultStrategyRow | null> {
-    return await getVaultStrategy(this.sql, { id });
-  }
-
-  async getStrategyByCategory(clientVaultId: string, category: string): Promise<GetVaultStrategyByCategoryRow | null> {
-    return await getVaultStrategyByCategory(this.sql, { clientVaultId, category });
-  }
-
-  async listStrategies(clientVaultId: string): Promise<ListVaultStrategiesRow[]> {
-    return await listVaultStrategies(this.sql, { clientVaultId });
+  // Vault Strategy operations (used by DeFi allocation logic)
+  async listStrategies(clientVaultId: string): Promise<GetVaultStrategiesRow[]> {
+    return await getVaultStrategies(this.sql, { clientVaultId });
   }
 
   async createStrategy(params: CreateVaultStrategyArgs): Promise<CreateVaultStrategyRow | null> {
@@ -161,16 +148,8 @@ export class DefiRepository {
     return await upsertVaultStrategy(this.sql, params);
   }
 
-  async updateStrategy(id: string, targetPercent: string): Promise<UpdateVaultStrategyRow | null> {
-    return await updateVaultStrategy(this.sql, { id, targetPercent });
-  }
-
-  async deleteStrategy(id: string): Promise<void> {
-    await deleteVaultStrategy(this.sql, { id });
-  }
-
   async deleteAllStrategies(clientVaultId: string): Promise<void> {
-    await deleteVaultStrategiesByVault(this.sql, { clientVaultId });
+    await deleteAllVaultStrategies(this.sql, { clientVaultId });
   }
 
   // Allocation operations

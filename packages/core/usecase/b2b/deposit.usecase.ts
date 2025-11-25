@@ -21,18 +21,26 @@ import type {
   FailDepositRequest,
   GetDepositStatsRequest,
 } from '../../dto/b2b';
+import { TokenTransferService } from '../../service/token-transfer.service';
+import { ClientGrowthIndexService } from '../../service/client-growth-index.service';
+import BigNumber from 'bignumber.js';
 
 /**
  * B2B Deposit Service
  */
 export class B2BDepositUseCase {
+  private tokenTransferService: TokenTransferService;
+
   constructor(
     private readonly depositRepository: DepositRepository,
     private readonly clientRepository: ClientRepository,
     private readonly vaultRepository: VaultRepository,
     private readonly userRepository: UserRepository,
-    private readonly auditRepository: AuditRepository
-  ) {}
+    private readonly auditRepository: AuditRepository,
+    private readonly clientGrowthIndexService: ClientGrowthIndexService
+  ) {
+    this.tokenTransferService = new TokenTransferService();
+  }
 
   /**
    * Create deposit transaction
@@ -48,7 +56,7 @@ export class B2BDepositUseCase {
     const user = await this.userRepository.getOrCreate(
       request.clientId,
       request.userId,
-      'individual', // Default userType
+      'custodial', // Default userType
       undefined // No wallet address yet
     );
 
@@ -114,13 +122,13 @@ export class B2BDepositUseCase {
   /**
    * Complete deposit (FLOW 4 - with vault operations)
    * 
-   * Steps:
+   * ✅ NEW SIMPLIFIED FLOW:
    * 1. Mark deposit as completed
-   * 2. Get client vault (for current index)
-   * 3. Calculate shares to mint (deposit_amount × 1e18 / current_index)
-   * 4. Get or create end_user_vault
-   * 5. Calculate new weighted entry index
-   * 6. Add shares to end_user_vault
+   * 2. Get client vault (for custodial wallet verification)
+   * 3. Calculate client growth index (weighted average across all vaults)
+   * 4. Get or create end_user_vault (simplified - no chain/token)
+   * 5. Calculate new weighted entry index (for DCA)
+   * 6. Update vault deposit (fiat amount, no shares)
    * 7. Add pending deposit to client_vault
    * 8. Update end_user.last_deposit_at
    */
@@ -135,17 +143,7 @@ export class B2BDepositUseCase {
       throw new Error(`Deposit is already ${deposit.status}`);
     }
 
-    // Step 1: Mark deposit as completed
-    await this.depositRepository.markCompleted(
-      deposit.id,
-      request.cryptoAmount,
-      request.gatewayFee,
-      request.proxifyFee,
-      request.networkFee,
-      request.totalFees
-    );
-
-    // Step 2: Get client vault for current index
+    // Step 0: Get client vault to retrieve custodial wallet address
     const clientVault = await this.vaultRepository.getClientVault(
       deposit.clientId,
       request.chain,
@@ -156,91 +154,162 @@ export class B2BDepositUseCase {
       throw new Error(`Client vault not found for ${request.chain}/${request.tokenAddress}`);
     }
 
-    // Step 3: Calculate shares to mint
-    // shares = deposit_amount × 1e18 / current_index
-    const depositAmount = BigInt(request.cryptoAmount);
-    const currentIndex = BigInt(clientVault.currentIndex);
-    const sharesToMint = (depositAmount * BigInt(1e18)) / currentIndex;
+    // Step 0.5: Verify token transfer on-chain
+    // In production, this checks the blockchain. In mock mode, it simulates verification.
+    if (request.transactionHash) {
+      console.log('[Deposit] Verifying token transfer on-chain...');
+      
+      const verification = await this.tokenTransferService.verifyTransfer({
+        chain: request.chain,
+        tokenAddress: request.tokenAddress,
+        expectedAmount: request.cryptoAmount,
+        transactionHash: request.transactionHash,
+        toAddress: clientVault.custodialWalletAddress || '', // Custodial wallet
+      });
 
-    // Step 4: Get end_user record
+      if (!verification.verified) {
+        // Mark deposit as failed
+        await this.depositRepository.markFailed(
+          deposit.id,
+          verification.error || 'Token transfer verification failed'
+        );
+        throw new Error(`Token transfer verification failed: ${verification.error}`);
+      }
+
+      console.log('[Deposit] ✅ Token transfer verified:', {
+        amount: verification.actualAmount,
+        from: verification.from,
+        block: verification.blockNumber,
+      });
+    }
+
+    // Step 1: Mark deposit as completed
+    await this.depositRepository.markCompleted(
+      deposit.id,
+      request.cryptoAmount,
+      request.gatewayFee,
+      request.proxifyFee,
+      request.networkFee,
+      request.totalFees
+    );
+
+    // Step 2: Calculate client growth index (weighted average across all client vaults)
+    const clientGrowthIndex = new BigNumber(
+      await this.clientGrowthIndexService.calculateClientGrowthIndex(deposit.clientId)
+    );
+
+    console.log('[Deposit] Client Growth Index:', {
+      clientId: deposit.clientId,
+      growthIndex: clientGrowthIndex.toString(),
+      growthIndexDecimal: clientGrowthIndex.dividedBy('1e18').toString(),
+    });
+
+    // Step 3: Get end_user record
     const endUser = await this.userRepository.getById(deposit.userId);
     if (!endUser) {
       throw new Error('End user not found');
     }
 
-    // Step 5: Get or create end_user_vault
-    const userVault = await this.vaultRepository.getEndUserVault(
+    // Step 4: Get or create end_user_vault (simplified - no chain/token, just clientId)
+    let userVault = await this.vaultRepository.getEndUserVaultByClient(
       endUser.id,
-      request.chain,
-      request.tokenAddress
+      deposit.clientId
     );
 
-    let endUserVaultId: string;
-    let oldShares = BigInt(0);
-    let oldWeightedIndex = BigInt(0);
-    let oldTotalDeposited = BigInt(0);
+    const depositAmount = new BigNumber(request.cryptoAmount);
 
-    if (userVault) {
-      endUserVaultId = userVault.id;
-      oldShares = BigInt(userVault.shares);
-      oldWeightedIndex = BigInt(userVault.weightedEntryIndex);
-      oldTotalDeposited = BigInt(userVault.totalDeposited);
-    } else {
-      // Create new end-user vault
+    if (!userVault) {
+      // ✅ First deposit - create vault with entry index = client growth index
+      // (This shouldn't happen often now that we create vaults on registration)
+      console.log('[Deposit] Creating new end-user vault (vault missing - should have been created on registration)');
+
       const newVault = await this.vaultRepository.createEndUserVault({
         endUserId: endUser.id,
         clientId: deposit.clientId,
-        chain: request.chain,
-        tokenAddress: request.tokenAddress,
-        tokenSymbol: request.tokenSymbol,
-        shares: '0',
-        weightedEntryIndex: '0',
-        totalDeposited: '0',
+        totalDeposited: depositAmount.toString(),
+        weightedEntryIndex: clientGrowthIndex.toString(),
       });
 
       if (!newVault) {
         throw new Error('Failed to create end-user vault');
       }
 
-      endUserVaultId = newVault.id;
-    }
-
-    // Step 6: Calculate new weighted entry index
-    // Formula: new_weighted_index = (old_shares × old_weighted_index + new_shares × current_index) / (old_shares + new_shares)
-    const newTotalShares = oldShares + sharesToMint;
-    let newWeightedIndex: bigint;
-
-    if (oldShares === BigInt(0)) {
-      // First deposit - weighted index = current index
-      newWeightedIndex = currentIndex;
+      console.log('[Deposit] ✅ Vault created:', {
+        vaultId: newVault.id,
+        totalDeposited: depositAmount.toString(),
+        entryIndex: clientGrowthIndex.toString(),
+        entryIndexDecimal: clientGrowthIndex.dividedBy('1e18').toString(),
+      });
     } else {
-      // Calculate weighted average
-      const oldWeight = oldShares * oldWeightedIndex;
-      const newWeight = sharesToMint * currentIndex;
-      newWeightedIndex = (oldWeight + newWeight) / newTotalShares;
+      const oldDeposited = new BigNumber(userVault.totalDeposited);
+      const oldEntryIndex = new BigNumber(userVault.weightedEntryIndex);
+
+      // Check if this is the first deposit (vault exists but has 0 balance from registration)
+      if (oldDeposited.isZero()) {
+        console.log('[Deposit] First deposit - updating vault created on registration');
+        
+        // Set entry index to current client growth index
+        await this.vaultRepository.updateVaultDeposit(
+          userVault.id,
+          depositAmount.toString(),
+          clientGrowthIndex.toString() // Entry index = current growth index
+        );
+
+        console.log('[Deposit] ✅ Vault updated (first deposit):', {
+          vaultId: userVault.id,
+          totalDeposited: depositAmount.toString(),
+          entryIndex: clientGrowthIndex.toString(),
+          entryIndexDecimal: clientGrowthIndex.dividedBy('1e18').toString(),
+        });
+      } else {
+        // ✅ DCA (Dollar-Cost Averaging) - recalculate weighted entry index
+        console.log('[Deposit] Updating existing vault (DCA)');
+
+        const totalDeposited = oldDeposited.plus(depositAmount);
+
+        // Formula: new_weighted_entry_index = (old_deposited × old_entry_index + new_deposited × client_growth_index) / total_deposited
+        const newWeightedEntryIndex = oldDeposited
+          .multipliedBy(oldEntryIndex)
+          .plus(depositAmount.multipliedBy(clientGrowthIndex))
+          .dividedBy(totalDeposited)
+          .integerValue(BigNumber.ROUND_DOWN);
+
+        console.log('[Deposit] DCA Calculation:', {
+          oldDeposited: oldDeposited.toString(),
+          oldEntryIndex: oldEntryIndex.toString(),
+          oldEntryIndexDecimal: oldEntryIndex.dividedBy('1e18').toString(),
+          newDeposited: depositAmount.toString(),
+          currentGrowthIndex: clientGrowthIndex.toString(),
+          currentGrowthIndexDecimal: clientGrowthIndex.dividedBy('1e18').toString(),
+          totalDeposited: totalDeposited.toString(),
+          newWeightedEntryIndex: newWeightedEntryIndex.toString(),
+          newWeightedEntryIndexDecimal: newWeightedEntryIndex.dividedBy('1e18').toString(),
+        });
+
+        // Update vault with new totals
+        await this.vaultRepository.updateVaultDeposit(
+          userVault.id,
+          depositAmount.toString(),
+          newWeightedEntryIndex.toString()
+        );
+
+        console.log('[Deposit] ✅ Vault updated (DCA)');
+      }
     }
 
-    // Step 7: Update end_user_vault (add shares)
-    const newTotalDeposited = oldTotalDeposited + depositAmount;
-    await this.vaultRepository.addShares(
-      endUserVaultId,
-      sharesToMint.toString(),
-      newWeightedIndex.toString(),
-      newTotalDeposited.toString()
-    );
-
-    // Step 8: Update client_vault (add pending deposit balance and total shares)
-    const newClientTotalShares = BigInt(clientVault.totalShares) + sharesToMint;
+    // Step 5: Update client_vault (add pending deposit balance)
+    // Note: Client vaults still track shares internally for their own accounting
+    // End users don't see shares, they see fiat balance
     await this.vaultRepository.addPendingDeposit(
       clientVault.id,
       request.cryptoAmount,
-      newClientTotalShares.toString()
+      clientVault.totalShares // Keep existing shares unchanged
     );
 
-    // Step 9: Update end_user.last_deposit_at
+    // Step 6: Update end_user.last_deposit_at
     await this.userRepository.updateDepositTimestamp(endUser.id);
 
-    // Step 10: Mark first deposit if needed (check if firstDepositAt is null)
+    // Step 7: Mark first deposit if needed (check if firstDepositAt is null)
     if (!endUser.firstDepositAt) {
       await this.userRepository.markFirstDeposit(endUser.id);
     }
@@ -258,14 +327,22 @@ export class B2BDepositUseCase {
         orderId: request.orderId,
         cryptoAmount: request.cryptoAmount,
         totalFees: request.totalFees,
-        sharesToMint: sharesToMint.toString(),
-        currentIndex: currentIndex.toString(),
-        newWeightedIndex: newWeightedIndex.toString(),
+        clientGrowthIndex: clientGrowthIndex.toString(),
+        clientGrowthIndexDecimal: clientGrowthIndex.dividedBy('1e18').toString(),
         chain: request.chain,
         tokenAddress: request.tokenAddress,
       },
       ipAddress: null,
       userAgent: null,
+    });
+
+    console.log('[Deposit] ✅ Deposit completed:', {
+      orderId: request.orderId,
+      userId: deposit.userId,
+      clientId: deposit.clientId,
+      amount: request.cryptoAmount,
+      chain: request.chain,
+      token: request.tokenSymbol,
     });
   }
 
