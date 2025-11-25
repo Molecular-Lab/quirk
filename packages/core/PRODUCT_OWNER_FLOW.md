@@ -1,7 +1,7 @@
 # ProductOwner → Embedded Wallet Creation Flow
 
-**Pattern:** Clean Architecture (Cleverse-style)
-**Reference:** `/Users/wtshai/Work/Cleverse/debut/packages/core/`
+**Pattern:** Clean Architecture (Proxify-style)
+**Reference:** `/Users/wtshai/Work/Proxify/proxify-core/packages/core/`
 
 ---
 
@@ -80,7 +80,7 @@ export type PrivyEmbeddedWallet = z.infer<typeof privyEmbeddedWalletSchema>
 
 ### 2. **Datagateway Layer** (`datagateway/privy-*.datagateway.ts`)
 
-**Interface contracts** (following Cleverse pattern)
+**Interface contracts** (following Proxify pattern)
 
 ```typescript
 // datagateway/privy-user.datagateway.ts
@@ -107,7 +107,7 @@ export interface IPrivyWalletDataGateway {
 
 ### 3. **Repository Layer** (`repository/privy/`)
 
-**Privy SDK implementations** (following Cleverse pattern)
+**Privy SDK implementations** (following Proxify pattern)
 
 #### `repository/privy/user.repository.ts`
 
@@ -215,7 +215,7 @@ export class PrivyRepository {
 
 ### 4. **Usecase Layer** (`usecase/privy.usecase.ts`)
 
-**Business logic** (following Cleverse pattern)
+**Business logic** (following Proxify pattern)
 
 ```typescript
 import { VError } from "verror"
@@ -517,5 +517,5 @@ Content-Type: application/json
 ---
 
 **Last Updated:** 2025-11-12
-**Pattern:** Clean Architecture (Cleverse-inspired)
-**Reference:** `/Users/wtshai/Work/Cleverse/debut/packages/core/`
+**Pattern:** Clean Architecture (Proxify-inspired)
+**Reference:** `/Users/wtshai/Work/Proxify/proxify-core/packages/core/`

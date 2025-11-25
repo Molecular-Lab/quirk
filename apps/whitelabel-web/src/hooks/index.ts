@@ -1,9 +1,10 @@
 /**
  * Custom hooks for data fetching
  */
-export * from './useEndUsers'
-export * from './useVaultIndex'
-export * from './useDefiProtocols'
-export * from './useTransactions'
-export * from './useAIInsights'
-export * from './useDashboard'
+export * from "./dashboard/useAIInsights"
+export * from "./dashboard/useDashboard"
+export * from "./dashboard/useEndUsers"
+export * from "./dashboard/useTransactions"
+export * from "./dashboard/useVaultIndex"
+export * from "./defi/useDefiProtocols"
+export * from "./privy/usePrivyAccount"

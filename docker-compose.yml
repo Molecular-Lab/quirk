@@ -10,7 +10,6 @@ services:
       - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/migrations:/docker-entrypoint-initdb.d
       - ./packages/core/migrations:/migrations
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U proxify_user -d proxify_dev"]

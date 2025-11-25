@@ -4,6 +4,36 @@
 -- Migration: 000001_init_schema
 -- Description: Initial schema with index-based vault accounting
 -- Created: 2025-11-17
+-- Updated: 2025-11-24 (Consolidated migrations 002-004)
+
+-- ============================================
+-- 0. PRIVY ACCOUNTS (Identity Layer)
+-- ============================================
+-- One Privy user can create multiple organizations (e.g., GrabPay, GrabFood)
+-- This table stores the identity layer, organizations reference it via FK
+
+CREATE TABLE privy_accounts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+
+  -- Privy Identity (UNIQUE per user)
+  privy_organization_id VARCHAR(255) UNIQUE NOT NULL,
+  privy_wallet_address VARCHAR(66) UNIQUE NOT NULL,
+  privy_email VARCHAR(255),
+  wallet_type VARCHAR(20) NOT NULL CHECK (wallet_type IN ('MANAGED', 'USER_OWNED', 'custodial', 'non-custodial')),
+
+  -- Timestamps
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_privy_accounts_org_id ON privy_accounts(privy_organization_id);
+CREATE INDEX idx_privy_accounts_wallet ON privy_accounts(privy_wallet_address);
+CREATE INDEX idx_privy_accounts_email ON privy_accounts(privy_email) WHERE privy_email IS NOT NULL;
+
+COMMENT ON TABLE privy_accounts IS 'One row per Privy user (identity layer). One user can create multiple organizations.';
+COMMENT ON COLUMN privy_accounts.privy_organization_id IS 'Privy user ID (unique per user, e.g., clb_abc123)';
+COMMENT ON COLUMN privy_accounts.privy_wallet_address IS 'Privy custodial wallet address (shared across all organizations for this user)';
+COMMENT ON COLUMN privy_accounts.wallet_type IS 'MANAGED (Privy custodial) | USER_OWNED (user-managed wallet)';
 
 -- ============================================
 -- 1. CLIENT ORGANIZATIONS (Product Owners)
@@ -12,6 +42,9 @@
 CREATE TABLE client_organizations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
 
+  -- Privy Account Reference (one user can have multiple organizations)
+  privy_account_id UUID NOT NULL REFERENCES privy_accounts(id) ON DELETE RESTRICT,
+
   -- Organization Info
   product_id VARCHAR(255) UNIQUE NOT NULL,
   company_name VARCHAR(255) NOT NULL,
@@ -19,15 +52,9 @@ CREATE TABLE client_organizations (
   description TEXT,
   website_url TEXT,
 
-  -- Privy Integration
-  wallet_type VARCHAR(20) NOT NULL CHECK (wallet_type IN ('custodial', 'non-custodial')),
-  wallet_managed_by VARCHAR(20) NOT NULL CHECK (wallet_managed_by IN ('proxify', 'client')),
-  privy_organization_id VARCHAR(255) UNIQUE NOT NULL,
-  privy_wallet_address VARCHAR(66) UNIQUE NOT NULL,
-
   -- API Credentials
-  api_key_hash VARCHAR(255) UNIQUE NOT NULL,
-  api_key_prefix VARCHAR(20) NOT NULL,
+  api_key_hash VARCHAR(255) UNIQUE,
+  api_key_prefix VARCHAR(20),
   webhook_urls TEXT[] DEFAULT '{}',
   webhook_secret VARCHAR(255),
 
@@ -48,16 +75,14 @@ CREATE TABLE client_organizations (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+CREATE INDEX idx_client_orgs_privy_account ON client_organizations(privy_account_id);
 CREATE INDEX idx_client_orgs_product_id ON client_organizations(product_id);
-CREATE INDEX idx_client_orgs_privy_org_id ON client_organizations(privy_organization_id);
 CREATE INDEX idx_client_orgs_active ON client_organizations(is_active) WHERE is_active = true;
 
-COMMENT ON TABLE client_organizations IS 'Product owners (clients) who integrate Proxify into their platforms';
-COMMENT ON COLUMN client_organizations.product_id IS 'Unique product identifier';
+COMMENT ON TABLE client_organizations IS 'Product organizations - multiple per Privy user (e.g., GrabPay, GrabFood). References privy_accounts for identity.';
+COMMENT ON COLUMN client_organizations.privy_account_id IS 'Foreign key to privy_accounts (one user can have many organizations)';
+COMMENT ON COLUMN client_organizations.product_id IS 'Primary public identifier for API operations (e.g., prod_abc123)';
 COMMENT ON COLUMN client_organizations.business_type IS 'ecommerce, streaming, gaming, freelance, saas, other';
-COMMENT ON COLUMN client_organizations.wallet_type IS 'custodial | non-custodial';
-COMMENT ON COLUMN client_organizations.wallet_managed_by IS 'proxify | client';
-COMMENT ON COLUMN client_organizations.privy_wallet_address IS 'Master wallet for client operations';
 COMMENT ON COLUMN client_organizations.end_user_yield_portion IS 'Percent of yield given to end users (e.g., 90.00)';
 
 -- ============================================
@@ -161,6 +186,9 @@ CREATE TABLE client_vaults (
   apy_7d NUMERIC(10,4),
   apy_30d NUMERIC(10,4),
 
+  -- DeFi Strategy Allocation (JSONB for atomic updates)
+  strategies JSONB DEFAULT '[]'::jsonb,
+
   -- Status
   is_active BOOLEAN NOT NULL DEFAULT true,
 
@@ -188,6 +216,7 @@ COMMENT ON COLUMN client_vaults.total_shares IS 'Sum of all end_user_vaults.shar
 COMMENT ON COLUMN client_vaults.current_index IS 'Growth index (scaled by 1e18, starts at 1.0)';
 COMMENT ON COLUMN client_vaults.pending_deposit_balance IS 'Deposits waiting to be batched and staked';
 COMMENT ON COLUMN client_vaults.total_staked_balance IS 'Total amount deployed to DeFi protocols';
+COMMENT ON COLUMN client_vaults.strategies IS 'DeFi strategy allocation as JSONB array: [{"category":"lending","target":70,"isActive":true},{"category":"lp","target":20,"isActive":true}]. Sum of targets should equal 100.';
 
 -- ============================================
 -- 5. END-USER VAULTS (Share-Based Accounting)
@@ -200,18 +229,13 @@ CREATE TABLE end_user_vaults (
   end_user_id UUID NOT NULL REFERENCES end_users(id) ON DELETE CASCADE,
   client_id UUID NOT NULL REFERENCES client_organizations(id) ON DELETE CASCADE,
 
-  -- Chain & Token
-  chain VARCHAR(50) NOT NULL,
-  token_address VARCHAR(66) NOT NULL,
-  token_symbol VARCHAR(20) NOT NULL,
+  -- ✅ SIMPLIFIED: No chain, no token, no shares!
+  -- User sees ONLY: total deposited + yield (backend manages multi-chain)
 
-  -- Index-Based Accounting (scaled by 1e18)
-  shares NUMERIC(78,0) NOT NULL DEFAULT 0,
-  weighted_entry_index NUMERIC(78,0) NOT NULL DEFAULT 1000000000000000000,
-
-  -- Historical tracking
-  total_deposited NUMERIC(40,18) NOT NULL DEFAULT 0,
-  total_withdrawn NUMERIC(40,18) NOT NULL DEFAULT 0,
+  -- User's Position (fiat-denominated, aggregated across all chains/tokens)
+  total_deposited NUMERIC(40,18) NOT NULL DEFAULT 0,     -- $1,000 (sum of all deposits)
+  total_withdrawn NUMERIC(40,18) NOT NULL DEFAULT 0,     -- $500 (sum of all withdrawals)
+  weighted_entry_index NUMERIC(78,0) NOT NULL DEFAULT 1000000000000000000,  -- Client's growth index at deposit time
 
   -- Activity tracking
   last_deposit_at TIMESTAMPTZ,
@@ -225,23 +249,21 @@ CREATE TABLE end_user_vaults (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
   -- Constraints
-  UNIQUE(end_user_id, chain, token_address),
-  CHECK (shares >= 0),
-  CHECK (weighted_entry_index >= 1000000000000000000),
+  UNIQUE(end_user_id, client_id),  -- ✅ ONE vault per user per client!
   CHECK (total_deposited >= 0),
-  CHECK (total_withdrawn >= 0)
+  CHECK (total_withdrawn >= 0),
+  CHECK (weighted_entry_index >= 1000000000000000000)
 );
 
 CREATE INDEX idx_end_user_vaults_user_id ON end_user_vaults(end_user_id);
 CREATE INDEX idx_end_user_vaults_client_id ON end_user_vaults(client_id);
-CREATE INDEX idx_end_user_vaults_chain_token ON end_user_vaults(chain, token_address);
 CREATE INDEX idx_end_user_vaults_active ON end_user_vaults(is_active) WHERE is_active = true;
-CREATE INDEX idx_end_user_vaults_shares ON end_user_vaults(shares) WHERE shares > 0;
 
-COMMENT ON TABLE end_user_vaults IS 'Individual user vault positions using share-based accounting';
-COMMENT ON COLUMN end_user_vaults.shares IS 'Normalized balance units (effective_balance = shares * current_index / 1e18)';
-COMMENT ON COLUMN end_user_vaults.weighted_entry_index IS 'Weighted average entry index (handles DCA deposits)';
-COMMENT ON COLUMN end_user_vaults.total_deposited IS 'Cumulative deposit amount (for yield calculation)';
+COMMENT ON TABLE end_user_vaults IS 'Simplified user vault positions - ONE vault per user per client (backend manages multi-chain/token)';
+COMMENT ON COLUMN end_user_vaults.total_deposited IS 'Cumulative fiat deposit amount across ALL chains/tokens';
+COMMENT ON COLUMN end_user_vaults.total_withdrawn IS 'Cumulative fiat withdrawal amount across ALL chains/tokens';
+COMMENT ON COLUMN end_user_vaults.weighted_entry_index IS 'Client growth index at deposit time (weighted avg of all client vaults)';
+COMMENT ON COLUMN end_user_vaults.weighted_entry_index IS 'Formula: current_value = total_deposited × (client_growth_index / weighted_entry_index)';
 
 -- ============================================
 -- 6. SUPPORTED DEFI PROTOCOLS
@@ -282,37 +304,7 @@ COMMENT ON COLUMN supported_defi_protocols.address_book IS 'Protocol addresses: 
 COMMENT ON COLUMN supported_defi_protocols.category IS 'Lending | LP | RealYield | Arbitrage';
 
 -- ============================================
--- 7. VAULT STRATEGIES
--- ============================================
-
-CREATE TABLE vault_strategies (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-
-  -- Relationships
-  client_vault_id UUID NOT NULL REFERENCES client_vaults(id) ON DELETE CASCADE,
-
-  -- Strategy
-  category VARCHAR(50) NOT NULL,
-  target_percent NUMERIC(5,2) NOT NULL,
-
-  -- Timestamps
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
-
-  -- Constraints
-  UNIQUE(client_vault_id, category),
-  CHECK (target_percent >= 0 AND target_percent <= 100)
-);
-
-CREATE INDEX idx_vault_strategies_vault_id ON vault_strategies(client_vault_id);
-CREATE INDEX idx_vault_strategies_category ON vault_strategies(category);
-
-COMMENT ON TABLE vault_strategies IS 'Declares the desired allocation per category for a client vault';
-COMMENT ON COLUMN vault_strategies.category IS 'lending | lp | staking | arbitrage';
-COMMENT ON COLUMN vault_strategies.target_percent IS 'Percentage of vault allocated to this category (e.g., 50.00)';
-
--- ============================================
--- 8. DEFI ALLOCATIONS
+-- 7. DEFI ALLOCATIONS
 -- ============================================
 
 CREATE TABLE defi_allocations (
@@ -372,7 +364,7 @@ COMMENT ON COLUMN defi_allocations.yield_earned IS 'Cumulative yield earned (sca
 COMMENT ON COLUMN defi_allocations.status IS 'active | withdrawn | rebalancing';
 
 -- ============================================
--- 9. DEPOSIT TRANSACTIONS
+-- 8. DEPOSIT TRANSACTIONS
 -- ============================================
 
 CREATE TABLE deposit_transactions (
@@ -447,7 +439,7 @@ COMMENT ON TABLE deposit_transactions IS 'Complete deposit transaction history (
 COMMENT ON COLUMN deposit_transactions.deposit_type IS 'external | internal';
 
 -- ============================================
--- 10. WITHDRAWAL TRANSACTIONS
+-- 9. WITHDRAWAL TRANSACTIONS
 -- ============================================
 
 CREATE TABLE withdrawal_transactions (
@@ -508,7 +500,7 @@ COMMENT ON TABLE withdrawal_transactions IS 'Withdrawal transactions - user cash
 COMMENT ON COLUMN withdrawal_transactions.destination_type IS 'client_balance | bank_account | debit_card | crypto_wallet';
 
 -- ============================================
--- 11. DEPOSIT BATCH QUEUE
+-- 10. DEPOSIT BATCH QUEUE
 -- ============================================
 
 CREATE TABLE deposit_batch_queue (
@@ -545,7 +537,7 @@ COMMENT ON TABLE deposit_batch_queue IS 'Queue for deposits waiting to be batche
 COMMENT ON COLUMN deposit_batch_queue.status IS 'pending → batched → staked';
 
 -- ============================================
--- 12. WITHDRAWAL QUEUE
+-- 11. WITHDRAWAL QUEUE
 -- ============================================
 
 CREATE TABLE withdrawal_queue (
@@ -606,7 +598,7 @@ COMMENT ON COLUMN withdrawal_queue.priority IS 'Higher = process first (0 = norm
 COMMENT ON COLUMN withdrawal_queue.status IS 'queued → unstaking → ready → processing → completed';
 
 -- ============================================
--- 13. AUDIT LOGS
+-- 12. AUDIT LOGS
 -- ============================================
 
 CREATE TABLE audit_logs (
@@ -686,13 +678,13 @@ CREATE TRIGGER update_supported_defi_protocols_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_vault_strategies_updated_at
-  BEFORE UPDATE ON vault_strategies
+CREATE TRIGGER update_defi_allocations_updated_at
+  BEFORE UPDATE ON defi_allocations
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_defi_allocations_updated_at
-  BEFORE UPDATE ON defi_allocations
+CREATE TRIGGER update_privy_accounts_updated_at
+  BEFORE UPDATE ON privy_accounts
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
 

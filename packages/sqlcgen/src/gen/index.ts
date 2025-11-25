@@ -7,6 +7,7 @@
 
 export * from './client_sql';
 export * from './vault_sql';
+export * from './vault_strategies_sql';
 export * from './deposit_sql';
 export * from './withdrawal_sql';
 export * from './end_user_sql';

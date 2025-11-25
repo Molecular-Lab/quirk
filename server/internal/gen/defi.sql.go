@@ -146,37 +146,6 @@ func (q *Queries) CreateProtocol(ctx context.Context, arg CreateProtocolParams) 
 	return i, err
 }
 
-const createVaultStrategy = `-- name: CreateVaultStrategy :one
-INSERT INTO vault_strategies (
-  client_vault_id,
-  category,
-  target_percent
-) VALUES (
-  $1, $2, $3
-)
-RETURNING id, client_vault_id, category, target_percent, created_at, updated_at
-`
-
-type CreateVaultStrategyParams struct {
-	ClientVaultID uuid.UUID      `db:"client_vault_id"`
-	Category      string         `db:"category"`
-	TargetPercent pgtype.Numeric `db:"target_percent"`
-}
-
-func (q *Queries) CreateVaultStrategy(ctx context.Context, arg CreateVaultStrategyParams) (VaultStrategy, error) {
-	row := q.db.QueryRow(ctx, createVaultStrategy, arg.ClientVaultID, arg.Category, arg.TargetPercent)
-	var i VaultStrategy
-	err := row.Scan(
-		&i.ID,
-		&i.ClientVaultID,
-		&i.Category,
-		&i.TargetPercent,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const deactivateProtocol = `-- name: DeactivateProtocol :exec
 UPDATE supported_defi_protocols
 SET is_active = false,
@@ -224,26 +193,6 @@ WHERE id = $1
 
 func (q *Queries) DeleteProtocol(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, deleteProtocol, id)
-	return err
-}
-
-const deleteVaultStrategiesByVault = `-- name: DeleteVaultStrategiesByVault :exec
-DELETE FROM vault_strategies
-WHERE client_vault_id = $1
-`
-
-func (q *Queries) DeleteVaultStrategiesByVault(ctx context.Context, clientVaultID uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteVaultStrategiesByVault, clientVaultID)
-	return err
-}
-
-const deleteVaultStrategy = `-- name: DeleteVaultStrategy :exec
-DELETE FROM vault_strategies
-WHERE id = $1
-`
-
-func (q *Queries) DeleteVaultStrategy(ctx context.Context, id uuid.UUID) error {
-	_, err := q.db.Exec(ctx, deleteVaultStrategy, id)
 	return err
 }
 
@@ -588,55 +537,6 @@ func (q *Queries) GetTotalAllocatedByClient(ctx context.Context, clientID uuid.U
 	row := q.db.QueryRow(ctx, getTotalAllocatedByClient, clientID)
 	var i GetTotalAllocatedByClientRow
 	err := row.Scan(&i.TotalDeployed, &i.TotalYield, &i.WeightedAvgApy)
-	return i, err
-}
-
-const getVaultStrategy = `-- name: GetVaultStrategy :one
-
-SELECT id, client_vault_id, category, target_percent, created_at, updated_at FROM vault_strategies
-WHERE id = $1 LIMIT 1
-`
-
-// ============================================
-// VAULT STRATEGY QUERIES
-// ============================================
-func (q *Queries) GetVaultStrategy(ctx context.Context, id uuid.UUID) (VaultStrategy, error) {
-	row := q.db.QueryRow(ctx, getVaultStrategy, id)
-	var i VaultStrategy
-	err := row.Scan(
-		&i.ID,
-		&i.ClientVaultID,
-		&i.Category,
-		&i.TargetPercent,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getVaultStrategyByCategory = `-- name: GetVaultStrategyByCategory :one
-SELECT id, client_vault_id, category, target_percent, created_at, updated_at FROM vault_strategies
-WHERE client_vault_id = $1
-  AND category = $2
-LIMIT 1
-`
-
-type GetVaultStrategyByCategoryParams struct {
-	ClientVaultID uuid.UUID `db:"client_vault_id"`
-	Category      string    `db:"category"`
-}
-
-func (q *Queries) GetVaultStrategyByCategory(ctx context.Context, arg GetVaultStrategyByCategoryParams) (VaultStrategy, error) {
-	row := q.db.QueryRow(ctx, getVaultStrategyByCategory, arg.ClientVaultID, arg.Category)
-	var i VaultStrategy
-	err := row.Scan(
-		&i.ID,
-		&i.ClientVaultID,
-		&i.Category,
-		&i.TargetPercent,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
 	return i, err
 }
 
@@ -1134,39 +1034,6 @@ func (q *Queries) ListProtocolsByChainAndCategory(ctx context.Context, arg ListP
 	return items, nil
 }
 
-const listVaultStrategies = `-- name: ListVaultStrategies :many
-SELECT id, client_vault_id, category, target_percent, created_at, updated_at FROM vault_strategies
-WHERE client_vault_id = $1
-ORDER BY target_percent DESC
-`
-
-func (q *Queries) ListVaultStrategies(ctx context.Context, clientVaultID uuid.UUID) ([]VaultStrategy, error) {
-	rows, err := q.db.Query(ctx, listVaultStrategies, clientVaultID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []VaultStrategy
-	for rows.Next() {
-		var i VaultStrategy
-		if err := rows.Scan(
-			&i.ID,
-			&i.ClientVaultID,
-			&i.Category,
-			&i.TargetPercent,
-			&i.CreatedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const markAllocationActive = `-- name: MarkAllocationActive :exec
 UPDATE defi_allocations
 SET status = 'active',
@@ -1294,33 +1161,6 @@ func (q *Queries) UpdateProtocol(ctx context.Context, arg UpdateProtocolParams) 
 	return i, err
 }
 
-const updateVaultStrategy = `-- name: UpdateVaultStrategy :one
-UPDATE vault_strategies
-SET target_percent = $2,
-    updated_at = now()
-WHERE id = $1
-RETURNING id, client_vault_id, category, target_percent, created_at, updated_at
-`
-
-type UpdateVaultStrategyParams struct {
-	ID            uuid.UUID      `db:"id"`
-	TargetPercent pgtype.Numeric `db:"target_percent"`
-}
-
-func (q *Queries) UpdateVaultStrategy(ctx context.Context, arg UpdateVaultStrategyParams) (VaultStrategy, error) {
-	row := q.db.QueryRow(ctx, updateVaultStrategy, arg.ID, arg.TargetPercent)
-	var i VaultStrategy
-	err := row.Scan(
-		&i.ID,
-		&i.ClientVaultID,
-		&i.Category,
-		&i.TargetPercent,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
 const upsertAllocation = `-- name: UpsertAllocation :one
 INSERT INTO defi_allocations (
   client_id,
@@ -1398,42 +1238,6 @@ func (q *Queries) UpsertAllocation(ctx context.Context, arg UpsertAllocationPara
 		&i.DeployedAt,
 		&i.LastRebalanceAt,
 		&i.WithdrawnAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const upsertVaultStrategy = `-- name: UpsertVaultStrategy :one
-INSERT INTO vault_strategies (
-  client_vault_id,
-  category,
-  target_percent
-) VALUES (
-  $1, $2, $3
-)
-ON CONFLICT (client_vault_id, category)
-DO UPDATE SET
-  target_percent = EXCLUDED.target_percent,
-  updated_at = now()
-RETURNING id, client_vault_id, category, target_percent, created_at, updated_at
-`
-
-type UpsertVaultStrategyParams struct {
-	ClientVaultID uuid.UUID      `db:"client_vault_id"`
-	Category      string         `db:"category"`
-	TargetPercent pgtype.Numeric `db:"target_percent"`
-}
-
-// Create or update strategy
-func (q *Queries) UpsertVaultStrategy(ctx context.Context, arg UpsertVaultStrategyParams) (VaultStrategy, error) {
-	row := q.db.QueryRow(ctx, upsertVaultStrategy, arg.ClientVaultID, arg.Category, arg.TargetPercent)
-	var i VaultStrategy
-	err := row.Scan(
-		&i.ID,
-		&i.ClientVaultID,
-		&i.Category,
-		&i.TargetPercent,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)

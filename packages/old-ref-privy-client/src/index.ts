@@ -45,7 +45,8 @@ export type {
 } from "@proxify/core"
 
 // Repository Classes
-export { PrivyRepository, PrivyUserRepository, PrivyWalletRepository } from "@proxify/core"
+// Note: PrivyRepository and related repos are not exported from @proxify/core (moved to ./old)
+// These are disabled in this package
 
 // Usecase Classes
 export { PrivyUsecase, EmbeddedWalletUsecase } from "@proxify/core"

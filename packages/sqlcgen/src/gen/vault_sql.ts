@@ -3,7 +3,7 @@ import { Sql } from "postgres";
 export const getClientVaultQuery = `-- name: GetClientVault :one
 
 
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at FROM client_vaults
 WHERE id = $1 LIMIT 1`;
 
 export interface GetClientVaultArgs {
@@ -24,6 +24,7 @@ export interface GetClientVaultRow {
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
+    strategies: any | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -49,17 +50,23 @@ export async function getClientVault(sql: Sql, args: GetClientVaultArgs): Promis
         cumulativeYield: row[10],
         apy_7d: row[11],
         apy_30d: row[12],
-        isActive: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        strategies: row[13],
+        isActive: row[14],
+        createdAt: row[15],
+        updatedAt: row[16]
     };
 }
 
 export const getClientVaultByTokenQuery = `-- name: GetClientVaultByToken :one
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
-WHERE client_id = $1
-  AND chain = $2
-  AND token_address = $3
+SELECT 
+  cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.is_active, cv.created_at, cv.updated_at,
+  pa.privy_wallet_address as custodial_wallet_address
+FROM client_vaults cv
+JOIN client_organizations co ON cv.client_id = co.id
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE cv.client_id = $1
+  AND cv.chain = $2
+  AND cv.token_address = $3
 LIMIT 1`;
 
 export interface GetClientVaultByTokenArgs {
@@ -82,9 +89,11 @@ export interface GetClientVaultByTokenRow {
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
+    strategies: any | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    custodialWalletAddress: string;
 }
 
 export async function getClientVaultByToken(sql: Sql, args: GetClientVaultByTokenArgs): Promise<GetClientVaultByTokenRow | null> {
@@ -107,17 +116,24 @@ export async function getClientVaultByToken(sql: Sql, args: GetClientVaultByToke
         cumulativeYield: row[10],
         apy_7d: row[11],
         apy_30d: row[12],
-        isActive: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        strategies: row[13],
+        isActive: row[14],
+        createdAt: row[15],
+        updatedAt: row[16],
+        custodialWalletAddress: row[17]
     };
 }
 
 export const getClientVaultByTokenForUpdateQuery = `-- name: GetClientVaultByTokenForUpdate :one
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
-WHERE client_id = $1
-  AND chain = $2
-  AND token_address = $3
+SELECT 
+  cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.is_active, cv.created_at, cv.updated_at,
+  pa.privy_wallet_address as custodial_wallet_address
+FROM client_vaults cv
+JOIN client_organizations co ON cv.client_id = co.id
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE cv.client_id = $1
+  AND cv.chain = $2
+  AND cv.token_address = $3
 FOR UPDATE
 LIMIT 1`;
 
@@ -141,9 +157,11 @@ export interface GetClientVaultByTokenForUpdateRow {
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
+    strategies: any | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    custodialWalletAddress: string;
 }
 
 export async function getClientVaultByTokenForUpdate(sql: Sql, args: GetClientVaultByTokenForUpdateArgs): Promise<GetClientVaultByTokenForUpdateRow | null> {
@@ -166,14 +184,16 @@ export async function getClientVaultByTokenForUpdate(sql: Sql, args: GetClientVa
         cumulativeYield: row[10],
         apy_7d: row[11],
         apy_30d: row[12],
-        isActive: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        strategies: row[13],
+        isActive: row[14],
+        createdAt: row[15],
+        updatedAt: row[16],
+        custodialWalletAddress: row[17]
     };
 }
 
 export const listClientVaultsQuery = `-- name: ListClientVaults :many
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at FROM client_vaults
 WHERE client_id = $1
 ORDER BY created_at DESC`;
 
@@ -195,6 +215,7 @@ export interface ListClientVaultsRow {
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
+    strategies: any | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -215,14 +236,15 @@ export async function listClientVaults(sql: Sql, args: ListClientVaultsArgs): Pr
         cumulativeYield: row[10],
         apy_7d: row[11],
         apy_30d: row[12],
-        isActive: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        strategies: row[13],
+        isActive: row[14],
+        createdAt: row[15],
+        updatedAt: row[16]
     }));
 }
 
 export const listClientVaultsPendingStakeQuery = `-- name: ListClientVaultsPendingStake :many
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at FROM client_vaults
 WHERE pending_deposit_balance >= $1  -- minimum threshold (e.g., 10000)
   AND is_active = true
 ORDER BY pending_deposit_balance DESC`;
@@ -245,6 +267,7 @@ export interface ListClientVaultsPendingStakeRow {
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
+    strategies: any | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
@@ -265,27 +288,36 @@ export async function listClientVaultsPendingStake(sql: Sql, args: ListClientVau
         cumulativeYield: row[10],
         apy_7d: row[11],
         apy_30d: row[12],
-        isActive: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        strategies: row[13],
+        isActive: row[14],
+        createdAt: row[15],
+        updatedAt: row[16]
     }));
 }
 
 export const createClientVaultQuery = `-- name: CreateClientVault :one
-INSERT INTO client_vaults (
-  client_id,
-  chain,
-  token_address,
-  token_symbol,
-  current_index,
-  total_shares,
-  pending_deposit_balance,
-  total_staked_balance,
-  cumulative_yield
-) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9
+WITH new_vault AS (
+  INSERT INTO client_vaults (
+    client_id,
+    chain,
+    token_address,
+    token_symbol,
+    current_index,
+    total_shares,
+    pending_deposit_balance,
+    total_staked_balance,
+    cumulative_yield
+  ) VALUES (
+    $1, $2, $3, $4, $5, $6, $7, $8, $9
+  )
+  RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at
 )
-RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, is_active, created_at, updated_at`;
+SELECT 
+  nv.id, nv.client_id, nv.chain, nv.token_address, nv.token_symbol, nv.total_shares, nv.current_index, nv.last_index_update, nv.pending_deposit_balance, nv.total_staked_balance, nv.cumulative_yield, nv.apy_7d, nv.apy_30d, nv.strategies, nv.is_active, nv.created_at, nv.updated_at,
+  pa.privy_wallet_address as custodial_wallet_address
+FROM new_vault nv
+JOIN client_organizations co ON nv.client_id = co.id
+JOIN privy_accounts pa ON co.privy_account_id = pa.id`;
 
 export interface CreateClientVaultArgs {
     clientId: string;
@@ -313,9 +345,11 @@ export interface CreateClientVaultRow {
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
+    strategies: any | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    custodialWalletAddress: string;
 }
 
 export async function createClientVault(sql: Sql, args: CreateClientVaultArgs): Promise<CreateClientVaultRow | null> {
@@ -338,9 +372,11 @@ export async function createClientVault(sql: Sql, args: CreateClientVaultArgs): 
         cumulativeYield: row[10],
         apy_7d: row[11],
         apy_30d: row[12],
-        isActive: row[13],
-        createdAt: row[14],
-        updatedAt: row[15]
+        strategies: row[13],
+        isActive: row[14],
+        createdAt: row[15],
+        updatedAt: row[16],
+        custodialWalletAddress: row[17]
     };
 }
 
@@ -433,7 +469,7 @@ export async function reduceStakedBalance(sql: Sql, args: ReduceStakedBalanceArg
 
 export const getEndUserVaultQuery = `-- name: GetEndUserVault :one
 
-SELECT id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
 WHERE id = $1 LIMIT 1`;
 
 export interface GetEndUserVaultArgs {
@@ -444,13 +480,9 @@ export interface GetEndUserVaultRow {
     id: string;
     endUserId: string;
     clientId: string;
-    chain: string;
-    tokenAddress: string;
-    tokenSymbol: string;
-    shares: string;
-    weightedEntryIndex: string;
     totalDeposited: string;
     totalWithdrawn: string;
+    weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
     isActive: boolean;
@@ -468,45 +500,35 @@ export async function getEndUserVault(sql: Sql, args: GetEndUserVaultArgs): Prom
         id: row[0],
         endUserId: row[1],
         clientId: row[2],
-        chain: row[3],
-        tokenAddress: row[4],
-        tokenSymbol: row[5],
-        shares: row[6],
-        weightedEntryIndex: row[7],
-        totalDeposited: row[8],
-        totalWithdrawn: row[9],
-        lastDepositAt: row[10],
-        lastWithdrawalAt: row[11],
-        isActive: row[12],
-        createdAt: row[13],
-        updatedAt: row[14]
+        totalDeposited: row[3],
+        totalWithdrawn: row[4],
+        weightedEntryIndex: row[5],
+        lastDepositAt: row[6],
+        lastWithdrawalAt: row[7],
+        isActive: row[8],
+        createdAt: row[9],
+        updatedAt: row[10]
     };
 }
 
-export const getEndUserVaultByTokenQuery = `-- name: GetEndUserVaultByToken :one
-SELECT id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
+export const getEndUserVaultByClientQuery = `-- name: GetEndUserVaultByClient :one
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
 WHERE end_user_id = $1
-  AND chain = $2
-  AND token_address = $3
+  AND client_id = $2
 LIMIT 1`;
 
-export interface GetEndUserVaultByTokenArgs {
+export interface GetEndUserVaultByClientArgs {
     endUserId: string;
-    chain: string;
-    tokenAddress: string;
+    clientId: string;
 }
 
-export interface GetEndUserVaultByTokenRow {
+export interface GetEndUserVaultByClientRow {
     id: string;
     endUserId: string;
     clientId: string;
-    chain: string;
-    tokenAddress: string;
-    tokenSymbol: string;
-    shares: string;
-    weightedEntryIndex: string;
     totalDeposited: string;
     totalWithdrawn: string;
+    weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
     isActive: boolean;
@@ -514,8 +536,8 @@ export interface GetEndUserVaultByTokenRow {
     updatedAt: Date;
 }
 
-export async function getEndUserVaultByToken(sql: Sql, args: GetEndUserVaultByTokenArgs): Promise<GetEndUserVaultByTokenRow | null> {
-    const rows = await sql.unsafe(getEndUserVaultByTokenQuery, [args.endUserId, args.chain, args.tokenAddress]).values();
+export async function getEndUserVaultByClient(sql: Sql, args: GetEndUserVaultByClientArgs): Promise<GetEndUserVaultByClientRow | null> {
+    const rows = await sql.unsafe(getEndUserVaultByClientQuery, [args.endUserId, args.clientId]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -524,46 +546,36 @@ export async function getEndUserVaultByToken(sql: Sql, args: GetEndUserVaultByTo
         id: row[0],
         endUserId: row[1],
         clientId: row[2],
-        chain: row[3],
-        tokenAddress: row[4],
-        tokenSymbol: row[5],
-        shares: row[6],
-        weightedEntryIndex: row[7],
-        totalDeposited: row[8],
-        totalWithdrawn: row[9],
-        lastDepositAt: row[10],
-        lastWithdrawalAt: row[11],
-        isActive: row[12],
-        createdAt: row[13],
-        updatedAt: row[14]
+        totalDeposited: row[3],
+        totalWithdrawn: row[4],
+        weightedEntryIndex: row[5],
+        lastDepositAt: row[6],
+        lastWithdrawalAt: row[7],
+        isActive: row[8],
+        createdAt: row[9],
+        updatedAt: row[10]
     };
 }
 
-export const getEndUserVaultByTokenForUpdateQuery = `-- name: GetEndUserVaultByTokenForUpdate :one
-SELECT id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
+export const getEndUserVaultByClientForUpdateQuery = `-- name: GetEndUserVaultByClientForUpdate :one
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
 WHERE end_user_id = $1
-  AND chain = $2
-  AND token_address = $3
+  AND client_id = $2
 FOR UPDATE
 LIMIT 1`;
 
-export interface GetEndUserVaultByTokenForUpdateArgs {
+export interface GetEndUserVaultByClientForUpdateArgs {
     endUserId: string;
-    chain: string;
-    tokenAddress: string;
+    clientId: string;
 }
 
-export interface GetEndUserVaultByTokenForUpdateRow {
+export interface GetEndUserVaultByClientForUpdateRow {
     id: string;
     endUserId: string;
     clientId: string;
-    chain: string;
-    tokenAddress: string;
-    tokenSymbol: string;
-    shares: string;
-    weightedEntryIndex: string;
     totalDeposited: string;
     totalWithdrawn: string;
+    weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
     isActive: boolean;
@@ -571,8 +583,8 @@ export interface GetEndUserVaultByTokenForUpdateRow {
     updatedAt: Date;
 }
 
-export async function getEndUserVaultByTokenForUpdate(sql: Sql, args: GetEndUserVaultByTokenForUpdateArgs): Promise<GetEndUserVaultByTokenForUpdateRow | null> {
-    const rows = await sql.unsafe(getEndUserVaultByTokenForUpdateQuery, [args.endUserId, args.chain, args.tokenAddress]).values();
+export async function getEndUserVaultByClientForUpdate(sql: Sql, args: GetEndUserVaultByClientForUpdateArgs): Promise<GetEndUserVaultByClientForUpdateRow | null> {
+    const rows = await sql.unsafe(getEndUserVaultByClientForUpdateQuery, [args.endUserId, args.clientId]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -581,23 +593,19 @@ export async function getEndUserVaultByTokenForUpdate(sql: Sql, args: GetEndUser
         id: row[0],
         endUserId: row[1],
         clientId: row[2],
-        chain: row[3],
-        tokenAddress: row[4],
-        tokenSymbol: row[5],
-        shares: row[6],
-        weightedEntryIndex: row[7],
-        totalDeposited: row[8],
-        totalWithdrawn: row[9],
-        lastDepositAt: row[10],
-        lastWithdrawalAt: row[11],
-        isActive: row[12],
-        createdAt: row[13],
-        updatedAt: row[14]
+        totalDeposited: row[3],
+        totalWithdrawn: row[4],
+        weightedEntryIndex: row[5],
+        lastDepositAt: row[6],
+        lastWithdrawalAt: row[7],
+        isActive: row[8],
+        createdAt: row[9],
+        updatedAt: row[10]
     };
 }
 
 export const listEndUserVaultsQuery = `-- name: ListEndUserVaults :many
-SELECT id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at FROM end_user_vaults
 WHERE end_user_id = $1
 ORDER BY created_at DESC`;
 
@@ -609,13 +617,9 @@ export interface ListEndUserVaultsRow {
     id: string;
     endUserId: string;
     clientId: string;
-    chain: string;
-    tokenAddress: string;
-    tokenSymbol: string;
-    shares: string;
-    weightedEntryIndex: string;
     totalDeposited: string;
     totalWithdrawn: string;
+    weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
     isActive: boolean;
@@ -628,214 +632,42 @@ export async function listEndUserVaults(sql: Sql, args: ListEndUserVaultsArgs): 
         id: row[0],
         endUserId: row[1],
         clientId: row[2],
-        chain: row[3],
-        tokenAddress: row[4],
-        tokenSymbol: row[5],
-        shares: row[6],
-        weightedEntryIndex: row[7],
-        totalDeposited: row[8],
-        totalWithdrawn: row[9],
-        lastDepositAt: row[10],
-        lastWithdrawalAt: row[11],
-        isActive: row[12],
-        createdAt: row[13],
-        updatedAt: row[14]
+        totalDeposited: row[3],
+        totalWithdrawn: row[4],
+        weightedEntryIndex: row[5],
+        lastDepositAt: row[6],
+        lastWithdrawalAt: row[7],
+        isActive: row[8],
+        createdAt: row[9],
+        updatedAt: row[10]
     }));
-}
-
-export const listEndUserVaultsWithBalanceQuery = `-- name: ListEndUserVaultsWithBalance :many
-SELECT
-  euv.id, euv.end_user_id, euv.client_id, euv.chain, euv.token_address, euv.token_symbol, euv.shares, euv.weighted_entry_index, euv.total_deposited, euv.total_withdrawn, euv.last_deposit_at, euv.last_withdrawal_at, euv.is_active, euv.created_at, euv.updated_at,
-  cv.current_index,
-  cv.token_symbol,
-  -- Effective balance = shares * current_index / 1e18
-  (euv.shares * cv.current_index / 1000000000000000000) AS effective_balance,
-  -- Yield earned = effective_balance - total_deposited
-  ((euv.shares * cv.current_index / 1000000000000000000) - euv.total_deposited) AS yield_earned
-FROM end_user_vaults euv
-JOIN client_vaults cv
-  ON euv.client_id = cv.client_id
-  AND euv.chain = cv.chain
-  AND euv.token_address = cv.token_address
-WHERE euv.end_user_id = $1
-  AND euv.is_active = true
-ORDER BY effective_balance DESC`;
-
-export interface ListEndUserVaultsWithBalanceArgs {
-    endUserId: string;
-}
-
-export interface ListEndUserVaultsWithBalanceRow {
-    id: string;
-    endUserId: string;
-    clientId: string;
-    chain: string;
-    tokenAddress: string;
-    tokenSymbol: string;
-    shares: string;
-    weightedEntryIndex: string;
-    totalDeposited: string;
-    totalWithdrawn: string;
-    lastDepositAt: Date | null;
-    lastWithdrawalAt: Date | null;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-    currentIndex: string;
-    tokenSymbol_2: string;
-    effectiveBalance: string;
-    yieldEarned: string;
-}
-
-export async function listEndUserVaultsWithBalance(sql: Sql, args: ListEndUserVaultsWithBalanceArgs): Promise<ListEndUserVaultsWithBalanceRow[]> {
-    return (await sql.unsafe(listEndUserVaultsWithBalanceQuery, [args.endUserId]).values()).map(row => ({
-        id: row[0],
-        endUserId: row[1],
-        clientId: row[2],
-        chain: row[3],
-        tokenAddress: row[4],
-        tokenSymbol: row[5],
-        shares: row[6],
-        weightedEntryIndex: row[7],
-        totalDeposited: row[8],
-        totalWithdrawn: row[9],
-        lastDepositAt: row[10],
-        lastWithdrawalAt: row[11],
-        isActive: row[12],
-        createdAt: row[13],
-        updatedAt: row[14],
-        currentIndex: row[15],
-        tokenSymbol_2: row[16],
-        effectiveBalance: row[17],
-        yieldEarned: row[18]
-    }));
-}
-
-export const getEndUserVaultWithBalanceQuery = `-- name: GetEndUserVaultWithBalance :one
-SELECT
-  euv.id, euv.end_user_id, euv.client_id, euv.chain, euv.token_address, euv.token_symbol, euv.shares, euv.weighted_entry_index, euv.total_deposited, euv.total_withdrawn, euv.last_deposit_at, euv.last_withdrawal_at, euv.is_active, euv.created_at, euv.updated_at,
-  cv.current_index,
-  cv.token_symbol,
-  cv.apy_7d,
-  cv.apy_30d,
-  cv.total_staked_balance,
-  cv.pending_deposit_balance,
-  -- Effective balance = shares * current_index / 1e18
-  (euv.shares * cv.current_index / 1000000000000000000) AS effective_balance,
-  -- Yield earned = effective_balance - total_deposited
-  ((euv.shares * cv.current_index / 1000000000000000000) - euv.total_deposited) AS yield_earned
-FROM end_user_vaults euv
-JOIN client_vaults cv
-  ON euv.client_id = cv.client_id
-  AND euv.chain = cv.chain
-  AND euv.token_address = cv.token_address
-WHERE euv.end_user_id = $1
-  AND euv.chain = $2
-  AND euv.token_address = $3
-LIMIT 1`;
-
-export interface GetEndUserVaultWithBalanceArgs {
-    endUserId: string;
-    chain: string;
-    tokenAddress: string;
-}
-
-export interface GetEndUserVaultWithBalanceRow {
-    id: string;
-    endUserId: string;
-    clientId: string;
-    chain: string;
-    tokenAddress: string;
-    tokenSymbol: string;
-    shares: string;
-    weightedEntryIndex: string;
-    totalDeposited: string;
-    totalWithdrawn: string;
-    lastDepositAt: Date | null;
-    lastWithdrawalAt: Date | null;
-    isActive: boolean;
-    createdAt: Date;
-    updatedAt: Date;
-    currentIndex: string;
-    tokenSymbol_2: string;
-    apy_7d: string | null;
-    apy_30d: string | null;
-    totalStakedBalance: string;
-    pendingDepositBalance: string;
-    effectiveBalance: string;
-    yieldEarned: string;
-}
-
-export async function getEndUserVaultWithBalance(sql: Sql, args: GetEndUserVaultWithBalanceArgs): Promise<GetEndUserVaultWithBalanceRow | null> {
-    const rows = await sql.unsafe(getEndUserVaultWithBalanceQuery, [args.endUserId, args.chain, args.tokenAddress]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        id: row[0],
-        endUserId: row[1],
-        clientId: row[2],
-        chain: row[3],
-        tokenAddress: row[4],
-        tokenSymbol: row[5],
-        shares: row[6],
-        weightedEntryIndex: row[7],
-        totalDeposited: row[8],
-        totalWithdrawn: row[9],
-        lastDepositAt: row[10],
-        lastWithdrawalAt: row[11],
-        isActive: row[12],
-        createdAt: row[13],
-        updatedAt: row[14],
-        currentIndex: row[15],
-        tokenSymbol_2: row[16],
-        apy_7d: row[17],
-        apy_30d: row[18],
-        totalStakedBalance: row[19],
-        pendingDepositBalance: row[20],
-        effectiveBalance: row[21],
-        yieldEarned: row[22]
-    };
 }
 
 export const createEndUserVaultQuery = `-- name: CreateEndUserVault :one
 INSERT INTO end_user_vaults (
   end_user_id,
   client_id,
-  chain,
-  token_address,
-  token_symbol,
-  shares,
-  weighted_entry_index,
-  total_deposited
+  total_deposited,
+  weighted_entry_index
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
+  $1, $2, $3, $4
 )
-RETURNING id, end_user_id, client_id, chain, token_address, token_symbol, shares, weighted_entry_index, total_deposited, total_withdrawn, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at`;
+RETURNING id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at`;
 
 export interface CreateEndUserVaultArgs {
     endUserId: string;
     clientId: string;
-    chain: string;
-    tokenAddress: string;
-    tokenSymbol: string;
-    shares: string;
-    weightedEntryIndex: string;
     totalDeposited: string;
+    weightedEntryIndex: string;
 }
 
 export interface CreateEndUserVaultRow {
     id: string;
     endUserId: string;
     clientId: string;
-    chain: string;
-    tokenAddress: string;
-    tokenSymbol: string;
-    shares: string;
-    weightedEntryIndex: string;
     totalDeposited: string;
     totalWithdrawn: string;
+    weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
     isActive: boolean;
@@ -844,7 +676,7 @@ export interface CreateEndUserVaultRow {
 }
 
 export async function createEndUserVault(sql: Sql, args: CreateEndUserVaultArgs): Promise<CreateEndUserVaultRow | null> {
-    const rows = await sql.unsafe(createEndUserVaultQuery, [args.endUserId, args.clientId, args.chain, args.tokenAddress, args.tokenSymbol, args.shares, args.weightedEntryIndex, args.totalDeposited]).values();
+    const rows = await sql.unsafe(createEndUserVaultQuery, [args.endUserId, args.clientId, args.totalDeposited, args.weightedEntryIndex]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -853,207 +685,134 @@ export async function createEndUserVault(sql: Sql, args: CreateEndUserVaultArgs)
         id: row[0],
         endUserId: row[1],
         clientId: row[2],
-        chain: row[3],
-        tokenAddress: row[4],
-        tokenSymbol: row[5],
-        shares: row[6],
-        weightedEntryIndex: row[7],
-        totalDeposited: row[8],
-        totalWithdrawn: row[9],
-        lastDepositAt: row[10],
-        lastWithdrawalAt: row[11],
-        isActive: row[12],
-        createdAt: row[13],
-        updatedAt: row[14]
+        totalDeposited: row[3],
+        totalWithdrawn: row[4],
+        weightedEntryIndex: row[5],
+        lastDepositAt: row[6],
+        lastWithdrawalAt: row[7],
+        isActive: row[8],
+        createdAt: row[9],
+        updatedAt: row[10]
     };
 }
 
-export const addSharesToUserVaultQuery = `-- name: AddSharesToUserVault :exec
+export const updateEndUserVaultDepositQuery = `-- name: UpdateEndUserVaultDeposit :exec
 UPDATE end_user_vaults
-SET shares = $2,  -- new total shares
-    weighted_entry_index = $3,  -- recalculated weighted entry index
-    total_deposited = total_deposited + $4,  -- increment deposited amount
+SET total_deposited = total_deposited + $2,  -- Add deposit amount
+    weighted_entry_index = $3,  -- Recalculate weighted entry index
     last_deposit_at = now(),
     updated_at = now()
 WHERE id = $1`;
 
-export interface AddSharesToUserVaultArgs {
+export interface UpdateEndUserVaultDepositArgs {
     id: string;
-    shares: string;
-    weightedEntryIndex: string;
     totalDeposited: string;
+    weightedEntryIndex: string;
 }
 
-export async function addSharesToUserVault(sql: Sql, args: AddSharesToUserVaultArgs): Promise<void> {
-    await sql.unsafe(addSharesToUserVaultQuery, [args.id, args.shares, args.weightedEntryIndex, args.totalDeposited]);
+export async function updateEndUserVaultDeposit(sql: Sql, args: UpdateEndUserVaultDepositArgs): Promise<void> {
+    await sql.unsafe(updateEndUserVaultDepositQuery, [args.id, args.totalDeposited, args.weightedEntryIndex]);
 }
 
-export const burnSharesFromUserVaultQuery = `-- name: BurnSharesFromUserVault :exec
+export const updateEndUserVaultWithdrawalQuery = `-- name: UpdateEndUserVaultWithdrawal :exec
 UPDATE end_user_vaults
-SET shares = shares - $2,  -- shares to burn
-    total_withdrawn = total_withdrawn + $3,  -- withdrawal amount
+SET total_withdrawn = total_withdrawn + $2,  -- Add withdrawal amount
     last_withdrawal_at = now(),
     updated_at = now()
 WHERE id = $1`;
 
-export interface BurnSharesFromUserVaultArgs {
+export interface UpdateEndUserVaultWithdrawalArgs {
     id: string;
-    shares: string;
     totalWithdrawn: string;
 }
 
-export async function burnSharesFromUserVault(sql: Sql, args: BurnSharesFromUserVaultArgs): Promise<void> {
-    await sql.unsafe(burnSharesFromUserVaultQuery, [args.id, args.shares, args.totalWithdrawn]);
+export async function updateEndUserVaultWithdrawal(sql: Sql, args: UpdateEndUserVaultWithdrawalArgs): Promise<void> {
+    await sql.unsafe(updateEndUserVaultWithdrawalQuery, [args.id, args.totalWithdrawn]);
 }
 
-export const getTotalSharesForVaultQuery = `-- name: GetTotalSharesForVault :one
-SELECT COALESCE(SUM(shares), 0) AS total_user_shares
-FROM end_user_vaults
-WHERE client_id = $1
-  AND chain = $2
-  AND token_address = $3
-  AND is_active = true`;
-
-export interface GetTotalSharesForVaultArgs {
-    clientId: string;
-    chain: string;
-    tokenAddress: string;
-}
-
-export interface GetTotalSharesForVaultRow {
-    totalUserShares: string | null;
-}
-
-export async function getTotalSharesForVault(sql: Sql, args: GetTotalSharesForVaultArgs): Promise<GetTotalSharesForVaultRow | null> {
-    const rows = await sql.unsafe(getTotalSharesForVaultQuery, [args.clientId, args.chain, args.tokenAddress]).values();
-    if (rows.length !== 1) {
-        return null;
-    }
-    const row = rows[0];
-    return {
-        totalUserShares: row[0]
-    };
-}
-
-export const getVaultSummaryQuery = `-- name: GetVaultSummary :one
+export const getClientSummaryQuery = `-- name: GetClientSummary :one
 
 SELECT
-  cv.id,
-  cv.chain,
-  cv.token_symbol,
-  cv.current_index,
-  cv.pending_deposit_balance,
-  cv.total_staked_balance,
-  cv.cumulative_yield,
-  cv.apy_7d,
-  cv.apy_30d,
-  cv.total_shares,
-  cv.last_index_update,
+  co.id,
+  co.product_id,
+  co.company_name,
   COUNT(DISTINCT euv.end_user_id) AS total_users,
   COALESCE(SUM(euv.total_deposited), 0) AS total_user_deposits,
   COALESCE(SUM(euv.total_withdrawn), 0) AS total_user_withdrawals
-FROM client_vaults cv
+FROM client_organizations co
 LEFT JOIN end_user_vaults euv
-  ON cv.client_id = euv.client_id
-  AND cv.chain = euv.chain
-  AND cv.token_address = euv.token_address
+  ON co.id = euv.client_id
   AND euv.is_active = true
-WHERE cv.id = $1
-GROUP BY cv.id`;
+WHERE co.id = $1
+GROUP BY co.id`;
 
-export interface GetVaultSummaryArgs {
+export interface GetClientSummaryArgs {
     id: string;
 }
 
-export interface GetVaultSummaryRow {
+export interface GetClientSummaryRow {
     id: string;
-    chain: string;
-    tokenSymbol: string;
-    currentIndex: string;
-    pendingDepositBalance: string;
-    totalStakedBalance: string;
-    cumulativeYield: string;
-    apy_7d: string | null;
-    apy_30d: string | null;
-    totalShares: string;
-    lastIndexUpdate: Date;
+    productId: string;
+    companyName: string;
     totalUsers: string;
     totalUserDeposits: string | null;
     totalUserWithdrawals: string | null;
 }
 
-export async function getVaultSummary(sql: Sql, args: GetVaultSummaryArgs): Promise<GetVaultSummaryRow | null> {
-    const rows = await sql.unsafe(getVaultSummaryQuery, [args.id]).values();
+export async function getClientSummary(sql: Sql, args: GetClientSummaryArgs): Promise<GetClientSummaryRow | null> {
+    const rows = await sql.unsafe(getClientSummaryQuery, [args.id]).values();
     if (rows.length !== 1) {
         return null;
     }
     const row = rows[0];
     return {
         id: row[0],
-        chain: row[1],
-        tokenSymbol: row[2],
-        currentIndex: row[3],
-        pendingDepositBalance: row[4],
-        totalStakedBalance: row[5],
-        cumulativeYield: row[6],
-        apy_7d: row[7],
-        apy_30d: row[8],
-        totalShares: row[9],
-        lastIndexUpdate: row[10],
-        totalUsers: row[11],
-        totalUserDeposits: row[12],
-        totalUserWithdrawals: row[13]
+        productId: row[1],
+        companyName: row[2],
+        totalUsers: row[3],
+        totalUserDeposits: row[4],
+        totalUserWithdrawals: row[5]
     };
 }
 
-export const listTopUsersByBalanceQuery = `-- name: ListTopUsersByBalance :many
+export const listTopUsersByDepositQuery = `-- name: ListTopUsersByDeposit :many
 SELECT
   euv.end_user_id,
   eu.user_id,
-  euv.shares,
-  euv.weighted_entry_index,
   euv.total_deposited,
   euv.total_withdrawn,
-  (euv.shares * cv.current_index / 1000000000000000000) AS effective_balance,
-  ((euv.shares * cv.current_index / 1000000000000000000) - euv.total_deposited) AS yield_earned
+  euv.weighted_entry_index,
+  euv.last_deposit_at
 FROM end_user_vaults euv
 JOIN end_users eu ON euv.end_user_id = eu.id
-JOIN client_vaults cv
-  ON euv.client_id = cv.client_id
-  AND euv.chain = cv.chain
-  AND euv.token_address = cv.token_address
-WHERE cv.id = $1
+WHERE euv.client_id = $1
   AND euv.is_active = true
-  AND euv.shares > 0
-ORDER BY effective_balance DESC
+  AND euv.total_deposited > 0
+ORDER BY euv.total_deposited DESC
 LIMIT $2`;
 
-export interface ListTopUsersByBalanceArgs {
-    id: string;
+export interface ListTopUsersByDepositArgs {
+    clientId: string;
     limit: string;
 }
 
-export interface ListTopUsersByBalanceRow {
+export interface ListTopUsersByDepositRow {
     endUserId: string;
     userId: string;
-    shares: string;
-    weightedEntryIndex: string;
     totalDeposited: string;
     totalWithdrawn: string;
-    effectiveBalance: string;
-    yieldEarned: string;
+    weightedEntryIndex: string;
+    lastDepositAt: Date | null;
 }
 
-export async function listTopUsersByBalance(sql: Sql, args: ListTopUsersByBalanceArgs): Promise<ListTopUsersByBalanceRow[]> {
-    return (await sql.unsafe(listTopUsersByBalanceQuery, [args.id, args.limit]).values()).map(row => ({
+export async function listTopUsersByDeposit(sql: Sql, args: ListTopUsersByDepositArgs): Promise<ListTopUsersByDepositRow[]> {
+    return (await sql.unsafe(listTopUsersByDepositQuery, [args.clientId, args.limit]).values()).map(row => ({
         endUserId: row[0],
         userId: row[1],
-        shares: row[2],
-        weightedEntryIndex: row[3],
-        totalDeposited: row[4],
-        totalWithdrawn: row[5],
-        effectiveBalance: row[6],
-        yieldEarned: row[7]
+        totalDeposited: row[2],
+        totalWithdrawn: row[3],
+        weightedEntryIndex: row[4],
+        lastDepositAt: row[5]
     }));
 }
 

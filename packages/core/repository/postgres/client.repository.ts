@@ -1,5 +1,5 @@
 /**
- * Client Organization Repository - Cleverse Pattern
+ * Client Organization Repository - Proxify Pattern
  * 
  * ✅ Wraps SQLC-generated queries from database/queries/client.sql
  * ✅ Adds business logic for client management
@@ -7,11 +7,12 @@
  */
 
 import { Sql } from 'postgres';
+import { verifyApiKey } from '../../utils/apiKey';
 import {
   // Query functions
   getClient,
   getClientByProductID,
-  getClientByPrivyOrgID,
+  getClientsByPrivyOrgID,
   getClientByAPIKeyPrefix,
   getClientByAPIKeyHash,
   listClients,
@@ -30,11 +31,11 @@ import {
   releaseReservedBalance,
   deductReservedBalance,
   getClientStats,
-  
+
   // Types
   type GetClientRow,
   type GetClientByProductIDRow,
-  type GetClientByPrivyOrgIDRow,
+  type GetClientsByPrivyOrgIDRow,
   type GetClientByAPIKeyPrefixRow,
   type GetClientByAPIKeyHashRow,
   type ListClientsRow,
@@ -79,8 +80,8 @@ export class ClientRepository {
    * Get client by Privy organization ID
    * Used for Privy webhook integration
    */
-  async getByPrivyOrgId(privyOrgId: string): Promise<GetClientByPrivyOrgIDRow | null> {
-    return await getClientByPrivyOrgID(this.sql, { privyOrganizationId: privyOrgId });
+  async getByPrivyOrgId(privyOrgId: string): Promise<GetClientsByPrivyOrgIDRow[]> {
+    return await getClientsByPrivyOrgID(this.sql, { privyOrganizationId: privyOrgId });
   }
 
   /**
@@ -244,21 +245,19 @@ export class ClientRepository {
     // Step 1: Extract prefix (first 8 chars)
     const prefix = apiKey.substring(0, 8);
     
-    // Step 2: Get client by prefix
+    // Step 2: Get client by prefix (fast lookup)
     const client = await this.getByApiKeyPrefix(prefix);
-    if (!client) {
+    if (!client || !client.apiKeyHash) {
       return null;
     }
 
-    // Step 3: Hash the full API key
-    // TODO: Implement hashing (bcrypt/argon2)
-    const hash = apiKey; // Placeholder - implement proper hashing
-
-    // Step 4: Validate hash matches
-    if (client.apiKeyHash !== hash) {
+    // Step 3: Verify API key against stored hash (constant-time via bcrypt)
+    const isValid = await verifyApiKey(apiKey, client.apiKeyHash);
+    if (!isValid) {
       return null;
     }
 
+    // Step 4: Return client if valid
     return client;
   }
 

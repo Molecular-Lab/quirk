@@ -1,11 +1,11 @@
-# Cleverse Clean Architecture Analysis: TypeScript Services with Smart Contracts
+# Proxify Clean Architecture Analysis: TypeScript Services with Smart Contracts
 
 ## Executive Summary
 
-Cleverse repositories demonstrate a **production-grade clean architecture pattern** for TypeScript services that interact with smart contracts and external APIs. The architecture emphasizes **separation of concerns**, **dependency injection**, and **type safety** through layered abstractions.
+Proxify repositories demonstrate a **production-grade clean architecture pattern** for TypeScript services that interact with smart contracts and external APIs. The architecture emphasizes **separation of concerns**, **dependency injection**, and **type safety** through layered abstractions.
 
 ### Three Key Patterns Analyzed:
-1. **alphatrace**: Solana trading analytics with external API integration
+1. **Proxify Analytics**: Solana trading analytics with external API integration
 2. **starbase**: EVM/Solana DeFi yield platform with contract interaction
 3. **rabbitswap-interface**: DEX interface with multi-protocol aggregation
 
@@ -593,7 +593,7 @@ app.use("/stars", starRoutes(starService, priceUsecase))
 **Consistent Error Model**:
 
 ```typescript
-// From alphatrace
+// From Proxify Analytics
 throw new ErrorException(ErrorCode.INVALID_REQUEST)
 throw new ErrorException(ErrorCode.INTERNAL_SERVER_ERROR)
 
@@ -815,7 +815,7 @@ apps/
 
 ## Conclusion
 
-The Cleverse architecture demonstrates **production-grade patterns** for building scalable TypeScript services:
+The Proxify architecture demonstrates **production-grade patterns** for building scalable TypeScript services:
 
 1. **Clear separation of concerns** with 4-5 distinct layers
 2. **Type-safe API integration** using ts-rest contracts

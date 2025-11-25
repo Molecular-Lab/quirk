@@ -1,5 +1,5 @@
 /**
- * Audit Repository - Cleverse Pattern
+ * Audit Repository - Proxify Pattern
  * ✅ SQLC-generated queries from database/queries/audit.sql
  */
 
