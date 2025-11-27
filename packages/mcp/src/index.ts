@@ -5,6 +5,8 @@ import { randomUUID } from 'node:crypto';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { yieldTools } from './tools/yieldTools.js';
+import { aggregatorTools } from './tools/aggregatorTools.js';
+import { optimizerTools } from './tools/optimizerTools.js';
 
 // Configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
@@ -50,8 +52,11 @@ async function main() {
 					}
 				);
 
+				// Combine all tools
+				const allTools = [...yieldTools, ...aggregatorTools, ...optimizerTools];
+
 				// Register all tools for this session
-				for (const tool of yieldTools) {
+				for (const tool of allTools) {
 					sessionServer.registerTool(
 						tool.name,
 						{
