@@ -9,17 +9,19 @@
 		"proxify-mcp": "./dist/index.js"
 	},
 	"scripts": {
-		"build": "tsc",
-		"dev": "tsc --watch",
+		"build": "tsup",
+		"dev": "tsup --watch",
 		"start": "node dist/index.js"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.0.4",
+		"@proxify/yield-engine": "workspace:*",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
 		"@proxify/tsconfig": "workspace:*",
 		"@types/node": "^22.10.2",
+		"tsup": "^8.3.5",
 		"typescript": "catalog:"
 	},
 	"keywords": [
