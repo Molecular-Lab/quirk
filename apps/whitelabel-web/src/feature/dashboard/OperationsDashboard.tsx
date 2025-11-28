@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { Clock, DollarSign, RefreshCw, Sparkles, TrendingUp, UserPlus, Users, Zap } from "lucide-react"
+import { DollarSign, RefreshCw, Sparkles, UserPlus, Users, Zap } from "lucide-react"
 
 import { b2bApiClient } from "@/api/b2bClient"
 import { useClientContext } from "@/store/clientContextStore"
@@ -25,7 +25,7 @@ export function OperationsDashboard() {
 	const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false)
 
 	// Get client context for API authentication
-	const { clientId, productId, apiKey, hasContext, hasApiKey } = useClientContext()
+	const { clientId, productId, hasContext, hasApiKey } = useClientContext()
 
 	useEffect(() => {
 		// Log client context for debugging

@@ -5,6 +5,7 @@
 import type { initServer } from "@ts-rest/express";
 import { b2bContract } from "@proxify/b2b-api-core";
 import { createClientRouter } from "./client.router";
+import { createDashboardRouter } from "./dashboard.router";
 import { createVaultRouter } from "./vault.router";
 import { createUserRouter } from "./user.router";
 import { createDepositRouter } from "./deposit.router";
@@ -33,6 +34,7 @@ export const createMainRouter = (
 ) => {
 	return s.router(b2bContract, {
 		client: createClientRouter(s, services.clientService),
+		dashboard: createDashboardRouter(s, services.vaultService, services.userService),
 		vault: createVaultRouter(s, services.vaultService),
 		user: createUserRouter(s, services.userService, services.userVaultService),
 		userVault: createUserVaultRouter(s, services.userVaultService),
