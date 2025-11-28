@@ -354,6 +354,21 @@ export class B2BAPIClient {
 		return response.data
 	}
 
+	// Dashboard endpoints
+	async getDashboardMetrics(clientId: string) {
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Fetching dashboard metrics:", clientId)
+
+		const response = await this.axios.get<unknown>(`${this.baseURL}/api/v1/dashboard/metrics`, {
+			params: { clientId },
+		})
+
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Dashboard metrics:", response.data)
+
+		return response.data
+	}
+
 	// Legacy method - kept for backward compatibility
 	// @deprecated Use configureBankAccounts instead
 	async configureBankAccount(

@@ -75,7 +75,7 @@ export const createDashboardRouter = (
 				if (totalStaked > 0) {
 					for (const vault of vaults) {
 						const stakedBalance = parseFloat(vault.totalStakedBalance || "0");
-						const apy = parseFloat(vault.apy7d || "0");
+						const apy = parseFloat(vault.apy_7d || "0");
 						weightedAPY += (stakedBalance / totalStaked) * apy;
 					}
 				}

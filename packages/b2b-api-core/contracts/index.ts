@@ -6,6 +6,7 @@
 import { initContract } from "@ts-rest/core";
 
 import { clientContract } from "./client";
+import { dashboardContract } from "./dashboard";
 import { depositContract } from "./deposit";
 import { privyAccountContract } from "./privy-account";
 import { userContract } from "./user";
@@ -18,6 +19,7 @@ const c = initContract();
 export const b2bContract = c.router(
 	{
 		client: clientContract,
+		dashboard: dashboardContract,
 		vault: vaultContract,
 		user: userContract,
 		userVault: userVaultContract,
@@ -31,6 +33,7 @@ export const b2bContract = c.router(
 );
 
 export * from "./client";
+export * from "./dashboard";
 export * from "./vault";
 export * from "./user";
 export * from "./user-vault";

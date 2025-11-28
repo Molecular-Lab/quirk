@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
 import TimeFilter, { type TimeRange } from '../../components/dashboard/TimeFilter'
+import { b2bApiClient } from '@/api/b2bClient'
+import { useClientContext } from '@/store/clientContextStore'
 
 // Mock data generators
 const generateMockData = (range: TimeRange) => {
@@ -101,36 +103,102 @@ const MOCK_END_USERS = [
   },
 ]
 
+interface DashboardMetrics {
+	fundStages: {
+		available: string
+		staked: string
+		total: string
+	}
+	revenue: {
+		total: string
+		clientShare: string
+		endUserShare: string
+		clientSharePercent: string
+	}
+	stats: {
+		totalUsers: number
+		activeUsers: number
+		apy: string
+		vaults: number
+	}
+	strategies: Array<{
+		category: string
+		target: number
+		allocated: number
+		isActive: boolean
+	}>
+}
+
 export function OverviewPage() {
+	const { clientId } = useClientContext()
 	const [timeRange, setTimeRange] = useState<TimeRange>('daily')
 	const [selectedMetric, setSelectedMetric] = useState<'tvl' | 'users' | 'apy' | 'revenue'>('tvl')
-	
+	const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null)
+	const [, setIsLoading] = useState(true)
+
+	// Fetch real dashboard data
+	useEffect(() => {
+		const fetchDashboardMetrics = async () => {
+			if (!clientId) {
+				setIsLoading(false)
+				return
+			}
+
+			try {
+				setIsLoading(true)
+				const response = await b2bApiClient.getDashboardMetrics(clientId)
+				console.log('[OverviewPage] Dashboard metrics:', response)
+				setDashboardMetrics(response as DashboardMetrics)
+			} catch (error) {
+				console.error('[OverviewPage] Failed to fetch dashboard metrics:', error)
+			} finally {
+				setIsLoading(false)
+			}
+		}
+
+		fetchDashboardMetrics()
+	}, [clientId])
+
 	const data = generateMockData(timeRange)
 	const latestData = data[data.length - 1]
+
+	// Use real data if available, otherwise fall back to mock data
+	const totalValue = dashboardMetrics ? parseFloat(dashboardMetrics.fundStages.total) : latestData.tvl
+	const totalUsers = dashboardMetrics ? dashboardMetrics.stats.totalUsers : latestData.users
+	const avgAPY = dashboardMetrics ? parseFloat(dashboardMetrics.stats.apy) : latestData.apy
+	const totalRevenue = dashboardMetrics ? parseFloat(dashboardMetrics.revenue.total) : latestData.revenue
 	
 	const metrics = {
 		tvl: {
-			label: 'Total Value Locked',
-			value: `$${latestData.tvl.toLocaleString()}`,
-			change: '+$52,340 (+15.2%)',
+			label: 'Total Assets Under Management',
+			value: `$${totalValue.toLocaleString()}`,
+			change: dashboardMetrics
+				? `Available: $${parseFloat(dashboardMetrics.fundStages.available).toLocaleString()} | Staked: $${parseFloat(dashboardMetrics.fundStages.staked).toLocaleString()}`
+				: '+$52,340 (+15.2%)',
 			color: '#00D9A3',
 		},
 		users: {
 			label: 'Total Users',
-			value: latestData.users.toLocaleString(),
-			change: '+342 (+7.1%)',
+			value: totalUsers.toLocaleString(),
+			change: dashboardMetrics
+				? `Active: ${dashboardMetrics.stats.activeUsers} | Vaults: ${dashboardMetrics.stats.vaults}`
+				: '+342 (+7.1%)',
 			color: '#3B82F6',
 		},
 		apy: {
 			label: 'Average APY',
-			value: `${latestData.apy.toFixed(2)}%`,
-			change: '+1.2% from last period',
+			value: `${avgAPY.toFixed(2)}%`,
+			change: dashboardMetrics
+				? `Weighted avg across ${dashboardMetrics.stats.vaults} vaults`
+				: '+1.2% from last period',
 			color: '#8B5CF6',
 		},
 		revenue: {
-			label: 'Total Revenue',
-			value: `$${latestData.revenue.toLocaleString()}`,
-			change: '+$845 (+12.3%)',
+			label: 'Total Revenue Generated',
+			value: `$${totalRevenue.toLocaleString()}`,
+			change: dashboardMetrics
+				? `Your cut (${dashboardMetrics.revenue.clientSharePercent}%): $${parseFloat(dashboardMetrics.revenue.clientShare).toLocaleString()}`
+				: '+$845 (+12.3%)',
 			color: '#F59E0B',
 		},
 	}
@@ -233,29 +301,71 @@ export function OverviewPage() {
 					<div className="space-y-4">
 						<div className="bg-gray-50 rounded-3xl p-6">
 							<div className="flex items-center justify-between mb-1">
-								<span className="text-xs font-medium text-gray-500">Active Strategies</span>
+								<span className="text-xs font-medium text-gray-500">DeFi Strategies</span>
 							</div>
-							<div className="text-[56px] font-bold text-gray-900 leading-none mb-4">3</div>
+							<div className="text-[56px] font-bold text-gray-900 leading-none mb-4">
+								{dashboardMetrics ? dashboardMetrics.strategies.length : 3}
+							</div>
 							<div className="space-y-2">
-								{MOCK_STRATEGIES.map((strategy, idx) => (
-									<div key={idx} className="flex items-center gap-2">
-										<div className={`w-2 h-2 rounded-full ${strategy.color}`}></div>
-										<span className="text-xs text-gray-600">{strategy.name}</span>
-									</div>
-								))}
+								{dashboardMetrics ? (
+									dashboardMetrics.strategies.map((strategy, idx) => (
+										<div key={idx} className="flex items-center justify-between gap-2">
+											<div className="flex items-center gap-2">
+												<div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-blue-500' : idx === 1 ? 'bg-green-500' : 'bg-purple-500'}`}></div>
+												<span className="text-xs text-gray-600">{strategy.category}</span>
+											</div>
+											<span className="text-xs font-medium text-gray-900">{strategy.target}%</span>
+										</div>
+									))
+								) : (
+									MOCK_STRATEGIES.map((strategy, idx) => (
+										<div key={idx} className="flex items-center gap-2">
+											<div className={`w-2 h-2 rounded-full ${strategy.color}`}></div>
+											<span className="text-xs text-gray-600">{strategy.name}</span>
+										</div>
+									))
+								)}
 							</div>
 						</div>
 
 						<div className="bg-gray-50 rounded-3xl p-6">
 							<div className="flex items-center justify-between mb-1">
-								<span className="text-xs font-medium text-gray-500">Total Portfolio Value</span>
+								<span className="text-xs font-medium text-gray-500">Fund Breakdown</span>
 							</div>
-							<div className="text-[56px] font-bold text-gray-900 leading-none mb-2">
-								${MOCK_STRATEGIES.reduce((sum, s) => sum + s.value, 0).toLocaleString()}
-							</div>
-							<div className="text-sm text-green-600 font-medium">
-								+{((MOCK_STRATEGIES.reduce((sum, s) => sum + s.value, 0) / 90000) * 100 - 100).toFixed(1)}% Total Return
-							</div>
+							{dashboardMetrics ? (
+								<>
+									<div className="mb-4">
+										<div className="text-xs text-gray-500 mb-1">Available (Stage 1)</div>
+										<div className="text-2xl font-bold text-blue-600">
+											${parseFloat(dashboardMetrics.fundStages.available).toLocaleString()}
+										</div>
+									</div>
+									<div className="mb-4">
+										<div className="text-xs text-gray-500 mb-1">Staked in DeFi (Stage 2)</div>
+										<div className="text-2xl font-bold text-green-600">
+											${parseFloat(dashboardMetrics.fundStages.staked).toLocaleString()}
+										</div>
+									</div>
+									<div className="pt-3 border-t border-gray-200">
+										<div className="text-xs text-gray-500 mb-1">Total Revenue (Stage 3)</div>
+										<div className="text-2xl font-bold text-purple-600">
+											${parseFloat(dashboardMetrics.revenue.total).toLocaleString()}
+										</div>
+										<div className="text-xs text-gray-500 mt-2">
+											End-users: ${parseFloat(dashboardMetrics.revenue.endUserShare).toLocaleString()}
+										</div>
+									</div>
+								</>
+							) : (
+								<>
+									<div className="text-[56px] font-bold text-gray-900 leading-none mb-2">
+										${MOCK_STRATEGIES.reduce((sum, s) => sum + s.value, 0).toLocaleString()}
+									</div>
+									<div className="text-sm text-green-600 font-medium">
+										+{((MOCK_STRATEGIES.reduce((sum, s) => sum + s.value, 0) / 90000) * 100 - 100).toFixed(1)}% Total Return
+									</div>
+								</>
+							)}
 						</div>
 					</div>
 				</div>
