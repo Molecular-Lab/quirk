@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { X, ArrowDown, Check, ChevronDown } from 'lucide-react'
+import { useMutation } from '@tanstack/react-query'
+import { X, ArrowDown, Check, ChevronDown, ExternalLink } from 'lucide-react'
 import { b2bApiClient } from '@/api/b2bClient'
 import usdcLogo from '@/assets/usd-coin-usdc-logo.png'
 
@@ -38,11 +39,44 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 	const [cryptoToken, setCryptoToken] = useState('USDC')
 	const [step, setStep] = useState<'select' | 'summary' | 'processing' | 'success'>('select')
 
+	// Mutation hook for batch completing deposits
+	const batchCompleteMutation = useMutation({
+		mutationFn: async (data: { orderIds: string[]; paidCurrency: string }) => {
+			console.log('[OnRampModal] Starting batch purchase for orders:', selectedOrders)
+			const response = await b2bApiClient.batchCompleteDeposits(data)
+
+			console.log('[OnRampModal] Batch complete response:', response)
+			console.log(`✅ ${data.orderIds.length} orders completed`)
+			console.log(`💰 Total USDC transferred: ${response.totalUSDC}`)
+			console.log(`🏦 Custodial wallet: ${response.custodialWallet}`)
+			console.log(`🔗 Transaction hash:`, response.completedOrders?.[0]?.transferTxHash)
+
+			return response
+		},
+		onSuccess: (data) => {
+			console.log('[OnRampModal] Mutation success:', data)
+			console.log('[OnRampModal] ✅ Deposit completed - Balance will update automatically')
+
+			// Show success after brief delay
+			setTimeout(() => {
+				setStep('success')
+			}, 1000)
+		},
+		onError: (error) => {
+			console.error('[OnRampModal] Mutation error:', error)
+			// Still show success for demo purposes
+			setTimeout(() => {
+				setStep('success')
+			}, 1000)
+		},
+	})
+
 	// Reset state when modal closes
 	const handleClose = () => {
 		setStep('select')
 		setFiatCurrency('USD')
 		setCryptoToken('USDC')
+		batchCompleteMutation.reset()
 		onClose()
 	}
 
@@ -65,34 +99,14 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 		setStep('summary')
 	}
 
-	const handlePurchase = async () => {
+	const handlePurchase = () => {
 		setStep('processing')
 
-		try {
-			console.log('[OnRampModal] Starting batch purchase for orders:', selectedOrders)
-
-			// Batch complete all deposits and transfer USDC to custodial wallet
-			const response = await b2bApiClient.batchCompleteDeposits({
-				orderIds: selectedOrderIds,
-				paidCurrency: fiatCurrency,
-			})
-
-			console.log('[OnRampModal] Batch complete response:', response)
-			console.log(`✅ ${selectedOrderIds.length} orders completed`)
-			console.log(`💰 Total USDC transferred: ${(response as any).totalUSDC}`)
-			console.log(`🏦 Custodial wallet: ${(response as any).custodialWallet}`)
-
-			// Show success after brief delay
-			setTimeout(() => {
-				setStep('success')
-			}, 1000)
-		} catch (error) {
-			console.error('[OnRampModal] Failed to complete deposits:', error)
-			// Still show success for demo purposes
-			setTimeout(() => {
-				setStep('success')
-			}, 1000)
-		}
+		// Execute batch complete mutation
+		batchCompleteMutation.mutate({
+			orderIds: selectedOrderIds,
+			paidCurrency: fiatCurrency,
+		})
 	}
 
 	const handleComplete = () => {
@@ -284,10 +298,25 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 										{fiatAmount.toFixed(2)} {fiatCurrency}
 									</span>
 								</div>
-								<div className="flex justify-between text-sm">
+								<div className="flex justify-between text-sm mb-2">
 									<span className="text-green-700">USDC minted:</span>
 									<span className="font-semibold text-green-900">{usdcAmount.toFixed(2)} USDC</span>
 								</div>
+								{batchCompleteMutation.data?.completedOrders?.[0]?.transferTxHash && (
+									<div className="mt-3 pt-3 border-t border-green-200">
+										<span className="text-xs text-green-600 block mb-2">Transaction Hash:</span>
+										<a
+											href={`https://sepolia.etherscan.io/tx/${batchCompleteMutation.data.completedOrders[0].transferTxHash}`}
+											target="_blank"
+											rel="noopener noreferrer"
+											className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 hover:text-blue-800 transition-colors break-all"
+										>
+											{batchCompleteMutation.data.completedOrders[0].transferTxHash.slice(0, 10)}...
+											{batchCompleteMutation.data.completedOrders[0].transferTxHash.slice(-8)}
+											<ExternalLink className="w-3 h-3 flex-shrink-0" />
+										</a>
+									</div>
+								)}
 							</div>
 							<button
 								onClick={handleComplete}

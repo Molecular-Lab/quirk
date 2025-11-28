@@ -15,7 +15,7 @@ import (
 
 const createMockUsdcMint = `-- name: CreateMockUsdcMint :one
 INSERT INTO mock_usdc_mints (
-  deposit_order_id,
+  deposit_transaction_id,
   client_id,
   user_id,
   amount,
@@ -27,24 +27,24 @@ INSERT INTO mock_usdc_mints (
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
-RETURNING id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at
+RETURNING id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at
 `
 
 type CreateMockUsdcMintParams struct {
-	DepositOrderID      uuid.UUID      `db:"deposit_order_id"`
-	ClientID            uuid.UUID      `db:"client_id"`
-	UserID              uuid.UUID      `db:"user_id"`
-	Amount              pgtype.Numeric `db:"amount"`
-	Chain               string         `db:"chain"`
-	TokenAddress        string         `db:"token_address"`
-	DestinationWallet   string         `db:"destination_wallet"`
-	MockTransactionHash string         `db:"mock_transaction_hash"`
-	BlockNumber         *int64         `db:"block_number"`
+	DepositTransactionID uuid.UUID      `db:"deposit_transaction_id"`
+	ClientID             uuid.UUID      `db:"client_id"`
+	UserID               uuid.UUID      `db:"user_id"`
+	Amount               pgtype.Numeric `db:"amount"`
+	Chain                string         `db:"chain"`
+	TokenAddress         string         `db:"token_address"`
+	DestinationWallet    string         `db:"destination_wallet"`
+	MockTransactionHash  string         `db:"mock_transaction_hash"`
+	BlockNumber          *int64         `db:"block_number"`
 }
 
 func (q *Queries) CreateMockUsdcMint(ctx context.Context, arg CreateMockUsdcMintParams) (MockUsdcMint, error) {
 	row := q.db.QueryRow(ctx, createMockUsdcMint,
-		arg.DepositOrderID,
+		arg.DepositTransactionID,
 		arg.ClientID,
 		arg.UserID,
 		arg.Amount,
@@ -57,7 +57,7 @@ func (q *Queries) CreateMockUsdcMint(ctx context.Context, arg CreateMockUsdcMint
 	var i MockUsdcMint
 	err := row.Scan(
 		&i.ID,
-		&i.DepositOrderID,
+		&i.DepositTransactionID,
 		&i.ClientID,
 		&i.UserID,
 		&i.Amount,
@@ -102,7 +102,7 @@ func (q *Queries) GetMockMintStats(ctx context.Context, arg GetMockMintStatsPara
 
 const getMockUsdcMint = `-- name: GetMockUsdcMint :one
 
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 WHERE id = $1 LIMIT 1
 `
 
@@ -114,7 +114,7 @@ func (q *Queries) GetMockUsdcMint(ctx context.Context, id uuid.UUID) (MockUsdcMi
 	var i MockUsdcMint
 	err := row.Scan(
 		&i.ID,
-		&i.DepositOrderID,
+		&i.DepositTransactionID,
 		&i.ClientID,
 		&i.UserID,
 		&i.Amount,
@@ -128,17 +128,17 @@ func (q *Queries) GetMockUsdcMint(ctx context.Context, id uuid.UUID) (MockUsdcMi
 	return i, err
 }
 
-const getMockUsdcMintByDepositOrder = `-- name: GetMockUsdcMintByDepositOrder :one
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
-WHERE deposit_order_id = $1 LIMIT 1
+const getMockUsdcMintByDepositTransaction = `-- name: GetMockUsdcMintByDepositTransaction :one
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+WHERE deposit_transaction_id = $1 LIMIT 1
 `
 
-func (q *Queries) GetMockUsdcMintByDepositOrder(ctx context.Context, depositOrderID uuid.UUID) (MockUsdcMint, error) {
-	row := q.db.QueryRow(ctx, getMockUsdcMintByDepositOrder, depositOrderID)
+func (q *Queries) GetMockUsdcMintByDepositTransaction(ctx context.Context, depositTransactionID uuid.UUID) (MockUsdcMint, error) {
+	row := q.db.QueryRow(ctx, getMockUsdcMintByDepositTransaction, depositTransactionID)
 	var i MockUsdcMint
 	err := row.Scan(
 		&i.ID,
-		&i.DepositOrderID,
+		&i.DepositTransactionID,
 		&i.ClientID,
 		&i.UserID,
 		&i.Amount,
@@ -153,7 +153,7 @@ func (q *Queries) GetMockUsdcMintByDepositOrder(ctx context.Context, depositOrde
 }
 
 const getMockUsdcMintByTxHash = `-- name: GetMockUsdcMintByTxHash :one
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 WHERE mock_transaction_hash = $1 LIMIT 1
 `
 
@@ -162,7 +162,7 @@ func (q *Queries) GetMockUsdcMintByTxHash(ctx context.Context, mockTransactionHa
 	var i MockUsdcMint
 	err := row.Scan(
 		&i.ID,
-		&i.DepositOrderID,
+		&i.DepositTransactionID,
 		&i.ClientID,
 		&i.UserID,
 		&i.Amount,
@@ -177,7 +177,7 @@ func (q *Queries) GetMockUsdcMintByTxHash(ctx context.Context, mockTransactionHa
 }
 
 const listMockUsdcMintsByClient = `-- name: ListMockUsdcMintsByClient :many
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 WHERE client_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3
@@ -200,7 +200,7 @@ func (q *Queries) ListMockUsdcMintsByClient(ctx context.Context, arg ListMockUsd
 		var i MockUsdcMint
 		if err := rows.Scan(
 			&i.ID,
-			&i.DepositOrderID,
+			&i.DepositTransactionID,
 			&i.ClientID,
 			&i.UserID,
 			&i.Amount,
@@ -222,7 +222,7 @@ func (q *Queries) ListMockUsdcMintsByClient(ctx context.Context, arg ListMockUsd
 }
 
 const listMockUsdcMintsByUser = `-- name: ListMockUsdcMintsByUser :many
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 WHERE user_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3
@@ -245,7 +245,7 @@ func (q *Queries) ListMockUsdcMintsByUser(ctx context.Context, arg ListMockUsdcM
 		var i MockUsdcMint
 		if err := rows.Scan(
 			&i.ID,
-			&i.DepositOrderID,
+			&i.DepositTransactionID,
 			&i.ClientID,
 			&i.UserID,
 			&i.Amount,
@@ -267,7 +267,7 @@ func (q *Queries) ListMockUsdcMintsByUser(ctx context.Context, arg ListMockUsdcM
 }
 
 const listRecentMockMints = `-- name: ListRecentMockMints :many
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 ORDER BY created_at DESC
 LIMIT $1
 `
@@ -284,7 +284,7 @@ func (q *Queries) ListRecentMockMints(ctx context.Context, limit int32) ([]MockU
 		var i MockUsdcMint
 		if err := rows.Scan(
 			&i.ID,
-			&i.DepositOrderID,
+			&i.DepositTransactionID,
 			&i.ClientID,
 			&i.UserID,
 			&i.Amount,

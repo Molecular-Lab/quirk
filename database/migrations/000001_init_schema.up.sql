@@ -62,6 +62,10 @@ CREATE TABLE client_organizations (
   custom_strategy JSONB,
   end_user_yield_portion NUMERIC(5,2),
 
+  -- Currency Configuration
+  supported_currencies JSONB DEFAULT '[]'::jsonb,
+  bank_accounts JSONB DEFAULT '[]'::jsonb,
+
   -- Status
   is_active BOOLEAN NOT NULL DEFAULT true,
   is_sandbox BOOLEAN NOT NULL DEFAULT false,
@@ -407,6 +411,17 @@ CREATE TABLE deposit_transactions (
   -- Wallet
   wallet_address VARCHAR(66),
 
+  -- Blockchain details (for fiat on-ramp)
+  chain VARCHAR(50),
+  token_symbol VARCHAR(20),
+  token_address VARCHAR(255),
+  on_ramp_provider VARCHAR(50) DEFAULT 'proxify_gateway',
+  qr_code TEXT,
+  transaction_hash VARCHAR(255),
+
+  -- Payment Instructions (for bank transfer)
+  payment_instructions JSONB,
+
   -- Timestamps
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   completed_at TIMESTAMPTZ,
@@ -432,11 +447,52 @@ CREATE INDEX idx_deposit_txns_client_id ON deposit_transactions(client_id);
 CREATE INDEX idx_deposit_txns_user_id ON deposit_transactions(user_id);
 CREATE INDEX idx_deposit_txns_status ON deposit_transactions(status);
 CREATE INDEX idx_deposit_txns_created_at ON deposit_transactions(created_at);
+CREATE INDEX idx_deposit_txns_chain ON deposit_transactions(chain);
+CREATE INDEX idx_deposit_txns_token_symbol ON deposit_transactions(token_symbol);
+CREATE INDEX idx_deposit_txns_on_ramp_provider ON deposit_transactions(on_ramp_provider);
+CREATE INDEX idx_deposit_txns_transaction_hash ON deposit_transactions(transaction_hash);
+
+COMMENT ON TABLE deposit_transactions IS 'Unified table for all deposit transactions (fiat on-ramp, internal transfers, etc.)';
+COMMENT ON COLUMN deposit_transactions.chain IS 'Blockchain network (base, ethereum, etc.)';
+COMMENT ON COLUMN deposit_transactions.token_symbol IS 'Token symbol (USDC, USDT, etc.)';
+COMMENT ON COLUMN deposit_transactions.token_address IS 'Token contract address';
+COMMENT ON COLUMN deposit_transactions.on_ramp_provider IS 'Fiat on-ramp provider (proxify_gateway, moonpay, etc.)';
+COMMENT ON COLUMN deposit_transactions.transaction_hash IS 'Blockchain transaction hash after mint/transfer';
+COMMENT ON COLUMN deposit_transactions.qr_code IS 'QR code for payment (base64 encoded)';
 CREATE INDEX idx_deposit_txns_gateway_order_id ON deposit_transactions(gateway_order_id)
   WHERE gateway_order_id IS NOT NULL;
 
-COMMENT ON TABLE deposit_transactions IS 'Complete deposit transaction history (external via payment gateway, internal via client balance)';
 COMMENT ON COLUMN deposit_transactions.deposit_type IS 'external | internal';
+
+-- Mock USDC Mints (for testnet on-ramp tracking)
+CREATE TABLE IF NOT EXISTS mock_usdc_mints (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    deposit_transaction_id UUID NOT NULL REFERENCES deposit_transactions(id) ON DELETE CASCADE,
+    client_id UUID NOT NULL REFERENCES client_organizations(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES end_users(id) ON DELETE CASCADE,
+
+    -- Mint details
+    amount DECIMAL(20, 8) NOT NULL,
+    chain VARCHAR(50) NOT NULL,
+    token_address VARCHAR(255) NOT NULL,
+
+    -- Destination
+    destination_wallet VARCHAR(255) NOT NULL,
+
+    -- Mock transaction
+    mock_transaction_hash VARCHAR(255) NOT NULL,
+    block_number BIGINT,
+
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_mock_usdc_mints_deposit_transaction_id ON mock_usdc_mints(deposit_transaction_id);
+CREATE INDEX idx_mock_usdc_mints_client_id ON mock_usdc_mints(client_id);
+CREATE INDEX idx_mock_usdc_mints_user_id ON mock_usdc_mints(user_id);
+CREATE INDEX idx_mock_usdc_mints_created_at ON mock_usdc_mints(created_at DESC);
+
+COMMENT ON TABLE mock_usdc_mints IS 'Tracks mock USDC mints for testnet on-ramp completions';
 
 -- ============================================
 -- 9. WITHDRAWAL TRANSACTIONS

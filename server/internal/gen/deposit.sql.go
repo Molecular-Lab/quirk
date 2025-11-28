@@ -20,18 +20,20 @@ SET status = 'completed',
     proxify_fee = COALESCE($4, proxify_fee),
     network_fee = COALESCE($5, network_fee),
     total_fees = COALESCE($6, total_fees),
+    transaction_hash = COALESCE($7, transaction_hash),
     completed_at = now()
 WHERE id = $1
-RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions
+RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code
 `
 
 type CompleteDepositParams struct {
-	ID           uuid.UUID      `db:"id"`
-	CryptoAmount pgtype.Numeric `db:"crypto_amount"`
-	GatewayFee   pgtype.Numeric `db:"gateway_fee"`
-	ProxifyFee   pgtype.Numeric `db:"proxify_fee"`
-	NetworkFee   pgtype.Numeric `db:"network_fee"`
-	TotalFees    pgtype.Numeric `db:"total_fees"`
+	ID              uuid.UUID      `db:"id"`
+	CryptoAmount    pgtype.Numeric `db:"crypto_amount"`
+	GatewayFee      pgtype.Numeric `db:"gateway_fee"`
+	ProxifyFee      pgtype.Numeric `db:"proxify_fee"`
+	NetworkFee      pgtype.Numeric `db:"network_fee"`
+	TotalFees       pgtype.Numeric `db:"total_fees"`
+	TransactionHash *string        `db:"transaction_hash"`
 }
 
 // Mark deposit as completed
@@ -43,6 +45,7 @@ func (q *Queries) CompleteDeposit(ctx context.Context, arg CompleteDepositParams
 		arg.ProxifyFee,
 		arg.NetworkFee,
 		arg.TotalFees,
+		arg.TransactionHash,
 	)
 	var i DepositTransaction
 	err := row.Scan(
@@ -66,13 +69,77 @@ func (q *Queries) CompleteDeposit(ctx context.Context, arg CompleteDepositParams
 		&i.ClientBalanceID,
 		&i.DeductedFromClient,
 		&i.WalletAddress,
+		&i.Chain,
+		&i.TokenSymbol,
+		&i.TokenAddress,
+		&i.OnRampProvider,
+		&i.QrCode,
+		&i.TransactionHash,
+		&i.PaymentInstructions,
 		&i.CreatedAt,
 		&i.CompletedAt,
 		&i.FailedAt,
 		&i.ExpiresAt,
 		&i.ErrorMessage,
 		&i.ErrorCode,
+	)
+	return i, err
+}
+
+const completeDepositByOrderID = `-- name: CompleteDepositByOrderID :one
+UPDATE deposit_transactions
+SET status = 'completed',
+    crypto_amount = $2,
+    transaction_hash = $3,
+    completed_at = now()
+WHERE order_id = $1
+RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code
+`
+
+type CompleteDepositByOrderIDParams struct {
+	OrderID         string         `db:"order_id"`
+	CryptoAmount    pgtype.Numeric `db:"crypto_amount"`
+	TransactionHash *string        `db:"transaction_hash"`
+}
+
+// Mark deposit as completed by order_id (for Operations Dashboard)
+func (q *Queries) CompleteDepositByOrderID(ctx context.Context, arg CompleteDepositByOrderIDParams) (DepositTransaction, error) {
+	row := q.db.QueryRow(ctx, completeDepositByOrderID, arg.OrderID, arg.CryptoAmount, arg.TransactionHash)
+	var i DepositTransaction
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.ClientID,
+		&i.UserID,
+		&i.DepositType,
+		&i.PaymentMethod,
+		&i.FiatAmount,
+		&i.CryptoAmount,
+		&i.Currency,
+		&i.CryptoCurrency,
+		&i.GatewayFee,
+		&i.ProxifyFee,
+		&i.NetworkFee,
+		&i.TotalFees,
+		&i.Status,
+		&i.PaymentUrl,
+		&i.GatewayOrderID,
+		&i.ClientBalanceID,
+		&i.DeductedFromClient,
+		&i.WalletAddress,
+		&i.Chain,
+		&i.TokenSymbol,
+		&i.TokenAddress,
+		&i.OnRampProvider,
+		&i.QrCode,
+		&i.TransactionHash,
 		&i.PaymentInstructions,
+		&i.CreatedAt,
+		&i.CompletedAt,
+		&i.FailedAt,
+		&i.ExpiresAt,
+		&i.ErrorMessage,
+		&i.ErrorCode,
 	)
 	return i, err
 }
@@ -99,13 +166,18 @@ INSERT INTO deposit_transactions (
   deducted_from_client,
   wallet_address,
   expires_at,
-  payment_instructions
+  payment_instructions,
+  chain,
+  token_symbol,
+  token_address,
+  on_ramp_provider,
+  qr_code
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
   $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-  $21
+  $21, $22, $23, $24, $25, $26
 )
-RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions
+RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code
 `
 
 type CreateDepositParams struct {
@@ -130,6 +202,11 @@ type CreateDepositParams struct {
 	WalletAddress       *string            `db:"wallet_address"`
 	ExpiresAt           pgtype.Timestamptz `db:"expires_at"`
 	PaymentInstructions []byte             `db:"payment_instructions"`
+	Chain               *string            `db:"chain"`
+	TokenSymbol         *string            `db:"token_symbol"`
+	TokenAddress        *string            `db:"token_address"`
+	OnRampProvider      *string            `db:"on_ramp_provider"`
+	QrCode              *string            `db:"qr_code"`
 }
 
 func (q *Queries) CreateDeposit(ctx context.Context, arg CreateDepositParams) (DepositTransaction, error) {
@@ -155,6 +232,11 @@ func (q *Queries) CreateDeposit(ctx context.Context, arg CreateDepositParams) (D
 		arg.WalletAddress,
 		arg.ExpiresAt,
 		arg.PaymentInstructions,
+		arg.Chain,
+		arg.TokenSymbol,
+		arg.TokenAddress,
+		arg.OnRampProvider,
+		arg.QrCode,
 	)
 	var i DepositTransaction
 	err := row.Scan(
@@ -178,13 +260,19 @@ func (q *Queries) CreateDeposit(ctx context.Context, arg CreateDepositParams) (D
 		&i.ClientBalanceID,
 		&i.DeductedFromClient,
 		&i.WalletAddress,
+		&i.Chain,
+		&i.TokenSymbol,
+		&i.TokenAddress,
+		&i.OnRampProvider,
+		&i.QrCode,
+		&i.TransactionHash,
+		&i.PaymentInstructions,
 		&i.CreatedAt,
 		&i.CompletedAt,
 		&i.FailedAt,
 		&i.ExpiresAt,
 		&i.ErrorMessage,
 		&i.ErrorCode,
-		&i.PaymentInstructions,
 	)
 	return i, err
 }
@@ -264,7 +352,7 @@ func (q *Queries) FailDeposit(ctx context.Context, arg FailDepositParams) error 
 
 const getDeposit = `-- name: GetDeposit :one
 
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
 WHERE id = $1 LIMIT 1
 `
 
@@ -295,19 +383,25 @@ func (q *Queries) GetDeposit(ctx context.Context, id uuid.UUID) (DepositTransact
 		&i.ClientBalanceID,
 		&i.DeductedFromClient,
 		&i.WalletAddress,
+		&i.Chain,
+		&i.TokenSymbol,
+		&i.TokenAddress,
+		&i.OnRampProvider,
+		&i.QrCode,
+		&i.TransactionHash,
+		&i.PaymentInstructions,
 		&i.CreatedAt,
 		&i.CompletedAt,
 		&i.FailedAt,
 		&i.ExpiresAt,
 		&i.ErrorMessage,
 		&i.ErrorCode,
-		&i.PaymentInstructions,
 	)
 	return i, err
 }
 
 const getDepositByGatewayOrderID = `-- name: GetDepositByGatewayOrderID :one
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
 WHERE gateway_order_id = $1 LIMIT 1
 `
 
@@ -335,19 +429,25 @@ func (q *Queries) GetDepositByGatewayOrderID(ctx context.Context, gatewayOrderID
 		&i.ClientBalanceID,
 		&i.DeductedFromClient,
 		&i.WalletAddress,
+		&i.Chain,
+		&i.TokenSymbol,
+		&i.TokenAddress,
+		&i.OnRampProvider,
+		&i.QrCode,
+		&i.TransactionHash,
+		&i.PaymentInstructions,
 		&i.CreatedAt,
 		&i.CompletedAt,
 		&i.FailedAt,
 		&i.ExpiresAt,
 		&i.ErrorMessage,
 		&i.ErrorCode,
-		&i.PaymentInstructions,
 	)
 	return i, err
 }
 
 const getDepositByOrderID = `-- name: GetDepositByOrderID :one
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
 WHERE order_id = $1 LIMIT 1
 `
 
@@ -375,19 +475,25 @@ func (q *Queries) GetDepositByOrderID(ctx context.Context, orderID string) (Depo
 		&i.ClientBalanceID,
 		&i.DeductedFromClient,
 		&i.WalletAddress,
+		&i.Chain,
+		&i.TokenSymbol,
+		&i.TokenAddress,
+		&i.OnRampProvider,
+		&i.QrCode,
+		&i.TransactionHash,
+		&i.PaymentInstructions,
 		&i.CreatedAt,
 		&i.CompletedAt,
 		&i.FailedAt,
 		&i.ExpiresAt,
 		&i.ErrorMessage,
 		&i.ErrorCode,
-		&i.PaymentInstructions,
 	)
 	return i, err
 }
 
 const getDepositByOrderIDForUpdate = `-- name: GetDepositByOrderIDForUpdate :one
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
 WHERE order_id = $1
 FOR UPDATE
 LIMIT 1
@@ -418,13 +524,19 @@ func (q *Queries) GetDepositByOrderIDForUpdate(ctx context.Context, orderID stri
 		&i.ClientBalanceID,
 		&i.DeductedFromClient,
 		&i.WalletAddress,
+		&i.Chain,
+		&i.TokenSymbol,
+		&i.TokenAddress,
+		&i.OnRampProvider,
+		&i.QrCode,
+		&i.TransactionHash,
+		&i.PaymentInstructions,
 		&i.CreatedAt,
 		&i.CompletedAt,
 		&i.FailedAt,
 		&i.ExpiresAt,
 		&i.ErrorMessage,
 		&i.ErrorCode,
-		&i.PaymentInstructions,
 	)
 	return i, err
 }
@@ -505,8 +617,76 @@ func (q *Queries) GetDepositStats(ctx context.Context, arg GetDepositStatsParams
 	return i, err
 }
 
+const listAllPendingDeposits = `-- name: ListAllPendingDeposits :many
+
+
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+WHERE status = 'pending'
+  AND deposit_type = 'external'
+ORDER BY created_at ASC
+`
+
+// end date
+// ============================================
+// OPERATIONS DASHBOARD QUERIES
+// ============================================
+// Get all pending deposits across all clients (for Operations Dashboard)
+func (q *Queries) ListAllPendingDeposits(ctx context.Context) ([]DepositTransaction, error) {
+	rows, err := q.db.Query(ctx, listAllPendingDeposits)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DepositTransaction
+	for rows.Next() {
+		var i DepositTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrderID,
+			&i.ClientID,
+			&i.UserID,
+			&i.DepositType,
+			&i.PaymentMethod,
+			&i.FiatAmount,
+			&i.CryptoAmount,
+			&i.Currency,
+			&i.CryptoCurrency,
+			&i.GatewayFee,
+			&i.ProxifyFee,
+			&i.NetworkFee,
+			&i.TotalFees,
+			&i.Status,
+			&i.PaymentUrl,
+			&i.GatewayOrderID,
+			&i.ClientBalanceID,
+			&i.DeductedFromClient,
+			&i.WalletAddress,
+			&i.Chain,
+			&i.TokenSymbol,
+			&i.TokenAddress,
+			&i.OnRampProvider,
+			&i.QrCode,
+			&i.TransactionHash,
+			&i.PaymentInstructions,
+			&i.CreatedAt,
+			&i.CompletedAt,
+			&i.FailedAt,
+			&i.ExpiresAt,
+			&i.ErrorMessage,
+			&i.ErrorCode,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listDeposits = `-- name: ListDeposits :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
 WHERE client_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3
@@ -548,13 +728,19 @@ func (q *Queries) ListDeposits(ctx context.Context, arg ListDepositsParams) ([]D
 			&i.ClientBalanceID,
 			&i.DeductedFromClient,
 			&i.WalletAddress,
+			&i.Chain,
+			&i.TokenSymbol,
+			&i.TokenAddress,
+			&i.OnRampProvider,
+			&i.QrCode,
+			&i.TransactionHash,
+			&i.PaymentInstructions,
 			&i.CreatedAt,
 			&i.CompletedAt,
 			&i.FailedAt,
 			&i.ExpiresAt,
 			&i.ErrorMessage,
 			&i.ErrorCode,
-			&i.PaymentInstructions,
 		); err != nil {
 			return nil, err
 		}
@@ -567,7 +753,7 @@ func (q *Queries) ListDeposits(ctx context.Context, arg ListDepositsParams) ([]D
 }
 
 const listDepositsByStatus = `-- name: ListDepositsByStatus :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
 WHERE client_id = $1
   AND status = $2
 ORDER BY created_at DESC
@@ -616,13 +802,19 @@ func (q *Queries) ListDepositsByStatus(ctx context.Context, arg ListDepositsBySt
 			&i.ClientBalanceID,
 			&i.DeductedFromClient,
 			&i.WalletAddress,
+			&i.Chain,
+			&i.TokenSymbol,
+			&i.TokenAddress,
+			&i.OnRampProvider,
+			&i.QrCode,
+			&i.TransactionHash,
+			&i.PaymentInstructions,
 			&i.CreatedAt,
 			&i.CompletedAt,
 			&i.FailedAt,
 			&i.ExpiresAt,
 			&i.ErrorMessage,
 			&i.ErrorCode,
-			&i.PaymentInstructions,
 		); err != nil {
 			return nil, err
 		}
@@ -635,7 +827,7 @@ func (q *Queries) ListDepositsByStatus(ctx context.Context, arg ListDepositsBySt
 }
 
 const listDepositsByUser = `-- name: ListDepositsByUser :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
 WHERE client_id = $1
   AND user_id = $2
 ORDER BY created_at DESC
@@ -684,13 +876,19 @@ func (q *Queries) ListDepositsByUser(ctx context.Context, arg ListDepositsByUser
 			&i.ClientBalanceID,
 			&i.DeductedFromClient,
 			&i.WalletAddress,
+			&i.Chain,
+			&i.TokenSymbol,
+			&i.TokenAddress,
+			&i.OnRampProvider,
+			&i.QrCode,
+			&i.TransactionHash,
+			&i.PaymentInstructions,
 			&i.CreatedAt,
 			&i.CompletedAt,
 			&i.FailedAt,
 			&i.ExpiresAt,
 			&i.ErrorMessage,
 			&i.ErrorCode,
-			&i.PaymentInstructions,
 		); err != nil {
 			return nil, err
 		}
@@ -703,7 +901,7 @@ func (q *Queries) ListDepositsByUser(ctx context.Context, arg ListDepositsByUser
 }
 
 const listExpiredDeposits = `-- name: ListExpiredDeposits :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
 WHERE status = 'pending'
   AND expires_at <= now()
 ORDER BY created_at ASC
@@ -741,13 +939,19 @@ func (q *Queries) ListExpiredDeposits(ctx context.Context, limit int32) ([]Depos
 			&i.ClientBalanceID,
 			&i.DeductedFromClient,
 			&i.WalletAddress,
+			&i.Chain,
+			&i.TokenSymbol,
+			&i.TokenAddress,
+			&i.OnRampProvider,
+			&i.QrCode,
+			&i.TransactionHash,
+			&i.PaymentInstructions,
 			&i.CreatedAt,
 			&i.CompletedAt,
 			&i.FailedAt,
 			&i.ExpiresAt,
 			&i.ErrorMessage,
 			&i.ErrorCode,
-			&i.PaymentInstructions,
 		); err != nil {
 			return nil, err
 		}
@@ -834,7 +1038,7 @@ func (q *Queries) ListPendingDepositQueueByVault(ctx context.Context, clientVaul
 }
 
 const listPendingDeposits = `-- name: ListPendingDeposits :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, created_at, completed_at, failed_at, expires_at, error_message, error_code, payment_instructions FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
 WHERE status = 'pending'
   AND client_id = $1
   AND (expires_at IS NULL OR expires_at > now())
@@ -872,13 +1076,82 @@ func (q *Queries) ListPendingDeposits(ctx context.Context, clientID uuid.UUID) (
 			&i.ClientBalanceID,
 			&i.DeductedFromClient,
 			&i.WalletAddress,
+			&i.Chain,
+			&i.TokenSymbol,
+			&i.TokenAddress,
+			&i.OnRampProvider,
+			&i.QrCode,
+			&i.TransactionHash,
+			&i.PaymentInstructions,
 			&i.CreatedAt,
 			&i.CompletedAt,
 			&i.FailedAt,
 			&i.ExpiresAt,
 			&i.ErrorMessage,
 			&i.ErrorCode,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPendingDepositsByClient = `-- name: ListPendingDepositsByClient :many
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+WHERE client_id = $1
+  AND status = 'pending'
+  AND deposit_type = 'external'
+ORDER BY created_at ASC
+`
+
+// Get pending deposits for a specific client (for Operations Dashboard)
+func (q *Queries) ListPendingDepositsByClient(ctx context.Context, clientID uuid.UUID) ([]DepositTransaction, error) {
+	rows, err := q.db.Query(ctx, listPendingDepositsByClient, clientID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []DepositTransaction
+	for rows.Next() {
+		var i DepositTransaction
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrderID,
+			&i.ClientID,
+			&i.UserID,
+			&i.DepositType,
+			&i.PaymentMethod,
+			&i.FiatAmount,
+			&i.CryptoAmount,
+			&i.Currency,
+			&i.CryptoCurrency,
+			&i.GatewayFee,
+			&i.ProxifyFee,
+			&i.NetworkFee,
+			&i.TotalFees,
+			&i.Status,
+			&i.PaymentUrl,
+			&i.GatewayOrderID,
+			&i.ClientBalanceID,
+			&i.DeductedFromClient,
+			&i.WalletAddress,
+			&i.Chain,
+			&i.TokenSymbol,
+			&i.TokenAddress,
+			&i.OnRampProvider,
+			&i.QrCode,
+			&i.TransactionHash,
 			&i.PaymentInstructions,
+			&i.CreatedAt,
+			&i.CompletedAt,
+			&i.FailedAt,
+			&i.ExpiresAt,
+			&i.ErrorMessage,
+			&i.ErrorCode,
 		); err != nil {
 			return nil, err
 		}

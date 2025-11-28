@@ -17,12 +17,16 @@ import {
   listExpiredDeposits,
   createDeposit,
   completeDeposit,
+  completeDepositByOrderID,
   failDeposit,
   expireDeposit,
   updateDepositGatewayInfo,
   markDepositAsBatched,
   markDepositAsStaked,
   markDepositBatchAsStaked,
+  // Operations Dashboard Queries
+  listAllPendingDeposits,
+  listPendingDepositsByClient,
   // Deposit Queue Queries
   getDepositQueueItem,
   listPendingDepositQueue,
@@ -40,8 +44,11 @@ import {
   type ListDepositsByStatusRow,
   type ListPendingDepositsRow,
   type ListExpiredDepositsRow,
+  type ListAllPendingDepositsRow,
+  type ListPendingDepositsByClientRow,
   type CreateDepositArgs,
   type CreateDepositRow,
+  type CompleteDepositByOrderIDRow,
   type GetDepositQueueItemRow,
   type ListPendingDepositQueueRow,
   type ListPendingDepositQueueByVaultRow,
@@ -99,9 +106,18 @@ export class DepositRepository {
     gatewayFee: string,
     proxifyFee: string,
     networkFee: string,
-    totalFees: string
+    totalFees: string,
+    transactionHash?: string
   ): Promise<void> {
-    await completeDeposit(this.sql, { id, cryptoAmount, gatewayFee, proxifyFee, networkFee, totalFees });
+    await completeDeposit(this.sql, {
+      id,
+      cryptoAmount,
+      gatewayFee,
+      proxifyFee,
+      networkFee,
+      totalFees,
+      transactionHash: transactionHash || null
+    });
   }
 
   async markFailed(id: string, errorMessage: string, errorCode?: string): Promise<void> {
@@ -114,6 +130,19 @@ export class DepositRepository {
 
   async updateGatewayInfo(id: string, paymentUrl: string | null, gatewayOrderId: string | null): Promise<void> {
     await updateDepositGatewayInfo(this.sql, { id, paymentUrl, gatewayOrderId });
+  }
+
+  // Operations Dashboard Methods
+  async listAllPending(): Promise<ListAllPendingDepositsRow[]> {
+    return await listAllPendingDeposits(this.sql);
+  }
+
+  async listPendingByClient(clientId: string): Promise<ListPendingDepositsByClientRow[]> {
+    return await listPendingDepositsByClient(this.sql, { clientId });
+  }
+
+  async completeByOrderId(orderId: string, cryptoAmount: string, transactionHash: string): Promise<CompleteDepositByOrderIDRow | null> {
+    return await completeDepositByOrderID(this.sql, { orderId, cryptoAmount, transactionHash });
   }
 
   async markAsBatched(id: string): Promise<void> {

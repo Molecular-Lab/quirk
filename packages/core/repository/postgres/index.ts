@@ -41,7 +41,6 @@ export { ClientRepository } from './client.repository';
 export { PrivyAccountRepository } from '../privy-account.repository';
 export { VaultRepository } from './vault.repository';
 export { DepositRepository } from './deposit.repository';
-export { DepositOrderRepository } from './deposit-order.repository';
 export { WithdrawalRepository } from './withdrawal.repository';
 export { UserRepository } from './end_user.repository';
 export { DefiRepository } from './defi.repository';

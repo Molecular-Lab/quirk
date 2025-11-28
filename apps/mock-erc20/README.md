@@ -1,57 +1,117 @@
-# Sample Hardhat 3 Beta Project (`node:test` and `viem`)
+# MockUSDC - Mintable Test Token
 
-This project showcases a Hardhat 3 Beta project using the native Node.js test runner (`node:test`) and the `viem` library for Ethereum interactions.
+Mintable USDC token for testing on-ramp flows and custodial wallet transfers.
 
-To learn more about the Hardhat 3 Beta, please visit the [Getting Started guide](https://hardhat.org/docs/getting-started#getting-started-with-hardhat-3). To share your feedback, join our [Hardhat 3 Beta](https://hardhat.org/hardhat3-beta-telegram-group) Telegram group or [open an issue](https://github.com/NomicFoundation/hardhat/issues/new) in our GitHub issue tracker.
+> **Built with Hardhat v3 + Viem** 🚀
 
-## Project Overview
+## Quick Start
 
-This example project includes:
+```bash
+# 1. Install dependencies
+pnpm install
 
-- A simple Hardhat configuration file.
-- Foundry-compatible Solidity unit tests.
-- TypeScript integration tests using [`node:test`](nodejs.org/api/test.html), the new Node.js native test runner, and [`viem`](https://viem.sh/).
-- Examples demonstrating how to connect to different types of networks, including locally simulating OP mainnet.
+# 2. Setup environment
+cp .env.example .env
+# Edit .env with your keys
 
-## Usage
+# 3. Compile contracts
+pnpm compile
 
-### Running Tests
+# 4. Deploy to testnet
+pnpm deploy:sepolia
 
-To run all the tests in the project, execute the following command:
-
-```shell
-npx hardhat test
+# 5. Mint tokens
+pnpm mint --network sepolia
 ```
 
-You can also selectively run the Solidity or `node:test` tests:
+## Features
 
-```shell
-npx hardhat test solidity
-npx hardhat test nodejs
+✅ **Ownable** - Only deployer can mint
+✅ **6 decimals** - Matches real USDC
+✅ **Unlimited mint** - For testing purposes
+✅ **Viem + Hardhat v3** - Modern stack
+
+## Environment Variables
+
+Required in `.env`:
+```bash
+SEPOLIA_RPC_URL=https://eth-sepolia.g.alchemy.com/v2/YOUR_KEY
+BASE_SEPOLIA_RPC_URL=https://sepolia.base.org
+PRIVATE_KEY=your_deployer_private_key
+MOCK_USDC_ADDRESS=deployed_contract_address
+CUSTODIAL_WALLET=client_privy_wallet_address
+AMOUNT=1000
 ```
 
-### Make a deployment to Sepolia
+⚠️ **Never commit `.env` to git!**
 
-This project includes an example Ignition module to deploy the contract. You can deploy this module to a locally simulated chain or to Sepolia.
+## Scripts
 
-To run the deployment to a local chain:
+- `pnpm compile` - Compile contracts
+- `pnpm deploy:sepolia` - Deploy to Sepolia
+- `pnpm deploy:base-sepolia` - Deploy to Base Sepolia
+- `pnpm mint --network sepolia` - Mint tokens
+- `pnpm verify:sepolia` - Verify on Etherscan
 
-```shell
-npx hardhat ignition deploy ignition/modules/Counter.ts
+## Documentation
+
+See [MINT_GUIDE.md](./MINT_GUIDE.md) for complete documentation.
+
+## Smart Contracts
+
+- **MockUSDC.sol** - Mintable USDC (ERC20 + Ownable) ✅
+- **USDQ.sol** - Fixed supply token (archived) ❌
+
+## Integration with Backend
+
+Simulates RampToCustodial transfer flow:
+
+1. **Backend completes deposits** via `/api/v1/deposits/batch-complete`
+2. **Logs transfer details**:
+   ```
+   🏦 RAMP TO CUSTODIAL - Mock USDC Transfer
+   📤 Transferring 10343.74 USDC
+   📍 To: 0x1234...abcd (custodial wallet)
+   ```
+3. **Run mint script** to transfer tokens on testnet
+4. **Custodial wallet receives USDC** on-chain
+
+## Networks Supported
+
+- **Sepolia** (Chain ID: 11155111)
+- **Base Sepolia** (Chain ID: 84532)
+- **Localhost** (Chain ID: 31337)
+
+## Technology Stack
+
+- Hardhat v3 (EDR runner)
+- Viem (TypeScript Ethereum library)
+- OpenZeppelin Contracts
+- Solidity 0.8.28
+- dotenv
+
+## Example Usage
+
+```bash
+# Deploy MockUSDC
+pnpm deploy:sepolia
+
+# Output:
+# ✅ MockUSDC deployed to: 0x5678...efgh
+# 💾 Save this address to your .env:
+# MOCK_USDC_ADDRESS="0x5678...efgh"
+
+# Update .env with deployed address
+echo 'MOCK_USDC_ADDRESS="0x5678...efgh"' >> .env
+
+# Mint 1000 USDC to custodial wallet
+AMOUNT=1000 pnpm mint --network sepolia
+
+# Output:
+# 🏦 RAMP TO CUSTODIAL - Minting MockUSDC (Viem)
+# ✅ Successfully minted USDC to custodial wallet!
 ```
 
-To run the deployment to Sepolia, you need an account with funds to send the transaction. The provided Hardhat configuration includes a Configuration Variable called `SEPOLIA_PRIVATE_KEY`, which you can use to set the private key of the account you want to use.
+## License
 
-You can set the `SEPOLIA_PRIVATE_KEY` variable using the `hardhat-keystore` plugin or by setting it as an environment variable.
-
-To set the `SEPOLIA_PRIVATE_KEY` config variable using `hardhat-keystore`:
-
-```shell
-npx hardhat keystore set SEPOLIA_PRIVATE_KEY
-```
-
-After setting the variable, you can run the deployment with the Sepolia network:
-
-```shell
-npx hardhat ignition deploy --network sepolia ignition/modules/Counter.ts
-```
+MIT

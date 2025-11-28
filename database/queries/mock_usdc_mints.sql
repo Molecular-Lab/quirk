@@ -6,9 +6,9 @@
 SELECT * FROM mock_usdc_mints
 WHERE id = $1 LIMIT 1;
 
--- name: GetMockUsdcMintByDepositOrder :one
+-- name: GetMockUsdcMintByDepositTransaction :one
 SELECT * FROM mock_usdc_mints
-WHERE deposit_order_id = $1 LIMIT 1;
+WHERE deposit_transaction_id = $1 LIMIT 1;
 
 -- name: GetMockUsdcMintByTxHash :one
 SELECT * FROM mock_usdc_mints
@@ -28,7 +28,7 @@ LIMIT $2 OFFSET $3;
 
 -- name: CreateMockUsdcMint :one
 INSERT INTO mock_usdc_mints (
-  deposit_order_id,
+  deposit_transaction_id,
   client_id,
   user_id,
   amount,

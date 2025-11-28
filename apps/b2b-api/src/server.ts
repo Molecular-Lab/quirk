@@ -19,7 +19,6 @@ import {
 	VaultRepository,
 	UserRepository,
 	DepositRepository,
-	DepositOrderRepository,
 	WithdrawalRepository,
 	AuditRepository,
 	B2BClientUseCase,
@@ -29,7 +28,7 @@ import {
 	B2BWithdrawalUseCase,
 	B2BUserVaultUseCase,
 	ClientGrowthIndexService, // ✅ NEW: Client growth index calculation
-	DepositOrderUseCase, // ✅ NEW: Deposit orders for Operations Dashboard
+	ViemClientManager, // ✅ NEW: Blockchain client for minting tokens
 } from "@proxify/core";
 import { b2bContract } from "@proxify/b2b-api-core";
 import { createExpressEndpoints } from "@ts-rest/express";
@@ -40,7 +39,6 @@ import { ClientService } from "./service/client.service";
 import { VaultService } from "./service/vault.service";
 import { UserService } from "./service/user.service";
 import { DepositService } from "./service/deposit.service";
-import { DepositOrderService } from "./service/deposit-order.service";
 import { WithdrawalService } from "./service/withdrawal.service";
 import { UserVaultService } from "./service/user-vault.service";
 import { PrivyAccountService } from "./service/privy-account.service";
@@ -67,13 +65,33 @@ async function main() {
 		process.exit(1);
 	}
 
+	// Initialize ViemClientManager for blockchain interactions
+	const deployerPrivateKey = ENV.DEPLOYER_PRIVATE_KEY || ENV.PRIVATE_KEY;
+	if (!deployerPrivateKey) {
+		logger.error("❌ DEPLOYER_PRIVATE_KEY not set in environment");
+		logger.error("   Please set DEPLOYER_PRIVATE_KEY in .env file");
+		process.exit(1);
+	}
+
+	if (!deployerPrivateKey.startsWith("0x")) {
+		logger.error("❌ DEPLOYER_PRIVATE_KEY must start with 0x");
+		process.exit(1);
+	}
+
+	try {
+		ViemClientManager.init(deployerPrivateKey as `0x${string}`);
+		logger.info("✅ ViemClientManager initialized for blockchain operations");
+	} catch (error: any) {
+		logger.error("❌ Failed to initialize ViemClientManager", { error: error.message });
+		process.exit(1);
+	}
+
 	// 2. Initialize Repositories
 	const clientRepository = new ClientRepository(sql);
 	const privyAccountRepository = new PrivyAccountRepository(sql);
 	const vaultRepository = new VaultRepository(sql);
 	const userRepository = new UserRepository(sql);
 	const depositRepository = new DepositRepository(sql);
-	const depositOrderRepository = new DepositOrderRepository(sql); // ✅ NEW: For Operations Dashboard
 	const withdrawalRepository = new WithdrawalRepository(sql);
 	const auditRepository = new AuditRepository(sql);
 
@@ -118,11 +136,6 @@ async function main() {
 		auditRepository,
 		clientGrowthIndexService
 	);
-	const depositOrderUseCase = new DepositOrderUseCase(
-		depositOrderRepository,
-		userRepository,
-		clientRepository
-	); // ✅ NEW: Deposit orders for Operations Dashboard
 
 	logger.info("✅ UseCases initialized");
 
@@ -131,7 +144,6 @@ async function main() {
 	const vaultService = new VaultService(vaultUseCase);
 	const userService = new UserService(userUseCase);
 	const depositService = new DepositService(depositUseCase);
-	const depositOrderService = new DepositOrderService(depositOrderUseCase); // ✅ NEW: For Operations Dashboard
 	const withdrawalService = new WithdrawalService(withdrawalUseCase);
 	const userVaultService = new UserVaultService(userVaultUseCase);
 	const privyAccountService = new PrivyAccountService(privyAccountRepository);
@@ -147,7 +159,6 @@ async function main() {
 		vaultService,
 		userService,
 		depositService,
-		depositOrderService, // ✅ NEW: For Operations Dashboard
 		withdrawalService,
 		userVaultService,
 		privyAccountService,
