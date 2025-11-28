@@ -13,4 +13,6 @@ dependencies = [
     "mcp>=1.21.1",
     "langchain-mcp-adapters>=0.1.13",
     "pydantic>=2.12.4",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.34.0",
 ]
