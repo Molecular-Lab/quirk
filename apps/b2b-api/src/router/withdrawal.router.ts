@@ -28,6 +28,14 @@ export function createWithdrawalRouter(
 
 				// Parse vaultId from request body to extract chain and tokenAddress
 				// Format: "base-0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+				// vaultId is optional in simplified architecture
+				if (!body.vaultId) {
+					return {
+						status: 400 as const,
+						body: { error: "vaultId is required" },
+					};
+				}
+
 				const [chain, tokenAddress] = body.vaultId.split("-");
 
 				if (!chain || !tokenAddress) {

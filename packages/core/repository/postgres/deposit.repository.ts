@@ -81,8 +81,8 @@ export class DepositRepository {
     return await listDepositsByStatus(this.sql, { clientId, status, limit: limit.toString(), offset: "0" });
   }
 
-  async listPending(): Promise<ListPendingDepositsRow[]> {
-    return await listPendingDeposits(this.sql);
+  async listPending(clientId: string): Promise<ListPendingDepositsRow[]> {
+    return await listPendingDeposits(this.sql, { clientId });
   }
 
   async listExpired(limit: number = 100): Promise<ListExpiredDepositsRow[]> {

@@ -30,8 +30,9 @@ interface ClientRegistrationResponse {
 /**
  * Save API key for specific organization
  * Stores in a map: { productId: apiKey }
+ * Also syncs to userStore and clientContextStore
  */
-const saveApiKeyForOrg = (productId: string, apiKey: string) => {
+const saveApiKeyForOrg = (productId: string, apiKey: string, orgData?: { id: string; companyName: string; businessType: string }) => {
 	// Get all stored keys
 	const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
 
@@ -46,13 +47,40 @@ const saveApiKeyForOrg = (productId: string, apiKey: string) => {
 	console.log(`[API Keys] ✅ Saved for ${productId}:`, apiKey.substring(0, 12) + "...")
 	// eslint-disable-next-line no-console
 	console.log("[API Keys] 📦 All stored keys:", Object.keys(allKeys))
+
+	// Sync to userStore (this will also trigger clientContextStore sync)
+	import("@/store/userStore").then(({ useUserStore }) => {
+		const { setApiKey, activeProductId } = useUserStore.getState()
+
+		// Only update if this is for the currently active organization
+		if (activeProductId === productId) {
+			setApiKey(apiKey)
+			// eslint-disable-next-line no-console
+			console.log("[API Keys] ✅ Synced to userStore (which syncs to clientContextStore)")
+		}
+	})
+
+	// Also directly sync to clientContextStore if we have org data
+	if (orgData) {
+		import("@/store/clientContextStore").then(({ useClientContext }) => {
+			useClientContext.getState().setClientContext({
+				clientId: orgData.id,
+				productId: productId,
+				apiKey: apiKey,
+				companyName: orgData.companyName,
+				businessType: orgData.businessType,
+			})
+			// eslint-disable-next-line no-console
+			console.log("[API Keys] ✅ Synced to clientContextStore directly")
+		})
+	}
 }
 
 /**
  * Load API key for specific organization
  */
 const loadApiKeyForOrg = (productId: string): string | null => {
-	const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") ?? "{}")
+	const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") ?? "{}") as Record<string, string>
 	return allKeys[productId] ?? null
 }
 
@@ -68,12 +96,12 @@ interface APIEndpoint {
 	id: string
 	flow: string
 	title: string
-	method: "GET" | "POST" | "PUT" | "DELETE"
+	method: "GET" | "POST" | "PUT" | "DELETE" | "PATCH"
 	endpoint: string
 	description: string
 	params: {
 		name: string
-		type: "string" | "json" | "select" | "number"
+		type: "string" | "json" | "select" | "number" | "multiselect"
 		required: boolean
 		description: string
 		default?: string
@@ -247,6 +275,209 @@ const API_FLOWS: APIEndpoint[] = [
 		),
 	},
 
+	// FLOW 1B: Settlement Banking Configuration (for Off-Ramp)
+	{
+		id: "banking-config",
+		flow: "FLOW 1B",
+		title: "Configure Settlement Banking (Off-Ramp)",
+		method: "POST",
+		endpoint: "/api/v1/clients/product/{productId}/bank-accounts",
+		description:
+			"🏦 Configure CLIENT's bank accounts for receiving OFF-RAMP funds (withdrawals only). When end-users withdraw, Proxify converts USDC → fiat → sends to YOUR bank accounts. Required for Method 2 & 3 withdrawals. Note: Deposits use Proxify's fixed bank accounts, not these!",
+		params: [
+			{
+				name: "productId",
+				type: "string",
+				required: true,
+				description: "Product ID from registration (auto-filled from active organization)",
+				default: "",
+			},
+			{
+				name: "bankAccounts",
+				type: "json",
+				required: true,
+				description:
+					"Array of bank accounts for different currencies. Each entry: {currency, bank_name, account_number, account_name, bank_details?}",
+				default: JSON.stringify(
+					[
+						{
+							currency: "THB",
+							bank_name: "Kasikorn Bank",
+							account_number: "123-4-56789-0",
+							account_name: "Company (Thailand) Co., Ltd.",
+							bank_details: {
+								swift_code: "KASITHBK",
+								bank_code: "004",
+								promptpay_id: "0891234567",
+							},
+						},
+						{
+							currency: "SGD",
+							bank_name: "DBS Bank",
+							account_number: "001-234567-8",
+							account_name: "Company Singapore Pte. Ltd.",
+							bank_details: {
+								swift_code: "DBSSSGSG",
+								bank_code: "7171",
+							},
+						},
+					],
+					null,
+					2,
+				),
+			},
+		],
+		exampleResponse: JSON.stringify(
+			{
+				success: true,
+				productId: "prod_123abc...",
+				bankAccounts: [
+					{
+						currency: "THB",
+						bank_name: "Kasikorn Bank",
+						account_number: "123-4-56789-0",
+						account_name: "Company (Thailand) Co., Ltd.",
+						bank_details: {
+							swift_code: "KASITHBK",
+							bank_code: "004",
+							promptpay_id: "0891234567",
+						},
+					},
+					{
+						currency: "SGD",
+						bank_name: "DBS Bank",
+						account_number: "001-234567-8",
+						account_name: "Company Singapore Pte. Ltd.",
+						bank_details: {
+							swift_code: "DBSSSGSG",
+							bank_code: "7171",
+						},
+					},
+				],
+				supportedCurrencies: ["THB", "SGD"],
+				message: "Bank accounts configured for 2 currencies",
+			},
+			null,
+			2,
+		),
+	},
+
+	// FLOW 1C: Update Organization Info
+	{
+		id: "org-info-update",
+		flow: "FLOW 1C",
+		title: "Update Organization Info",
+		method: "PATCH",
+		endpoint: "/api/v1/clients/product/{productId}/organization",
+		description:
+			"🏢 Update organization information (company name, description, website). Separate endpoint for partial updates.",
+		params: [
+			{
+				name: "productId",
+				type: "string",
+				required: true,
+				description: "Product ID from registration (auto-filled from active organization)",
+				default: "",
+			},
+			{
+				name: "companyName",
+				type: "string",
+				required: false,
+				description: "Company name (optional - only updates if provided)",
+				default: "",
+			},
+			{
+				name: "businessType",
+				type: "select",
+				required: false,
+				description: "Business type (optional - only updates if provided)",
+				default: "",
+				options: [
+					{ value: "", label: "-- Keep current --" },
+					{ value: "E-COMMERCE", label: "E-Commerce" },
+					{ value: "FINTECH", label: "Fintech" },
+					{ value: "GAMING", label: "Gaming" },
+					{ value: "REMITTANCE", label: "Remittance" },
+					{ value: "PAYMENTS", label: "Payments" },
+					{ value: "TRADING", label: "Trading" },
+					{ value: "OTHER", label: "Other" },
+				],
+			},
+			{
+				name: "description",
+				type: "string",
+				required: false,
+				description: "Business description (optional)",
+				default: "",
+			},
+			{
+				name: "websiteUrl",
+				type: "string",
+				required: false,
+				description: "Company website URL (optional)",
+				default: "",
+			},
+		],
+		exampleResponse: JSON.stringify(
+			{
+				success: true,
+				productId: "prod_xxx",
+				companyName: "Acme Corp",
+				businessType: "FINTECH",
+				description: "Digital payments platform",
+				websiteUrl: "https://acme.corp",
+				message: "Organization info updated successfully",
+			},
+			null,
+			2,
+		),
+	},
+
+	// FLOW 1D: Update Supported Currencies
+	{
+		id: "currencies-update",
+		flow: "FLOW 1D",
+		title: "Update Supported Currencies",
+		method: "PATCH",
+		endpoint: "/api/v1/clients/product/{productId}/currencies",
+		description:
+			"💱 Update the list of supported fiat currencies for off-ramp withdrawals. Currencies determine which bank accounts can be configured.",
+		params: [
+			{
+				name: "productId",
+				type: "string",
+				required: true,
+				description: "Product ID from registration (auto-filled from active organization)",
+				default: "",
+			},
+			{
+				name: "supportedCurrencies",
+				type: "multiselect",
+				required: true,
+				description: "Select currencies to support (can select multiple)",
+				default: "SGD,USD",
+				options: [
+					{ value: "SGD", label: "SGD - Singapore Dollar" },
+					{ value: "USD", label: "USD - US Dollar" },
+					{ value: "EUR", label: "EUR - Euro" },
+					{ value: "THB", label: "THB - Thai Baht" },
+					{ value: "TWD", label: "TWD - Taiwan Dollar" },
+					{ value: "KRW", label: "KRW - Korean Won" },
+				],
+			},
+		],
+		exampleResponse: JSON.stringify(
+			{
+				success: true,
+				productId: "prod_xxx",
+				supportedCurrencies: ["SGD", "USD", "EUR"],
+				message: "Supported currencies updated successfully",
+			},
+			null,
+			2,
+		),
+	},
+
 	// FLOW 2: Strategy Configuration
 	{
 		id: "strategy-config",
@@ -377,7 +608,8 @@ const API_FLOWS: APIEndpoint[] = [
 		title: "Initiate Deposit (On-Ramp)",
 		method: "POST",
 		endpoint: "/api/v1/deposits/fiat",
-		description: "Start a fiat deposit via Proxify's on-ramp gateway or banking partnerships (Circle, MoonPay, etc.)",
+		description:
+			"🏦 Start a fiat deposit. Returns PROXIFY's bank account (fixed per currency: THB → Kasikorn Bank, SGD → DBS, etc.). End-user transfers to Proxify's account → Proxify mints shares. Note: Client's bank accounts (Configure Settlement Banking) are for OFF-RAMP withdrawals only!",
 		params: [
 			{ name: "api_key", type: "string", required: true, description: "Client API key" },
 			{ name: "user_id", type: "string", required: true, description: "End user ID", default: "grab_driver_12345" },
@@ -419,7 +651,8 @@ const API_FLOWS: APIEndpoint[] = [
 		title: "Complete Deposit (Webhook)",
 		method: "POST",
 		endpoint: "/api/v1/deposits/fiat/:orderId/complete",
-		description: "Complete fiat deposit after on-ramp provider confirms payment (webhook callback or manual completion)",
+		description:
+			"Complete fiat deposit after on-ramp provider confirms payment (webhook callback or manual completion)",
 		params: [
 			{
 				name: "orderId",
@@ -463,6 +696,44 @@ const API_FLOWS: APIEndpoint[] = [
 				shares_minted: "285710000000000000000",
 				effective_balance: "285.71",
 				current_index: "1000000000000000000",
+			},
+			null,
+			2,
+		),
+	},
+
+	// FLOW 4c: List Pending Deposits (Demo - Automated Banking Flow)
+	{
+		id: "deposits-pending",
+		flow: "FLOW 4",
+		title: "List Pending Deposits (Banking Demo)",
+		method: "GET",
+		endpoint: "/api/v1/deposits/pending",
+		description:
+			"📋 List all pending deposits grouped by currency. For demo purposes - shows what transfers need to be executed. In production, this would trigger automated bank transfers.",
+		params: [{ name: "api_key", type: "string", required: true, description: "Client API key (auto-filled)" }],
+		exampleResponse: JSON.stringify(
+			{
+				deposits: [
+					{
+						orderId: "DEP-123",
+						userId: "user_123",
+						amount: "10000",
+						currency: "THB",
+						status: "pending",
+						paymentInstructions: {
+							bankName: "Kasikorn Bank",
+							accountNumber: "123-4-56789-0",
+							reference: "DEP-123",
+						},
+						createdAt: "2025-11-27T06:00:00Z",
+					},
+				],
+				summary: [
+					{ currency: "THB", count: 5, totalAmount: "50000" },
+					{ currency: "SGD", count: 3, totalAmount: "5000" },
+					{ currency: "USD", count: 2, totalAmount: "2000" },
+				],
 			},
 			null,
 			2,
@@ -524,14 +795,18 @@ const API_FLOWS: APIEndpoint[] = [
 		),
 	},
 
-	// FLOW 8: Initiate Withdrawal
+	// FLOW 8: Initiate Withdrawal (3 Methods)
 	{
 		id: "withdrawal-initiate",
 		flow: "FLOW 8",
-		title: "Request Withdrawal",
+		title: "Request Withdrawal (3 Methods)",
 		method: "POST",
 		endpoint: "/api/v1/withdrawals",
-		description: "User requests to withdraw funds",
+		description:
+			"🏦 User requests to withdraw funds. Supports 3 withdrawal methods:\n" +
+			"1) CRYPTO: Direct crypto transfer to end-user wallet\n" +
+			"2) FIAT_TO_CLIENT: Off-ramp to client's bank account (client handles distribution, KYB required)\n" +
+			"3) FIAT_TO_END_USER: Off-ramp directly to end-user's bank account (requires KYC)",
 		params: [
 			{ name: "api_key", type: "string", required: true, description: "Client API key" },
 			{ name: "user_id", type: "string", required: true, description: "End user ID", default: "grab_driver_12345" },
@@ -539,23 +814,80 @@ const API_FLOWS: APIEndpoint[] = [
 				name: "vaultId",
 				type: "string",
 				required: true,
-				description: "Vault ID (chain-tokenAddress)",
+				description: "Vault ID (chain-tokenAddress or clientId)",
 				default: "ethereum-0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
 			},
-			{ name: "amount", type: "number", required: true, description: "Amount to withdraw", default: "100" },
+			{ name: "amount", type: "number", required: true, description: "Amount to withdraw (USDC)", default: "100" },
+			{
+				name: "withdrawal_method",
+				type: "select",
+				required: true,
+				description: "Withdrawal execution method",
+				default: "crypto",
+				options: [
+					{
+						value: "crypto",
+						label: "Method 1: Direct Crypto Transfer (to end-user wallet)",
+					},
+					{
+						value: "fiat_to_client",
+						label: "Method 2: Off-Ramp to Client Bank (client distributes via app, KYB required)",
+					},
+					{
+						value: "fiat_to_end_user",
+						label: "Method 3: Off-Ramp to End-User Bank (direct to end-user, KYC required)",
+					},
+				],
+			},
 			{
 				name: "destination_address",
 				type: "string",
 				required: false,
-				description: "Withdrawal address (if non-custodial)",
+				description: "End-user wallet address (required for Method 1: crypto)",
+				default: "",
+			},
+			{
+				name: "destination_currency",
+				type: "select",
+				required: false,
+				description: "Fiat currency for off-ramp (required for Method 2 & 3)",
+				default: "THB",
+				options: [
+					{ value: "THB", label: "THB - Thai Baht" },
+					{ value: "SGD", label: "SGD - Singapore Dollar" },
+					{ value: "USD", label: "USD - US Dollar" },
+				],
+			},
+			{
+				name: "end_user_bank_account",
+				type: "json",
+				required: false,
+				description: "End-user bank account (required for Method 3: fiat_to_end_user). Must have KYC verification.",
+				default: JSON.stringify(
+					{
+						currency: "THB",
+						bank_name: "Kasikorn Bank",
+						account_number: "987-6-54321-0",
+						account_name: "Driver Name",
+						bank_details: {
+							promptpay_id: "0812345678",
+						},
+					},
+					null,
+					0,
+				),
 			},
 		],
 		exampleResponse: JSON.stringify(
 			{
 				withdrawal_id: "uuid...",
 				status: "queued",
-				shares_burned: "95238095238095238095",
+				withdrawal_method: "fiat_to_client",
+				amount: "100",
+				destination_currency: "THB",
+				estimated_fiat_amount: "3500",
 				estimated_completion: "2024-01-15T12:00:00Z",
+				message: "Withdrawal queued. Off-ramp to client bank account will complete in 1-3 business days.",
 			},
 			null,
 			2,
@@ -603,6 +935,43 @@ const API_FLOWS: APIEndpoint[] = [
 	},
 ]
 
+/**
+ * Helper function to recursively parse JSON strings in an object
+ * This ensures that stringified JSON in the response is properly formatted
+ */
+function parseNestedJSON(obj: unknown): unknown {
+	if (obj === null || obj === undefined) {
+		return obj
+	}
+
+	if (typeof obj === "string") {
+		// Try to parse if it looks like JSON
+		if ((obj.startsWith("{") && obj.endsWith("}")) || (obj.startsWith("[") && obj.endsWith("]"))) {
+			try {
+				return parseNestedJSON(JSON.parse(obj))
+			} catch {
+				// Not valid JSON, return as-is
+				return obj
+			}
+		}
+		return obj
+	}
+
+	if (Array.isArray(obj)) {
+		return obj.map((item) => parseNestedJSON(item))
+	}
+
+	if (typeof obj === "object") {
+		const result: Record<string, unknown> = {}
+		for (const [key, value] of Object.entries(obj)) {
+			result[key] = parseNestedJSON(value)
+		}
+		return result
+	}
+
+	return obj
+}
+
 export function APITestingPage() {
 	const [expandedCard, setExpandedCard] = useState<string | null>(null)
 	const [loading, setLoading] = useState<string | null>(null)
@@ -611,6 +980,25 @@ export function APITestingPage() {
 	const [formData, setFormData] = useState<Record<string, Record<string, string>>>({})
 	const [savedApiKey, setSavedApiKey] = useState<string | null>(null)
 	const [loadingOrgs, setLoadingOrgs] = useState(false)
+
+	// State for dynamic bank accounts form (FLOW 1B)
+	const [bankAccounts, setBankAccounts] = useState<
+		{
+			currency: string
+			bank_name: string
+			account_number: string
+			account_name: string
+			bank_details: string // JSON string
+		}[]
+	>([
+		{
+			currency: "THB",
+			bank_name: "",
+			account_number: "",
+			account_name: "",
+			bank_details: "",
+		},
+	])
 
 	// Privy integration
 	const { user, authenticated } = usePrivy()
@@ -666,6 +1054,54 @@ export function APITestingPage() {
 				setSavedApiKey(null)
 			}
 		}
+	}, [activeProductId])
+
+	// Load existing bank accounts when active organization changes
+	useEffect(() => {
+		const loadBankAccounts = async () => {
+			if (activeProductId) {
+				try {
+					// eslint-disable-next-line no-console
+					console.log("[API Test] Loading bank accounts for organization:", activeProductId)
+					const orgData = await b2bApiClient.getOrganizationByProductId(activeProductId)
+					const existingBankAccounts = (orgData as any)?.bank_accounts || (orgData as any)?.bankAccounts || []
+
+					if (existingBankAccounts.length > 0) {
+						// Map backend format (snake_case) to frontend format (camelCase)
+						const mappedAccounts = existingBankAccounts.map((ba: any) => ({
+							currency: ba.currency || "",
+							bank_name: ba.bank_name || ba.bankName || "",
+							account_number: ba.account_number || ba.accountNumber || "",
+							account_name: ba.account_name || ba.accountName || "",
+							bank_details:
+								ba.bank_details || ba.bankDetails ? JSON.stringify(ba.bank_details || ba.bankDetails, null, 2) : "",
+						}))
+						setBankAccounts(mappedAccounts)
+						// eslint-disable-next-line no-console
+						console.log(`[API Test] ✅ Loaded ${mappedAccounts.length} bank account(s)`)
+					} else {
+						// No existing accounts - reset to default empty form
+						setBankAccounts([
+							{
+								currency: "THB",
+								bank_name: "",
+								account_number: "",
+								account_name: "",
+								bank_details: "",
+							},
+						])
+						// eslint-disable-next-line no-console
+						console.log("[API Test] No existing bank accounts found - showing empty form")
+					}
+				} catch (error) {
+					// eslint-disable-next-line no-console
+					console.error("[API Test] Failed to load bank accounts:", error)
+					// On error, keep default empty form
+				}
+			}
+		}
+
+		loadBankAccounts()
 	}, [activeProductId])
 
 	// Load organizations when user is authenticated (READ ONLY - don't modify UserStore)
@@ -855,6 +1291,8 @@ export function APITestingPage() {
 						privyEmail: privyEmail ?? undefined, // ✅ From privy_accounts table via UserStore
 						description: params.description || undefined,
 						websiteUrl: params.websiteUrl || undefined,
+						// ✅ Don't send supportedCurrencies and bankAccounts during registration
+						// These will be configured separately via FLOW 1B and FLOW 1D
 					})
 
 					// Add to UserStore after successful registration
@@ -878,6 +1316,112 @@ export function APITestingPage() {
 					break
 				}
 
+				// FLOW 1B: Configure Settlement Banking (Multiple Accounts)
+				case "banking-config": {
+					// Validate active organization is selected
+					if (!activeProductId) {
+						throw new Error("Please select an active organization first from the dropdown above")
+					}
+
+					// eslint-disable-next-line no-console
+					console.log("[API Test] Configuring bank accounts for organization:", activeProductId)
+
+					// Validate each bank account has required fields
+					for (const ba of bankAccounts) {
+						if (!ba.currency || !ba.bank_name || !ba.account_number || !ba.account_name) {
+							throw new Error("Each bank account must have: currency, bank_name, account_number, account_name")
+						}
+					}
+
+					// Prepare bank accounts array, parsing bank_details if provided
+					const bankAccountsArray = bankAccounts.map((ba) => {
+						let parsedBankDetails = undefined
+						if (ba.bank_details && ba.bank_details.trim() !== "") {
+							try {
+								parsedBankDetails = JSON.parse(ba.bank_details)
+							} catch (error) {
+								throw new Error(`Invalid JSON in bank_details: ${ba.bank_details}`)
+							}
+						}
+
+						return {
+							currency: ba.currency,
+							bank_name: ba.bank_name,
+							account_number: ba.account_number,
+							account_name: ba.account_name,
+							bank_details: parsedBankDetails,
+						}
+					})
+
+					data = await b2bApiClient.configureBankAccounts(activeProductId, {
+						bankAccounts: bankAccountsArray,
+					})
+
+					// eslint-disable-next-line no-console
+					console.log("[API Test] Bank accounts configured successfully:", data)
+					break
+				}
+
+				// FLOW 1C: Update Organization Info
+				case "org-info-update": {
+					// Validate active organization is selected
+					if (!activeProductId) {
+						throw new Error("Please select an active organization first from the dropdown above")
+					}
+
+					// eslint-disable-next-line no-console
+					console.log("[API Test] Updating organization info for:", activeProductId)
+
+					// Build update object, only including non-empty fields
+					const orgUpdateData: {
+						companyName?: string
+						businessType?: string
+						description?: string
+						websiteUrl?: string
+					} = {}
+
+					if (params.companyName) orgUpdateData.companyName = params.companyName
+					if (params.businessType) orgUpdateData.businessType = params.businessType
+					if (params.description) orgUpdateData.description = params.description
+					if (params.websiteUrl) orgUpdateData.websiteUrl = params.websiteUrl
+
+					data = await b2bApiClient.updateOrganizationInfo(activeProductId, orgUpdateData)
+
+					// eslint-disable-next-line no-console
+					console.log("[API Test] Organization info updated successfully:", data)
+					break
+				}
+
+				// FLOW 1D: Update Supported Currencies
+				case "currencies-update": {
+					// Validate active organization is selected
+					if (!activeProductId) {
+						throw new Error("Please select an active organization first from the dropdown above")
+					}
+
+					// eslint-disable-next-line no-console
+					console.log("[API Test] Updating supported currencies for:", activeProductId)
+
+					// Parse currencies from comma-separated string or multiselect
+					const currenciesString = params.supportedCurrencies || ""
+					const supportedCurrencies = currenciesString
+						.split(",")
+						.map((c: string) => c.trim())
+						.filter(Boolean)
+
+					if (supportedCurrencies.length === 0) {
+						throw new Error("Please select at least one currency")
+					}
+
+					data = await b2bApiClient.updateSupportedCurrencies(activeProductId, {
+						supportedCurrencies,
+					})
+
+					// eslint-disable-next-line no-console
+					console.log("[API Test] Supported currencies updated successfully:", data)
+					break
+				}
+
 				// FLOW 2: Configure Vault Strategies
 				case "strategy-config":
 					data = await b2bApiClient.configureStrategies(params.productId, {
@@ -897,7 +1441,7 @@ export function APITestingPage() {
 
 					// eslint-disable-next-line no-console
 					console.log("[API Test] Creating end user for organization:", {
-						activeProductId,
+						activeProductId: activeProductId,
 						clientUserId: params.clientUserId,
 						email: params.email,
 						walletAddress: params.walletAddress,
@@ -938,6 +1482,11 @@ export function APITestingPage() {
 					})
 					break
 
+				// FLOW 4c: List Pending Deposits
+				case "deposits-pending":
+					data = await b2bApiClient.listPendingDeposits()
+					break
+
 				// FLOW 5: Get User Balance
 				case "balance-get":
 					data = await b2bApiClient.getUserBalance(params.user_id, {
@@ -954,13 +1503,16 @@ export function APITestingPage() {
 					})
 					break
 
-				// FLOW 8: Initiate Withdrawal
+				// FLOW 8: Initiate Withdrawal (3 Methods)
 				case "withdrawal-initiate":
 					data = await b2bApiClient.createWithdrawal({
 						user_id: params.user_id,
 						vaultId: params.vaultId,
 						amount: params.amount,
+						withdrawal_method: params.withdrawal_method as "crypto" | "fiat_to_client" | "fiat_to_end_user",
 						destination_address: params.destination_address || undefined,
+						destination_currency: params.destination_currency || undefined,
+						end_user_bank_account: params.end_user_bank_account ? JSON.parse(params.end_user_bank_account) : undefined,
 					})
 					break
 
@@ -994,7 +1546,15 @@ export function APITestingPage() {
 				}
 
 				if (productId) {
-					saveApiKeyForOrg(productId, apiKey) // ✅ Save per-org!
+					// Get active organization data for syncing to clientContextStore
+					const activeOrg = getActiveOrganization()
+					const orgData = activeOrg ? {
+						id: activeOrg.id,
+						companyName: activeOrg.companyName,
+						businessType: activeOrg.businessType,
+					} : undefined
+
+					saveApiKeyForOrg(productId, apiKey, orgData) // ✅ Save per-org with org data!
 					setSavedApiKey(apiKey)
 					// eslint-disable-next-line no-console
 					console.log(`[API Test] ✅ API Key saved for ${productId}:`, apiKey.substring(0, 12) + "...")
@@ -1072,6 +1632,8 @@ export function APITestingPage() {
 				return "bg-green-100 text-green-700"
 			case "PUT":
 				return "bg-yellow-100 text-yellow-700"
+			case "PATCH":
+				return "bg-orange-100 text-orange-700"
 			case "DELETE":
 				return "bg-red-100 text-red-700"
 			default:
@@ -1230,7 +1792,7 @@ export function APITestingPage() {
 												<div>
 													<span className="text-gray-500">Privy Org ID:</span>
 													<code className={`ml-2 font-mono ${privyOrganizationId ? "text-green-700" : "text-red-700"}`}>
-														{privyOrganizationId || "❌ NOT SET"}
+														{privyOrganizationId ?? "❌ NOT SET"}
 													</code>
 												</div>
 												<div>
@@ -1242,13 +1804,13 @@ export function APITestingPage() {
 												<div>
 													<span className="text-gray-500">Privy Email:</span>
 													<code className={`ml-2 font-mono ${privyEmail ? "text-green-700" : "text-gray-500"}`}>
-														{privyEmail || "N/A"}
+														{privyEmail ?? "N/A"}
 													</code>
 												</div>
 												<div>
 													<span className="text-gray-500">Wallet Type:</span>
 													<code className={`ml-2 font-mono ${walletType ? "text-green-700" : "text-red-700"}`}>
-														{walletType || "❌ NOT SET"}
+														{walletType ?? "❌ NOT SET"}
 													</code>
 												</div>
 											</div>
@@ -1396,15 +1958,14 @@ export function APITestingPage() {
 										{org.productId !== activeProductId && (
 											<button
 												onClick={() => {
-													setActiveOrganization(org.productId)
-
-													// Load API key for this organization
+													// Load API key for this organization FIRST
 													const orgApiKey = loadApiKeyForOrg(org.productId)
+
+													// Update userStore with new API key (if found)
 													if (orgApiKey) {
+														setApiKey(orgApiKey)
 														localStorage.setItem("b2b:api_key", orgApiKey)
 														setSavedApiKey(orgApiKey)
-														// eslint-disable-next-line no-console
-														console.log("[API Test] ✓ Switched to:", org.companyName)
 														// eslint-disable-next-line no-console
 														console.log("[API Test] ✓ Loaded API key:", orgApiKey.substring(0, 12) + "...")
 													} else {
@@ -1415,6 +1976,13 @@ export function APITestingPage() {
 														localStorage.removeItem("b2b:api_key")
 														setSavedApiKey(null)
 													}
+
+													// Now switch organization (this will sync to clientContextStore)
+													setActiveOrganization(org.productId)
+													// eslint-disable-next-line no-console
+													console.log("[API Test] ✓ Switched to:", org.companyName)
+													// eslint-disable-next-line no-console
+													console.log("[API Test] ✓ Synced to clientContextStore")
 												}}
 												className="ml-4 px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400"
 											>
@@ -1494,57 +2062,275 @@ export function APITestingPage() {
 											{/* Parameters Section */}
 											<div>
 												<h4 className="text-sm font-semibold text-gray-900 mb-3">Parameters</h4>
-												<div className="space-y-3">
-													{endpoint.params.map((param) => (
-														<div key={param.name} className="grid grid-cols-12 gap-4 items-start">
-															<div className="col-span-3">
-																<label className="block text-sm font-medium text-gray-700">
-																	{param.name}
-																	{param.required && <span className="text-red-500 ml-1">*</span>}
-																</label>
-																<span className="text-xs text-gray-500">{param.type}</span>
-															</div>
-															<div className="col-span-9">
-																{param.type === "json" ? (
-																	<textarea
-																		value={currentFormData[param.name]}
-																		onChange={(e) => {
-																			handleParamChange(endpoint.id, param.name, e.target.value)
-																		}}
-																		placeholder={param.description}
-																		rows={3}
-																		className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
-																	/>
-																) : param.type === "select" && param.options ? (
-																	<select
-																		value={currentFormData[param.name]}
-																		onChange={(e) => {
-																			handleParamChange(endpoint.id, param.name, e.target.value)
-																		}}
-																		className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-																	>
-																		{param.options.map((option) => (
-																			<option key={option.value} value={option.value}>
-																				{option.label}
-																			</option>
-																		))}
-																	</select>
-																) : (
-																	<input
-																		type="text"
-																		value={currentFormData[param.name]}
-																		onChange={(e) => {
-																			handleParamChange(endpoint.id, param.name, e.target.value)
-																		}}
-																		placeholder={param.description}
-																		className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-																	/>
-																)}
-																<p className="mt-1 text-xs text-gray-500">{param.description}</p>
+
+												{/* Custom UI for Bank Accounts Configuration */}
+												{endpoint.id === "banking-config" ? (
+													<div className="space-y-4">
+														{/* Product ID (auto-filled) */}
+														<div className="p-3 bg-blue-50 border border-blue-200 rounded-md">
+															<div className="text-sm">
+																<span className="font-medium text-gray-700">Product ID: </span>
+																<span className="text-gray-900 font-mono">
+																	{activeProductId ?? "Please select an organization"}
+																</span>
 															</div>
 														</div>
-													))}
-												</div>
+
+														{/* Bank Accounts Dynamic Form */}
+														<div className="space-y-4">
+															{bankAccounts.map((account, index) => (
+																<div key={index} className="p-4 border border-gray-300 rounded-lg space-y-3 bg-gray-50">
+																	<div className="flex items-center justify-between mb-2">
+																		<h5 className="text-sm font-semibold text-gray-800">Bank Account {index + 1}</h5>
+																		{bankAccounts.length > 1 && (
+																			<button
+																				type="button"
+																				onClick={() => {
+																					setBankAccounts(bankAccounts.filter((_, i) => i !== index))
+																				}}
+																				className="text-red-600 hover:text-red-800 text-sm"
+																			>
+																				Remove
+																			</button>
+																		)}
+																	</div>
+
+																	{/* Currency Dropdown */}
+																	<div>
+																		<label className="block text-sm font-medium text-gray-700 mb-1">
+																			Currency <span className="text-red-500">*</span>
+																		</label>
+																		<select
+																			value={account.currency}
+																			onChange={(e) => {
+																				const updated = [...bankAccounts]
+																				updated[index].currency = e.target.value
+																				setBankAccounts(updated)
+																			}}
+																			className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+																		>
+																			<option value="THB">THB - Thai Baht</option>
+																			<option value="SGD">SGD - Singapore Dollar</option>
+																			<option value="USD">USD - US Dollar</option>
+																			<option value="EUR">EUR - Euro</option>
+																			<option value="TWD">TWD - Taiwan Dollar</option>
+																			<option value="KRW">KRW - Korean Won</option>
+																		</select>
+																	</div>
+
+																	{/* Bank Name */}
+																	<div>
+																		<label className="block text-sm font-medium text-gray-700 mb-1">
+																			Bank Name <span className="text-red-500">*</span>
+																		</label>
+																		<input
+																			type="text"
+																			value={account.bank_name}
+																			onChange={(e) => {
+																				const updated = [...bankAccounts]
+																				updated[index].bank_name = e.target.value
+																				setBankAccounts(updated)
+																			}}
+																			placeholder="e.g., Kasikorn Bank"
+																			className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+																		/>
+																	</div>
+
+																	{/* Account Number */}
+																	<div>
+																		<label className="block text-sm font-medium text-gray-700 mb-1">
+																			Account Number <span className="text-red-500">*</span>
+																		</label>
+																		<input
+																			type="text"
+																			value={account.account_number}
+																			onChange={(e) => {
+																				const updated = [...bankAccounts]
+																				updated[index].account_number = e.target.value
+																				setBankAccounts(updated)
+																			}}
+																			placeholder="e.g., 123-4-56789-0"
+																			className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+																		/>
+																	</div>
+
+																	{/* Account Name */}
+																	<div>
+																		<label className="block text-sm font-medium text-gray-700 mb-1">
+																			Account Holder Name <span className="text-red-500">*</span>
+																		</label>
+																		<input
+																			type="text"
+																			value={account.account_name}
+																			onChange={(e) => {
+																				const updated = [...bankAccounts]
+																				updated[index].account_name = e.target.value
+																				setBankAccounts(updated)
+																			}}
+																			placeholder="e.g., Company (Thailand) Co., Ltd."
+																			className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+																		/>
+																	</div>
+
+																	{/* Bank Details (Optional JSON) */}
+																	<div>
+																		<label className="block text-sm font-medium text-gray-700 mb-1">
+																			Bank Details (Optional JSON)
+																		</label>
+																		<textarea
+																			value={account.bank_details}
+																			onChange={(e) => {
+																				const updated = [...bankAccounts]
+																				updated[index].bank_details = e.target.value
+																				setBankAccounts(updated)
+																			}}
+																			placeholder='{"swift_code":"KASITHBK","bank_code":"004"}'
+																			rows={2}
+																			className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+																		/>
+																	</div>
+																</div>
+															))}
+
+															{/* Add Another Currency Button */}
+															<button
+																type="button"
+																onClick={() => {
+																	setBankAccounts([
+																		...bankAccounts,
+																		{
+																			currency: "USD",
+																			bank_name: "",
+																			account_number: "",
+																			account_name: "",
+																			bank_details: "",
+																		},
+																	])
+																}}
+																className="w-full py-2 border-2 border-dashed border-gray-300 rounded-lg text-sm text-gray-600 hover:border-blue-500 hover:text-blue-600 transition-colors"
+															>
+																+ Add Another Currency
+															</button>
+														</div>
+													</div>
+												) : (
+													/* Default parameter rendering for other flows */
+													<div className="space-y-3">
+														{endpoint.params.map((param) => (
+															<div key={param.name} className="grid grid-cols-12 gap-4 items-start">
+																<div className="col-span-3">
+																	<label className="block text-sm font-medium text-gray-700">
+																		{param.name}
+																		{param.required && <span className="text-red-500 ml-1">*</span>}
+																	</label>
+																	<span className="text-xs text-gray-500">{param.type}</span>
+																</div>
+																<div className="col-span-9">
+																	{param.type === "json" ? (
+																		<textarea
+																			value={currentFormData[param.name]}
+																			onChange={(e) => {
+																				handleParamChange(endpoint.id, param.name, e.target.value)
+																			}}
+																			placeholder={param.description}
+																			rows={3}
+																			className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono"
+																		/>
+																	) : param.type === "select" && param.options ? (
+																		<select
+																			value={currentFormData[param.name]}
+																			onChange={(e) => {
+																				handleParamChange(endpoint.id, param.name, e.target.value)
+																			}}
+																			className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+																		>
+																			{param.options.map((option) => (
+																				<option key={option.value} value={option.value}>
+																					{option.label}
+																				</option>
+																			))}
+																		</select>
+																	) : param.type === "multiselect" && param.options ? (
+																		<div className="space-y-2">
+																			<div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md min-h-[38px] bg-white">
+																				{(currentFormData[param.name] || "")
+																					.split(",")
+																					.filter(Boolean)
+																					.map((selected: string) => {
+																						const option = param.options?.find((o) => o.value === selected.trim())
+																						return option ? (
+																							<span
+																								key={selected}
+																								className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs"
+																							>
+																								{option.label}
+																								<button
+																									type="button"
+																									onClick={() => {
+																										const current = (currentFormData[param.name] || "")
+																											.split(",")
+																											.filter(Boolean)
+																											.map((s: string) => s.trim())
+																										const updated = current.filter((c: string) => c !== selected.trim())
+																										handleParamChange(endpoint.id, param.name, updated.join(","))
+																									}}
+																									className="hover:text-blue-900"
+																								>
+																									×
+																								</button>
+																							</span>
+																						) : null
+																					})}
+																			</div>
+																			<select
+																				value=""
+																				onChange={(e) => {
+																					if (e.target.value) {
+																						const current = (currentFormData[param.name] || "")
+																							.split(",")
+																							.filter(Boolean)
+																							.map((s: string) => s.trim())
+																						if (!current.includes(e.target.value)) {
+																							current.push(e.target.value)
+																							handleParamChange(endpoint.id, param.name, current.join(","))
+																						}
+																					}
+																				}}
+																				className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+																			>
+																				<option value="">+ Add currency...</option>
+																				{param.options
+																					.filter(
+																						(option) =>
+																							!(currentFormData[param.name] || "")
+																								.split(",")
+																								.map((s: string) => s.trim())
+																								.includes(option.value),
+																					)
+																					.map((option) => (
+																						<option key={option.value} value={option.value}>
+																							{option.label}
+																						</option>
+																					))}
+																			</select>
+																		</div>
+																	) : (
+																		<input
+																			type="text"
+																			value={currentFormData[param.name]}
+																			onChange={(e) => {
+																				handleParamChange(endpoint.id, param.name, e.target.value)
+																			}}
+																			placeholder={param.description}
+																			className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+																		/>
+																	)}
+																	<p className="mt-1 text-xs text-gray-500">{param.description}</p>
+																</div>
+															</div>
+														))}
+													</div>
+												)}
 											</div>
 
 											{/* Execute Button */}
@@ -1580,7 +2366,7 @@ export function APITestingPage() {
 															<span className="text-xs text-gray-500">{response.timestamp}</span>
 															<button
 																onClick={() => {
-																	copyToClipboard(JSON.stringify(response.data, null, 2), endpoint.id)
+																	copyToClipboard(JSON.stringify(parseNestedJSON(response.data), null, 2), endpoint.id)
 																}}
 																className="p-1 hover:bg-gray-100 rounded"
 															>
@@ -1593,7 +2379,7 @@ export function APITestingPage() {
 														</div>
 													</div>
 													<pre className="bg-gray-900 text-gray-100 p-4 rounded-md overflow-x-auto text-sm">
-														{JSON.stringify(response.data, null, 2)}
+														{JSON.stringify(parseNestedJSON(response.data), null, 2)}
 													</pre>
 												</div>
 											)}

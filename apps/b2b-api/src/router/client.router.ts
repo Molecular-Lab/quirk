@@ -13,6 +13,23 @@ export const createClientRouter = (
 	s: ReturnType<typeof initServer>,
 	clientService: ClientService
 ): any => {
+
+	// Helper: normalize bankAccounts field (DB may store as JSON string)
+	const normalizeBankAccounts = (raw: any): any[] => {
+		if (!raw) return []
+		if (typeof raw === "string") {
+			try {
+				const parsed = JSON.parse(raw)
+				return Array.isArray(parsed) ? parsed : []
+			} catch (e) {
+				logger.warn("Failed to parse bankAccounts JSON", { raw })
+				return []
+			}
+		}
+		if (Array.isArray(raw)) return raw
+		return []
+	}
+
 	return s.router(b2bContract.client, {
 		// GET /clients/:id
 		getById: async ({ params }: { params: { id: string } }) => {
@@ -40,6 +57,8 @@ export const createClientRouter = (
 						websiteUrl: client.websiteUrl || null,
 						walletType: client.privyWalletType, // ✅ From JOIN
 						privyOrganizationId: client.privyOrganizationId,
+						supportedCurrencies: client.supportedCurrencies || [],
+						bankAccounts: normalizeBankAccounts(client.bankAccounts),
 						isActive: client.isActive,
 						isSandbox: client.isSandbox || false,
 						createdAt: client.createdAt.toISOString(),
@@ -84,6 +103,8 @@ export const createClientRouter = (
 						websiteUrl: client.websiteUrl || null,
 						walletType: client.privyWalletType, // ✅ From JOIN
 						privyOrganizationId: client.privyOrganizationId,
+						supportedCurrencies: client.supportedCurrencies || [],
+						bankAccounts: normalizeBankAccounts(client.bankAccounts),
 						isActive: client.isActive,
 						isSandbox: client.isSandbox || false,
 						createdAt: client.createdAt.toISOString(),
@@ -121,6 +142,9 @@ export const createClientRouter = (
 					websiteUrl: client.websiteUrl || null,
 					walletType: client.privyWalletType, // ✅ From JOIN
 					privyOrganizationId: client.privyOrganizationId,
+					supportedCurrencies: client.supportedCurrencies || [],
+					// Normalize bankAccounts (may be JSON string from DB)
+					bankAccounts: normalizeBankAccounts(client.bankAccounts),
 					isActive: client.isActive,
 					isSandbox: client.isSandbox || false,
 					createdAt: client.createdAt.toISOString(),
@@ -270,6 +294,10 @@ export const createClientRouter = (
 					platformFee: body.platformFee || null,
 					performanceFee: body.performanceFee || null,
 
+					// Multi-currency support (for off-ramp withdrawals)
+					supportedCurrencies: body.supportedCurrencies || [],
+					bankAccounts: body.bankAccounts || [],
+
 					// Status
 					isActive: body.isActive ?? true,
 					isSandbox: body.isSandbox ?? false,
@@ -285,6 +313,9 @@ export const createClientRouter = (
 					// No API key yet - user must generate via FLOW 0
 				});
 
+				// Normalize bankAccounts (DB may store JSON string)
+				const bankAccounts = normalizeBankAccounts(client.bankAccounts)
+
 				// Return response WITHOUT api_key (user must call FLOW 0 to generate)
 				return {
 					status: 201 as const,
@@ -297,6 +328,8 @@ export const createClientRouter = (
 						websiteUrl: client.websiteUrl || null,
 						walletType: client.privyWalletType, // ✅ From JOIN with privy_accounts
 						privyOrganizationId: client.privyOrganizationId, // ✅ From JOIN
+						supportedCurrencies: client.supportedCurrencies || [],
+						bankAccounts: bankAccounts,
 						isActive: client.isActive,
 						isSandbox: client.isSandbox || false,
 						createdAt: client.createdAt.toISOString(),
@@ -481,6 +514,175 @@ export const createClientRouter = (
 					body: {
 						success: false,
 						error: error.message || "Failed to configure strategies",
+					},
+				};
+			}
+		},
+
+		// ============================================
+		// SEPARATE CONFIG ENDPOINTS (3 cards on Settings page)
+		// ============================================
+
+		// 1. Update organization info only
+		updateOrganizationInfo: async ({ params, body }: { params: { productId: string }; body: any }) => {
+			try {
+				logger.info("Updating organization info", { productId: params.productId, body });
+
+				const result = await clientService.updateOrganizationInfo(params.productId, body);
+
+				if (!result) {
+					return {
+						status: 404 as const,
+						body: { success: false, error: `Client not found: ${params.productId}` },
+					};
+				}
+
+				return {
+					status: 200 as const,
+					body: {
+						success: true,
+						productId: params.productId,
+						companyName: result.companyName,
+						businessType: result.businessType,
+						description: result.description,
+						websiteUrl: result.websiteUrl,
+						message: "Organization info updated successfully",
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error updating organization info", { error: error.message, params, body });
+				if (error.message.includes("not found")) {
+					return {
+						status: 404 as const,
+						body: { success: false, error: error.message },
+					};
+				}
+				return {
+					status: 400 as const,
+					body: { success: false, error: error.message || "Failed to update organization info" },
+				};
+			}
+		},
+
+		// 2. Update supported currencies only
+		updateSupportedCurrencies: async ({ params, body }: { params: { productId: string }; body: { supportedCurrencies: string[] } }) => {
+			try {
+				logger.info("Updating supported currencies", { productId: params.productId, currencies: body.supportedCurrencies });
+
+				await clientService.updateSupportedCurrencies(params.productId, body.supportedCurrencies);
+
+				return {
+					status: 200 as const,
+					body: {
+						success: true,
+						productId: params.productId,
+						supportedCurrencies: body.supportedCurrencies,
+						message: `Supported currencies updated: ${body.supportedCurrencies.join(", ")}`,
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error updating supported currencies", { error: error.message, params, body });
+				if (error.message.includes("not found")) {
+					return {
+						status: 404 as const,
+						body: { success: false, error: error.message },
+					};
+				}
+				return {
+					status: 400 as const,
+					body: { success: false, error: error.message || "Failed to update supported currencies" },
+				};
+			}
+		},
+
+		// 3. Configure bank accounts for fiat withdrawals (off-ramp)
+		configureBankAccounts: async ({ params, body }: { params: { productId: string }; body: { bankAccounts: any[] } }) => {
+			try {
+				logger.info("Configuring bank accounts", { productId: params.productId, bankAccountsCount: body.bankAccounts.length });
+
+				// Get client by productId
+				const client = await clientService.getClientByProductId(params.productId);
+				if (!client) {
+					return {
+						status: 404 as const,
+						body: {
+							success: false,
+							error: "Client not found",
+						},
+					};
+				}
+
+				// Extract supported currencies from bank accounts
+				const supportedCurrencies = Array.from(new Set(body.bankAccounts.map((ba: any) => ba.currency)));
+
+				// Update bank accounts via service
+				await clientService.configureBankAccounts(client.id, body.bankAccounts, supportedCurrencies);
+
+				logger.info("Bank accounts configured successfully", { 
+					productId: params.productId, 
+					currencies: supportedCurrencies 
+				});
+
+				// Read back the client to return the canonical/stored bank accounts
+				const refreshedClient = await clientService.getClientByProductId(params.productId);
+
+				const returnedBankAccounts = normalizeBankAccounts(refreshedClient?.bankAccounts ?? client.bankAccounts ?? body.bankAccounts);
+				const returnedSupportedCurrencies = refreshedClient?.supportedCurrencies ?? supportedCurrencies;
+
+				return {
+					status: 200 as const,
+					body: {
+						success: true,
+						productId: params.productId,
+						bankAccounts: returnedBankAccounts,
+						supportedCurrencies: returnedSupportedCurrencies,
+						message: `Bank accounts configured for ${returnedSupportedCurrencies.length} currencies`,
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error configuring bank accounts", { error: error.message, params, body });
+				return {
+					status: 400 as const,
+					body: {
+						success: false,
+						error: error.message || "Failed to configure bank accounts",
+					},
+				};
+			}
+		},
+
+		// Get bank accounts for a client
+		getBankAccounts: async ({ params }: { params: { productId: string } }) => {
+			try {
+				const client = await clientService.getClientByProductId(params.productId);
+				if (!client) {
+					return {
+						status: 404 as const,
+						body: {
+							success: false,
+							error: "Client not found",
+						},
+					};
+				}
+
+				// Normalize bankAccounts (DB may store JSON string)
+				const bankAccounts = normalizeBankAccounts(client.bankAccounts);
+
+				return {
+					status: 200 as const,
+					body: {
+						productId: params.productId,
+						bankAccounts,
+						supportedCurrencies: client.supportedCurrencies || [],
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting bank accounts", { error: error.message, params });
+				return {
+					status: 404 as const,
+					body: {
+						success: false,
+						error: error.message || "Failed to get bank accounts",
 					},
 				};
 			}

@@ -1,5 +1,7 @@
 /**
  * UserVault Router - B2B user-vault endpoints
+ * 
+ * SIMPLIFIED ARCHITECTURE: ONE vault per user per client
  */
 
 import type { initServer } from "@ts-rest/express";
@@ -15,25 +17,13 @@ export function createUserVaultRouter(
 		// GET /user-vaults/:userId/:vaultId/balance
 		getBalance: async ({ params }) => {
 			try {
-				// Parse vaultId to extract chain and tokenAddress
-				// Format: base-0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913
-				const [chain, tokenAddress] = params.vaultId.split("-");
-
-				if (!chain || !tokenAddress) {
-					return {
-						status: 400 as const,
-						body: { error: "Invalid vaultId format. Expected: chain-tokenAddress" },
-					};
-				}
-
-				// Note: clientId should come from JWT or session in production
-				const clientId = ""; // TODO: Get from authenticated context
+				// In simplified architecture, vaultId is just an identifier
+				// We use the vaultId as clientId for now
+				const clientId = params.vaultId;
 
 				const balance = await userVaultService.getUserBalance(
 					params.userId,
-					clientId,
-					chain,
-					tokenAddress
+					clientId
 				);
 
 				if (!balance) {
@@ -48,7 +38,7 @@ export function createUserVaultRouter(
 					body: {
 						userId: balance.userId,
 						vaultId: params.vaultId,
-						shares: balance.shares,
+						shares: "0", // Simplified architecture doesn't use shares
 						entryIndex: balance.weightedEntryIndex,
 						effectiveBalance: balance.effectiveBalance,
 						yieldEarned: balance.yieldEarned,
@@ -67,28 +57,19 @@ export function createUserVaultRouter(
 		listVaultUsers: async ({ params, query }) => {
 			try {
 				const limit = query?.limit ? parseInt(query.limit) : 50;
+				const offset = query?.offset ? parseInt(query.offset) : 0;
 
-				// Parse vaultId to extract chain and tokenAddress
-				const [chain, tokenAddress] = params.vaultId.split("-");
+				// In simplified architecture, vaultId is clientId
+				const clientId = params.vaultId;
 
-				if (!chain || !tokenAddress) {
-					return {
-						status: 400 as const,
-						body: { error: "Invalid vaultId format. Expected: chain-tokenAddress" },
-					};
-				}
-
-				// Note: clientId should come from JWT or session in production
-				const clientId = ""; // TODO: Get from authenticated context
-
-				const users = await userVaultService.listVaultUsers(clientId, chain, tokenAddress, limit);
+				const users = await userVaultService.listVaultUsers(clientId, limit, offset);
 
 				return {
 					status: 200 as const,
 					body: users.map(user => ({
 						userId: user.userId,
-						clientUserId: user.userId, // Using userId as clientUserId for now
-						shares: user.shares,
+						clientUserId: user.userId,
+						shares: "0", // Simplified architecture doesn't use shares
 						balance: user.effectiveBalance,
 						yieldEarned: user.yieldEarned,
 					})),

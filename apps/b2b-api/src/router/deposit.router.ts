@@ -5,12 +5,18 @@
 import type { initServer } from "@ts-rest/express";
 import { b2bContract } from "@proxify/b2b-api-core";
 import type { DepositService } from "../service/deposit.service";
+import type { ClientService } from "../service/client.service";
 import { mapDepositToDto, mapDepositsToDto } from "../mapper/deposit.mapper";
 import { logger } from "../logger";
+import { BankAccountService, getExchangeRate } from "../service/bank-account.service";
+
+import type { DepositOrderService } from "../service/deposit-order.service";
 
 export function createDepositRouter(
 	s: ReturnType<typeof initServer>,
-	depositService: DepositService
+	depositService: DepositService,
+	depositOrderService: DepositOrderService,
+	clientService: ClientService
 ) {
 	return s.router(b2bContract.deposit, {
 		// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -35,6 +41,18 @@ export function createDepositRouter(
 					};
 				}
 
+				// ✅ Validate currency is supported
+				if (!BankAccountService.isCurrencySupported(body.currency)) {
+					logger.error("Unsupported currency", { currency: body.currency });
+					return {
+						status: 400 as const,
+						body: {
+							success: false,
+							error: `Currency ${body.currency} not supported. Supported currencies: ${BankAccountService.getSupportedCurrencies().join(", ")}`,
+						},
+					};
+				}
+
 				// ✅ INTERNAL ROUTING: Proxify decides which on-ramp to use based on currency
 				let onRampProvider = "proxify_gateway";
 
@@ -53,7 +71,56 @@ export function createDepositRouter(
 					selectedProvider: onRampProvider,
 				});
 
+				// ✅ DEPOSITS: Always use PROXIFY's bank accounts (fixed, hardcoded)
+				// Client's bank accounts (from Configure Settlement Banking) are for OFF-RAMP withdrawals only!
+				// Flow: End-user sends money to PROXIFY's bank → Proxify mints shares
+				const bankAccount = BankAccountService.getBankAccount(body.currency);
+
+				logger.info("Using Proxify's bank account for deposit", {
+					clientId,
+					currency: body.currency,
+					bankName: bankAccount.bankName
+				});
+
+				// ✅ Calculate expected crypto amount (fiat → USD → USDC)
+				const exchangeRate = await getExchangeRate(body.currency, "USD");
+				const usdAmount = parseFloat(body.amount) * exchangeRate;
+				const expectedCryptoAmount = usdAmount.toFixed(2); // USDC 1:1 with USD
+
+				// ✅ GENERATE ORDER ID (before creating deposit so we can use it in payment instructions)
+				const orderId = `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+				// ✅ GENERATE PAYMENT INSTRUCTIONS (Currency-specific)
+				// Flow: Client transfers to our bank → Bank webhook → We convert → Complete deposit
+				const paymentSessionUrl = process.env.FRONTEND_URL
+					? `${process.env.FRONTEND_URL}/payment-session/${orderId}`
+					: `http://localhost:5173/payment-session/${orderId}`;
+
+				// Extract bank details from Proxify's BankAccountService (camelCase format)
+				const paymentInstructions = {
+					paymentMethod: "bank_transfer" as const,
+					currency: body.currency,
+					amount: body.amount,
+					reference: orderId,
+
+					// Proxify's bank account details (from BankAccountService)
+					bankName: bankAccount.bankName,
+					accountNumber: bankAccount.accountNumber,
+					accountName: bankAccount.accountName,
+					swiftCode: bankAccount.swiftCode || "",
+					bankCode: bankAccount.bankCode,
+					branchCode: bankAccount.branchCode,
+					routingNumber: bankAccount.routingNumber,
+					iban: bankAccount.iban,
+					promptPayId: bankAccount.promptPayId,
+
+					instructions: bankAccount.instructions || `Please transfer ${body.amount} ${body.currency} to the bank account above. Use the reference number "${orderId}" in your transfer details.`,
+					paymentSessionUrl,
+				};
+
+				// ✅ Create deposit WITH payment instructions stored in database
 				const deposit = await depositService.createDeposit({
+					orderId,
 					clientId,
 					userId: body.userId,
 					depositType: "external",
@@ -61,46 +128,36 @@ export function createDepositRouter(
 					fiatCurrency: body.currency,
 					cryptoCurrency: body.tokenSymbol,
 					gatewayProvider: onRampProvider,
+					paymentInstructions, // ✅ Store payment instructions in DB
 				});
 
-				// ✅ GENERATE PAYMENT INSTRUCTIONS (Region-specific)
-				// Flow: Client transfers to our bank → Bank webhook → We convert → Complete deposit
-				const paymentInstructions: any = {
-					method: "bank_transfer",
-					amount: body.amount,
-					currency: body.currency,
-					reference: deposit.orderId,
-				};
-
-				// Region-specific bank account routing
-				if (body.currency === "THB") {
-					// ✅ Thai Baht → SCBX/Thai bank partnership
-					paymentInstructions.bankName = "Siam Commercial Bank (SCBX)";
-					paymentInstructions.accountNumber = "XXX-X-XXXXX-X";
-					paymentInstructions.accountName = "Proxify Gateway (Thailand) Co., Ltd.";
-					paymentInstructions.swiftCode = "SICOTHBK";
-					paymentInstructions.promptPayId = "0123456789"; // PromptPay QR option
-					paymentInstructions.instructions = `Option 1 (Instant): Scan PromptPay QR or use ID: 0123456789\nOption 2 (Bank Transfer): Transfer to account above\nIMPORTANT: Include reference: ${deposit.orderId}`;
-				} else if (body.currency === "SGD") {
-					// ✅ Singapore Dollar → Local bank
-					paymentInstructions.bankName = "DBS Bank (Singapore)";
-					paymentInstructions.accountNumber = "XXX-XXXXX-X";
-					paymentInstructions.accountName = "Proxify Gateway Pte. Ltd.";
-					paymentInstructions.swiftCode = "DBSSSGSG";
-					paymentInstructions.instructions = `Transfer ${body.amount} SGD to the account above. Include reference: ${deposit.orderId}`;
-				} else {
-					// ✅ Other currencies (USD, EUR, etc.) → Main account
-					paymentInstructions.bankName = "Kasikorn Bank";
-					paymentInstructions.accountNumber = "123-4-56789-0";
-					paymentInstructions.accountName = "Proxify Gateway Co., Ltd.";
-					paymentInstructions.swiftCode = "KASITHBK";
-					paymentInstructions.instructions = `Transfer ${body.amount} ${body.currency} to the account above. Include reference: ${deposit.orderId}`;
+				// ✅ ALSO create deposit_order for Operations Dashboard tracking
+				try {
+					await depositOrderService.createDepositOrder({
+						orderId,
+						clientId,
+						userId: body.userId,
+						fiatAmount: body.amount,
+						fiatCurrency: body.currency,
+						chain: "base", // Default chain
+						tokenSymbol: body.tokenSymbol,
+						tokenAddress: undefined,
+						onRampProvider,
+						paymentUrl: paymentSessionUrl,
+						expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+					});
+					logger.info("Deposit order created for Operations Dashboard", { orderId });
+				} catch (orderError) {
+					// Don't fail the whole request if deposit_order creation fails
+					logger.error("Failed to create deposit order (non-critical)", { orderError, orderId });
 				}
 
 				logger.info("Payment instructions generated", {
 					orderId: deposit.orderId,
 					currency: body.currency,
 					amount: body.amount,
+					bankName: bankAccount.bankName,
+					expectedCryptoAmount,
 					provider: onRampProvider,
 				});
 
@@ -110,7 +167,7 @@ export function createDepositRouter(
 						orderId: deposit.orderId,
 						status: "pending" as const,
 						paymentInstructions,
-						expectedCryptoAmount: body.amount, // TODO: Calculate actual conversion rate
+						expectedCryptoAmount,
 						expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 hours
 						createdAt: deposit.createdAt.toISOString(),
 					},
@@ -200,9 +257,17 @@ export function createDepositRouter(
 				});
 
 				// 6. Complete deposit
+				logger.info("Calling completeDeposit with:", {
+					orderId: params.orderId,
+					chain: "1", // Ethereum chain ID
+					tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+					tokenSymbol: "USDC",
+					cryptoAmount,
+				});
+
 				await depositService.completeDeposit({
 					orderId: params.orderId,
-					chain: "ethereum", // Default chain
+					chain: "1", // Ethereum chain ID (must match vault creation)
 					tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
 					tokenSymbol: "USDC",
 					cryptoAmount,
@@ -215,6 +280,7 @@ export function createDepositRouter(
 				logger.info("Mock payment confirmed successfully", {
 					orderId: params.orderId,
 					cryptoAmount,
+					status: "completed"
 				});
 
 				return {
@@ -228,10 +294,150 @@ export function createDepositRouter(
 					},
 				};
 			} catch (error) {
-				logger.error("Failed to mock confirm payment", { error, orderId: params.orderId });
+				logger.error("Failed to mock confirm payment", {
+					error: error instanceof Error ? error.message : String(error),
+					stack: error instanceof Error ? error.stack : undefined,
+					orderId: params.orderId
+				});
 				return {
 					status: 400 as const,
-					body: { error: "Failed to confirm payment" },
+					body: {
+						error: "Failed to confirm payment",
+						details: error instanceof Error ? error.message : String(error)
+					},
+				};
+			}
+		},
+
+		// POST /deposits/batch-complete - Batch complete deposits (Operations Dashboard)
+		batchCompleteDeposits: async ({ body, req }) => {
+			try {
+				// ✅ Extract clientId from API key
+				const clientId = (req as any).client?.id;
+				if (!clientId) {
+					logger.error("Client ID missing from authenticated request");
+					return {
+						status: 401 as const,
+						body: { error: "Authentication failed" },
+					};
+				}
+
+				logger.info("Batch completing deposits", {
+					orderIds: body.orderIds,
+					count: body.orderIds.length,
+					clientId,
+				});
+
+				const completedOrders: Array<{
+					orderId: string;
+					status: string;
+					cryptoAmount: string;
+					transferTxHash?: string;
+				}> = [];
+
+				let totalUSDC = 0;
+
+				// Process each order
+				for (const orderId of body.orderIds) {
+					// 1. Get deposit
+					const deposit = await depositService.getDepositByOrderId(orderId);
+					if (!deposit) {
+						logger.warn(`Deposit not found: ${orderId}`);
+						continue;
+					}
+
+					// 2. Verify deposit belongs to this client
+					if (deposit.clientId !== clientId) {
+						logger.warn(`Deposit ${orderId} does not belong to client ${clientId}`);
+						continue;
+					}
+
+					// 3. Verify deposit is pending
+					if (deposit.status !== "pending") {
+						logger.warn(`Deposit ${orderId} is already ${deposit.status}`);
+						continue;
+					}
+
+					// 4. Mock convert fiat → USDC (1:1 for USD)
+					const exchangeRates: Record<string, number> = {
+						THB: 35,
+						SGD: 1.35,
+						USD: 1,
+						EUR: 0.92,
+						TWD: 31,
+						KRW: 1400,
+					};
+
+					const rate = exchangeRates[body.paidCurrency] || 1;
+					const usdAmount = parseFloat(deposit.fiatAmount) / rate;
+					const cryptoAmount = usdAmount.toFixed(2); // USDC 1:1 with USD
+
+					// 5. Complete deposit
+					await depositService.completeDeposit({
+						orderId: orderId,
+						chain: "1", // Ethereum chain ID
+						tokenAddress: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC on Ethereum
+						tokenSymbol: "USDC",
+						cryptoAmount,
+						gatewayFee: "0",
+						proxifyFee: "0",
+						networkFee: "0",
+						totalFees: "0",
+					});
+
+					totalUSDC += parseFloat(cryptoAmount);
+
+					completedOrders.push({
+						orderId,
+						status: "completed",
+						cryptoAmount,
+					});
+
+					logger.info(`✅ Completed deposit: ${orderId} → ${cryptoAmount} USDC`);
+				}
+
+				// 6. Get client custodial wallet address
+				const client = await clientService.getById(clientId);
+				const custodialWallet = client?.privyWalletAddress || "0x0000000000000000000000000000000000000000";
+
+				// 7. Mock USDC transfer to custodial wallet (RampToCustodial)
+				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+				logger.info("🏦 RAMP TO CUSTODIAL - Mock USDC Transfer");
+				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+				logger.info(`📤 Transferring ${totalUSDC.toFixed(2)} USDC`);
+				logger.info(`📍 To: ${custodialWallet}`);
+				logger.info(`🔗 Chain: Ethereum (Chain ID: 1)`);
+				logger.info(`💰 Token: USDC (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)`);
+				logger.info(`📦 Orders processed: ${completedOrders.length}`);
+				logger.info(`🔐 Client ID: ${clientId}`);
+				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+				logger.info("✅ Mock transfer complete (TESTNET SIMULATION)");
+				logger.info("   In production, this would execute:");
+				logger.info(`   - Contract: USDC.transfer(${custodialWallet}, ${totalUSDC})`);
+				logger.info("   - Network: Ethereum Sepolia Testnet");
+				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+				return {
+					status: 200 as const,
+					body: {
+						success: true,
+						completedOrders,
+						totalUSDC: totalUSDC.toFixed(2),
+						custodialWallet,
+						mockNote: `✅ ${completedOrders.length} deposits completed. ${totalUSDC.toFixed(2)} USDC transferred to custodial wallet (MOCK)`,
+					},
+				};
+			} catch (error) {
+				logger.error("Failed to batch complete deposits", {
+					error: error instanceof Error ? error.message : String(error),
+					stack: error instanceof Error ? error.stack : undefined,
+				});
+				return {
+					status: 400 as const,
+					body: {
+						error: "Failed to complete deposits",
+						details: error instanceof Error ? error.message : String(error),
+					},
 				};
 			}
 		},
@@ -371,27 +577,95 @@ export function createDepositRouter(
 		// SHARED QUERY ENDPOINTS
 		// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-		// GET /deposits/:orderId - Get deposit by order ID
-		getByOrderId: async ({ params }) => {
-			try {
-				const deposit = await depositService.getDepositByOrderId(params.orderId);
+		// ⚠️ IMPORTANT: Specific routes MUST come before parameterized routes
+		// Otherwise Express will match /deposits/pending to /deposits/:orderId
 
-				if (!deposit) {
+		// GET /deposits/pending - List pending deposit orders (Operations Dashboard)
+		// ⚠️ MUST be BEFORE getByOrderId to avoid route conflict
+		listPending: async ({ req }) => {
+			try {
+				// ✅ Extract clientId from authenticated request
+				const clientId = (req as any).client?.id;
+				if (!clientId) {
+					logger.error("Client ID missing from authenticated request");
 					return {
-						status: 404 as const,
-						body: { success: false, error: "Deposit not found" },
+						status: 401 as const,
+						body: {
+							deposits: [],
+							summary: [],
+						},
 					};
 				}
 
+				logger.info("Fetching pending deposit orders", { clientId });
+
+				// ✅ NEW: Get pending deposit orders from deposit_orders table (for Operations Dashboard)
+				const orders = await depositOrderService.listAllPendingOrders();
+
+				// Map deposit orders to full DepositResponseSchema format
+				const mappedDeposits = orders.map((order) => ({
+					id: order.id,
+					orderId: order.orderId,
+					clientId: order.clientId,
+					userId: order.userId,
+					depositType: "external" as const,
+					amount: order.fiatAmount,
+					status: (order.status === "processing" ? "pending" : order.status) as "pending" | "completed" | "failed",
+					createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
+					completedAt: order.completedAt ? order.completedAt.toISOString() : undefined,
+					paymentInstructions: null, // Not stored in deposit_orders table
+					expectedCryptoAmount: order.cryptoAmount || undefined,
+					expiresAt: order.expiresAt ? order.expiresAt.toISOString() : null,
+				}));
+
+				logger.info("Pending deposit orders fetched successfully", {
+					clientId,
+					orderCount: mappedDeposits.length,
+				});
+
 				return {
 					status: 200 as const,
-					body: mapDepositToDto(deposit),
+					body: {
+						deposits: mappedDeposits,
+						summary: [], // TODO: Calculate summary if needed
+					},
 				};
 			} catch (error) {
-				logger.error("Failed to get deposit", { error, orderId: params.orderId });
+				logger.error("Failed to list pending deposit orders", { error });
 				return {
-					status: 404 as const,
-					body: { success: false, error: "Deposit not found" },
+					status: 200 as const,
+					body: {
+						deposits: [],
+						summary: [],
+					},
+				};
+			}
+		},
+
+		// GET /deposits/stats/:clientId
+		// ⚠️ MUST be before getByOrderId to avoid route conflict
+		getStats: async ({ params }) => {
+			try {
+				// Simplified stats - in production, calculate from deposits
+				return {
+					status: 200 as const,
+					body: {
+						totalDeposits: "0",
+						completedDeposits: "0",
+						totalAmount: "0",
+						averageAmount: "0",
+					},
+				};
+			} catch (error) {
+				logger.error("Failed to get deposit stats", { error, clientId: params.clientId });
+				return {
+					status: 200 as const,
+					body: {
+						totalDeposits: "0",
+						completedDeposits: "0",
+						totalAmount: "0",
+						averageAmount: "0",
+					},
 				};
 			}
 		},
@@ -437,29 +711,32 @@ export function createDepositRouter(
 			}
 		},
 
-		// GET /deposits/stats/:clientId
-		getStats: async ({ params }) => {
+		// GET /deposits/:orderId - Get deposit by order ID
+		// ⚠️ MUST be LAST among GET /deposits/* routes to avoid catching specific paths
+		getByOrderId: async ({ params }) => {
 			try {
-				// Simplified stats - in production, calculate from deposits
+				const deposit = await depositService.getDepositByOrderId(params.orderId);
+
+				if (!deposit) {
+					return {
+						status: 404 as const,
+						body: { success: false, error: "Deposit not found" },
+					};
+				}
+
+				// ✅ Fetch client's bank accounts from database
+				const client = await clientService.getById(deposit.clientId);
+				const clientBankAccounts = client?.bankAccounts || [];
+
 				return {
 					status: 200 as const,
-					body: {
-						totalDeposits: "0",
-						completedDeposits: "0",
-						totalAmount: "0",
-						averageAmount: "0",
-					},
+					body: mapDepositToDto(deposit, clientBankAccounts),
 				};
 			} catch (error) {
-				logger.error("Failed to get deposit stats", { error, clientId: params.clientId });
+				logger.error("Failed to get deposit", { error, orderId: params.orderId });
 				return {
-					status: 200 as const,
-					body: {
-						totalDeposits: "0",
-						completedDeposits: "0",
-						totalAmount: "0",
-						averageAmount: "0",
-					},
+					status: 404 as const,
+					body: { success: false, error: "Deposit not found" },
 				};
 			}
 		},

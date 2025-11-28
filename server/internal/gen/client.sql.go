@@ -59,12 +59,14 @@ INSERT INTO client_organizations (
   platform_fee,
   performance_fee,
   is_active,
-  is_sandbox
+  is_sandbox,
+  supported_currencies,
+  bank_accounts
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16
+  $11, $12, $13, $14, $15, $16, $17, $18
 )
-RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at, supported_currencies, bank_accounts
 `
 
 type CreateClientParams struct {
@@ -84,6 +86,8 @@ type CreateClientParams struct {
 	PerformanceFee      pgtype.Numeric `db:"performance_fee"`
 	IsActive            bool           `db:"is_active"`
 	IsSandbox           bool           `db:"is_sandbox"`
+	SupportedCurrencies []string       `db:"supported_currencies"`
+	BankAccounts        []byte         `db:"bank_accounts"`
 }
 
 func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (ClientOrganization, error) {
@@ -104,6 +108,8 @@ func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (Cli
 		arg.PerformanceFee,
 		arg.IsActive,
 		arg.IsSandbox,
+		arg.SupportedCurrencies,
+		arg.BankAccounts,
 	)
 	var i ClientOrganization
 	err := row.Scan(
@@ -126,6 +132,8 @@ func (q *Queries) CreateClient(ctx context.Context, arg CreateClientParams) (Cli
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SupportedCurrencies,
+		&i.BankAccounts,
 	)
 	return i, err
 }
@@ -233,7 +241,7 @@ func (q *Queries) DeleteClient(ctx context.Context, id uuid.UUID) error {
 const getClient = `-- name: GetClient :one
 
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -264,6 +272,8 @@ type GetClientRow struct {
 	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	SupportedCurrencies []string           `db:"supported_currencies"`
+	BankAccounts        []byte             `db:"bank_accounts"`
 	PrivyOrganizationID string             `db:"privy_organization_id"`
 	PrivyWalletAddress  string             `db:"privy_wallet_address"`
 	PrivyEmail          *string            `db:"privy_email"`
@@ -296,6 +306,8 @@ func (q *Queries) GetClient(ctx context.Context, id uuid.UUID) (GetClientRow, er
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SupportedCurrencies,
+		&i.BankAccounts,
 		&i.PrivyOrganizationID,
 		&i.PrivyWalletAddress,
 		&i.PrivyEmail,
@@ -355,7 +367,7 @@ func (q *Queries) GetClientBalanceForUpdate(ctx context.Context, clientID uuid.U
 
 const getClientByAPIKeyHash = `-- name: GetClientByAPIKeyHash :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -386,6 +398,8 @@ type GetClientByAPIKeyHashRow struct {
 	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	SupportedCurrencies []string           `db:"supported_currencies"`
+	BankAccounts        []byte             `db:"bank_accounts"`
 	PrivyOrganizationID string             `db:"privy_organization_id"`
 	PrivyWalletAddress  string             `db:"privy_wallet_address"`
 	PrivyEmail          *string            `db:"privy_email"`
@@ -416,6 +430,8 @@ func (q *Queries) GetClientByAPIKeyHash(ctx context.Context, apiKeyHash *string)
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SupportedCurrencies,
+		&i.BankAccounts,
 		&i.PrivyOrganizationID,
 		&i.PrivyWalletAddress,
 		&i.PrivyEmail,
@@ -426,7 +442,7 @@ func (q *Queries) GetClientByAPIKeyHash(ctx context.Context, apiKeyHash *string)
 
 const getClientByAPIKeyPrefix = `-- name: GetClientByAPIKeyPrefix :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -457,6 +473,8 @@ type GetClientByAPIKeyPrefixRow struct {
 	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	SupportedCurrencies []string           `db:"supported_currencies"`
+	BankAccounts        []byte             `db:"bank_accounts"`
 	PrivyOrganizationID string             `db:"privy_organization_id"`
 	PrivyWalletAddress  string             `db:"privy_wallet_address"`
 	PrivyEmail          *string            `db:"privy_email"`
@@ -487,6 +505,8 @@ func (q *Queries) GetClientByAPIKeyPrefix(ctx context.Context, apiKeyPrefix *str
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SupportedCurrencies,
+		&i.BankAccounts,
 		&i.PrivyOrganizationID,
 		&i.PrivyWalletAddress,
 		&i.PrivyEmail,
@@ -497,7 +517,7 @@ func (q *Queries) GetClientByAPIKeyPrefix(ctx context.Context, apiKeyPrefix *str
 
 const getClientByProductID = `-- name: GetClientByProductID :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -528,6 +548,8 @@ type GetClientByProductIDRow struct {
 	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	SupportedCurrencies []string           `db:"supported_currencies"`
+	BankAccounts        []byte             `db:"bank_accounts"`
 	PrivyOrganizationID string             `db:"privy_organization_id"`
 	PrivyWalletAddress  string             `db:"privy_wallet_address"`
 	PrivyEmail          *string            `db:"privy_email"`
@@ -557,6 +579,8 @@ func (q *Queries) GetClientByProductID(ctx context.Context, productID string) (G
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SupportedCurrencies,
+		&i.BankAccounts,
 		&i.PrivyOrganizationID,
 		&i.PrivyWalletAddress,
 		&i.PrivyEmail,
@@ -634,7 +658,7 @@ func (q *Queries) GetClientStats(ctx context.Context, id uuid.UUID) (GetClientSt
 
 const getClientsByPrivyOrgID = `-- name: GetClientsByPrivyOrgID :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -664,6 +688,8 @@ type GetClientsByPrivyOrgIDRow struct {
 	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	SupportedCurrencies []string           `db:"supported_currencies"`
+	BankAccounts        []byte             `db:"bank_accounts"`
 	PrivyOrganizationID string             `db:"privy_organization_id"`
 	PrivyWalletAddress  string             `db:"privy_wallet_address"`
 	PrivyEmail          *string            `db:"privy_email"`
@@ -699,6 +725,8 @@ func (q *Queries) GetClientsByPrivyOrgID(ctx context.Context, privyOrganizationI
 			&i.PerformanceFee,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.SupportedCurrencies,
+			&i.BankAccounts,
 			&i.PrivyOrganizationID,
 			&i.PrivyWalletAddress,
 			&i.PrivyEmail,
@@ -716,7 +744,7 @@ func (q *Queries) GetClientsByPrivyOrgID(ctx context.Context, privyOrganizationI
 
 const listActiveClients = `-- name: ListActiveClients :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -747,6 +775,8 @@ type ListActiveClientsRow struct {
 	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	SupportedCurrencies []string           `db:"supported_currencies"`
+	BankAccounts        []byte             `db:"bank_accounts"`
 	PrivyOrganizationID string             `db:"privy_organization_id"`
 	PrivyWalletAddress  string             `db:"privy_wallet_address"`
 	PrivyEmail          *string            `db:"privy_email"`
@@ -782,6 +812,8 @@ func (q *Queries) ListActiveClients(ctx context.Context) ([]ListActiveClientsRow
 			&i.PerformanceFee,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.SupportedCurrencies,
+			&i.BankAccounts,
 			&i.PrivyOrganizationID,
 			&i.PrivyWalletAddress,
 			&i.PrivyEmail,
@@ -799,7 +831,7 @@ func (q *Queries) ListActiveClients(ctx context.Context) ([]ListActiveClientsRow
 
 const listClients = `-- name: ListClients :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -835,6 +867,8 @@ type ListClientsRow struct {
 	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	SupportedCurrencies []string           `db:"supported_currencies"`
+	BankAccounts        []byte             `db:"bank_accounts"`
 	PrivyOrganizationID string             `db:"privy_organization_id"`
 	PrivyWalletAddress  string             `db:"privy_wallet_address"`
 	PrivyEmail          *string            `db:"privy_email"`
@@ -870,6 +904,8 @@ func (q *Queries) ListClients(ctx context.Context, arg ListClientsParams) ([]Lis
 			&i.PerformanceFee,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.SupportedCurrencies,
+			&i.BankAccounts,
 			&i.PrivyOrganizationID,
 			&i.PrivyWalletAddress,
 			&i.PrivyEmail,
@@ -930,22 +966,24 @@ func (q *Queries) ReserveBalance(ctx context.Context, arg ReserveBalanceParams) 
 const updateClient = `-- name: UpdateClient :one
 UPDATE client_organizations
 SET company_name = COALESCE($2, company_name),
-    description = COALESCE($3, description),
-    website_url = COALESCE($4, website_url),
-    webhook_urls = COALESCE($5, webhook_urls),
-    webhook_secret = COALESCE($6, webhook_secret),
-    custom_strategy = COALESCE($7, custom_strategy),
-    end_user_yield_portion = COALESCE($8, end_user_yield_portion),
-    platform_fee = COALESCE($9, platform_fee),
-    performance_fee = COALESCE($10, performance_fee),
+    business_type = COALESCE($3, business_type),
+    description = COALESCE($4, description),
+    website_url = COALESCE($5, website_url),
+    webhook_urls = COALESCE($6, webhook_urls),
+    webhook_secret = COALESCE($7, webhook_secret),
+    custom_strategy = COALESCE($8, custom_strategy),
+    end_user_yield_portion = COALESCE($9, end_user_yield_portion),
+    platform_fee = COALESCE($10, platform_fee),
+    performance_fee = COALESCE($11, performance_fee),
     updated_at = now()
 WHERE id = $1
-RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at, supported_currencies, bank_accounts
 `
 
 type UpdateClientParams struct {
 	ID                  uuid.UUID      `db:"id"`
 	CompanyName         *string        `db:"company_name"`
+	BusinessType        *string        `db:"business_type"`
 	Description         *string        `db:"description"`
 	WebsiteUrl          *string        `db:"website_url"`
 	WebhookUrls         []string       `db:"webhook_urls"`
@@ -960,6 +998,7 @@ func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Cli
 	row := q.db.QueryRow(ctx, updateClient,
 		arg.ID,
 		arg.CompanyName,
+		arg.BusinessType,
 		arg.Description,
 		arg.WebsiteUrl,
 		arg.WebhookUrls,
@@ -990,6 +1029,8 @@ func (q *Queries) UpdateClient(ctx context.Context, arg UpdateClientParams) (Cli
 		&i.PerformanceFee,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.SupportedCurrencies,
+		&i.BankAccounts,
 	)
 	return i, err
 }

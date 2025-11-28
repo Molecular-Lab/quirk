@@ -3,7 +3,7 @@ import { Sql } from "postgres";
 export const getClientQuery = `-- name: GetClient :one
 
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -37,6 +37,8 @@ export interface GetClientRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
     privyOrganizationId: string;
     privyWalletAddress: string;
     privyEmail: string | null;
@@ -69,16 +71,18 @@ export async function getClient(sql: Sql, args: GetClientArgs): Promise<GetClien
         performanceFee: row[16],
         createdAt: row[17],
         updatedAt: row[18],
-        privyOrganizationId: row[19],
-        privyWalletAddress: row[20],
-        privyEmail: row[21],
-        privyWalletType: row[22]
+        supportedCurrencies: row[19],
+        bankAccounts: row[20],
+        privyOrganizationId: row[21],
+        privyWalletAddress: row[22],
+        privyEmail: row[23],
+        privyWalletType: row[24]
     };
 }
 
 export const getClientByProductIDQuery = `-- name: GetClientByProductID :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -112,6 +116,8 @@ export interface GetClientByProductIDRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
     privyOrganizationId: string;
     privyWalletAddress: string;
     privyEmail: string | null;
@@ -144,16 +150,18 @@ export async function getClientByProductID(sql: Sql, args: GetClientByProductIDA
         performanceFee: row[16],
         createdAt: row[17],
         updatedAt: row[18],
-        privyOrganizationId: row[19],
-        privyWalletAddress: row[20],
-        privyEmail: row[21],
-        privyWalletType: row[22]
+        supportedCurrencies: row[19],
+        bankAccounts: row[20],
+        privyOrganizationId: row[21],
+        privyWalletAddress: row[22],
+        privyEmail: row[23],
+        privyWalletType: row[24]
     };
 }
 
 export const getClientsByPrivyOrgIDQuery = `-- name: GetClientsByPrivyOrgID :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -186,6 +194,8 @@ export interface GetClientsByPrivyOrgIDRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
     privyOrganizationId: string;
     privyWalletAddress: string;
     privyEmail: string | null;
@@ -213,16 +223,18 @@ export async function getClientsByPrivyOrgID(sql: Sql, args: GetClientsByPrivyOr
         performanceFee: row[16],
         createdAt: row[17],
         updatedAt: row[18],
-        privyOrganizationId: row[19],
-        privyWalletAddress: row[20],
-        privyEmail: row[21],
-        privyWalletType: row[22]
+        supportedCurrencies: row[19],
+        bankAccounts: row[20],
+        privyOrganizationId: row[21],
+        privyWalletAddress: row[22],
+        privyEmail: row[23],
+        privyWalletType: row[24]
     }));
 }
 
 export const getClientByAPIKeyPrefixQuery = `-- name: GetClientByAPIKeyPrefix :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -256,6 +268,8 @@ export interface GetClientByAPIKeyPrefixRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
     privyOrganizationId: string;
     privyWalletAddress: string;
     privyEmail: string | null;
@@ -288,16 +302,18 @@ export async function getClientByAPIKeyPrefix(sql: Sql, args: GetClientByAPIKeyP
         performanceFee: row[16],
         createdAt: row[17],
         updatedAt: row[18],
-        privyOrganizationId: row[19],
-        privyWalletAddress: row[20],
-        privyEmail: row[21],
-        privyWalletType: row[22]
+        supportedCurrencies: row[19],
+        bankAccounts: row[20],
+        privyOrganizationId: row[21],
+        privyWalletAddress: row[22],
+        privyEmail: row[23],
+        privyWalletType: row[24]
     };
 }
 
 export const getClientByAPIKeyHashQuery = `-- name: GetClientByAPIKeyHash :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -331,6 +347,8 @@ export interface GetClientByAPIKeyHashRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
     privyOrganizationId: string;
     privyWalletAddress: string;
     privyEmail: string | null;
@@ -363,16 +381,18 @@ export async function getClientByAPIKeyHash(sql: Sql, args: GetClientByAPIKeyHas
         performanceFee: row[16],
         createdAt: row[17],
         updatedAt: row[18],
-        privyOrganizationId: row[19],
-        privyWalletAddress: row[20],
-        privyEmail: row[21],
-        privyWalletType: row[22]
+        supportedCurrencies: row[19],
+        bankAccounts: row[20],
+        privyOrganizationId: row[21],
+        privyWalletAddress: row[22],
+        privyEmail: row[23],
+        privyWalletType: row[24]
     };
 }
 
 export const listClientsQuery = `-- name: ListClients :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -407,6 +427,8 @@ export interface ListClientsRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
     privyOrganizationId: string;
     privyWalletAddress: string;
     privyEmail: string | null;
@@ -434,16 +456,18 @@ export async function listClients(sql: Sql, args: ListClientsArgs): Promise<List
         performanceFee: row[16],
         createdAt: row[17],
         updatedAt: row[18],
-        privyOrganizationId: row[19],
-        privyWalletAddress: row[20],
-        privyEmail: row[21],
-        privyWalletType: row[22]
+        supportedCurrencies: row[19],
+        bankAccounts: row[20],
+        privyOrganizationId: row[21],
+        privyWalletAddress: row[22],
+        privyEmail: row[23],
+        privyWalletType: row[24]
     }));
 }
 
 export const listActiveClientsQuery = `-- name: ListActiveClients :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at, co.supported_currencies, co.bank_accounts,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -473,6 +497,8 @@ export interface ListActiveClientsRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
     privyOrganizationId: string;
     privyWalletAddress: string;
     privyEmail: string | null;
@@ -500,10 +526,12 @@ export async function listActiveClients(sql: Sql): Promise<ListActiveClientsRow[
         performanceFee: row[16],
         createdAt: row[17],
         updatedAt: row[18],
-        privyOrganizationId: row[19],
-        privyWalletAddress: row[20],
-        privyEmail: row[21],
-        privyWalletType: row[22]
+        supportedCurrencies: row[19],
+        bankAccounts: row[20],
+        privyOrganizationId: row[21],
+        privyWalletAddress: row[22],
+        privyEmail: row[23],
+        privyWalletType: row[24]
     }));
 }
 
@@ -524,12 +552,14 @@ INSERT INTO client_organizations (
   platform_fee,
   performance_fee,
   is_active,
-  is_sandbox
+  is_sandbox,
+  supported_currencies,
+  bank_accounts
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16
+  $11, $12, $13, $14, $15, $16, $17, $18
 )
-RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at`;
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at, supported_currencies, bank_accounts`;
 
 export interface CreateClientArgs {
     privyAccountId: string;
@@ -548,6 +578,8 @@ export interface CreateClientArgs {
     performanceFee: string | null;
     isActive: boolean;
     isSandbox: boolean;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
 }
 
 export interface CreateClientRow {
@@ -570,10 +602,12 @@ export interface CreateClientRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
 }
 
 export async function createClient(sql: Sql, args: CreateClientArgs): Promise<CreateClientRow | null> {
-    const rows = await sql.unsafe(createClientQuery, [args.privyAccountId, args.productId, args.companyName, args.businessType, args.description, args.websiteUrl, args.apiKeyHash, args.apiKeyPrefix, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee, args.isActive, args.isSandbox]).values();
+    const rows = await sql.unsafe(createClientQuery, [args.privyAccountId, args.productId, args.companyName, args.businessType, args.description, args.websiteUrl, args.apiKeyHash, args.apiKeyPrefix, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee, args.isActive, args.isSandbox, args.supportedCurrencies, args.bankAccounts]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -597,28 +631,32 @@ export async function createClient(sql: Sql, args: CreateClientArgs): Promise<Cr
         platformFee: row[15],
         performanceFee: row[16],
         createdAt: row[17],
-        updatedAt: row[18]
+        updatedAt: row[18],
+        supportedCurrencies: row[19],
+        bankAccounts: row[20]
     };
 }
 
 export const updateClientQuery = `-- name: UpdateClient :one
 UPDATE client_organizations
 SET company_name = COALESCE($2, company_name),
-    description = COALESCE($3, description),
-    website_url = COALESCE($4, website_url),
-    webhook_urls = COALESCE($5, webhook_urls),
-    webhook_secret = COALESCE($6, webhook_secret),
-    custom_strategy = COALESCE($7, custom_strategy),
-    end_user_yield_portion = COALESCE($8, end_user_yield_portion),
-    platform_fee = COALESCE($9, platform_fee),
-    performance_fee = COALESCE($10, performance_fee),
+    business_type = COALESCE($3, business_type),
+    description = COALESCE($4, description),
+    website_url = COALESCE($5, website_url),
+    webhook_urls = COALESCE($6, webhook_urls),
+    webhook_secret = COALESCE($7, webhook_secret),
+    custom_strategy = COALESCE($8, custom_strategy),
+    end_user_yield_portion = COALESCE($9, end_user_yield_portion),
+    platform_fee = COALESCE($10, platform_fee),
+    performance_fee = COALESCE($11, performance_fee),
     updated_at = now()
 WHERE id = $1
-RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at`;
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at, supported_currencies, bank_accounts`;
 
 export interface UpdateClientArgs {
     id: string;
     companyName: string | null;
+    businessType: string | null;
     description: string | null;
     websiteUrl: string | null;
     webhookUrls: string[] | null;
@@ -649,10 +687,12 @@ export interface UpdateClientRow {
     performanceFee: string | null;
     createdAt: Date;
     updatedAt: Date;
+    supportedCurrencies: string[] | null;
+    bankAccounts: any | null;
 }
 
 export async function updateClient(sql: Sql, args: UpdateClientArgs): Promise<UpdateClientRow | null> {
-    const rows = await sql.unsafe(updateClientQuery, [args.id, args.companyName, args.description, args.websiteUrl, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee]).values();
+    const rows = await sql.unsafe(updateClientQuery, [args.id, args.companyName, args.businessType, args.description, args.websiteUrl, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -676,7 +716,9 @@ export async function updateClient(sql: Sql, args: UpdateClientArgs): Promise<Up
         platformFee: row[15],
         performanceFee: row[16],
         createdAt: row[17],
-        updatedAt: row[18]
+        updatedAt: row[18],
+        supportedCurrencies: row[19],
+        bankAccounts: row[20]
     };
 }
 

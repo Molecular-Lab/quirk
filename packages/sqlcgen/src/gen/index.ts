@@ -6,9 +6,12 @@
  */
 
 export * from './client_sql';
+export * from './client_bank_accounts_sql';
 export * from './vault_sql';
 export * from './vault_strategies_sql';
 export * from './deposit_sql';
+export * from './deposit_orders_sql';
+export * from './mock_usdc_mints_sql';
 export * from './withdrawal_sql';
 export * from './end_user_sql';
 export * from './defi_sql';

@@ -8,11 +8,34 @@ import { z } from "zod";
 
 const c = initContract();
 
+// End-user's bank account for direct fiat withdrawal
+const EndUserBankAccountSchema = z.object({
+	currency: z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"]),
+	bank_name: z.string(),
+	account_number: z.string(),
+	account_name: z.string(),
+	bank_details: z.record(z.any()).optional(), // JSONB: {swift_code, bank_code, branch_code, etc.}
+});
+
 const CreateWithdrawalSchema = z.object({
 	clientId: z.string().optional(), // ✅ Optional - extracted from API key auth
 	userId: z.string(),
-	vaultId: z.string(),
+	vaultId: z.string().optional(), // Optional for simplified architecture
 	amount: z.string(),
+	
+	// ✅ NEW: Withdrawal method selection
+	withdrawal_method: z.enum(["crypto", "fiat_to_client", "fiat_to_end_user"]).default("crypto"),
+	
+	// For crypto withdrawal
+	destination_address: z.string().optional(), // Required for crypto
+	chain: z.string().optional(), // e.g., "8453" for Base
+	token_address: z.string().optional(),
+	
+	// For fiat withdrawal
+	destination_currency: z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"]).optional(),
+	
+	// For fiat_to_end_user only
+	end_user_bank_account: EndUserBankAccountSchema.optional(),
 });
 
 const CompleteWithdrawalSchema = z.object({
@@ -28,13 +51,23 @@ const WithdrawalResponseSchema = z.object({
 	id: z.string(),
 	clientId: z.string(),
 	userId: z.string(),
-	vaultId: z.string(),
+	vaultId: z.string().optional(),
 	requestedAmount: z.string(),
 	sharesBurned: z.string().optional(),
 	finalAmount: z.string().optional(),
-	status: z.enum(["PENDING", "QUEUED", "COMPLETED", "FAILED"]),
+	status: z.enum(["PENDING", "QUEUED", "PROCESSING", "COMPLETED", "FAILED"]),
+	
+	// Withdrawal method info
+	withdrawal_method: z.enum(["crypto", "fiat_to_client", "fiat_to_end_user"]).optional(),
+	destination_currency: z.string().optional(),
+	destination_address: z.string().optional(),
+	
+	// Transaction info
 	transactionHash: z.string().optional(),
+	offRampReference: z.string().optional(), // For fiat withdrawals
+	
 	createdAt: z.string(),
+	completedAt: z.string().optional(),
 });
 
 const WithdrawalStatsSchema = z.object({

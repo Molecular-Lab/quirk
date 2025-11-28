@@ -48,9 +48,8 @@ const c = initContract();
 const CreateFiatDepositSchema = z.object({
 	userId: z.string().describe("End-user ID from client's system"),
 	amount: z.string().describe("Fiat amount (e.g., '1000.00')"),
-	currency: z.string().default("USD").describe("Fiat currency (THB, USD, SGD, etc.)"),
-	chain: z.string().describe("Target chain (8453 = Base, 1 = Ethereum, etc.)"),
-	tokenSymbol: z.string().describe("Target token (USDC, USDT, etc.)"),
+	currency: z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"]).describe("Fiat currency - determines which bank account to show"),
+	tokenSymbol: z.string().default("USDC").describe("Target token (USDC, USDT, etc.)"),
 	clientReference: z.string().optional().describe("Client's internal reference ID"),
 });
 
@@ -58,22 +57,27 @@ const FiatDepositResponseSchema = z.object({
 	orderId: z.string().describe("Proxify order ID for tracking"),
 	status: z.enum(["pending"]),
 
-	// Traditional payment instructions
+	// Bank transfer payment instructions (currency-specific)
 	paymentInstructions: z.object({
-		method: z.string().describe("Payment method (stripe, wire, etc.)"),
-		amount: z.string(),
+		paymentMethod: z.literal("bank_transfer"),
 		currency: z.string(),
+		amount: z.string(),
+		reference: z.string().describe("CRITICAL: Must include this in bank transfer"),
 
-		// For Stripe Connect
-		stripePaymentUrl: z.string().optional(),
-		stripeSessionId: z.string().optional(),
-
-		// For Wire Transfer
-		bankName: z.string().optional(),
-		accountNumber: z.string().optional(),
+		// Bank account details (currency-specific)
+		bankName: z.string(),
+		accountNumber: z.string(),
+		accountName: z.string(),
+		swiftCode: z.string(),
+		bankCode: z.string().optional(),
+		branchCode: z.string().optional(),
 		routingNumber: z.string().optional(),
-		reference: z.string().optional(),
-	}).optional(),
+		iban: z.string().optional(),
+		promptPayId: z.string().optional().describe("For THB only"),
+
+		instructions: z.string(),
+		paymentSessionUrl: z.string().describe("URL to payment session page"),
+	}),
 
 	expectedCryptoAmount: z.string().optional().describe("Expected USDC after conversion"),
 	expiresAt: z.string().describe("Order expires after this time"),
@@ -157,6 +161,28 @@ const DepositResponseSchema = z.object({
 	status: z.enum(["pending", "completed", "failed"]),
 	createdAt: z.string(),
 	completedAt: z.string().optional(),
+
+	// ✅ Payment instructions (stored in DB, frozen at deposit creation)
+	paymentInstructions: z.object({
+		paymentMethod: z.literal("bank_transfer"),
+		currency: z.string(),
+		amount: z.string(),
+		reference: z.string(),
+		bankName: z.string(),
+		accountNumber: z.string(),
+		accountName: z.string(),
+		swiftCode: z.string(),
+		bankCode: z.string().optional(),
+		branchCode: z.string().optional(),
+		routingNumber: z.string().optional(),
+		iban: z.string().optional(),
+		promptPayId: z.string().optional(),
+		instructions: z.string(),
+		paymentSessionUrl: z.string(),
+	}).optional().nullable(),
+
+	expectedCryptoAmount: z.string().optional(),
+	expiresAt: z.string().optional().nullable(),
 });
 
 const DepositStatsSchema = z.object({
@@ -240,6 +266,35 @@ export const depositContract = c.router({
 		summary: "Mock payment confirmation (demo only - replaces bank webhook)",
 	},
 
+	/**
+	 * Batch complete deposits (Operations Dashboard)
+	 * Completes multiple orders and transfers USDC to custodial wallet
+	 */
+	batchCompleteDeposits: {
+		method: "POST",
+		path: "/deposits/batch-complete",
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				completedOrders: z.array(z.object({
+					orderId: z.string(),
+					status: z.string(),
+					cryptoAmount: z.string(),
+					transferTxHash: z.string().optional(),
+				})),
+				totalUSDC: z.string(),
+				custodialWallet: z.string(),
+				mockNote: z.string(),
+			}),
+			400: ErrorResponseSchema,
+		},
+		body: z.object({
+			orderIds: z.array(z.string()).describe("Array of order IDs to complete"),
+			paidCurrency: z.string().default("USD").describe("Currency paid"),
+		}),
+		summary: "Batch complete deposits and transfer USDC to custodial wallet",
+	},
+
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	// FLOW 4B: CRYPTO DEPOSIT ENDPOINTS
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -279,16 +334,38 @@ export const depositContract = c.router({
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	/**
-	 * Get deposit by order ID
+	 * List pending deposits (for automated banking flow demo)
+	 * Returns pending deposits grouped by currency for bulk processing
+	 *
+	 * ⚠️ MUST be before getByOrderId to avoid route conflict
 	 */
-	getByOrderId: {
+	listPending: {
 		method: "GET",
-		path: "/deposits/:orderId",
+		path: "/deposits/pending",
 		responses: {
-			200: DepositResponseSchema,
-			404: ErrorResponseSchema,
+			200: z.object({
+				deposits: z.array(DepositResponseSchema),
+				summary: z.array(z.object({
+					currency: z.string(),
+					count: z.number(),
+					totalAmount: z.string(),
+				})),
+			}),
 		},
-		summary: "Get deposit by order ID",
+		summary: "List pending deposits with summary by currency",
+	},
+
+	/**
+	 * Get deposit stats
+	 * ⚠️ MUST be before getByOrderId to avoid route conflict
+	 */
+	getStats: {
+		method: "GET",
+		path: "/deposits/stats/:clientId",
+		responses: {
+			200: DepositStatsSchema,
+		},
+		summary: "Get deposit statistics for a client",
 	},
 
 	/**
@@ -325,14 +402,16 @@ export const depositContract = c.router({
 	},
 
 	/**
-	 * Get deposit stats
+	 * Get deposit by order ID
+	 * ⚠️ MUST be LAST among GET /deposits/* routes to avoid catching specific paths
 	 */
-	getStats: {
+	getByOrderId: {
 		method: "GET",
-		path: "/deposits/stats/:clientId",
+		path: "/deposits/:orderId",
 		responses: {
-			200: DepositStatsSchema,
+			200: DepositResponseSchema,
+			404: ErrorResponseSchema,
 		},
-		summary: "Get deposit statistics for a client",
+		summary: "Get deposit by order ID",
 	},
 });

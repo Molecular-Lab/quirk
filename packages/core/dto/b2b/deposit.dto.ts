@@ -4,6 +4,7 @@
  */
 
 export interface CreateDepositRequest {
+  orderId?: string; // ✅ Optional: Allow external orderId generation
   clientId: string;
   userId: string;
   fiatCurrency: string;
@@ -13,6 +14,7 @@ export interface CreateDepositRequest {
   gatewayProvider?: string;
   gatewayOrderId?: string;
   paymentUrl?: string;
+  paymentInstructions?: any; // ✅ JSONB payment instructions to store in DB
 }
 
 export interface CompleteDepositRequest {

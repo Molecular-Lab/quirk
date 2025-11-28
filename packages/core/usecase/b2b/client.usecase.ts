@@ -34,11 +34,18 @@ export class B2BClientUseCase {
   ) {}
 
   /**
+   * Get client by ID (internal)
+   */
+  async getClientById(clientId: string): Promise<GetClientRow | null> {
+    return await this.clientRepository.getById(clientId);
+  }
+
+  /**
    * Get client by product ID
    */
   async getClientByProductId(productId: string): Promise<GetClientRow | null> {
     const client = await this.clientRepository.getByProductId(productId);
-    
+
     if (!client) {
       return null;
     }
@@ -153,6 +160,8 @@ export class B2BClientUseCase {
       performanceFee: request.performanceFee || null,
       isActive: request.isActive ?? true,
       isSandbox: request.isSandbox ?? false,
+      supportedCurrencies: request.supportedCurrencies || [],
+      bankAccounts: request.bankAccounts ? JSON.stringify(request.bankAccounts) : '[]',
     };
 
     const client = await this.clientRepository.create(args);
@@ -506,5 +515,138 @@ export class B2BClientUseCase {
     });
 
     return vault;
+  }
+
+  /**
+   * Update organization info only (company name, description, website)
+   */
+  async updateOrganizationInfo(
+    productId: string,
+    data: {
+      companyName?: string;
+      businessType?: string;
+      description?: string | null;
+      websiteUrl?: string | null;
+    }
+  ) {
+    // 1. Get client by product ID
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    // 2. Update client with new organization info
+    // Convert undefined to null for SQLC compatibility
+    const updated = await this.clientRepository.update(client.id, {
+      companyName: data.companyName ?? null,
+      businessType: data.businessType ?? null,
+      description: data.description ?? null,
+      websiteUrl: data.websiteUrl ?? null,
+      // Pass null for fields we're not updating (will use COALESCE in SQL)
+      webhookUrls: null,
+      webhookSecret: null,
+      customStrategy: null,
+      endUserYieldPortion: null,
+      platformFee: null,
+      performanceFee: null,
+    });
+
+    // 3. Audit log
+    await this.auditRepository.create({
+      clientId: client.id,
+      userId: null,
+      actorType: 'client',
+      action: 'organization_info_updated',
+      resourceType: 'client',
+      resourceId: client.id,
+      description: `Updated organization info for product: ${productId}`,
+      metadata: data,
+      ipAddress: null,
+      userAgent: null,
+    });
+
+    return updated;
+  }
+
+  /**
+   * Update supported currencies only
+   */
+  async updateSupportedCurrencies(productId: string, currencies: string[]) {
+    // 1. Get client by product ID
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    // 2. Update supported currencies
+    await this.clientRepository.updateSupportedCurrencies(client.id, currencies);
+
+    // 3. Audit log
+    await this.auditRepository.create({
+      clientId: client.id,
+      userId: null,
+      actorType: 'client',
+      action: 'supported_currencies_updated',
+      resourceType: 'client',
+      resourceId: client.id,
+      description: `Updated supported currencies: ${currencies.join(', ')}`,
+      metadata: { currencies },
+      ipAddress: null,
+      userAgent: null,
+    });
+
+    // 4. Return updated client
+    return await this.clientRepository.getById(client.id);
+  }
+
+  /**
+   * Configure bank accounts for fiat withdrawals (FLOW 3)
+   * Sets up client's bank accounts for off-ramp and updates supported currencies
+   */
+  async configureBankAccounts(
+    clientId: string,
+    bankAccounts: Array<{
+      currency: string;
+      bank_name: string;
+      account_number: string;
+      account_name: string;
+      bank_details?: Record<string, any>;
+    }>,
+    supportedCurrencies: string[]
+  ): Promise<{ bankAccounts: typeof bankAccounts; supportedCurrencies: string[] }> {
+    // 1. Verify client exists
+    const client = await this.clientRepository.getById(clientId);
+    if (!client) {
+      throw new Error(`Client not found: ${clientId}`);
+    }
+
+    // 2. REPLACE bank accounts (clear existing, then set new ones)
+    await this.clientRepository.replaceBankAccounts(clientId, bankAccounts);
+
+    // 3. Update supported currencies
+    await this.clientRepository.updateSupportedCurrencies(clientId, supportedCurrencies);
+
+    // 4. Audit log
+    await this.auditRepository.create({
+      clientId,
+      userId: null,
+      actorType: 'client',
+      action: 'bank_accounts_configured',
+      resourceType: 'client',
+      resourceId: clientId,
+      description: `Configured ${bankAccounts.length} bank accounts with currencies: ${supportedCurrencies.join(', ')}`,
+      metadata: {
+        currencies: supportedCurrencies,
+        bankAccountCount: bankAccounts.length,
+      },
+      ipAddress: null,
+      userAgent: null,
+    });
+
+    // 5. Return configured data
+    return {
+      bankAccounts,
+      supportedCurrencies,
+    };
   }
 }

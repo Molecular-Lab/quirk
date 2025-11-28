@@ -31,6 +31,11 @@ import {
   releaseReservedBalance,
   deductReservedBalance,
   getClientStats,
+  getClientBankAccounts,
+  updateClientBankAccounts,
+  updateClientSupportedCurrencies,
+  addSupportedCurrency,
+  removeSupportedCurrency,
 
   // Types
   type GetClientRow,
@@ -48,7 +53,16 @@ import {
   type CreateClientBalanceArgs,
   type CreateClientBalanceRow,
   type GetClientStatsRow,
+  type GetClientBankAccountsRow,
 } from '@proxify/sqlcgen';
+
+interface BankAccount {
+  currency: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  bank_details?: Record<string, any>;
+}
 
 /**
  * Client Organization Repository
@@ -267,7 +281,7 @@ export class ClientRepository {
    */
   async getOrCreateBalance(clientId: string, currency: string = 'USD'): Promise<GetClientBalanceRow> {
     let balance = await this.getBalance(clientId);
-    
+
     if (!balance) {
       const created = await this.createBalance({
         clientId,
@@ -275,14 +289,152 @@ export class ClientRepository {
         reserved: '0',
         currency,
       });
-      
+
       if (!created) {
         throw new Error('Failed to create client balance');
       }
-      
+
       balance = created;
     }
 
     return balance;
+  }
+
+  // ==========================================
+  // BANK ACCOUNT OPERATIONS (Multi-Currency)
+  // ==========================================
+
+  /**
+   * Get all bank accounts for a client
+   */
+  async getBankAccounts(clientId: string): Promise<BankAccount[]> {
+    const result = await getClientBankAccounts(this.sql, { id: clientId });
+
+    if (!result || !result.bankAccounts) {
+      return [];
+    }
+
+    try {
+      // Parse JSONB array
+      const bankAccounts = typeof result.bankAccounts === 'string'
+        ? JSON.parse(result.bankAccounts)
+        : result.bankAccounts;
+
+      return Array.isArray(bankAccounts) ? bankAccounts : [];
+    } catch (error) {
+      console.error('Failed to parse bank accounts:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get bank account by currency
+   */
+  async getBankAccountByCurrency(clientId: string, currency: string): Promise<BankAccount | null> {
+    const bankAccounts = await this.getBankAccounts(clientId);
+    return bankAccounts.find(account => account.currency === currency) || null;
+  }
+
+  /**
+   * Add or update bank account for a specific currency
+   */
+  async addOrUpdateBankAccount(clientId: string, bankAccount: BankAccount): Promise<void> {
+    // Get existing bank accounts
+    const existingAccounts = await this.getBankAccounts(clientId);
+
+    // Normalize currency to avoid duplicates due to whitespace/case differences
+    const normalizedCurrency = (bankAccount.currency || "").toString().trim().toUpperCase();
+    bankAccount.currency = normalizedCurrency;
+
+    // Find if currency already exists (compare normalized)
+    const existingIndex = existingAccounts.findIndex(acc => (acc.currency || "").toString().trim().toUpperCase() === normalizedCurrency);
+
+    if (existingIndex >= 0) {
+      // Update existing
+      existingAccounts[existingIndex] = bankAccount;
+    } else {
+      // Add new
+      existingAccounts.push(bankAccount);
+    }
+
+    // Save back to database
+    // ✅ Pass array directly - PostgreSQL JSONB (::jsonb cast) handles serialization automatically
+    await updateClientBankAccounts(this.sql, {
+      id: clientId,
+      bankAccounts: existingAccounts as any,
+    });
+  }
+
+  /**
+   * Remove bank account by currency
+   */
+  async removeBankAccount(clientId: string, currency: string): Promise<void> {
+    const existingAccounts = await this.getBankAccounts(clientId);
+    const filteredAccounts = existingAccounts.filter(acc => acc.currency !== currency);
+
+    await updateClientBankAccounts(this.sql, {
+      id: clientId,
+      bankAccounts: filteredAccounts as any,
+    });
+  }
+
+  /**
+   * Replace all bank accounts (REPLACE strategy: clear existing, set new)
+   * Used when user configures bank accounts via UI - replaces entire array
+   */
+  async replaceBankAccounts(
+    clientId: string,
+    bankAccounts: Array<{
+      currency: string;
+      bank_name: string;
+      account_number: string;
+      account_name: string;
+      bank_details?: Record<string, any>;
+    }>
+  ): Promise<void> {
+    // Replace entire bank_accounts array with new set
+    // PostgreSQL JSONB (::jsonb cast) handles serialization automatically
+    await updateClientBankAccounts(this.sql, {
+      id: clientId,
+      bankAccounts: bankAccounts as any,
+    });
+  }
+
+  /**
+   * Get supported currencies
+   */
+  async getSupportedCurrencies(clientId: string): Promise<string[]> {
+    const client = await this.getById(clientId);
+    return client?.supportedCurrencies || [];
+  }
+
+  /**
+   * Update supported currencies
+   */
+  async updateSupportedCurrencies(clientId: string, currencies: string[]): Promise<void> {
+    await updateClientSupportedCurrencies(this.sql, {
+      id: clientId,
+      supportedCurrencies: currencies,
+    });
+  }
+
+  /**
+   * Add a single supported currency
+   */
+  async addCurrency(clientId: string, currency: string): Promise<void> {
+    await addSupportedCurrency(this.sql, {
+      id: clientId,
+      arrayAppend: currency,
+    });
+  }
+
+  /**
+   * Remove a supported currency
+   */
+  async removeCurrency(clientId: string, currency: string): Promise<void> {
+    await removeSupportedCurrency(this.sql, {
+      id: clientId,
+      arrayRemove: currency,
+    });
   }
 }

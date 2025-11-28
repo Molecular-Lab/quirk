@@ -6,6 +6,7 @@ package gen
 
 import (
 	"net/netip"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -68,6 +69,16 @@ type ClientOrganization struct {
 	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
+	// Array of currency codes client accepts for deposits (e.g., ['SGD', 'THB', 'USD'])
+	SupportedCurrencies []string `db:"supported_currencies"`
+	// Array of bank account objects for off-ramp: [{currency, bankName, accountNumber, accountName, swiftCode, ...}]
+	BankAccounts []byte `db:"bank_accounts"`
+}
+
+type ClientOrganizationsBankAccountsBackup struct {
+	ID                   uuid.UUID   `db:"id"`
+	OriginalBankAccounts []byte      `db:"original_bank_accounts"`
+	BackedAt             interface{} `db:"backed_at"`
 }
 
 // Aggregated custodial vault per client with index-based yield tracking
@@ -135,6 +146,33 @@ type DepositBatchQueue struct {
 	CreatedAt pgtype.Timestamptz `db:"created_at"`
 }
 
+// Tracks fiat on-ramp deposit orders from end-users
+type DepositOrder struct {
+	ID              uuid.UUID      `db:"id"`
+	OrderID         string         `db:"order_id"`
+	ClientID        uuid.UUID      `db:"client_id"`
+	UserID          uuid.UUID      `db:"user_id"`
+	FiatAmount      pgtype.Numeric `db:"fiat_amount"`
+	FiatCurrency    string         `db:"fiat_currency"`
+	CryptoAmount    pgtype.Numeric `db:"crypto_amount"`
+	Chain           string         `db:"chain"`
+	TokenSymbol     string         `db:"token_symbol"`
+	TokenAddress    *string        `db:"token_address"`
+	OnRampProvider  string         `db:"on_ramp_provider"`
+	PaymentUrl      *string        `db:"payment_url"`
+	QrCode          *string        `db:"qr_code"`
+	Status          string         `db:"status"`
+	TransactionHash *string        `db:"transaction_hash"`
+	GatewayFee      pgtype.Numeric `db:"gateway_fee"`
+	ProxifyFee      pgtype.Numeric `db:"proxify_fee"`
+	NetworkFee      pgtype.Numeric `db:"network_fee"`
+	TotalFees       pgtype.Numeric `db:"total_fees"`
+	CreatedAt       *time.Time     `db:"created_at"`
+	UpdatedAt       *time.Time     `db:"updated_at"`
+	CompletedAt     *time.Time     `db:"completed_at"`
+	ExpiresAt       *time.Time     `db:"expires_at"`
+}
+
 // Complete deposit transaction history (external via payment gateway, internal via client balance)
 type DepositTransaction struct {
 	ID       uuid.UUID `db:"id"`
@@ -164,6 +202,8 @@ type DepositTransaction struct {
 	ExpiresAt          pgtype.Timestamptz `db:"expires_at"`
 	ErrorMessage       *string            `db:"error_message"`
 	ErrorCode          *string            `db:"error_code"`
+	// Frozen payment instructions at deposit creation time: {paymentMethod, currency, amount, reference, bankName, accountNumber, accountName, swiftCode, bankCode, instructions, paymentSessionUrl}
+	PaymentInstructions []byte `db:"payment_instructions"`
 }
 
 // End-users who deposit funds through client platforms
@@ -199,6 +239,21 @@ type EndUserVault struct {
 	IsActive           bool               `db:"is_active"`
 	CreatedAt          pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt          pgtype.Timestamptz `db:"updated_at"`
+}
+
+// Tracks mock USDC mints for testnet on-ramp completions
+type MockUsdcMint struct {
+	ID                  uuid.UUID      `db:"id"`
+	DepositOrderID      uuid.UUID      `db:"deposit_order_id"`
+	ClientID            uuid.UUID      `db:"client_id"`
+	UserID              uuid.UUID      `db:"user_id"`
+	Amount              pgtype.Numeric `db:"amount"`
+	Chain               string         `db:"chain"`
+	TokenAddress        string         `db:"token_address"`
+	DestinationWallet   string         `db:"destination_wallet"`
+	MockTransactionHash string         `db:"mock_transaction_hash"`
+	BlockNumber         *int64         `db:"block_number"`
+	CreatedAt           *time.Time     `db:"created_at"`
 }
 
 // One row per Privy user (identity layer). One user can create multiple organizations.

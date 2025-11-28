@@ -25,34 +25,32 @@ export const createUserRouter = (
 					userWalletAddress: body.walletAddress,
 				});
 
-				// ✅ Fetch user's vaults to return in response
-				let vaults: any[] = [];
+				// ✅ Fetch user's vault to return in response (simplified: single vault)
+				let vault: any = null;
 				try {
 					const portfolio = await userVaultService.getUserPortfolio(user.userId, user.clientId);
-					if (portfolio) {
-						vaults = portfolio.vaults.map((v: any) => ({
-							vaultId: v.vaultId || "", // Use vault ID if available
-							chain: v.chain,
-							tokenSymbol: v.tokenSymbol,
-							tokenAddress: v.tokenAddress,
-							shares: v.shares,
-							effectiveBalance: v.effectiveBalance,
-							yieldEarned: v.yieldEarned,
-						}));
+					if (portfolio && portfolio.vault) {
+						vault = {
+							vaultId: user.clientId, // Simplified: vaultId = clientId
+							totalDeposited: portfolio.vault.totalDeposited,
+							effectiveBalance: portfolio.vault.effectiveBalance,
+							yieldEarned: portfolio.vault.yieldEarned,
+							weightedEntryIndex: portfolio.vault.weightedEntryIndex,
+						};
 					}
 				} catch (vaultError) {
-					logger.warn("Failed to fetch user vaults, returning user without vaults", { 
+					logger.warn("Failed to fetch user vault, returning user without vault", { 
 						userId: user.id, 
 						error: vaultError 
 					});
-					// Continue without vaults - non-critical
+					// Continue without vault - non-critical
 				}
 
 				return {
 					status: 200 as const,
 					body: {
 						...mapUserToDto(user),
-						vaults, // ✅ Include vaults in response
+						vaults: vault ? [vault] : [], // ✅ Return as array for backward compatibility
 					},
 				};
 			} catch (error) {
