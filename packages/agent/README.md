@@ -2,6 +2,39 @@
 
 An AI-powered DeFi yield optimization agent with real-time protocol data access via MCP (Model Context Protocol).
 
+## 🐳 Quick Start with Docker (Recommended)
+
+The easiest way to run the agent with the MCP server:
+
+```bash
+# 1. Navigate to the repo root
+cd /path/to/proxify
+
+# 2. Create .env file from example (in packages/agent/)
+cp packages/agent/.env.example packages/agent/.env
+
+# 3. Add your OpenAI API key to .env
+nano packages/agent/.env  # or your preferred editor
+
+# 4. Start both services with Docker Compose
+docker-compose up -d
+
+# 5. Check health
+curl http://localhost:8000/health
+
+# 6. View logs
+docker-compose logs -f
+```
+
+**Services will be available at:**
+- Agent API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
+- MCP Server: http://localhost:3000 (internal)
+
+For detailed Docker documentation, see the [Docker Deployment Guide](../../DOCKER.md).
+
+---
+
 ## Features
 
 - 🤖 **AI-Powered**: Uses OpenAI GPT models with LangChain for intelligent DeFi analysis

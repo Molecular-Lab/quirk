@@ -37,6 +37,53 @@ services:
       - proxify-network
     restart: unless-stopped
 
+  # MCP Server - Provides DeFi protocol data via Model Context Protocol
+  mcp-server:
+    build:
+      context: .
+      dockerfile: packages/mcp/Dockerfile
+    container_name: proxify-mcp-server
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./packages/mcp/.env
+    environment:
+      - NODE_ENV=production
+    networks:
+      - proxify-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 405 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # Yield Optimizer Agent - AI-powered DeFi yield optimization API
+  agent:
+    build:
+      context: packages/agent
+      dockerfile: Dockerfile
+    container_name: proxify-agent
+    ports:
+      - "8000:8000"
+    env_file: 
+      - ./packages/agent/.env
+    environment:
+      - MCP_SERVER_URL=http://mcp-server:3000
+    depends_on:
+      mcp-server:
+        condition: service_healthy
+    networks:
+      - proxify-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
 volumes:
   postgres_data:
 
