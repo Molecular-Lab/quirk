@@ -27,3 +27,17 @@ export type {
 	FeeOverview,
 	ProtocolFeeDetail,
 } from '../utils/defillama.js';
+
+// Export types from yield-engine
+export type {
+	Protocol as YieldProtocol,
+	YieldOpportunity as EngineYieldOpportunity,
+	ProtocolPosition,
+	ProtocolMetrics,
+	OptimizationResult,
+	RiskProfile,
+	RebalanceConfig,
+	AggregatedMetrics,
+	AggregatedOpportunities,
+	AggregatedPositions,
+} from '@proxify/yield-engine';

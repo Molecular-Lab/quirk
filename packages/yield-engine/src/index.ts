@@ -130,8 +130,38 @@ export {
 } from './protocols/morpho/morpho.constants'
 
 // ============================================================================
-// Aggregator & Optimizer (will be added in Phase 5)
+// Aggregator & Optimizer (Phase 5)
 // ============================================================================
 
-// export { YieldAggregator } from './aggregator/yield-aggregator'
-// export { YieldOptimizer } from './optimizer/yield-optimizer'
+// Aggregator
+export { YieldAggregator } from './aggregator/yield-aggregator'
+export type {
+	AggregatorConfig,
+	AggregatedMetrics,
+	AggregatedOpportunities,
+	AggregatedPositions,
+	OpportunityFilter,
+} from './aggregator/aggregator.types'
+export { AggregatorConfigSchema, AggregatedMetricsSchema } from './aggregator/aggregator.types'
+
+// Optimizer
+export { YieldOptimizer } from './optimizer/yield-optimizer'
+export type {
+	OptimizerConfig,
+	OptimizationInput,
+	ExtendedOptimizationResult,
+	IOptimizationStrategy,
+	OptimizationStrategy,
+	GasEstimate,
+	PositionComparison,
+	ProtocolRiskAssessment,
+	OptimizationHistoryEntry,
+} from './optimizer/optimizer.types'
+export { OptimizerConfigSchema } from './optimizer/optimizer.types'
+
+// Strategies
+export {
+	HighestYieldStrategy,
+	RiskAdjustedStrategy,
+	GasAwareStrategy,
+} from './optimizer/strategies'

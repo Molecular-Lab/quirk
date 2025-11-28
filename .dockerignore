@@ -1,0 +1,55 @@
+# Dependencies
+**/node_modules
+**/.pnp
+**/.pnp.js
+
+# Testing
+**/coverage
+**/*.tsbuildinfo
+
+# Build outputs (we'll copy only what we need)
+**/dist
+**/build
+**/.turbo
+
+# Environment files
+**/.env
+**/.env.local
+**/.env.*.local
+
+# IDE
+**/.vscode
+**/.idea
+**/*.swp
+**/*.swo
+**/*~
+
+# OS
+**/.DS_Store
+**/Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Logs
+**/logs
+**/*.log
+**/npm-debug.log*
+**/pnpm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+
+# Other packages we don't need for MCP build
+apps/
+server/
+
+# Python
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.venv
+
+# Documentation
+**/*.md
+!**/README.md

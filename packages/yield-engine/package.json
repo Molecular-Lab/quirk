@@ -5,8 +5,8 @@
 	"main": "./dist/index.js",
 	"types": "./dist/index.d.ts",
 	"scripts": {
-		"dev": "tsc --watch",
-		"build": "tsc",
+		"dev": "tsup --watch",
+		"build": "tsup",
 		"test": "vitest",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
@@ -28,6 +28,7 @@
 		"@proxify/tsconfig": "workspace:*",
 		"@types/node": "^22.10.1",
 		"eslint": "catalog:",
+		"tsup": "^8.3.5",
 		"typescript": "catalog:",
 		"vitest": "^2.1.8"
 	}
