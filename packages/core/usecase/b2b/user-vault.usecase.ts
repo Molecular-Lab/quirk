@@ -1,39 +1,40 @@
 /**
  * B2B User Vault Service
- * Manages end-user balance queries with index-based calculation (FLOW 5)
+ * Manages end-user balance queries with index-based calculation
  * 
- * FORMULA: effective_balance = shares × current_index / 1e18
- * FORMULA: yield_earned = effective_balance - total_deposited
+ * SIMPLIFIED ARCHITECTURE (Nov 2025):
+ * - ONE vault per user per client (no chain/token)
+ * - Fiat-based tracking with weightedEntryIndex
+ * - FORMULA: effective_balance = totalDeposited × (clientGrowthIndex / weightedEntryIndex)
+ * - FORMULA: yield_earned = effective_balance - total_deposited
  */
 
 import type { VaultRepository, UserRepository, AuditRepository } from '../../repository';
 import type {
-  GetEndUserVaultWithBalanceRow,
-  ListEndUserVaultsWithBalanceRow,
+  GetEndUserVaultByClientRow,
 } from '@proxify/sqlcgen';
 import type {
-  UserBalanceRequest,
   UserBalanceResponse,
   UserPortfolioResponse,
-  ListVaultUsersRequest,
 } from '../../dto/b2b';
+import { ClientGrowthIndexService } from '../../service/client-growth-index.service';
+import BigNumber from 'bignumber.js';
 
 export class B2BUserVaultUseCase {
   constructor(
     private readonly vaultRepository: VaultRepository,
     private readonly userRepository: UserRepository,
-    private readonly auditRepository: AuditRepository
+    private readonly auditRepository: AuditRepository,
+    private readonly clientGrowthIndexService: ClientGrowthIndexService
   ) {}
 
   /**
-   * Get user's balance for specific vault (FLOW 5)
+   * Get user's balance (SIMPLIFIED)
    * Returns balance with index-based yield calculation
    */
   async getUserBalance(
     userId: string,
-    clientId: string,
-    chain: string,
-    tokenAddress: string
+    clientId: string
   ): Promise<UserBalanceResponse | null> {
     // Get end_user record
     const endUser = await this.userRepository.getByClientAndUserId(clientId, userId);
@@ -41,16 +42,18 @@ export class B2BUserVaultUseCase {
       return null;
     }
 
-    // Get vault with calculated balance
-    const vault = await this.vaultRepository.getEndUserVaultWithBalance(
+    // Get vault (simplified - one vault per user per client)
+    const vault = await this.vaultRepository.getEndUserVaultByClient(
       endUser.id,
-      chain,
-      tokenAddress
+      clientId
     );
 
     if (!vault) {
       return null;
     }
+
+    // Get current client growth index
+    const clientGrowthIndex = await this.clientGrowthIndexService.calculateClientGrowthIndex(clientId);
 
     // Audit the balance query
     await this.auditRepository.create({
@@ -62,129 +65,128 @@ export class B2BUserVaultUseCase {
       resourceId: vault.id,
       description: 'User balance query',
       metadata: {
-        effectiveBalance: vault.effectiveBalance,
-        yieldEarned: vault.yieldEarned,
+        totalDeposited: vault.totalDeposited,
+        weightedEntryIndex: vault.weightedEntryIndex,
+        clientGrowthIndex,
       },
       ipAddress: null,
       userAgent: null,
     });
 
-    return this.mapToBalanceResponse(vault, userId, clientId);
+    return this.mapToBalanceResponse(vault, userId, clientId, clientGrowthIndex);
   }
 
   /**
-   * Get user's portfolio across all vaults
+   * Get user's portfolio (simplified - single vault per client)
    */
   async getUserPortfolio(userId: string, clientId: string): Promise<UserPortfolioResponse | null> {
-    // Get end_user record
-    const endUser = await this.userRepository.getByClientAndUserId(clientId, userId);
-    if (!endUser) {
-      return null;
-    }
+    const balance = await this.getUserBalance(userId, clientId);
 
-    // Get all vaults with balances
-    const vaults = await this.vaultRepository.listEndUserVaultsWithBalance(endUser.id);
-
-    if (vaults.length === 0) {
+    if (!balance) {
       return {
         userId,
         clientId,
-        totalVaults: 0,
         totalDeposited: '0',
         totalEffectiveBalance: '0',
         totalYieldEarned: '0',
-        vaults: [],
+        vault: null,
       };
     }
-
-    // Calculate totals
-    const totalDeposited = vaults.reduce(
-      (sum, v) => sum + BigInt(v.totalDeposited),
-      BigInt(0)
-    );
-    const totalEffectiveBalance = vaults.reduce(
-      (sum, v) => sum + BigInt(v.effectiveBalance),
-      BigInt(0)
-    );
-    const totalYieldEarned = vaults.reduce(
-      (sum, v) => sum + BigInt(v.yieldEarned),
-      BigInt(0)
-    );
 
     return {
       userId,
       clientId,
-      totalVaults: vaults.length,
-      totalDeposited: totalDeposited.toString(),
-      totalEffectiveBalance: totalEffectiveBalance.toString(),
-      totalYieldEarned: totalYieldEarned.toString(),
-      vaults: vaults.map(v => this.mapToBalanceResponse(v, userId, clientId)),
+      totalDeposited: balance.totalDeposited,
+      totalEffectiveBalance: balance.effectiveBalance,
+      totalYieldEarned: balance.yieldEarned,
+      vault: balance,
     };
   }
 
   /**
-   * List all users with balances for a specific vault (admin view)
+   * List all users with balances for a client (admin view)
    */
   async listVaultUsers(
     clientId: string,
-    chain: string,
-    tokenAddress: string,
-    limit: number = 100
+    limit: number = 100,
+    offset: number = 0
   ): Promise<UserBalanceResponse[]> {
-    // This would require a new SQLC query
-    // For now, return empty array - implement when needed
-    return [];
+    // Get all end users with balances
+    const users = await this.userRepository.listByClient(clientId, limit, offset);
+    
+    // Get current client growth index
+    const clientGrowthIndex = await this.clientGrowthIndexService.calculateClientGrowthIndex(clientId);
+
+    const results: UserBalanceResponse[] = [];
+    
+    for (const user of users) {
+      const vault = await this.vaultRepository.getEndUserVaultByClient(user.id, clientId);
+      if (vault) {
+        results.push(this.mapToBalanceResponse(vault, user.userId, clientId, clientGrowthIndex));
+      }
+    }
+
+    return results;
   }
 
   /**
-   * Calculate effective balance manually (for verification)
-   * This is already done by SQLC, but useful for testing
+   * Calculate effective balance
+   * FORMULA: effective_balance = totalDeposited × (clientGrowthIndex / weightedEntryIndex)
    */
-  calculateEffectiveBalance(shares: string, currentIndex: string): string {
-    const sharesBigInt = BigInt(shares);
-    const indexBigInt = BigInt(currentIndex);
-    const scale = BigInt(1e18);
+  calculateEffectiveBalance(totalDeposited: string, weightedEntryIndex: string, clientGrowthIndex: string): string {
+    const deposited = new BigNumber(totalDeposited);
+    const entryIndex = new BigNumber(weightedEntryIndex);
+    const growthIndex = new BigNumber(clientGrowthIndex);
 
-    // effective_balance = shares × current_index / 1e18
-    const effectiveBalance = (sharesBigInt * indexBigInt) / scale;
+    if (entryIndex.isZero()) {
+      return deposited.toString();
+    }
+
+    // effective_balance = totalDeposited × (clientGrowthIndex / weightedEntryIndex)
+    const effectiveBalance = deposited
+      .multipliedBy(growthIndex)
+      .dividedBy(entryIndex)
+      .integerValue(BigNumber.ROUND_DOWN);
+
     return effectiveBalance.toString();
   }
 
   /**
-   * Calculate yield earned manually (for verification)
+   * Calculate yield earned
+   * FORMULA: yield_earned = effective_balance - total_deposited
    */
   calculateYieldEarned(effectiveBalance: string, totalDeposited: string): string {
-    const effectiveBigInt = BigInt(effectiveBalance);
-    const depositedBigInt = BigInt(totalDeposited);
+    const effective = new BigNumber(effectiveBalance);
+    const deposited = new BigNumber(totalDeposited);
 
-    // yield_earned = effective_balance - total_deposited
-    const yieldEarned = effectiveBigInt - depositedBigInt;
-    return yieldEarned > 0 ? yieldEarned.toString() : '0';
+    const yieldEarned = effective.minus(deposited);
+    return yieldEarned.isGreaterThan(0) ? yieldEarned.toString() : '0';
   }
 
   /**
    * Map database row to response
    */
   private mapToBalanceResponse(
-    vault: GetEndUserVaultWithBalanceRow | ListEndUserVaultsWithBalanceRow,
+    vault: GetEndUserVaultByClientRow,
     userId: string,
-    clientId: string
+    clientId: string,
+    clientGrowthIndex: string
   ): UserBalanceResponse {
+    const effectiveBalance = this.calculateEffectiveBalance(
+      vault.totalDeposited,
+      vault.weightedEntryIndex,
+      clientGrowthIndex
+    );
+    const yieldEarned = this.calculateYieldEarned(effectiveBalance, vault.totalDeposited);
+
     return {
       userId,
       clientId,
-      chain: vault.chain,
-      tokenAddress: vault.tokenAddress,
-      tokenSymbol: vault.tokenSymbol,
       totalDeposited: vault.totalDeposited,
       totalWithdrawn: vault.totalWithdrawn,
-      effectiveBalance: vault.effectiveBalance,
-      yieldEarned: vault.yieldEarned,
-      shares: vault.shares,
+      effectiveBalance,
+      yieldEarned,
       weightedEntryIndex: vault.weightedEntryIndex,
-      currentIndex: vault.currentIndex,
-      apy7d: 'apy_7d' in vault ? vault.apy_7d : null,
-      apy30d: 'apy_30d' in vault ? vault.apy_30d : null,
       isActive: vault.isActive,
       lastDepositAt: vault.lastDepositAt,
       lastWithdrawalAt: vault.lastWithdrawalAt,

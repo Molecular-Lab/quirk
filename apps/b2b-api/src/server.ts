@@ -19,6 +19,7 @@ import {
 	VaultRepository,
 	UserRepository,
 	DepositRepository,
+	DepositOrderRepository,
 	WithdrawalRepository,
 	AuditRepository,
 	B2BClientUseCase,
@@ -28,6 +29,7 @@ import {
 	B2BWithdrawalUseCase,
 	B2BUserVaultUseCase,
 	ClientGrowthIndexService, // ✅ NEW: Client growth index calculation
+	DepositOrderUseCase, // ✅ NEW: Deposit orders for Operations Dashboard
 } from "@proxify/core";
 import { b2bContract } from "@proxify/b2b-api-core";
 import { createExpressEndpoints } from "@ts-rest/express";
@@ -38,6 +40,7 @@ import { ClientService } from "./service/client.service";
 import { VaultService } from "./service/vault.service";
 import { UserService } from "./service/user.service";
 import { DepositService } from "./service/deposit.service";
+import { DepositOrderService } from "./service/deposit-order.service";
 import { WithdrawalService } from "./service/withdrawal.service";
 import { UserVaultService } from "./service/user-vault.service";
 import { PrivyAccountService } from "./service/privy-account.service";
@@ -70,6 +73,7 @@ async function main() {
 	const vaultRepository = new VaultRepository(sql);
 	const userRepository = new UserRepository(sql);
 	const depositRepository = new DepositRepository(sql);
+	const depositOrderRepository = new DepositOrderRepository(sql); // ✅ NEW: For Operations Dashboard
 	const withdrawalRepository = new WithdrawalRepository(sql);
 	const auditRepository = new AuditRepository(sql);
 
@@ -111,8 +115,14 @@ async function main() {
 	const userVaultUseCase = new B2BUserVaultUseCase(
 		vaultRepository,
 		userRepository,
-		auditRepository
+		auditRepository,
+		clientGrowthIndexService
 	);
+	const depositOrderUseCase = new DepositOrderUseCase(
+		depositOrderRepository,
+		userRepository,
+		clientRepository
+	); // ✅ NEW: Deposit orders for Operations Dashboard
 
 	logger.info("✅ UseCases initialized");
 
@@ -121,6 +131,7 @@ async function main() {
 	const vaultService = new VaultService(vaultUseCase);
 	const userService = new UserService(userUseCase);
 	const depositService = new DepositService(depositUseCase);
+	const depositOrderService = new DepositOrderService(depositOrderUseCase); // ✅ NEW: For Operations Dashboard
 	const withdrawalService = new WithdrawalService(withdrawalUseCase);
 	const userVaultService = new UserVaultService(userVaultUseCase);
 	const privyAccountService = new PrivyAccountService(privyAccountRepository);
@@ -136,6 +147,7 @@ async function main() {
 		vaultService,
 		userService,
 		depositService,
+		depositOrderService, // ✅ NEW: For Operations Dashboard
 		withdrawalService,
 		userVaultService,
 		privyAccountService,
@@ -149,7 +161,7 @@ async function main() {
 	// CORS middleware - Allow requests from frontend
 	app.use((req, res, next) => {
 		res.header("Access-Control-Allow-Origin", "*"); // In production, set specific origin
-		res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+		res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS"); // ✅ Added PATCH
 		res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key"); // ✅ Added x-api-key
 		res.header("Access-Control-Max-Age", "86400"); // 24 hours
 		

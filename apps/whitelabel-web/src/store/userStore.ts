@@ -117,6 +117,26 @@ export const useUserStore = create<UserStore>()(
 				const org = get().organizations.find((o) => o.productId === productId)
 				if (org) {
 					set({ activeProductId: productId })
+
+					// Sync to clientContextStore
+					import("./clientContextStore").then(({ useClientContext }) => {
+						const apiKey = get().apiKey
+						console.log("[UserStore] Switching active organization:", {
+							productId,
+							companyName: org.companyName,
+							hasApiKey: !!apiKey,
+						})
+
+						useClientContext.getState().setClientContext({
+							clientId: org.id,
+							productId: org.productId,
+							apiKey: apiKey || "",
+							companyName: org.companyName,
+							businessType: org.businessType,
+						})
+
+						console.log("[UserStore] ✅ Synced to clientContextStore")
+					})
 				}
 			},
 
@@ -180,8 +200,8 @@ export const useUserStore = create<UserStore>()(
 					})
 				} catch (error) {
 					console.error("[UserStore] Failed to load organizations:", error)
-					// Don't throw - just log the error
-					set({ organizations: [] })
+					// ✅ Keep existing organizations instead of clearing them
+					// This prevents losing UI state when API calls fail
 				}
 			},
 
@@ -191,6 +211,24 @@ export const useUserStore = create<UserStore>()(
 					apiKey,
 					webhookSecret,
 				})
+
+				// Sync to clientContextStore
+				const activeOrg = get().getActiveOrganization()
+				if (activeOrg) {
+					import("./clientContextStore").then(({ useClientContext }) => {
+						console.log("[UserStore] API key updated, syncing to clientContextStore")
+
+						useClientContext.getState().setClientContext({
+							clientId: activeOrg.id,
+							productId: activeOrg.productId,
+							apiKey: apiKey,
+							companyName: activeOrg.companyName,
+							businessType: activeOrg.businessType,
+						})
+
+						console.log("[UserStore] ✅ API key synced to clientContextStore")
+					})
+				}
 			},
 
 			// Check if user is authenticated with Privy

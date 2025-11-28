@@ -8,6 +8,7 @@ export class DepositService {
 	constructor(private depositUseCase: B2BDepositUseCase) {}
 
 	async createDeposit(request: {
+		orderId?: string;
 		clientId: string;
 		userId: string;
 		depositType: "internal" | "external";
@@ -17,6 +18,7 @@ export class DepositService {
 		gatewayProvider?: string;
 		paymentUrl?: string;
 		gatewayOrderId?: string;
+		paymentInstructions?: any; // ✅ Payment instructions to store in DB
 	}) {
 		return await this.depositUseCase.createDeposit(request);
 	}
@@ -53,6 +55,10 @@ export class DepositService {
 
 	async getDepositStats(clientId: string, startDate?: Date, endDate?: Date) {
 		return await this.depositUseCase.getDepositStats(clientId, startDate, endDate);
+	}
+
+	async listPendingDeposits(clientId: string) {
+		return await this.depositUseCase.listPendingDeposits(clientId);
 	}
 }
 

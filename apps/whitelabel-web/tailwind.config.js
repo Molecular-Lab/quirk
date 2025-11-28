@@ -10,20 +10,6 @@ export default {
   theme: {
     extend: {
       colors: {
-        // Primary - Glider.Fi green
-        primary: {
-          50: '#E6FFF9',
-          100: '#B3FFE9',
-          200: '#80FFD9',
-          300: '#4DFFC9',
-          400: '#1AFFB9',
-          500: '#00D9A3',
-          600: '#00B88A',
-          700: '#009770',
-          800: '#007657',
-          900: '#00553D',
-        },
-
         // Production-grade grays (Standard pattern)
         gray: {
           DEFAULT: '#F2F2F2',
@@ -43,54 +29,18 @@ export default {
           950: '#262626',
         },
 
-        // Secondary
-        secondary: {
-          DEFAULT: '#1D1D1B',
-          active: '#333331',
-          hover: '#555555',
-          50: '#F2F2F1',
-          100: '#D9D9D8',
-          200: '#BFBFBE',
-          300: '#A6A6A5',
-        },
-
-        // Background
-        background: {
-          DEFAULT: '#FFFFFF',
-          dark: '#1F1F21',
-        },
-
-        // Success
+        // Accent colors for specific states
         success: {
-          DEFAULT: '#2E7D32',
-          background: '#EDF7ED',
-          hover: '#3ED675',
-          active: '#32CC6A',
-          darken: '#26BE5D',
+          DEFAULT: '#10B981',
+          light: '#D1FAE5',
         },
-
-        // Warning
         warning: {
-          DEFAULT: '#EF6C00',
-          background: '#FFF4E5',
-          hover: '#F5E500',
-          active: '#EFDF00',
-          darken: '#f5bc0f',
+          DEFAULT: '#F59E0B',
+          light: '#FEF3C7',
         },
-
-        // Error
         error: {
-          DEFAULT: '#D32F2F',
-          background: '#FDEDED',
-          hover: '#E33837',
-          active: '#D52B2A',
-          darken: '#C82221',
-        },
-
-        // Number colors (for APY, returns)
-        number: {
-          positive: '#40B66B',
-          negative: '#FF5F52',
+          DEFAULT: '#EF4444',
+          light: '#FEE2E2',
         },
       },
 
@@ -106,6 +56,17 @@ export default {
         sm: ['14px', '16px'],
         base: ['16px', '18px'],
         lg: ['18px', '22px'],
+      },
+
+      animation: {
+        float: 'float 6s ease-in-out infinite',
+      },
+
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-20px)' },
+        },
       },
     },
   },

@@ -8,6 +8,15 @@ import { z } from "zod";
 // REQUEST DTOs
 // ============================================
 
+// Client's bank account for receiving withdrawal funds (off-ramp)
+export const ClientBankAccountDto = z.object({
+	currency: z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"]),
+	bank_name: z.string(),
+	account_number: z.string(),
+	account_name: z.string(),
+	bank_details: z.record(z.any()).optional(), // Dynamic JSONB: {swift_code, bank_code, branch_code, promptpay_id, etc.}
+});
+
 export const CreateClientDto = z.object({
 	companyName: z.string().min(1),
 	businessType: z.string(),
@@ -19,6 +28,10 @@ export const CreateClientDto = z.object({
 	privyOrganizationId: z.string(),
 	privyWalletAddress: z.string().min(1), // ✅ Required - Wallet address from Privy
 	privyEmail: z.string().email().optional().nullable(), // ✅ Optional - Email from Privy
+
+	// Currency & banking configuration (for off-ramp withdrawals)
+	supportedCurrencies: z.array(z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"])).optional(),
+	bankAccounts: z.array(ClientBankAccountDto).optional(),
 });
 
 export const AddFundsDto = z.object({
@@ -44,6 +57,28 @@ export const DeductReservedDto = z.object({
 });
 
 // ============================================
+// UPDATE DTOs (Separate cards/forms)
+// ============================================
+
+// Update organization info only (company name, description, etc.)
+export const UpdateOrganizationInfoDto = z.object({
+	companyName: z.string().min(1).optional(),
+	businessType: z.string().optional(),
+	description: z.string().optional().nullable(),
+	websiteUrl: z.string().url().optional().nullable(),
+});
+
+// Update supported currencies only
+export const UpdateSupportedCurrenciesDto = z.object({
+	supportedCurrencies: z.array(z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"])),
+});
+
+// Configure bank accounts (already exists but explicit DTO)
+export const ConfigureBankAccountsDto = z.object({
+	bankAccounts: z.array(ClientBankAccountDto),
+});
+
+// ============================================
 // RESPONSE DTOs
 // ============================================
 
@@ -64,6 +99,8 @@ export const ClientDto = z.object({
 	privyOrganizationId: z.string(),
 	isActive: z.boolean(),
 	isSandbox: z.boolean().optional(),
+	supportedCurrencies: z.array(z.string()).nullable().optional(),
+	bankAccounts: z.array(ClientBankAccountDto).nullable().optional(),
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });
@@ -96,6 +133,7 @@ export const ClientStatsDto = z.object({
 // TYPE EXPORTS
 // ============================================
 
+export type ClientBankAccountDto = z.infer<typeof ClientBankAccountDto>;
 export type CreateClientDto = z.infer<typeof CreateClientDto>;
 export type AddFundsDto = z.infer<typeof AddFundsDto>;
 export type ReserveFundsDto = z.infer<typeof ReserveFundsDto>;
@@ -105,3 +143,6 @@ export type ClientBalanceDto = z.infer<typeof ClientBalanceDto>;
 export type ClientDto = z.infer<typeof ClientDto>;
 export type ApiKeyDto = z.infer<typeof ApiKeyDto>;
 export type ClientStatsDto = z.infer<typeof ClientStatsDto>;
+export type UpdateOrganizationInfoDto = z.infer<typeof UpdateOrganizationInfoDto>;
+export type UpdateSupportedCurrenciesDto = z.infer<typeof UpdateSupportedCurrenciesDto>;
+export type ConfigureBankAccountsDto = z.infer<typeof ConfigureBankAccountsDto>;

@@ -46,6 +46,15 @@ export class B2BAPIClient {
 		privyEmail?: string
 		description?: string
 		websiteUrl?: string
+		// Multi-currency support (for off-ramp withdrawals)
+		supportedCurrencies?: string[]
+		bankAccounts?: {
+			currency: string
+			bank_name: string
+			account_number: string
+			account_name: string
+			bank_details?: Record<string, unknown>
+		}[]
 	}) {
 		// eslint-disable-next-line no-console
 		console.log("[b2bApiClient] registerClient called with:", {
@@ -184,7 +193,13 @@ export class B2BAPIClient {
 			currency: data.currency,
 			chain: data.chain,
 			tokenSymbol: data.token,
-			onRampProvider: data.payment_method as "proxify_gateway" | "circle" | "coinbase" | "bridge" | "moonpay" | undefined,
+			onRampProvider: data.payment_method as
+				| "proxify_gateway"
+				| "circle"
+				| "coinbase"
+				| "bridge"
+				| "moonpay"
+				| undefined,
 		}
 
 		// eslint-disable-next-line no-console
@@ -194,7 +209,13 @@ export class B2BAPIClient {
 		return response.data
 	}
 
-	async completeDeposit(data: { orderId: string; transactionHash: string; cryptoAmount: string; chain: string; tokenAddress: string }) {
+	async completeDeposit(data: {
+		orderId: string
+		transactionHash: string
+		cryptoAmount: string
+		chain: string
+		tokenAddress: string
+	}) {
 		// ✅ Use correct endpoint path for completing fiat deposit
 		// eslint-disable-next-line no-console
 		console.log("[b2bApiClient] Completing deposit:", data)
@@ -212,19 +233,182 @@ export class B2BAPIClient {
 
 		const response = await this.axios.post<unknown>(
 			`${this.baseURL}/api/v1/deposits/fiat/${data.orderId}/complete`,
-			requestBody
+			requestBody,
 		)
 		return response.data
 	}
 
+	// ============================================
+	// SEPARATE CONFIG ENDPOINTS (3 cards on Settings page)
+	// ============================================
+
+	/**
+	 * 1. Update organization info only
+	 * Card: "Organization Info"
+	 */
+	async updateOrganizationInfo(
+		productId: string,
+		data: {
+			companyName?: string
+			businessType?: string
+			description?: string
+			websiteUrl?: string
+		},
+	) {
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Updating organization info:", { productId, data })
+
+		const response = await this.axios.patch<unknown>(
+			`${this.baseURL}/api/v1/clients/product/${productId}/organization`,
+			data,
+		)
+
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Organization info updated:", response.data)
+
+		return response.data
+	}
+
+	/**
+	 * 2. Update supported currencies only
+	 * Card: "Supported Currencies"
+	 */
+	async updateSupportedCurrencies(
+		productId: string,
+		data: {
+			supportedCurrencies: string[]
+		},
+	) {
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Updating supported currencies:", { productId, data })
+
+		const response = await this.axios.patch<unknown>(
+			`${this.baseURL}/api/v1/clients/product/${productId}/currencies`,
+			data,
+		)
+
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Supported currencies updated:", response.data)
+
+		return response.data
+	}
+
+	/**
+	 * 3. Configure bank accounts for withdrawals (off-ramp)
+	 * Card: "Settlement Bank Accounts"
+	 */
+	async configureBankAccounts(
+		productId: string,
+		data: {
+			bankAccounts: {
+				currency: string
+				bankName?: string
+				accountNumber?: string
+				accountName?: string
+				bankDetails?: Record<string, unknown>
+				bank_name?: string
+				account_number?: string
+				account_name?: string
+				bank_details?: Record<string, unknown>
+			}[]
+		},
+	) {
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Configuring bank accounts:", { productId, data })
+
+		// Map camelCase fields to snake_case to match backend Zod DTOs
+		const requestBody = {
+			bankAccounts: data.bankAccounts.map((ba) => ({
+				currency: ba.currency,
+				bank_name: ba.bank_name ?? ba.bankName ?? "",
+				account_number: ba.account_number ?? ba.accountNumber ?? "",
+				account_name: ba.account_name ?? ba.accountName ?? "",
+				bank_details: ba.bank_details ?? ba.bankDetails ?? undefined,
+			})),
+		}
+
+		const response = await this.axios.post<unknown>(
+			`${this.baseURL}/api/v1/clients/product/${productId}/bank-accounts`,
+			requestBody,
+		)
+
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Bank accounts configured:", response.data)
+
+		return response.data
+	}
+
+	/**
+	 * Get bank accounts for a client
+	 */
+	async getBankAccounts(productId: string) {
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Getting bank accounts:", productId)
+
+		const response = await this.axios.get<unknown>(`${this.baseURL}/api/v1/clients/product/${productId}/bank-accounts`)
+
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Bank accounts:", response.data)
+
+		return response.data
+	}
+
+	// Legacy method - kept for backward compatibility
+	// @deprecated Use configureBankAccounts instead
+	async configureBankAccount(
+		productId: string,
+		data: {
+			currency: string
+			bank_name: string
+			account_number: string
+			account_name: string
+			bank_details?: Record<string, unknown>
+		},
+	) {
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] [DEPRECATED] configureBankAccount - use configureBankAccounts instead")
+
+		// Convert to new format and call configureBankAccounts
+		return this.configureBankAccounts(productId, {
+			bankAccounts: [
+				{
+					currency: data.currency,
+					bankName: data.bank_name,
+					accountNumber: data.account_number,
+					accountName: data.account_name,
+					bankDetails: data.bank_details,
+				},
+			],
+		})
+	}
+
 	// Withdrawal endpoints
-	async createWithdrawal(data: { user_id: string; vaultId: string; amount: string; destination_address?: string }) {
+	async createWithdrawal(data: {
+		user_id: string
+		vaultId: string
+		amount: string
+		withdrawal_method: "crypto" | "fiat_to_client" | "fiat_to_end_user"
+		destination_address?: string // For crypto withdrawals
+		destination_currency?: string // For fiat withdrawals
+		end_user_bank_account?: {
+			// For fiat_to_end_user method
+			currency: string
+			bank_name: string
+			account_number: string
+			account_name: string
+			bank_details?: Record<string, any>
+		}
+	}) {
 		// ✅ Map frontend params to backend contract
 		const requestBody = {
 			clientId: "", // ✅ Will be extracted from API key by backend
 			userId: data.user_id,
 			vaultId: data.vaultId,
 			amount: data.amount,
+			withdrawal_method: data.withdrawal_method,
+			destination_address: data.destination_address,
+			destination_currency: data.destination_currency,
+			end_user_bank_account: data.end_user_bank_account,
 		}
 
 		// eslint-disable-next-line no-console
@@ -239,23 +423,68 @@ export class B2BAPIClient {
 	}
 
 	// Mock deposit confirmation (DEMO only)
-	async mockConfirmFiatDeposit(orderId: string, data: {
-		bankTransactionId: string;
-		paidAmount: string;
-		paidCurrency: string;
-	}) {
+	async mockConfirmFiatDeposit(
+		orderId: string,
+		data: {
+			bankTransactionId: string
+			paidAmount: string
+			paidCurrency: string
+		},
+	) {
 		// eslint-disable-next-line no-console
-		console.log("[b2bApiClient] Mock confirming payment:", { orderId, data });
+		console.log("[b2bApiClient] Mock confirming payment:", { orderId, data })
 
 		const response = await this.axios.post<unknown>(
 			`${this.baseURL}/api/v1/deposits/fiat/${orderId}/mock-confirm`,
-			data
-		);
+			data,
+		)
 
 		// eslint-disable-next-line no-console
-		console.log("[b2bApiClient] Mock confirm response:", response.data);
+		console.log("[b2bApiClient] Mock confirm response:", response.data)
 
-		return response.data;
+		return response.data
+	}
+
+	// Batch complete deposits (Operations Dashboard)
+	async batchCompleteDeposits(data: { orderIds: string[]; paidCurrency?: string }) {
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Batch completing deposits:", data)
+
+		const response = await this.axios.post<unknown>(`${this.baseURL}/api/v1/deposits/batch-complete`, {
+			orderIds: data.orderIds,
+			paidCurrency: data.paidCurrency || "USD",
+		})
+
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Batch complete response:", response.data)
+
+		return response.data
+	}
+
+	// Get deposit by order ID
+	async getDepositByOrderId(orderId: string) {
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Fetching deposit:", orderId)
+
+		const response = await this.axios.get<unknown>(`${this.baseURL}/api/v1/deposits/${orderId}`)
+
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Deposit response:", response.data)
+
+		return response.data
+	}
+
+	// List pending deposits with currency summary
+	async listPendingDeposits() {
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Fetching pending deposits")
+
+		const response = await this.axios.get<unknown>(`${this.baseURL}/api/v1/deposits/pending`)
+
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] Pending deposits response:", response.data)
+
+		return response.data
 	}
 
 	// Vault endpoints
@@ -268,7 +497,10 @@ export class B2BAPIClient {
 		// eslint-disable-next-line no-console
 		console.log("[b2bApiClient] Updating vault yield:", { vaultId, requestBody })
 
-		const response = await this.axios.post<unknown>(`${this.baseURL}/api/v1/vaults/${vaultId}/index/update`, requestBody)
+		const response = await this.axios.post<unknown>(
+			`${this.baseURL}/api/v1/vaults/${vaultId}/index/update`,
+			requestBody,
+		)
 
 		// eslint-disable-next-line no-console
 		console.log("[b2bApiClient] Yield update response:", response.data)

@@ -23,6 +23,13 @@ export class ClientService {
 	}
 
 	/**
+	 * Get client by ID
+	 */
+	async getById(clientId: string) {
+		return await this.clientUseCase.getClientById(clientId);
+	}
+
+	/**
 	 * Get client by product ID
 	 */
 	async getClientByProductId(productId: string) {
@@ -93,5 +100,44 @@ export class ClientService {
 		}
 	) {
 		return await this.clientUseCase.configureStrategies(productId, data);
+	}
+
+	/**
+	 * Update organization info only (company name, description, website)
+	 */
+	async updateOrganizationInfo(
+		productId: string,
+		data: {
+			companyName?: string;
+			businessType?: string;
+			description?: string | null;
+			websiteUrl?: string | null;
+		}
+	) {
+		return await this.clientUseCase.updateOrganizationInfo(productId, data);
+	}
+
+	/**
+	 * Update supported currencies only
+	 */
+	async updateSupportedCurrencies(productId: string, currencies: string[]) {
+		return await this.clientUseCase.updateSupportedCurrencies(productId, currencies);
+	}
+
+	/**
+	 * Configure bank accounts for fiat withdrawals (off-ramp)
+	 */
+	async configureBankAccounts(
+		clientId: string,
+		bankAccounts: Array<{
+			currency: string;
+			bank_name: string;
+			account_number: string;
+			account_name: string;
+			bank_details?: Record<string, any>;
+		}>,
+		supportedCurrencies: string[]
+	) {
+		return await this.clientUseCase.configureBankAccounts(clientId, bankAccounts, supportedCurrencies);
 	}
 }

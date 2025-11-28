@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Set Proxify API Key</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            margin-top: 0;
+            color: #333;
+        }
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: monospace;
+            box-sizing: border-box;
+        }
+        button {
+            background: #6366f1;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 12px;
+            width: 100%;
+        }
+        button:hover {
+            background: #4f46e5;
+        }
+        .success {
+            background: #10b981;
+            color: white;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 12px;
+            display: none;
+        }
+        .code {
+            background: #f3f4f6;
+            padding: 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            margin: 12px 0;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔑 Set Proxify API Key</h1>
+
+        <p><strong>Your Generated API Key:</strong></p>
+        <div class="code">test_pk_2a2463f87bfd6756822f48698fedd4ef</div>
+
+        <label for="apiKey">Paste API Key:</label>
+        <input
+            type="text"
+            id="apiKey"
+            value="test_pk_2a2463f87bfd6756822f48698fedd4ef"
+            placeholder="test_pk_..."
+        />
+
+        <button onclick="setApiKey()">Save API Key & Open Dashboard</button>
+
+        <div class="success" id="success">
+            ✓ API Key saved! Opening dashboard...
+        </div>
+    </div>
+
+    <script>
+        function setApiKey() {
+            const apiKey = document.getElementById('apiKey').value.trim();
+
+            if (!apiKey) {
+                alert('Please enter an API key');
+                return;
+            }
+
+            try {
+                // 1. Set in localStorage for b2bApiClient
+                localStorage.setItem('b2b:api_key', apiKey);
+
+                // 2. Set in userStore
+                const userStoreKey = 'proxify-user-credentials';
+                let userStore = JSON.parse(localStorage.getItem(userStoreKey) || '{"state":{}}');
+                if (!userStore.state) {
+                    userStore.state = {};
+                }
+                userStore.state.apiKey = apiKey;
+                userStore.state.activeProductId = 'test_product_001';
+                localStorage.setItem(userStoreKey, JSON.stringify(userStore));
+
+                // 3. Set in demoStore
+                const demoStoreKey = 'proxify-demo-state';
+                let demoStore = JSON.parse(localStorage.getItem(demoStoreKey) || '{"state":{}}');
+                if (!demoStore.state) {
+                    demoStore.state = {};
+                }
+                demoStore.state.activeApiKey = apiKey;
+                demoStore.state.activeProductId = 'test_product_001';
+                localStorage.setItem(demoStoreKey, JSON.stringify(demoStore));
+
+                // Show success
+                document.getElementById('success').style.display = 'block';
+
+                // Redirect to dashboard after 1 second
+                setTimeout(() => {
+                    window.location.href = 'http://localhost:5173/dashboard';
+                }, 1000);
+            } catch (error) {
+                alert('Error saving API key: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

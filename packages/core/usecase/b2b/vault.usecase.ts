@@ -212,38 +212,34 @@ export class B2BVaultUseCase {
   }
 
   /**
-   * Get or create end-user vault
-   * Called when user makes first deposit in a specific vault
+   * Get or create end-user vault (SIMPLIFIED)
+   * Called when user makes first deposit
+   * 
+   * SIMPLIFIED ARCHITECTURE: ONE vault per user per client
+   * - No chain/token fields
+   * - Uses weightedEntryIndex for DCA tracking
    */
   async getOrCreateEndUserVault(
     endUserId: string,
-    clientId: string,
-    chain: string,
-    tokenAddress: string,
-    tokenSymbol: string
-  ): Promise<{ id: string; shares: string; weightedEntryIndex: string; totalDeposited: string }> {
+    clientId: string
+  ): Promise<{ id: string; weightedEntryIndex: string; totalDeposited: string }> {
     // Check if end-user vault exists
-    const existing = await this.vaultRepository.getEndUserVault(endUserId, chain, tokenAddress);
+    const existing = await this.vaultRepository.getEndUserVaultByClient(endUserId, clientId);
     
     if (existing) {
       return {
         id: existing.id,
-        shares: existing.shares,
         weightedEntryIndex: existing.weightedEntryIndex,
         totalDeposited: existing.totalDeposited,
       };
     }
 
-    // Create new end-user vault with zero shares
+    // Create new end-user vault
     const vault = await this.vaultRepository.createEndUserVault({
       endUserId,
       clientId,
-      chain,
-      tokenAddress,
-      tokenSymbol,
-      shares: '0',
-      weightedEntryIndex: '0',
       totalDeposited: '0',
+      weightedEntryIndex: '0',
     });
 
     if (!vault) {
@@ -258,12 +254,10 @@ export class B2BVaultUseCase {
       action: 'end_user_vault_created',
       resourceType: 'end_user_vault',
       resourceId: vault.id,
-      description: `End-user vault created: ${chain}/${tokenSymbol}`,
+      description: `End-user vault created for client: ${clientId}`,
       metadata: {
         endUserId,
-        chain,
-        tokenAddress,
-        tokenSymbol,
+        clientId,
       },
       ipAddress: null,
       userAgent: null,
@@ -271,7 +265,6 @@ export class B2BVaultUseCase {
 
     return {
       id: vault.id,
-      shares: vault.shares,
       weightedEntryIndex: vault.weightedEntryIndex,
       totalDeposited: vault.totalDeposited,
     };

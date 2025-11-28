@@ -6,6 +6,19 @@
 import { z } from 'zod';
 
 /**
+ * Bank Account Schema for Client Withdrawals
+ */
+export const bankAccountSchema = z.object({
+  currency: z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"]),
+  bank_name: z.string(),
+  account_number: z.string(),
+  account_name: z.string(),
+  bank_details: z.record(z.any()).optional(), // Dynamic: {swift_code, bank_code, promptpay_id, etc.}
+});
+
+export type BankAccount = z.infer<typeof bankAccountSchema>;
+
+/**
  * Client Organization Schema
  */
 export const clientSchema = z.object({
@@ -16,6 +29,11 @@ export const clientSchema = z.object({
   apiKeyPrefix: z.string().nullable(),
   apiKeyHash: z.string().nullable(),
   isActive: z.boolean().default(true),
+
+  // Multi-currency support
+  supportedCurrencies: z.array(z.string()).default([]),
+  bankAccounts: z.array(bankAccountSchema).default([]),
+
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -60,6 +78,8 @@ export const createClientSchema = z.object({
   name: z.string().min(1, 'Name is required').max(255, 'Name too long'),
   apiKeyPrefix: z.string().nullable().optional(),
   apiKeyHash: z.string().nullable().optional(),
+  supportedCurrencies: z.array(z.string()).optional(),
+  bankAccounts: z.array(bankAccountSchema).optional(),
 });
 
 export type CreateClient = z.infer<typeof createClientSchema>;

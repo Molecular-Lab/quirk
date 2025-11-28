@@ -104,16 +104,19 @@ INSERT INTO client_organizations (
   platform_fee,
   performance_fee,
   is_active,
-  is_sandbox
+  is_sandbox,
+  supported_currencies,
+  bank_accounts
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16
+  $11, $12, $13, $14, $15, $16, $17, $18
 )
 RETURNING *;
 
 -- name: UpdateClient :one
 UPDATE client_organizations
 SET company_name = COALESCE(sqlc.narg('company_name'), company_name),
+    business_type = COALESCE(sqlc.narg('business_type'), business_type),
     description = COALESCE(sqlc.narg('description'), description),
     website_url = COALESCE(sqlc.narg('website_url'), website_url),
     webhook_urls = COALESCE(sqlc.narg('webhook_urls'), webhook_urls),

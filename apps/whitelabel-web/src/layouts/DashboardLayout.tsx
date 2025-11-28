@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 import { usePrivy } from "@privy-io/react-auth"
 import { Link, Outlet, useNavigate } from "@tanstack/react-router"
-import { Aperture, BookText, LayoutDashboard, LogOut, Menu, Sparkles, Webhook, X } from "lucide-react"
+import { Aperture, BookText, LayoutDashboard, LogOut, Menu, Shield, Sparkles, Webhook, X } from "lucide-react"
 
 const navigation = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -10,6 +10,7 @@ const navigation = [
 	{ name: "Market", href: "/dashboard/market", icon: Sparkles },
 	{ name: "Integration", href: "/dashboard/integration", icon: BookText },
 	{ name: "API Testing", href: "/dashboard/api-testing", icon: Webhook },
+	{ name: "Onboarding", href: "/dashboard/onboarding", icon: Shield },
 ]
 
 export function DashboardLayout() {

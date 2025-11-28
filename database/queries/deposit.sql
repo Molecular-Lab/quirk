@@ -42,10 +42,11 @@ ORDER BY created_at DESC
 LIMIT $3 OFFSET $4;
 
 -- name: ListPendingDeposits :many
--- Get pending deposits that haven't expired
+-- Get pending deposits that haven't expired for a specific client
 SELECT * FROM deposit_transactions
 WHERE status = 'pending'
-  AND expires_at > now()
+  AND client_id = $1
+  AND (expires_at IS NULL OR expires_at > now())
 ORDER BY created_at ASC;
 
 -- name: ListExpiredDeposits :many
@@ -77,10 +78,12 @@ INSERT INTO deposit_transactions (
   client_balance_id,
   deducted_from_client,
   wallet_address,
-  expires_at
+  expires_at,
+  payment_instructions
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16, $17, $18, $19, $20
+  $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+  $21
 )
 RETURNING *;
 

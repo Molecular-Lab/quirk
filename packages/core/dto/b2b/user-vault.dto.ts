@@ -1,36 +1,30 @@
 /**
  * B2B User Vault DTO - Request/Response Types
  * Used for API ↔ UseCase communication
+ * 
+ * SIMPLIFIED ARCHITECTURE (Nov 2025):
+ * - ONE vault per user per client (no chain/token)
+ * - Fiat-based tracking with weightedEntryIndex
+ * - Balance calculation uses client growth index
  */
 
 export interface UserBalanceRequest {
   userId: string;
   clientId: string;
-  chain: string;
-  tokenAddress: string;
 }
 
 export interface UserBalanceResponse {
   userId: string;
   clientId: string;
-  chain: string;
-  tokenAddress: string;
-  tokenSymbol: string;
   
-  // Balance information
-  totalDeposited: string;
-  totalWithdrawn: string;
-  effectiveBalance: string; // shares × current_index / 1e18
-  yieldEarned: string;      // effective_balance - total_deposited
+  // Balance information (fiat-based)
+  totalDeposited: string;     // Fiat amount deposited
+  totalWithdrawn: string;     // Fiat amount withdrawn
+  effectiveBalance: string;   // totalDeposited × (clientGrowthIndex / weightedEntryIndex)
+  yieldEarned: string;        // effectiveBalance - totalDeposited
   
-  // Vault shares
-  shares: string;
-  weightedEntryIndex: string;
-  currentIndex: string;
-  
-  // Performance metrics
-  apy7d: string | null;
-  apy30d: string | null;
+  // Index tracking (for DCA)
+  weightedEntryIndex: string; // User's weighted average entry index
   
   // Status
   isActive: boolean;
@@ -41,16 +35,14 @@ export interface UserBalanceResponse {
 export interface UserPortfolioResponse {
   userId: string;
   clientId: string;
-  totalVaults: number;
   totalDeposited: string;
   totalEffectiveBalance: string;
   totalYieldEarned: string;
-  vaults: UserBalanceResponse[];
+  vault: UserBalanceResponse | null;
 }
 
 export interface ListVaultUsersRequest {
   clientId: string;
-  chain: string;
-  tokenAddress: string;
   limit?: number;
+  offset?: number;
 }

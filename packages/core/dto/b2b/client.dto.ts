@@ -3,6 +3,14 @@
  * Used for API ↔ UseCase communication
  */
 
+export interface ClientBankAccountDTO {
+  currency: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string;
+  bank_details?: Record<string, any>;
+}
+
 export interface CreateClientRequest {
   // Privy account info (stored in privy_accounts table)
   privyOrganizationId: string;
@@ -30,6 +38,10 @@ export interface CreateClientRequest {
   endUserYieldPortion?: string;
   platformFee?: string;
   performanceFee?: string;
+
+  // Multi-currency support (for off-ramp withdrawals)
+  supportedCurrencies?: string[];
+  bankAccounts?: ClientBankAccountDTO[];
 
   // Status
   isActive?: boolean;

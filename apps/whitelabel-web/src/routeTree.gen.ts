@@ -11,9 +11,12 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
+import { Route as PaymentSessionOrderIdRouteImport } from './routes/payment-session.$orderId'
+import { Route as DashboardOnboardingRouteImport } from './routes/dashboard.onboarding'
 import { Route as DashboardMarketRouteImport } from './routes/dashboard/market'
 import { Route as DashboardIntegrationRouteImport } from './routes/dashboard/integration'
 import { Route as DashboardExploreRouteImport } from './routes/dashboard/explore'
@@ -37,6 +40,11 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -50,6 +58,16 @@ const IndexRoute = IndexRouteImport.update({
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const PaymentSessionOrderIdRoute = PaymentSessionOrderIdRouteImport.update({
+  id: '/payment-session/$orderId',
+  path: '/payment-session/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardOnboardingRoute = DashboardOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardMarketRoute = DashboardMarketRouteImport.update({
@@ -120,6 +138,7 @@ const DashboardPortfoliosIdRoute = DashboardPortfoliosIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/demo': typeof DemoRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -128,6 +147,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
+  '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
   '/dashboard/settings/api-keys': typeof DashboardSettingsApiKeysRoute
@@ -138,6 +159,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/demo': typeof DemoRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -146,6 +168,8 @@ export interface FileRoutesByTo {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
+  '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
   '/dashboard/settings/api-keys': typeof DashboardSettingsApiKeysRoute
@@ -158,6 +182,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
+  '/demo': typeof DemoRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -166,6 +191,8 @@ export interface FileRoutesById {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
+  '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
   '/dashboard/settings/api-keys': typeof DashboardSettingsApiKeysRoute
@@ -179,6 +206,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
+    | '/demo'
     | '/login'
     | '/register'
     | '/dashboard/analytics'
@@ -187,6 +215,8 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
+    | '/dashboard/onboarding'
+    | '/payment-session/$orderId'
     | '/dashboard/'
     | '/dashboard/portfolios/$id'
     | '/dashboard/settings/api-keys'
@@ -197,6 +227,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/demo'
     | '/login'
     | '/register'
     | '/dashboard/analytics'
@@ -205,6 +236,8 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
+    | '/dashboard/onboarding'
+    | '/payment-session/$orderId'
     | '/dashboard'
     | '/dashboard/portfolios/$id'
     | '/dashboard/settings/api-keys'
@@ -216,6 +249,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/dashboard'
+    | '/demo'
     | '/login'
     | '/register'
     | '/dashboard/analytics'
@@ -224,6 +258,8 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
+    | '/dashboard/onboarding'
+    | '/payment-session/$orderId'
     | '/dashboard/'
     | '/dashboard/portfolios/$id'
     | '/dashboard/settings/api-keys'
@@ -236,8 +272,10 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRouteWithChildren
+  DemoRoute: typeof DemoRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  PaymentSessionOrderIdRoute: typeof PaymentSessionOrderIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -254,6 +292,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -275,6 +320,20 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/dashboard/'
       preLoaderRoute: typeof DashboardIndexRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/payment-session/$orderId': {
+      id: '/payment-session/$orderId'
+      path: '/payment-session/$orderId'
+      fullPath: '/payment-session/$orderId'
+      preLoaderRoute: typeof PaymentSessionOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/onboarding': {
+      id: '/dashboard/onboarding'
+      path: '/onboarding'
+      fullPath: '/dashboard/onboarding'
+      preLoaderRoute: typeof DashboardOnboardingRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/market': {
@@ -371,6 +430,7 @@ interface DashboardRouteChildren {
   DashboardExploreRoute: typeof DashboardExploreRoute
   DashboardIntegrationRoute: typeof DashboardIntegrationRoute
   DashboardMarketRoute: typeof DashboardMarketRoute
+  DashboardOnboardingRoute: typeof DashboardOnboardingRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardPortfoliosIdRoute: typeof DashboardPortfoliosIdRoute
   DashboardSettingsApiKeysRoute: typeof DashboardSettingsApiKeysRoute
@@ -387,6 +447,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardExploreRoute: DashboardExploreRoute,
   DashboardIntegrationRoute: DashboardIntegrationRoute,
   DashboardMarketRoute: DashboardMarketRoute,
+  DashboardOnboardingRoute: DashboardOnboardingRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardPortfoliosIdRoute: DashboardPortfoliosIdRoute,
   DashboardSettingsApiKeysRoute: DashboardSettingsApiKeysRoute,
@@ -403,8 +464,10 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRouteWithChildren,
+  DemoRoute: DemoRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  PaymentSessionOrderIdRoute: PaymentSessionOrderIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

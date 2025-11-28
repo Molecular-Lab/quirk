@@ -62,7 +62,7 @@ export class B2BDepositUseCase {
 
     // Create deposit args
     const args: CreateDepositArgs = {
-      orderId: `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Generate unique order ID
+      orderId: request.orderId || `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Use provided or generate unique order ID
       clientId: request.clientId,
       userId: user.id,
       depositType: request.depositType,
@@ -82,6 +82,7 @@ export class B2BDepositUseCase {
       deductedFromClient: null,
       walletAddress: null,
       expiresAt: null,
+      paymentInstructions: request.paymentInstructions || null, // ✅ Store payment instructions in DB
     };
 
     const deposit = await this.depositRepository.create(args);
@@ -405,7 +406,53 @@ export class B2BDepositUseCase {
     // Default to last 30 days if not provided
     const end = endDate || new Date();
     const start = startDate || new Date(end.getTime() - 30 * 24 * 60 * 60 * 1000);
-    
+
     return await this.depositRepository.getStats(clientId, start, end);
+  }
+
+  /**
+   * List pending deposits with summary by currency
+   * Used for automated banking flow demo
+   */
+  async listPendingDeposits(clientId: string): Promise<{
+    deposits: any[];
+    summary: Array<{
+      currency: string;
+      count: number;
+      totalAmount: string;
+    }>;
+  }> {
+    const deposits = await this.depositRepository.listPending(clientId);
+
+    // Group by currency and calculate totals
+    const summaryMap = new Map<string, { count: number; totalAmount: BigNumber }>();
+
+    for (const deposit of deposits) {
+      const currency = deposit.currency || 'USD';
+      const amount = new BigNumber(deposit.fiatAmount || '0');
+
+      if (summaryMap.has(currency)) {
+        const existing = summaryMap.get(currency)!;
+        existing.count += 1;
+        existing.totalAmount = existing.totalAmount.plus(amount);
+      } else {
+        summaryMap.set(currency, {
+          count: 1,
+          totalAmount: amount,
+        });
+      }
+    }
+
+    // Convert summary map to array
+    const summary = Array.from(summaryMap.entries()).map(([currency, data]) => ({
+      currency,
+      count: data.count,
+      totalAmount: data.totalAmount.toString(),
+    }));
+
+    return {
+      deposits,
+      summary,
+    };
   }
 }

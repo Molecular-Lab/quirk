@@ -8,6 +8,7 @@ import { z } from "zod";
 import {
 	AddFundsDto,
 	ClientBalanceDto,
+	ClientBankAccountDto,
 	ClientDto,
 	CreateClientDto,
 	DeductReservedDto,
@@ -15,6 +16,8 @@ import {
 	ReleaseFundsDto,
 	ReserveFundsDto,
 	SuccessResponseDto,
+	UpdateOrganizationInfoDto,
+	UpdateSupportedCurrenciesDto,
 } from "../dto";
 
 const c = initContract();
@@ -161,5 +164,84 @@ export const clientContract = c.router({
 			),
 		}),
 		summary: "Configure DeFi strategy allocation for client vault (by productId)",
+	},
+
+	// ============================================
+	// SEPARATE CONFIG ENDPOINTS (3 cards on Settings page)
+	// ============================================
+
+	// 1. Update organization info only
+	updateOrganizationInfo: {
+		method: "PATCH",
+		path: "/clients/product/:productId/organization",
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				productId: z.string(),
+				companyName: z.string(),
+				businessType: z.string(),
+				description: z.string().nullable(),
+				websiteUrl: z.string().nullable(),
+				message: z.string(),
+			}),
+			400: ErrorResponseDto,
+			404: ErrorResponseDto,
+		},
+		body: UpdateOrganizationInfoDto,
+		summary: "Update organization info (company name, description, website)",
+	},
+
+	// 2. Update supported currencies only
+	updateSupportedCurrencies: {
+		method: "PATCH",
+		path: "/clients/product/:productId/currencies",
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				productId: z.string(),
+				supportedCurrencies: z.array(z.string()),
+				message: z.string(),
+			}),
+			400: ErrorResponseDto,
+			404: ErrorResponseDto,
+		},
+		body: UpdateSupportedCurrenciesDto,
+		summary: "Update supported currencies for the client",
+	},
+
+	// 3. Configure bank accounts for withdrawals (off-ramp)
+	configureBankAccounts: {
+		method: "POST",
+		path: "/clients/product/:productId/bank-accounts",
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				productId: z.string(),
+				bankAccounts: z.array(ClientBankAccountDto),
+				supportedCurrencies: z.array(z.string()),
+				message: z.string(),
+			}),
+			400: ErrorResponseDto,
+			404: ErrorResponseDto,
+		},
+		body: z.object({
+			bankAccounts: z.array(ClientBankAccountDto),
+		}),
+		summary: "Configure bank accounts for fiat withdrawals (off-ramp)",
+	},
+
+	// Get bank accounts for a client
+	getBankAccounts: {
+		method: "GET",
+		path: "/clients/product/:productId/bank-accounts",
+		responses: {
+			200: z.object({
+				productId: z.string(),
+				bankAccounts: z.array(ClientBankAccountDto),
+				supportedCurrencies: z.array(z.string()),
+			}),
+			404: ErrorResponseDto,
+		},
+		summary: "Get configured bank accounts for a client",
 	},
 });
