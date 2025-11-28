@@ -4,18 +4,16 @@
 
 import type { initServer } from "@ts-rest/express";
 import { b2bContract } from "@proxify/b2b-api-core";
+import { getMockUSDCAddress } from "@proxify/core/constants";
 import type { DepositService } from "../service/deposit.service";
 import type { ClientService } from "../service/client.service";
 import { mapDepositToDto, mapDepositsToDto } from "../mapper/deposit.mapper";
 import { logger } from "../logger";
 import { BankAccountService, getExchangeRate } from "../service/bank-account.service";
 
-import type { DepositOrderService } from "../service/deposit-order.service";
-
 export function createDepositRouter(
 	s: ReturnType<typeof initServer>,
 	depositService: DepositService,
-	depositOrderService: DepositOrderService,
 	clientService: ClientService
 ) {
 	return s.router(b2bContract.deposit, {
@@ -129,28 +127,12 @@ export function createDepositRouter(
 					cryptoCurrency: body.tokenSymbol,
 					gatewayProvider: onRampProvider,
 					paymentInstructions, // ✅ Store payment instructions in DB
+					chain: "base", // Default chain for on-ramp
+					tokenSymbol: body.tokenSymbol,
+					expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
 				});
 
-				// ✅ ALSO create deposit_order for Operations Dashboard tracking
-				try {
-					await depositOrderService.createDepositOrder({
-						orderId,
-						clientId,
-						userId: body.userId,
-						fiatAmount: body.amount,
-						fiatCurrency: body.currency,
-						chain: "base", // Default chain
-						tokenSymbol: body.tokenSymbol,
-						tokenAddress: undefined,
-						onRampProvider,
-						paymentUrl: paymentSessionUrl,
-						expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
-					});
-					logger.info("Deposit order created for Operations Dashboard", { orderId });
-				} catch (orderError) {
-					// Don't fail the whole request if deposit_order creation fails
-					logger.error("Failed to create deposit order (non-critical)", { orderError, orderId });
-				}
+				logger.info("Deposit created in unified deposit_transactions table", { orderId });
 
 				logger.info("Payment instructions generated", {
 					orderId: deposit.orderId,
@@ -339,10 +321,10 @@ export function createDepositRouter(
 
 				// Process each order
 				for (const orderId of body.orderIds) {
-					// 1. Get deposit
+					// 1. Get deposit from deposit_transactions table
 					const deposit = await depositService.getDepositByOrderId(orderId);
 					if (!deposit) {
-						logger.warn(`Deposit not found: ${orderId}`);
+						logger.warn(`Deposit not found in deposit_transactions: ${orderId}`);
 						continue;
 					}
 
@@ -372,7 +354,7 @@ export function createDepositRouter(
 					const usdAmount = parseFloat(deposit.fiatAmount) / rate;
 					const cryptoAmount = usdAmount.toFixed(2); // USDC 1:1 with USD
 
-					// 5. Complete deposit
+					// 5. Complete deposit in deposit_transactions table
 					await depositService.completeDeposit({
 						orderId: orderId,
 						chain: "1", // Ethereum chain ID
@@ -396,35 +378,71 @@ export function createDepositRouter(
 					logger.info(`✅ Completed deposit: ${orderId} → ${cryptoAmount} USDC`);
 				}
 
-				// 6. Get client custodial wallet address
+					// 6. Get client custodial wallet address
 				const client = await clientService.getById(clientId);
 				const custodialWallet = client?.privyWalletAddress || "0x0000000000000000000000000000000000000000";
 
-				// 7. Mock USDC transfer to custodial wallet (RampToCustodial)
+				// 7. Execute USDC transfer to custodial wallet (RampToCustodial)
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-				logger.info("🏦 RAMP TO CUSTODIAL - Mock USDC Transfer");
+				logger.info("🏦 RAMP TO CUSTODIAL - Minting MockUSDC (USDQ)");
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+				// Execute the actual mint transaction using DepositService
+				const chainId = process.env.CHAIN_ID || "11155111"; // Default: Sepolia (as string)
+				const mockUSDCAddress = getMockUSDCAddress(Number(chainId) as 11155111); // Get address from constants
+
 				logger.info(`📤 Transferring ${totalUSDC.toFixed(2)} USDC`);
 				logger.info(`📍 To: ${custodialWallet}`);
-				logger.info(`🔗 Chain: Ethereum (Chain ID: 1)`);
-				logger.info(`💰 Token: USDC (0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48)`);
+				logger.info(`🔗 Chain: Sepolia Testnet (Chain ID: ${chainId})`);
+				logger.info(`💰 Token: MockUSDC (USDQ) - ${mockUSDCAddress}`);
 				logger.info(`📦 Orders processed: ${completedOrders.length}`);
 				logger.info(`🔐 Client ID: ${clientId}`);
+
+				let mintResult;
+				try {
+					mintResult = await depositService.mintTokensToCustodial(
+						chainId,
+						mockUSDCAddress,
+						custodialWallet,
+						totalUSDC.toFixed(2)
+					);
+				} catch (error) {
+					logger.error("❌ Mint to custodial failed:", {
+						error: error instanceof Error ? error.message : String(error),
+						chainId,
+						tokenAddress: mockUSDCAddress,
+						custodialWallet,
+						amount: totalUSDC.toFixed(2),
+					});
+					logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+					return {
+						status: 500 as const,
+						body: {
+							error: "Failed to mint USDC to custodial wallet",
+							details: error instanceof Error ? error.message : "Unknown error - check server logs",
+						},
+					};
+				}
+
+				logger.info("✅ Mint successful!");
+				logger.info(`   Transaction: ${mintResult.txHash}`);
+				logger.info(`   Block: ${mintResult.blockNumber}`);
+				logger.info(`   Amount: ${mintResult.amountMinted} USDC`);
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-				logger.info("✅ Mock transfer complete (TESTNET SIMULATION)");
-				logger.info("   In production, this would execute:");
-				logger.info(`   - Contract: USDC.transfer(${custodialWallet}, ${totalUSDC})`);
-				logger.info("   - Network: Ethereum Sepolia Testnet");
-				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+				// Add transfer txHash to all completed orders
+				const completedOrdersWithTxHash = completedOrders.map(order => ({
+					...order,
+					transferTxHash: mintResult.txHash,
+				}));
 
 				return {
 					status: 200 as const,
 					body: {
 						success: true,
-						completedOrders,
+						completedOrders: completedOrdersWithTxHash,
 						totalUSDC: totalUSDC.toFixed(2),
 						custodialWallet,
-						mockNote: `✅ ${completedOrders.length} deposits completed. ${totalUSDC.toFixed(2)} USDC transferred to custodial wallet (MOCK)`,
+						mockNote: `✅ ${completedOrders.length} deposits completed. ${totalUSDC.toFixed(2)} USDC minted to custodial wallet. TX: ${mintResult.txHash}`,
 					},
 				};
 			} catch (error) {
@@ -597,25 +615,25 @@ export function createDepositRouter(
 					};
 				}
 
-				logger.info("Fetching pending deposit orders", { clientId });
+				logger.info("Fetching pending deposits", { clientId });
 
-				// ✅ NEW: Get pending deposit orders from deposit_orders table (for Operations Dashboard)
-				const orders = await depositOrderService.listAllPendingOrders();
+				// ✅ Get pending deposits from deposit_transactions table (for Operations Dashboard)
+				const deposits = await depositService.listAllPendingDeposits();
 
-				// Map deposit orders to full DepositResponseSchema format
-				const mappedDeposits = orders.map((order) => ({
-					id: order.id,
-					orderId: order.orderId,
-					clientId: order.clientId,
-					userId: order.userId,
-					depositType: "external" as const,
-					amount: order.fiatAmount,
-					status: (order.status === "processing" ? "pending" : order.status) as "pending" | "completed" | "failed",
-					createdAt: order.createdAt ? order.createdAt.toISOString() : new Date().toISOString(),
-					completedAt: order.completedAt ? order.completedAt.toISOString() : undefined,
-					paymentInstructions: null, // Not stored in deposit_orders table
-					expectedCryptoAmount: order.cryptoAmount || undefined,
-					expiresAt: order.expiresAt ? order.expiresAt.toISOString() : null,
+				// Map deposits to full DepositResponseSchema format
+				const mappedDeposits = deposits.map((deposit) => ({
+					id: deposit.id,
+					orderId: deposit.orderId,
+					clientId: deposit.clientId,
+					userId: deposit.userId,
+					depositType: deposit.depositType as "external" | "internal",
+					amount: deposit.fiatAmount,
+					status: deposit.status as "pending" | "completed" | "failed",
+					createdAt: deposit.createdAt ? deposit.createdAt.toISOString() : new Date().toISOString(),
+					completedAt: deposit.completedAt ? deposit.completedAt.toISOString() : undefined,
+					paymentInstructions: deposit.paymentInstructions || null,
+					expectedCryptoAmount: deposit.cryptoAmount || undefined,
+					expiresAt: deposit.expiresAt ? deposit.expiresAt.toISOString() : null,
 				}));
 
 				logger.info("Pending deposit orders fetched successfully", {

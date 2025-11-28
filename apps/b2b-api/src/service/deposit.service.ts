@@ -18,7 +18,13 @@ export class DepositService {
 		gatewayProvider?: string;
 		paymentUrl?: string;
 		gatewayOrderId?: string;
-		paymentInstructions?: any; // ✅ Payment instructions to store in DB
+		paymentInstructions?: any;
+		chain?: string;
+		tokenSymbol?: string;
+		tokenAddress?: string;
+		onRampProvider?: string;
+		qrCode?: string;
+		expiresAt?: Date;
 	}) {
 		return await this.depositUseCase.createDeposit(request);
 	}
@@ -53,12 +59,30 @@ export class DepositService {
 		return await this.depositUseCase.listDepositsByUser(clientId, userId, limit || 50);
 	}
 
+	async listAllPendingDeposits() {
+		return await this.depositUseCase.listAllPendingDeposits();
+	}
+
 	async getDepositStats(clientId: string, startDate?: Date, endDate?: Date) {
 		return await this.depositUseCase.getDepositStats(clientId, startDate, endDate);
 	}
 
 	async listPendingDeposits(clientId: string) {
 		return await this.depositUseCase.listPendingDeposits(clientId);
+	}
+
+	async mintTokensToCustodial(
+		chainId: string,
+		tokenAddress: string,
+		custodialWallet: string,
+		amount: string
+	) {
+		return await this.depositUseCase.mintTokensToCustodial(
+			chainId,
+			tokenAddress,
+			custodialWallet,
+			amount
+		);
 	}
 }
 

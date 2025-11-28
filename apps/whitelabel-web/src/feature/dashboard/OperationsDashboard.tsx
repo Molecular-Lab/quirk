@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { Clock, DollarSign, Sparkles, TrendingUp, UserPlus, Users, Zap } from "lucide-react"
+import { Clock, DollarSign, RefreshCw, Sparkles, TrendingUp, UserPlus, Users, Zap } from "lucide-react"
 
 import { b2bApiClient } from "@/api/b2bClient"
 import { useClientContext } from "@/store/clientContextStore"
@@ -39,8 +39,9 @@ export function OperationsDashboard() {
 		loadPendingOrders()
 	}, [])
 
-	const loadPendingOrders = async () => {
+	const loadPendingOrders = async (forceRefresh = false) => {
 		setIsLoading(true)
+		setError(null) // Clear any previous errors
 
 		// Check if API key is available
 		if (!hasApiKey()) {
@@ -51,6 +52,10 @@ export function OperationsDashboard() {
 		}
 
 		try {
+			// Add timestamp to prevent browser caching
+			const timestamp = forceRefresh ? `?_t=${Date.now()}` : ''
+			console.log(`[OperationsDashboard] Loading pending orders (forceRefresh=${forceRefresh})${timestamp}`)
+
 			const response = await b2bApiClient.listPendingDeposits()
 			console.log("[OperationsDashboard] Pending deposits response:", response)
 
@@ -227,24 +232,37 @@ export function OperationsDashboard() {
 								</div>
 								<p className="text-sm text-gray-600 mt-1">Select orders and click "Onboard Selected" to process via on-ramp</p>
 							</div>
-							{orders.length > 0 && (
-								<div className="flex items-center gap-3">
-									<button
-										onClick={handleSelectAll}
-										className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-									>
-										{selectedOrderIds.size === orders.length ? "Deselect All" : "Select All"}
-									</button>
-									<button
-										onClick={handleOnboardSelected}
-										disabled={selectedOrderIds.size === 0}
-										className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-									>
-										<Zap className="w-4 h-4" />
-										Onboard Selected ({selectedOrderIds.size})
-									</button>
-								</div>
-							)}
+							<div className="flex items-center gap-3">
+								{/* Refresh Button */}
+								<button
+									onClick={() => loadPendingOrders(true)}
+									disabled={isLoading}
+									className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
+									title="Refresh pending orders"
+								>
+									<RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+									Refresh
+								</button>
+
+								{orders.length > 0 && (
+									<>
+										<button
+											onClick={handleSelectAll}
+											className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+										>
+											{selectedOrderIds.size === orders.length ? "Deselect All" : "Select All"}
+										</button>
+										<button
+											onClick={handleOnboardSelected}
+											disabled={selectedOrderIds.size === 0}
+											className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+										>
+											<Zap className="w-4 h-4" />
+											Onboard Selected ({selectedOrderIds.size})
+										</button>
+									</>
+								)}
+							</div>
 						</div>
 					</div>
 
@@ -339,9 +357,16 @@ export function OperationsDashboard() {
 				selectedOrderIds={Array.from(selectedOrderIds)}
 				orders={orders}
 				onComplete={() => {
-					// Clear selection and reload orders
+					console.log('[OperationsDashboard] Deposit completed - refreshing orders list')
+
+					// Clear selection
 					setSelectedOrderIds(new Set())
-					loadPendingOrders()
+
+					// Force refresh with cache-busting
+					// Add small delay to ensure backend has processed the completion
+					setTimeout(() => {
+						loadPendingOrders(true)
+					}, 500)
 				}}
 			/>
 		</div>

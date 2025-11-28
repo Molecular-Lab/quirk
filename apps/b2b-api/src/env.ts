@@ -9,6 +9,8 @@ const envSchema = z.object({
 	PORT: z.string().default("3001"),
 	DATABASE_URL: z.string(),
 	LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),
+	DEPLOYER_PRIVATE_KEY: z.string().optional(),
+	PRIVATE_KEY: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

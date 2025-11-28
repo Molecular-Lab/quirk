@@ -63,22 +63,14 @@ type ClientOrganization struct {
 	CustomStrategy []byte   `db:"custom_strategy"`
 	// Percent of yield given to end users (e.g., 90.00)
 	EndUserYieldPortion pgtype.Numeric     `db:"end_user_yield_portion"`
+	SupportedCurrencies []byte             `db:"supported_currencies"`
+	BankAccounts        []byte             `db:"bank_accounts"`
 	IsActive            bool               `db:"is_active"`
 	IsSandbox           bool               `db:"is_sandbox"`
 	PlatformFee         pgtype.Numeric     `db:"platform_fee"`
 	PerformanceFee      pgtype.Numeric     `db:"performance_fee"`
 	CreatedAt           pgtype.Timestamptz `db:"created_at"`
 	UpdatedAt           pgtype.Timestamptz `db:"updated_at"`
-	// Array of currency codes client accepts for deposits (e.g., ['SGD', 'THB', 'USD'])
-	SupportedCurrencies []string `db:"supported_currencies"`
-	// Array of bank account objects for off-ramp: [{currency, bankName, accountNumber, accountName, swiftCode, ...}]
-	BankAccounts []byte `db:"bank_accounts"`
-}
-
-type ClientOrganizationsBankAccountsBackup struct {
-	ID                   uuid.UUID   `db:"id"`
-	OriginalBankAccounts []byte      `db:"original_bank_accounts"`
-	BackedAt             interface{} `db:"backed_at"`
 }
 
 // Aggregated custodial vault per client with index-based yield tracking
@@ -146,64 +138,48 @@ type DepositBatchQueue struct {
 	CreatedAt pgtype.Timestamptz `db:"created_at"`
 }
 
-// Tracks fiat on-ramp deposit orders from end-users
-type DepositOrder struct {
-	ID              uuid.UUID      `db:"id"`
-	OrderID         string         `db:"order_id"`
-	ClientID        uuid.UUID      `db:"client_id"`
-	UserID          uuid.UUID      `db:"user_id"`
-	FiatAmount      pgtype.Numeric `db:"fiat_amount"`
-	FiatCurrency    string         `db:"fiat_currency"`
-	CryptoAmount    pgtype.Numeric `db:"crypto_amount"`
-	Chain           string         `db:"chain"`
-	TokenSymbol     string         `db:"token_symbol"`
-	TokenAddress    *string        `db:"token_address"`
-	OnRampProvider  string         `db:"on_ramp_provider"`
-	PaymentUrl      *string        `db:"payment_url"`
-	QrCode          *string        `db:"qr_code"`
-	Status          string         `db:"status"`
-	TransactionHash *string        `db:"transaction_hash"`
-	GatewayFee      pgtype.Numeric `db:"gateway_fee"`
-	ProxifyFee      pgtype.Numeric `db:"proxify_fee"`
-	NetworkFee      pgtype.Numeric `db:"network_fee"`
-	TotalFees       pgtype.Numeric `db:"total_fees"`
-	CreatedAt       *time.Time     `db:"created_at"`
-	UpdatedAt       *time.Time     `db:"updated_at"`
-	CompletedAt     *time.Time     `db:"completed_at"`
-	ExpiresAt       *time.Time     `db:"expires_at"`
-}
-
-// Complete deposit transaction history (external via payment gateway, internal via client balance)
+// Unified table for all deposit transactions (fiat on-ramp, internal transfers, etc.)
 type DepositTransaction struct {
 	ID       uuid.UUID `db:"id"`
 	OrderID  string    `db:"order_id"`
 	ClientID uuid.UUID `db:"client_id"`
 	UserID   string    `db:"user_id"`
 	// external | internal
-	DepositType        string             `db:"deposit_type"`
-	PaymentMethod      *string            `db:"payment_method"`
-	FiatAmount         pgtype.Numeric     `db:"fiat_amount"`
-	CryptoAmount       pgtype.Numeric     `db:"crypto_amount"`
-	Currency           string             `db:"currency"`
-	CryptoCurrency     *string            `db:"crypto_currency"`
-	GatewayFee         pgtype.Numeric     `db:"gateway_fee"`
-	ProxifyFee         pgtype.Numeric     `db:"proxify_fee"`
-	NetworkFee         pgtype.Numeric     `db:"network_fee"`
-	TotalFees          pgtype.Numeric     `db:"total_fees"`
-	Status             string             `db:"status"`
-	PaymentUrl         *string            `db:"payment_url"`
-	GatewayOrderID     *string            `db:"gateway_order_id"`
-	ClientBalanceID    pgtype.UUID        `db:"client_balance_id"`
-	DeductedFromClient pgtype.Numeric     `db:"deducted_from_client"`
-	WalletAddress      *string            `db:"wallet_address"`
-	CreatedAt          pgtype.Timestamptz `db:"created_at"`
-	CompletedAt        pgtype.Timestamptz `db:"completed_at"`
-	FailedAt           pgtype.Timestamptz `db:"failed_at"`
-	ExpiresAt          pgtype.Timestamptz `db:"expires_at"`
-	ErrorMessage       *string            `db:"error_message"`
-	ErrorCode          *string            `db:"error_code"`
-	// Frozen payment instructions at deposit creation time: {paymentMethod, currency, amount, reference, bankName, accountNumber, accountName, swiftCode, bankCode, instructions, paymentSessionUrl}
-	PaymentInstructions []byte `db:"payment_instructions"`
+	DepositType        string         `db:"deposit_type"`
+	PaymentMethod      *string        `db:"payment_method"`
+	FiatAmount         pgtype.Numeric `db:"fiat_amount"`
+	CryptoAmount       pgtype.Numeric `db:"crypto_amount"`
+	Currency           string         `db:"currency"`
+	CryptoCurrency     *string        `db:"crypto_currency"`
+	GatewayFee         pgtype.Numeric `db:"gateway_fee"`
+	ProxifyFee         pgtype.Numeric `db:"proxify_fee"`
+	NetworkFee         pgtype.Numeric `db:"network_fee"`
+	TotalFees          pgtype.Numeric `db:"total_fees"`
+	Status             string         `db:"status"`
+	PaymentUrl         *string        `db:"payment_url"`
+	GatewayOrderID     *string        `db:"gateway_order_id"`
+	ClientBalanceID    pgtype.UUID    `db:"client_balance_id"`
+	DeductedFromClient pgtype.Numeric `db:"deducted_from_client"`
+	WalletAddress      *string        `db:"wallet_address"`
+	// Blockchain network (base, ethereum, etc.)
+	Chain *string `db:"chain"`
+	// Token symbol (USDC, USDT, etc.)
+	TokenSymbol *string `db:"token_symbol"`
+	// Token contract address
+	TokenAddress *string `db:"token_address"`
+	// Fiat on-ramp provider (proxify_gateway, moonpay, etc.)
+	OnRampProvider *string `db:"on_ramp_provider"`
+	// QR code for payment (base64 encoded)
+	QrCode *string `db:"qr_code"`
+	// Blockchain transaction hash after mint/transfer
+	TransactionHash     *string            `db:"transaction_hash"`
+	PaymentInstructions []byte             `db:"payment_instructions"`
+	CreatedAt           pgtype.Timestamptz `db:"created_at"`
+	CompletedAt         pgtype.Timestamptz `db:"completed_at"`
+	FailedAt            pgtype.Timestamptz `db:"failed_at"`
+	ExpiresAt           pgtype.Timestamptz `db:"expires_at"`
+	ErrorMessage        *string            `db:"error_message"`
+	ErrorCode           *string            `db:"error_code"`
 }
 
 // End-users who deposit funds through client platforms
@@ -243,17 +219,17 @@ type EndUserVault struct {
 
 // Tracks mock USDC mints for testnet on-ramp completions
 type MockUsdcMint struct {
-	ID                  uuid.UUID      `db:"id"`
-	DepositOrderID      uuid.UUID      `db:"deposit_order_id"`
-	ClientID            uuid.UUID      `db:"client_id"`
-	UserID              uuid.UUID      `db:"user_id"`
-	Amount              pgtype.Numeric `db:"amount"`
-	Chain               string         `db:"chain"`
-	TokenAddress        string         `db:"token_address"`
-	DestinationWallet   string         `db:"destination_wallet"`
-	MockTransactionHash string         `db:"mock_transaction_hash"`
-	BlockNumber         *int64         `db:"block_number"`
-	CreatedAt           *time.Time     `db:"created_at"`
+	ID                   uuid.UUID      `db:"id"`
+	DepositTransactionID uuid.UUID      `db:"deposit_transaction_id"`
+	ClientID             uuid.UUID      `db:"client_id"`
+	UserID               uuid.UUID      `db:"user_id"`
+	Amount               pgtype.Numeric `db:"amount"`
+	Chain                string         `db:"chain"`
+	TokenAddress         string         `db:"token_address"`
+	DestinationWallet    string         `db:"destination_wallet"`
+	MockTransactionHash  string         `db:"mock_transaction_hash"`
+	BlockNumber          *int64         `db:"block_number"`
+	CreatedAt            *time.Time     `db:"created_at"`
 }
 
 // One row per Privy user (identity layer). One user can create multiple organizations.

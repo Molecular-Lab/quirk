@@ -2,7 +2,7 @@ import { Sql } from "postgres";
 
 export const getMockUsdcMintQuery = `-- name: GetMockUsdcMint :one
 
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 WHERE id = $1 LIMIT 1`;
 
 export interface GetMockUsdcMintArgs {
@@ -11,7 +11,7 @@ export interface GetMockUsdcMintArgs {
 
 export interface GetMockUsdcMintRow {
     id: string;
-    depositOrderId: string;
+    depositTransactionId: string;
     clientId: string;
     userId: string;
     amount: string;
@@ -31,7 +31,7 @@ export async function getMockUsdcMint(sql: Sql, args: GetMockUsdcMintArgs): Prom
     const row = rows[0];
     return {
         id: row[0],
-        depositOrderId: row[1],
+        depositTransactionId: row[1],
         clientId: row[2],
         userId: row[3],
         amount: row[4],
@@ -44,17 +44,17 @@ export async function getMockUsdcMint(sql: Sql, args: GetMockUsdcMintArgs): Prom
     };
 }
 
-export const getMockUsdcMintByDepositOrderQuery = `-- name: GetMockUsdcMintByDepositOrder :one
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
-WHERE deposit_order_id = $1 LIMIT 1`;
+export const getMockUsdcMintByDepositTransactionQuery = `-- name: GetMockUsdcMintByDepositTransaction :one
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+WHERE deposit_transaction_id = $1 LIMIT 1`;
 
-export interface GetMockUsdcMintByDepositOrderArgs {
-    depositOrderId: string;
+export interface GetMockUsdcMintByDepositTransactionArgs {
+    depositTransactionId: string;
 }
 
-export interface GetMockUsdcMintByDepositOrderRow {
+export interface GetMockUsdcMintByDepositTransactionRow {
     id: string;
-    depositOrderId: string;
+    depositTransactionId: string;
     clientId: string;
     userId: string;
     amount: string;
@@ -66,15 +66,15 @@ export interface GetMockUsdcMintByDepositOrderRow {
     createdAt: Date | null;
 }
 
-export async function getMockUsdcMintByDepositOrder(sql: Sql, args: GetMockUsdcMintByDepositOrderArgs): Promise<GetMockUsdcMintByDepositOrderRow | null> {
-    const rows = await sql.unsafe(getMockUsdcMintByDepositOrderQuery, [args.depositOrderId]).values();
+export async function getMockUsdcMintByDepositTransaction(sql: Sql, args: GetMockUsdcMintByDepositTransactionArgs): Promise<GetMockUsdcMintByDepositTransactionRow | null> {
+    const rows = await sql.unsafe(getMockUsdcMintByDepositTransactionQuery, [args.depositTransactionId]).values();
     if (rows.length !== 1) {
         return null;
     }
     const row = rows[0];
     return {
         id: row[0],
-        depositOrderId: row[1],
+        depositTransactionId: row[1],
         clientId: row[2],
         userId: row[3],
         amount: row[4],
@@ -88,7 +88,7 @@ export async function getMockUsdcMintByDepositOrder(sql: Sql, args: GetMockUsdcM
 }
 
 export const getMockUsdcMintByTxHashQuery = `-- name: GetMockUsdcMintByTxHash :one
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 WHERE mock_transaction_hash = $1 LIMIT 1`;
 
 export interface GetMockUsdcMintByTxHashArgs {
@@ -97,7 +97,7 @@ export interface GetMockUsdcMintByTxHashArgs {
 
 export interface GetMockUsdcMintByTxHashRow {
     id: string;
-    depositOrderId: string;
+    depositTransactionId: string;
     clientId: string;
     userId: string;
     amount: string;
@@ -117,7 +117,7 @@ export async function getMockUsdcMintByTxHash(sql: Sql, args: GetMockUsdcMintByT
     const row = rows[0];
     return {
         id: row[0],
-        depositOrderId: row[1],
+        depositTransactionId: row[1],
         clientId: row[2],
         userId: row[3],
         amount: row[4],
@@ -131,7 +131,7 @@ export async function getMockUsdcMintByTxHash(sql: Sql, args: GetMockUsdcMintByT
 }
 
 export const listMockUsdcMintsByClientQuery = `-- name: ListMockUsdcMintsByClient :many
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 WHERE client_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3`;
@@ -144,7 +144,7 @@ export interface ListMockUsdcMintsByClientArgs {
 
 export interface ListMockUsdcMintsByClientRow {
     id: string;
-    depositOrderId: string;
+    depositTransactionId: string;
     clientId: string;
     userId: string;
     amount: string;
@@ -159,7 +159,7 @@ export interface ListMockUsdcMintsByClientRow {
 export async function listMockUsdcMintsByClient(sql: Sql, args: ListMockUsdcMintsByClientArgs): Promise<ListMockUsdcMintsByClientRow[]> {
     return (await sql.unsafe(listMockUsdcMintsByClientQuery, [args.clientId, args.limit, args.offset]).values()).map(row => ({
         id: row[0],
-        depositOrderId: row[1],
+        depositTransactionId: row[1],
         clientId: row[2],
         userId: row[3],
         amount: row[4],
@@ -173,7 +173,7 @@ export async function listMockUsdcMintsByClient(sql: Sql, args: ListMockUsdcMint
 }
 
 export const listMockUsdcMintsByUserQuery = `-- name: ListMockUsdcMintsByUser :many
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 WHERE user_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3`;
@@ -186,7 +186,7 @@ export interface ListMockUsdcMintsByUserArgs {
 
 export interface ListMockUsdcMintsByUserRow {
     id: string;
-    depositOrderId: string;
+    depositTransactionId: string;
     clientId: string;
     userId: string;
     amount: string;
@@ -201,7 +201,7 @@ export interface ListMockUsdcMintsByUserRow {
 export async function listMockUsdcMintsByUser(sql: Sql, args: ListMockUsdcMintsByUserArgs): Promise<ListMockUsdcMintsByUserRow[]> {
     return (await sql.unsafe(listMockUsdcMintsByUserQuery, [args.userId, args.limit, args.offset]).values()).map(row => ({
         id: row[0],
-        depositOrderId: row[1],
+        depositTransactionId: row[1],
         clientId: row[2],
         userId: row[3],
         amount: row[4],
@@ -216,7 +216,7 @@ export async function listMockUsdcMintsByUser(sql: Sql, args: ListMockUsdcMintsB
 
 export const createMockUsdcMintQuery = `-- name: CreateMockUsdcMint :one
 INSERT INTO mock_usdc_mints (
-  deposit_order_id,
+  deposit_transaction_id,
   client_id,
   user_id,
   amount,
@@ -228,10 +228,10 @@ INSERT INTO mock_usdc_mints (
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9
 )
-RETURNING id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at`;
+RETURNING id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at`;
 
 export interface CreateMockUsdcMintArgs {
-    depositOrderId: string;
+    depositTransactionId: string;
     clientId: string;
     userId: string;
     amount: string;
@@ -244,7 +244,7 @@ export interface CreateMockUsdcMintArgs {
 
 export interface CreateMockUsdcMintRow {
     id: string;
-    depositOrderId: string;
+    depositTransactionId: string;
     clientId: string;
     userId: string;
     amount: string;
@@ -257,14 +257,14 @@ export interface CreateMockUsdcMintRow {
 }
 
 export async function createMockUsdcMint(sql: Sql, args: CreateMockUsdcMintArgs): Promise<CreateMockUsdcMintRow | null> {
-    const rows = await sql.unsafe(createMockUsdcMintQuery, [args.depositOrderId, args.clientId, args.userId, args.amount, args.chain, args.tokenAddress, args.destinationWallet, args.mockTransactionHash, args.blockNumber]).values();
+    const rows = await sql.unsafe(createMockUsdcMintQuery, [args.depositTransactionId, args.clientId, args.userId, args.amount, args.chain, args.tokenAddress, args.destinationWallet, args.mockTransactionHash, args.blockNumber]).values();
     if (rows.length !== 1) {
         return null;
     }
     const row = rows[0];
     return {
         id: row[0],
-        depositOrderId: row[1],
+        depositTransactionId: row[1],
         clientId: row[2],
         userId: row[3],
         amount: row[4],
@@ -278,7 +278,7 @@ export async function createMockUsdcMint(sql: Sql, args: CreateMockUsdcMintArgs)
 }
 
 export const listRecentMockMintsQuery = `-- name: ListRecentMockMints :many
-SELECT id, deposit_order_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
+SELECT id, deposit_transaction_id, client_id, user_id, amount, chain, token_address, destination_wallet, mock_transaction_hash, block_number, created_at FROM mock_usdc_mints
 ORDER BY created_at DESC
 LIMIT $1`;
 
@@ -288,7 +288,7 @@ export interface ListRecentMockMintsArgs {
 
 export interface ListRecentMockMintsRow {
     id: string;
-    depositOrderId: string;
+    depositTransactionId: string;
     clientId: string;
     userId: string;
     amount: string;
@@ -303,7 +303,7 @@ export interface ListRecentMockMintsRow {
 export async function listRecentMockMints(sql: Sql, args: ListRecentMockMintsArgs): Promise<ListRecentMockMintsRow[]> {
     return (await sql.unsafe(listRecentMockMintsQuery, [args.limit]).values()).map(row => ({
         id: row[0],
-        depositOrderId: row[1],
+        depositTransactionId: row[1],
         clientId: row[2],
         userId: row[3],
         amount: row[4],

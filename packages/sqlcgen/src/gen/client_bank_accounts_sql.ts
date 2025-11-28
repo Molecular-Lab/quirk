@@ -52,7 +52,7 @@ WHERE id = $1`;
 
 export interface UpdateClientSupportedCurrenciesArgs {
     id: string;
-    supportedCurrencies: string[] | null;
+    supportedCurrencies: any | null;
 }
 
 export async function updateClientSupportedCurrencies(sql: Sql, args: UpdateClientSupportedCurrenciesArgs): Promise<void> {

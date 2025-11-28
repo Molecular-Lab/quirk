@@ -117,7 +117,7 @@ WHERE id = $1
 
 type UpdateClientSupportedCurrenciesParams struct {
 	ID                  uuid.UUID `db:"id"`
-	SupportedCurrencies []string  `db:"supported_currencies"`
+	SupportedCurrencies []byte    `db:"supported_currencies"`
 }
 
 // Update supported currencies array

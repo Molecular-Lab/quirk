@@ -2,13 +2,28 @@
   "name": "mock-erc20",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "compile": "hardhat compile",
+    "deploy:sepolia": "hardhat run scripts/deploy-mock-usdc.ts --network sepolia",
+    "deploy:base-sepolia": "hardhat run scripts/deploy-mock-usdc.ts --network baseSepolia",
+    "mint": "hardhat run scripts/mint-to-custodial.ts",
+    "verify:sepolia": "hardhat verify --network sepolia",
+    "verify:base-sepolia": "hardhat verify --network baseSepolia"
+  },
   "devDependencies": {
     "@nomicfoundation/hardhat-ignition": "^3.0.5",
     "@nomicfoundation/hardhat-toolbox-viem": "^5.0.1",
     "@types/node": "^22.18.13",
+    "dotenv": "^16.6.1",
     "forge-std": "github:foundry-rs/forge-std#v1.9.4",
     "hardhat": "^3.0.16",
     "typescript": "~5.8.3",
     "viem": "^2.40.3"
+  },
+  "dependencies": {
+    "@nomicfoundation/hardhat-ethers": "^4.0.2",
+    "@nomicfoundation/hardhat-verify": "^3.0.4",
+    "@openzeppelin/contracts": "^5.4.0",
+    "@proxify/core": "workspace:*"
   }
 }

@@ -79,11 +79,16 @@ INSERT INTO deposit_transactions (
   deducted_from_client,
   wallet_address,
   expires_at,
-  payment_instructions
+  payment_instructions,
+  chain,
+  token_symbol,
+  token_address,
+  on_ramp_provider,
+  qr_code
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
   $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-  $21
+  $21, $22, $23, $24, $25, $26
 )
 RETURNING *;
 
@@ -104,8 +109,19 @@ SET status = 'completed',
     proxify_fee = COALESCE(sqlc.narg('proxify_fee'), proxify_fee),
     network_fee = COALESCE(sqlc.narg('network_fee'), network_fee),
     total_fees = COALESCE(sqlc.narg('total_fees'), total_fees),
+    transaction_hash = COALESCE(sqlc.narg('transaction_hash'), transaction_hash),
     completed_at = now()
 WHERE id = $1
+RETURNING *;
+
+-- name: CompleteDepositByOrderID :one
+-- Mark deposit as completed by order_id (for Operations Dashboard)
+UPDATE deposit_transactions
+SET status = 'completed',
+    crypto_amount = $2,
+    transaction_hash = $3,
+    completed_at = now()
+WHERE order_id = $1
 RETURNING *;
 
 -- name: FailDeposit :exec
@@ -194,3 +210,22 @@ FROM deposit_transactions
 WHERE client_id = sqlc.arg('client_id')
   AND created_at >= sqlc.arg('start_date')  -- start date
   AND created_at <= sqlc.arg('end_date'); -- end date
+
+-- ============================================
+-- OPERATIONS DASHBOARD QUERIES
+-- ============================================
+
+-- name: ListAllPendingDeposits :many
+-- Get all pending deposits across all clients (for Operations Dashboard)
+SELECT * FROM deposit_transactions
+WHERE status = 'pending'
+  AND deposit_type = 'external'
+ORDER BY created_at ASC;
+
+-- name: ListPendingDepositsByClient :many
+-- Get pending deposits for a specific client (for Operations Dashboard)
+SELECT * FROM deposit_transactions
+WHERE client_id = $1
+  AND status = 'pending'
+  AND deposit_type = 'external'
+ORDER BY created_at ASC;

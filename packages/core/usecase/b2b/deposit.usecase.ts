@@ -23,6 +23,7 @@ import type {
 } from '../../dto/b2b';
 import { TokenTransferService } from '../../service/token-transfer.service';
 import { ClientGrowthIndexService } from '../../service/client-growth-index.service';
+import { MockUSDCClient, type MockTokenChainId } from '../../blockchain';
 import BigNumber from 'bignumber.js';
 
 /**
@@ -62,14 +63,14 @@ export class B2BDepositUseCase {
 
     // Create deposit args
     const args: CreateDepositArgs = {
-      orderId: request.orderId || `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Use provided or generate unique order ID
+      orderId: request.orderId || `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       clientId: request.clientId,
       userId: user.id,
       depositType: request.depositType,
       paymentMethod: request.gatewayProvider || null,
       fiatAmount: request.fiatAmount,
       cryptoAmount: null,
-      currency: request.fiatCurrency, // SQLC uses 'currency' for fiat currency
+      currency: request.fiatCurrency,
       cryptoCurrency: request.cryptoCurrency,
       gatewayFee: null,
       proxifyFee: null,
@@ -81,8 +82,13 @@ export class B2BDepositUseCase {
       clientBalanceId: null,
       deductedFromClient: null,
       walletAddress: null,
-      expiresAt: null,
-      paymentInstructions: request.paymentInstructions || null, // ✅ Store payment instructions in DB
+      expiresAt: request.expiresAt || null,
+      paymentInstructions: request.paymentInstructions || null,
+      chain: request.chain || null,
+      tokenSymbol: request.tokenSymbol || request.cryptoCurrency || null,
+      tokenAddress: request.tokenAddress || null,
+      onRampProvider: request.onRampProvider || request.gatewayProvider || null,
+      qrCode: request.qrCode || null,
     };
 
     const deposit = await this.depositRepository.create(args);
@@ -122,7 +128,7 @@ export class B2BDepositUseCase {
 
   /**
    * Complete deposit (FLOW 4 - with vault operations)
-   * 
+   *
    * ✅ NEW SIMPLIFIED FLOW:
    * 1. Mark deposit as completed
    * 2. Get client vault (for custodial wallet verification)
@@ -132,6 +138,8 @@ export class B2BDepositUseCase {
    * 6. Update vault deposit (fiat amount, no shares)
    * 7. Add pending deposit to client_vault
    * 8. Update end_user.last_deposit_at
+   *
+   * Note: Token minting (Step 1.5) happens in the API router before this is called
    */
   async completeDeposit(request: CompleteDepositRequest): Promise<void> {
     const deposit = await this.depositRepository.getByOrderId(request.orderId);
@@ -191,8 +199,12 @@ export class B2BDepositUseCase {
       request.gatewayFee,
       request.proxifyFee,
       request.networkFee,
-      request.totalFees
+      request.totalFees,
+      request.transactionHash
     );
+
+    // Note: Token minting happens in the API router layer (batch complete deposits)
+    // before this method is called. This usecase only handles vault accounting.
 
     // Step 2: Calculate client growth index (weighted average across all client vaults)
     const clientGrowthIndex = new BigNumber(
@@ -348,6 +360,54 @@ export class B2BDepositUseCase {
   }
 
   /**
+   * Mint tokens to custodial wallet using MockUSDCClient
+   *
+   * @param chainId - Chain ID (Sepolia: 11155111, Base Sepolia: 84532)
+   * @param tokenAddress - MockUSDC token contract address
+   * @param custodialWallet - Destination custodial wallet address
+   * @param amount - Amount to mint (in USDC, e.g., "1000.50")
+   * @returns Mint result with transaction hash
+   */
+  async mintTokensToCustodial(
+    chainId: string,
+    tokenAddress: string,
+    custodialWallet: string,
+    amount: string
+  ) {
+    console.log('[Deposit] Minting tokens to custodial wallet:', {
+      chainId,
+      tokenAddress,
+      custodialWallet,
+      amount,
+    });
+
+    // Create MockUSDC client
+    const mockUSDC = new MockUSDCClient(
+      chainId as MockTokenChainId,
+      tokenAddress as `0x${string}`
+    );
+
+    // Mint tokens
+    const result = await mockUSDC.write.mintToCustodial(
+      custodialWallet as `0x${string}`,
+      amount
+    );
+
+    if (!result.success) {
+      console.error('[Deposit] ❌ Mint failed:', result.error);
+      throw new Error(`Token mint failed: ${result.error}`);
+    }
+
+    console.log('[Deposit] ✅ Tokens minted:', {
+      txHash: result.txHash,
+      blockNumber: result.blockNumber?.toString(),
+      amount: result.amountMinted,
+    });
+
+    return result;
+  }
+
+  /**
    * Fail deposit
    */
   async failDeposit(orderId: string, errorMessage: string, errorCode?: string): Promise<void> {
@@ -414,6 +474,10 @@ export class B2BDepositUseCase {
    * List pending deposits with summary by currency
    * Used for automated banking flow demo
    */
+  async listAllPendingDeposits(): Promise<any[]> {
+    return await this.depositRepository.listAllPending();
+  }
+
   async listPendingDeposits(clientId: string): Promise<{
     deposits: any[];
     summary: Array<{

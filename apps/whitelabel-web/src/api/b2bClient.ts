@@ -1,6 +1,7 @@
 import b2bAxiosClient from "@/config/axios"
 
 import type { AxiosInstance } from "axios"
+import type { BatchCompleteDepositsResponse } from "@proxify/core/dto/b2b"
 
 /**
  * Helper function to get saved API key from localStorage
@@ -446,17 +447,19 @@ export class B2BAPIClient {
 	}
 
 	// Batch complete deposits (Operations Dashboard)
-	async batchCompleteDeposits(data: { orderIds: string[]; paidCurrency?: string }) {
+	async batchCompleteDeposits(data: { orderIds: string[]; paidCurrency?: string }): Promise<BatchCompleteDepositsResponse> {
 		// eslint-disable-next-line no-console
 		console.log("[b2bApiClient] Batch completing deposits:", data)
 
-		const response = await this.axios.post<unknown>(`${this.baseURL}/api/v1/deposits/batch-complete`, {
+		const response = await this.axios.post<BatchCompleteDepositsResponse>(`${this.baseURL}/api/v1/deposits/batch-complete`, {
 			orderIds: data.orderIds,
 			paidCurrency: data.paidCurrency || "USD",
 		})
 
 		// eslint-disable-next-line no-console
 		console.log("[b2bApiClient] Batch complete response:", response.data)
+		// eslint-disable-next-line no-console
+		console.log("[b2bApiClient] First order tx hash:", response.data.completedOrders?.[0]?.transferTxHash)
 
 		return response.data
 	}

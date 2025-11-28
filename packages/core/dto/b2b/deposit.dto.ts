@@ -4,7 +4,7 @@
  */
 
 export interface CreateDepositRequest {
-  orderId?: string; // ✅ Optional: Allow external orderId generation
+  orderId?: string;
   clientId: string;
   userId: string;
   fiatCurrency: string;
@@ -14,7 +14,13 @@ export interface CreateDepositRequest {
   gatewayProvider?: string;
   gatewayOrderId?: string;
   paymentUrl?: string;
-  paymentInstructions?: any; // ✅ JSONB payment instructions to store in DB
+  paymentInstructions?: any;
+  chain?: string;
+  tokenSymbol?: string;
+  tokenAddress?: string;
+  onRampProvider?: string;
+  qrCode?: string;
+  expiresAt?: Date;
 }
 
 export interface CompleteDepositRequest {
@@ -40,4 +46,23 @@ export interface GetDepositStatsRequest {
   clientId: string;
   startDate?: Date;
   endDate?: Date;
+}
+
+/**
+ * Batch Complete Deposits Response
+ * Returned after successfully completing multiple deposit orders
+ */
+export interface BatchCompleteDepositsResponse {
+  success: boolean;
+  completedOrders: CompletedOrderInfo[];
+  totalUSDC: string;
+  custodialWallet: string;
+  mockNote?: string;
+}
+
+export interface CompletedOrderInfo {
+  orderId: string;
+  status: string;
+  cryptoAmount: string;
+  transferTxHash?: string;  // Transaction hash from blockchain mint
 }
