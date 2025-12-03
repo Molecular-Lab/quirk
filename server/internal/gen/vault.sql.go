@@ -482,6 +482,90 @@ func (q *Queries) GetEndUserVaultByClientForUpdate(ctx context.Context, arg GetE
 	return i, err
 }
 
+const getVaultHistoricalIndex = `-- name: GetVaultHistoricalIndex :one
+SELECT current_index, last_index_update
+FROM client_vaults
+WHERE id = $1
+  AND last_index_update >= NOW() - INTERVAL '1 day' * $2
+ORDER BY last_index_update ASC
+LIMIT 1
+`
+
+type GetVaultHistoricalIndexParams struct {
+	ID       uuid.UUID   `db:"id"`
+	DaysBack interface{} `db:"days_back"`
+}
+
+type GetVaultHistoricalIndexRow struct {
+	CurrentIndex    pgtype.Numeric     `db:"current_index"`
+	LastIndexUpdate pgtype.Timestamptz `db:"last_index_update"`
+}
+
+// Get historical index for APY calculation
+func (q *Queries) GetVaultHistoricalIndex(ctx context.Context, arg GetVaultHistoricalIndexParams) (GetVaultHistoricalIndexRow, error) {
+	row := q.db.QueryRow(ctx, getVaultHistoricalIndex, arg.ID, arg.DaysBack)
+	var i GetVaultHistoricalIndexRow
+	err := row.Scan(&i.CurrentIndex, &i.LastIndexUpdate)
+	return i, err
+}
+
+const listActiveVaultsForIndexUpdate = `-- name: ListActiveVaultsForIndexUpdate :many
+SELECT
+  id,
+  client_id,
+  chain,
+  token_symbol,
+  current_index,
+  total_staked_balance,
+  strategies,
+  last_index_update
+FROM client_vaults
+WHERE is_active = true
+  AND total_staked_balance > 0
+ORDER BY last_index_update ASC
+`
+
+type ListActiveVaultsForIndexUpdateRow struct {
+	ID                 uuid.UUID          `db:"id"`
+	ClientID           uuid.UUID          `db:"client_id"`
+	Chain              string             `db:"chain"`
+	TokenSymbol        string             `db:"token_symbol"`
+	CurrentIndex       pgtype.Numeric     `db:"current_index"`
+	TotalStakedBalance pgtype.Numeric     `db:"total_staked_balance"`
+	Strategies         []byte             `db:"strategies"`
+	LastIndexUpdate    pgtype.Timestamptz `db:"last_index_update"`
+}
+
+// Get all active vaults with staked balance for daily index updates
+func (q *Queries) ListActiveVaultsForIndexUpdate(ctx context.Context) ([]ListActiveVaultsForIndexUpdateRow, error) {
+	rows, err := q.db.Query(ctx, listActiveVaultsForIndexUpdate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveVaultsForIndexUpdateRow
+	for rows.Next() {
+		var i ListActiveVaultsForIndexUpdateRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ClientID,
+			&i.Chain,
+			&i.TokenSymbol,
+			&i.CurrentIndex,
+			&i.TotalStakedBalance,
+			&i.Strategies,
+			&i.LastIndexUpdate,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listClientVaults = `-- name: ListClientVaults :many
 SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at FROM client_vaults
 WHERE client_id = $1
@@ -793,5 +877,23 @@ type UpdateEndUserVaultWithdrawalParams struct {
 // Update vault on withdrawal
 func (q *Queries) UpdateEndUserVaultWithdrawal(ctx context.Context, arg UpdateEndUserVaultWithdrawalParams) error {
 	_, err := q.db.Exec(ctx, updateEndUserVaultWithdrawal, arg.ID, arg.TotalWithdrawn)
+	return err
+}
+
+const updateTotalStakedBalance = `-- name: UpdateTotalStakedBalance :exec
+UPDATE client_vaults
+SET total_staked_balance = $2,
+    updated_at = now()
+WHERE id = $1
+`
+
+type UpdateTotalStakedBalanceParams struct {
+	ID                 uuid.UUID      `db:"id"`
+	TotalStakedBalance pgtype.Numeric `db:"total_staked_balance"`
+}
+
+// Update total staked balance (after deposit/withdrawal)
+func (q *Queries) UpdateTotalStakedBalance(ctx context.Context, arg UpdateTotalStakedBalanceParams) error {
+	_, err := q.db.Exec(ctx, updateTotalStakedBalance, arg.ID, arg.TotalStakedBalance)
 	return err
 }

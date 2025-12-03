@@ -17,11 +17,7 @@ export function calculateDailyRate(apy: number): number {
 /**
  * Calculate expected yield over time
  */
-export function calculateExpectedYield(
-	principal: number,
-	apy: number,
-	days: number
-): number {
+export function calculateExpectedYield(principal: number, apy: number, days: number): number {
 	const dailyRate = calculateDailyRate(apy)
 	return principal * Math.pow(1 + dailyRate, days) - principal
 }

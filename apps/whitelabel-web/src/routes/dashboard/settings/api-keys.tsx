@@ -1,6 +1,7 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { APIKeysPage } from '@/feature/dashboard/APIKeysPage'
+import { createFileRoute } from "@tanstack/react-router"
 
-export const Route = createFileRoute('/dashboard/settings/api-keys')({
+import { APIKeysPage } from "@/feature/dashboard/APIKeysPage"
+
+export const Route = createFileRoute("/dashboard/settings/api-keys")({
 	component: APIKeysPage,
 })

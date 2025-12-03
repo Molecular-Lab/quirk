@@ -13,6 +13,7 @@
         "@proxify/b2b-api-core": "workspace:*",
         "@proxify/core": "workspace:*",
         "@proxify/sqlcgen": "workspace:*",
+        "@proxify/yield-engine": "workspace:*",
         "@ts-rest/express": "catalog:",
         "dotenv": "^16.4.7",
         "express": "^4.21.2",

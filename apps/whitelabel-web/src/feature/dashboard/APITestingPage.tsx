@@ -32,7 +32,11 @@ interface ClientRegistrationResponse {
  * Stores in a map: { productId: apiKey }
  * Also syncs to userStore and clientContextStore
  */
-const saveApiKeyForOrg = (productId: string, apiKey: string, orgData?: { id: string; companyName: string; businessType: string }) => {
+const saveApiKeyForOrg = (
+	productId: string,
+	apiKey: string,
+	orgData?: { id: string; companyName: string; businessType: string },
+) => {
 	// Get all stored keys
 	const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
 
@@ -1548,11 +1552,13 @@ export function APITestingPage() {
 				if (productId) {
 					// Get active organization data for syncing to clientContextStore
 					const activeOrg = getActiveOrganization()
-					const orgData = activeOrg ? {
-						id: activeOrg.id,
-						companyName: activeOrg.companyName,
-						businessType: activeOrg.businessType,
-					} : undefined
+					const orgData = activeOrg
+						? {
+								id: activeOrg.id,
+								companyName: activeOrg.companyName,
+								businessType: activeOrg.businessType,
+							}
+						: undefined
 
 					saveApiKeyForOrg(productId, apiKey, orgData) // ✅ Save per-org with org data!
 					setSavedApiKey(apiKey)

@@ -2,40 +2,40 @@
 const featuredPortfolios = [
 	{
 		id: 1,
-		name: 'The Big Five',
-		description: 'An equal weighted portfolio of BTC, ETH, SOL, XRP and DOGE.',
-		icons: ['₿', 'Ξ', '◎', 'X', 'Ð'],
-		users: '1,034',
-		totalDeposits: '$7,360.51',
-		allTimeReturn: '+1.70%',
+		name: "The Big Five",
+		description: "An equal weighted portfolio of BTC, ETH, SOL, XRP and DOGE.",
+		icons: ["₿", "Ξ", "◎", "X", "Ð"],
+		users: "1,034",
+		totalDeposits: "$7,360.51",
+		allTimeReturn: "+1.70%",
 		returnPositive: true,
 	},
 	{
 		id: 2,
-		name: '50/50 BTC and ETH',
-		description: 'Holds 50% BTC and 50% Ethereum.',
-		icons: ['₿', 'Ξ'],
-		users: '569',
-		totalDeposits: '$22,974.13',
-		allTimeReturn: '+31.20%',
+		name: "50/50 BTC and ETH",
+		description: "Holds 50% BTC and 50% Ethereum.",
+		icons: ["₿", "Ξ"],
+		users: "569",
+		totalDeposits: "$22,974.13",
+		allTimeReturn: "+31.20%",
 		returnPositive: true,
 	},
 	{
 		id: 3,
-		name: 'DeFi Token Mix',
-		description: 'The biggest DeFi protocol tokens on Base equally weighted.',
-		icons: ['🔷', '🔵', '⭐'],
-		users: '866',
-		totalDeposits: '$12,617.30',
-		allTimeReturn: '-15.92%',
+		name: "DeFi Token Mix",
+		description: "The biggest DeFi protocol tokens on Base equally weighted.",
+		icons: ["🔷", "🔵", "⭐"],
+		users: "866",
+		totalDeposits: "$12,617.30",
+		allTimeReturn: "-15.92%",
 		returnPositive: false,
 	},
 ]
 
 const categories = [
-	{ name: 'DeFi', portfolios: 3, totalDeposits: '$21,908.68' },
-	{ name: 'Trending Tokens', portfolios: 12, totalDeposits: '$1,771,665.06' },
-	{ name: 'Most Users', portfolios: 8, totalDeposits: '$943,218.45' },
+	{ name: "DeFi", portfolios: 3, totalDeposits: "$21,908.68" },
+	{ name: "Trending Tokens", portfolios: 12, totalDeposits: "$1,771,665.06" },
+	{ name: "Most Users", portfolios: 8, totalDeposits: "$943,218.45" },
 ]
 
 export function ExplorePage() {
@@ -45,9 +45,7 @@ export function ExplorePage() {
 				{/* Header */}
 				<div className="mb-10">
 					<h1 className="text-[32px] font-bold text-gray-900 mb-2">Explore</h1>
-					<p className="text-gray-600">
-						Discover and invest in pre-built portfolios created by the community
-					</p>
+					<p className="text-gray-600">Discover and invest in pre-built portfolios created by the community</p>
 				</div>
 
 				{/* Featured Portfolios */}
@@ -71,9 +69,7 @@ export function ExplorePage() {
 
 							{/* Title & Description */}
 							<h3 className="text-lg font-bold text-gray-900 mb-2">{portfolio.name}</h3>
-							<p className="text-sm text-gray-600 mb-6 leading-relaxed">
-								{portfolio.description}
-							</p>
+							<p className="text-sm text-gray-600 mb-6 leading-relaxed">{portfolio.description}</p>
 
 							{/* Stats */}
 							<div className="grid grid-cols-3 gap-4">
@@ -83,15 +79,13 @@ export function ExplorePage() {
 								</div>
 								<div>
 									<div className="text-xs text-gray-500 mb-1">Total Deposits</div>
-									<div className="text-sm font-semibold text-gray-900">
-										{portfolio.totalDeposits}
-									</div>
+									<div className="text-sm font-semibold text-gray-900">{portfolio.totalDeposits}</div>
 								</div>
 								<div>
 									<div className="text-xs text-gray-500 mb-1">All Time Return</div>
 									<div
 										className={`text-sm font-semibold ${
-											portfolio.returnPositive ? 'text-primary-500' : 'text-red-500'
+											portfolio.returnPositive ? "text-primary-500" : "text-red-500"
 										}`}
 									>
 										{portfolio.allTimeReturn}
@@ -119,26 +113,17 @@ export function ExplorePage() {
 										stroke="currentColor"
 										viewBox="0 0 24 24"
 									>
-										<path
-											strokeLinecap="round"
-											strokeLinejoin="round"
-											strokeWidth={2}
-											d="M9 5l7 7-7 7"
-										/>
+										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
 									</svg>
 								</div>
 								<div className="space-y-2">
 									<div className="flex items-center justify-between">
 										<span className="text-sm text-gray-600">Portfolios</span>
-										<span className="text-sm font-semibold text-gray-900">
-											{category.portfolios}
-										</span>
+										<span className="text-sm font-semibold text-gray-900">{category.portfolios}</span>
 									</div>
 									<div className="flex items-center justify-between">
 										<span className="text-sm text-gray-600">Total Deposits</span>
-										<span className="text-sm font-semibold text-gray-900">
-											{category.totalDeposits}
-										</span>
+										<span className="text-sm font-semibold text-gray-900">{category.totalDeposits}</span>
 									</div>
 								</div>
 							</div>

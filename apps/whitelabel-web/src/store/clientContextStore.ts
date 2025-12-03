@@ -10,14 +10,14 @@
  * - apiKey (test_pk_...)
  */
 
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
 
 export interface ClientContext {
 	// Current client identifiers
-	clientId: string | null        // UUID from database (e.g., "9be8eac3-a21d-4f1a-a846-65751d6d6fa9")
-	productId: string | null       // Product ID (e.g., "test_product_001")
-	apiKey: string | null          // API key (e.g., "test_pk_2a2463f87bfd6756822f48698fedd4ef")
+	clientId: string | null // UUID from database (e.g., "9be8eac3-a21d-4f1a-a846-65751d6d6fa9")
+	productId: string | null // Product ID (e.g., "test_product_001")
+	apiKey: string | null // API key (e.g., "test_pk_2a2463f87bfd6756822f48698fedd4ef")
 
 	// Client info (optional, for display)
 	companyName: string | null
@@ -64,10 +64,10 @@ export const useClientContext = create<ClientContextStore>()(
 
 			// Set complete client context
 			setClientContext: (context) => {
-				console.log('[ClientContextStore] Setting client context:', {
+				console.log("[ClientContextStore] Setting client context:", {
 					clientId: context.clientId,
 					productId: context.productId,
-					apiKey: context.apiKey.substring(0, 12) + '...',
+					apiKey: context.apiKey.substring(0, 12) + "...",
 					companyName: context.companyName,
 					businessType: context.businessType,
 				})
@@ -81,28 +81,28 @@ export const useClientContext = create<ClientContextStore>()(
 				})
 
 				// Sync to localStorage for b2bApiClient
-				localStorage.setItem('b2b:api_key', context.apiKey)
-				localStorage.setItem('b2b:product_id', context.productId)
-				localStorage.setItem('b2b:client_id', context.clientId)
+				localStorage.setItem("b2b:api_key", context.apiKey)
+				localStorage.setItem("b2b:product_id", context.productId)
+				localStorage.setItem("b2b:client_id", context.clientId)
 
-				console.log('[ClientContextStore] ✅ Context saved and synced to localStorage')
+				console.log("[ClientContextStore] ✅ Context saved and synced to localStorage")
 			},
 
 			// Set individual fields
 			setClientId: (clientId) => {
 				set({ clientId })
-				localStorage.setItem('b2b:client_id', clientId)
+				localStorage.setItem("b2b:client_id", clientId)
 			},
 
 			setProductId: (productId) => {
 				set({ productId })
-				localStorage.setItem('b2b:product_id', productId)
+				localStorage.setItem("b2b:product_id", productId)
 			},
 
 			setApiKey: (apiKey) => {
 				set({ apiKey })
-				localStorage.setItem('b2b:api_key', apiKey)
-				console.log('[ClientContextStore] API key updated:', apiKey.substring(0, 12) + '...')
+				localStorage.setItem("b2b:api_key", apiKey)
+				console.log("[ClientContextStore] API key updated:", apiKey.substring(0, 12) + "...")
 			},
 
 			// Check if context is complete
@@ -119,22 +119,22 @@ export const useClientContext = create<ClientContextStore>()(
 			// Sync current state to localStorage
 			syncToLocalStorage: () => {
 				const { clientId, productId, apiKey } = get()
-				if (clientId) localStorage.setItem('b2b:client_id', clientId)
-				if (productId) localStorage.setItem('b2b:product_id', productId)
-				if (apiKey) localStorage.setItem('b2b:api_key', apiKey)
+				if (clientId) localStorage.setItem("b2b:client_id", clientId)
+				if (productId) localStorage.setItem("b2b:product_id", productId)
+				if (apiKey) localStorage.setItem("b2b:api_key", apiKey)
 			},
 
 			// Clear all context
 			clearContext: () => {
 				set(initialState)
-				localStorage.removeItem('b2b:api_key')
-				localStorage.removeItem('b2b:product_id')
-				localStorage.removeItem('b2b:client_id')
-				console.log('[ClientContextStore] Context cleared')
+				localStorage.removeItem("b2b:api_key")
+				localStorage.removeItem("b2b:product_id")
+				localStorage.removeItem("b2b:client_id")
+				console.log("[ClientContextStore] Context cleared")
 			},
 		}),
 		{
-			name: 'proxify-client-context',
+			name: "proxify-client-context",
 			partialize: (state) => ({
 				clientId: state.clientId,
 				productId: state.productId,
@@ -155,7 +155,7 @@ export function useApiKey(): string | null {
 
 	if (!apiKey) {
 		// Fallback to localStorage
-		return localStorage.getItem('b2b:api_key')
+		return localStorage.getItem("b2b:api_key")
 	}
 
 	return apiKey

@@ -1,12 +1,12 @@
 export function SupportedAssetsSection() {
 	const assets = [
-		{ name: 'USDC', icon: '💵' },
-		{ name: 'USDT', icon: '💲' },
-		{ name: 'BTC', icon: '₿' },
-		{ name: 'ETH', icon: 'Ξ' },
-		{ name: 'LINK', icon: '🔗' },
-		{ name: 'DOGE', icon: '🐕' },
-		{ name: 'XRP', icon: '✕' },
+		{ name: "USDC", icon: "💵" },
+		{ name: "USDT", icon: "💲" },
+		{ name: "BTC", icon: "₿" },
+		{ name: "ETH", icon: "Ξ" },
+		{ name: "LINK", icon: "🔗" },
+		{ name: "DOGE", icon: "🐕" },
+		{ name: "XRP", icon: "✕" },
 	]
 
 	return (

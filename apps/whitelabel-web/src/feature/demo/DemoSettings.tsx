@@ -1,19 +1,21 @@
-import { useState } from 'react'
-import { Settings, X, Check } from 'lucide-react'
-import { useClientContext } from '@/store/clientContextStore'
+import { useState } from "react"
+
+import { Check, Settings, X } from "lucide-react"
+
+import { useClientContext } from "@/store/clientContextStore"
 
 export function DemoSettings() {
 	const [isOpen, setIsOpen] = useState(false)
-	const [clientId, setClientId] = useState('')
-	const [productId, setProductId] = useState('')
-	const [apiKey, setApiKey] = useState('')
+	const [clientId, setClientId] = useState("")
+	const [productId, setProductId] = useState("")
+	const [apiKey, setApiKey] = useState("")
 	const [saved, setSaved] = useState(false)
 
 	const { setClientContext } = useClientContext()
 
 	const handleSave = () => {
 		if (!clientId.trim() || !productId.trim() || !apiKey.trim()) {
-			alert('Please enter Client ID, Product ID, and API Key')
+			alert("Please enter Client ID, Product ID, and API Key")
 			return
 		}
 
@@ -25,10 +27,10 @@ export function DemoSettings() {
 			apiKey: apiKey.trim(),
 		})
 
-		console.log('[DemoSettings] ✅ Saved to clientContextStore:', {
+		console.log("[DemoSettings] ✅ Saved to clientContextStore:", {
 			clientId: clientId.trim(),
 			productId: productId.trim(),
-			apiKey: apiKey.trim().substring(0, 12) + '...',
+			apiKey: apiKey.trim().substring(0, 12) + "...",
 		})
 
 		setSaved(true)
@@ -42,7 +44,9 @@ export function DemoSettings() {
 		<>
 			{/* Settings Button */}
 			<button
-				onClick={() => setIsOpen(!isOpen)}
+				onClick={() => {
+					setIsOpen(!isOpen)
+				}}
 				className="fixed bottom-6 right-6 p-4 bg-gray-900 hover:bg-gray-800 text-white rounded-full shadow-lg transition-all z-50"
 				title="Demo Settings"
 			>
@@ -54,7 +58,12 @@ export function DemoSettings() {
 				<div className="fixed bottom-24 right-6 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 p-6 z-50">
 					<div className="flex items-center justify-between mb-4">
 						<h3 className="text-lg font-bold text-gray-900">Demo Settings</h3>
-						<button onClick={() => setIsOpen(false)} className="p-1 hover:bg-gray-100 rounded-lg transition-colors">
+						<button
+							onClick={() => {
+								setIsOpen(false)
+							}}
+							className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+						>
 							<X className="w-5 h-5 text-gray-500" />
 						</button>
 					</div>
@@ -66,7 +75,9 @@ export function DemoSettings() {
 							<input
 								type="text"
 								value={clientId}
-								onChange={(e) => setClientId(e.target.value)}
+								onChange={(e) => {
+									setClientId(e.target.value)
+								}}
 								placeholder="9be8eac3-a21d-4f1a-a846-65751d6d6fa9"
 								className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 							/>
@@ -79,7 +90,9 @@ export function DemoSettings() {
 							<input
 								type="text"
 								value={productId}
-								onChange={(e) => setProductId(e.target.value)}
+								onChange={(e) => {
+									setProductId(e.target.value)
+								}}
 								placeholder="test_product_001"
 								className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 							/>
@@ -92,7 +105,9 @@ export function DemoSettings() {
 							<input
 								type="text"
 								value={apiKey}
-								onChange={(e) => setApiKey(e.target.value)}
+								onChange={(e) => {
+									setApiKey(e.target.value)
+								}}
 								placeholder="test_pk_..."
 								className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
 							/>
@@ -121,7 +136,7 @@ export function DemoSettings() {
 									Saved!
 								</>
 							) : (
-								'Save Settings'
+								"Save Settings"
 							)}
 						</button>
 					</div>

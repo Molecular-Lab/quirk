@@ -1,42 +1,40 @@
-import { Link } from '@tanstack/react-router'
-import { Building2 } from 'lucide-react'
-import { NewHeroSection } from './NewHeroSection'
-import { PortfoliosSection } from './PortfoliosSection'
-import { TradingStrategiesSection } from './TradingStrategiesSection'
-import { SupportedAssetsSection } from './SupportedAssetsSection'
-import { CustomizeEarnSection } from './CustomizeEarnSection'
-import { CustodySection } from './CustodySection'
-import { IntegrationSection } from './IntegrationSection'
+import { Link } from "@tanstack/react-router"
+import { Building2 } from "lucide-react"
+
+import { CustodySection } from "./CustodySection"
+import { CustomizeEarnSection } from "./CustomizeEarnSection"
+import { IntegrationSection } from "./IntegrationSection"
+import { NewHeroSection } from "./NewHeroSection"
+import { PortfoliosSection } from "./PortfoliosSection"
+import { SupportedAssetsSection } from "./SupportedAssetsSection"
+import { TradingStrategiesSection } from "./TradingStrategiesSection"
 
 export function LandingPage() {
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-gradient-to-br from-purple-50 via-gray-50 via-30% to-gray-50">
 			{/* Header */}
-			<header className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
+			<header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md">
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<div className="text-2xl font-bold text-gray-900">Quirk</div>
+						<div className="text-2xl font-bold text-black">Quirk</div>
 					</div>
-					<nav className="hidden md:flex items-center gap-4">
-						<Link to="/demo" className="text-gray-600 hover:text-gray-900 transition-colors px-4 py-2">
+					<nav className="hidden md:flex items-center gap-6">
+						<Link to="/demo" className="text-gray-600 hover:text-black transition-colors font-medium">
 							Demo
 						</Link>
 						<Link
 							to="/dashboard/operations"
-							className="text-gray-600 hover:text-gray-900 transition-colors px-4 py-2 flex items-center gap-2"
+							className="text-gray-600 hover:text-black transition-colors flex items-center gap-2 font-medium"
 						>
 							<Building2 className="w-4 h-4" />
 							<span>Operations</span>
 						</Link>
-						<Link
-							to="/login"
-							className="text-gray-900 px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-medium border border-gray-200"
-						>
+						<Link to="/login" className="text-gray-700 hover:text-black transition-colors font-medium">
 							Sign In
 						</Link>
 						<Link
-							to="/register"
-							className="text-gray-900 px-6 py-2.5 rounded-xl hover:bg-gray-50 transition-colors font-medium border border-gray-200"
+							to="/get-started"
+							className="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-all font-medium"
 						>
 							Get Started
 						</Link>
@@ -71,9 +69,7 @@ export function LandingPage() {
 					<div className="grid md:grid-cols-4 gap-8 mb-12">
 						<div>
 							<h4 className="font-bold text-gray-900 mb-4">Quirk</h4>
-							<p className="text-sm text-gray-600">
-								White-label DeFi yield infrastructure for apps
-							</p>
+							<p className="text-sm text-gray-600">White-label DeFi yield infrastructure for apps</p>
 						</div>
 						<div>
 							<h4 className="font-semibold text-gray-900 mb-4">Product</h4>

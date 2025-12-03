@@ -3,7 +3,7 @@
  * Based on PRODUCT_OWNER_FLOW.md - transactions table schema
  */
 
-export type TransactionType = 'deposit' | 'withdraw' | 'yield' | 'rebalance'
+export type TransactionType = "deposit" | "withdraw" | "yield" | "rebalance"
 
 export interface Transaction {
 	id: string
@@ -13,7 +13,7 @@ export interface Transaction {
 	amount: string
 	indexAtTime: string // Index value when transaction occurred
 	txHash: string | null
-	status: 'pending' | 'completed' | 'failed'
+	status: "pending" | "completed" | "failed"
 	createdAt: string
 }
 
@@ -25,7 +25,7 @@ export interface TransactionListItem {
 	userId: string
 	type: TransactionType
 	amount: number
-	status: 'pending' | 'completed' | 'failed'
+	status: "pending" | "completed" | "failed"
 	txHash: string | null
 	timestamp: string
 }

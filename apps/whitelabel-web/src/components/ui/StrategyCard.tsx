@@ -17,10 +17,12 @@ export function StrategyCard({
 	platforms,
 	collateral,
 	lockup,
-	className = '',
+	className = "",
 }: StrategyCardProps) {
 	return (
-		<div className={`bg-gray-50 rounded-3xl p-8 border border-gray-100 hover:border-gray-200 transition-colors ${className}`}>
+		<div
+			className={`bg-gray-50 rounded-3xl p-8 border border-gray-100 hover:border-gray-200 transition-colors ${className}`}
+		>
 			{/* Title */}
 			<h3 className="text-2xl font-bold text-gray-900 mb-4">{title}</h3>
 

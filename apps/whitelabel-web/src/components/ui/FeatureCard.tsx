@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import type { ReactNode } from "react"
 
 interface FeatureCardProps {
 	icon?: ReactNode
@@ -7,7 +7,7 @@ interface FeatureCardProps {
 	className?: string
 }
 
-export function FeatureCard({ icon, title, description, className = '' }: FeatureCardProps) {
+export function FeatureCard({ icon, title, description, className = "" }: FeatureCardProps) {
 	return (
 		<div className={`bg-gray-50 rounded-3xl p-8 border border-gray-100 ${className}`}>
 			{icon && (

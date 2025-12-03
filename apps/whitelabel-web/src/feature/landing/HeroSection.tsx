@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link } from "@tanstack/react-router"
 
 export function HeroSection() {
 	return (
@@ -6,8 +6,14 @@ export function HeroSection() {
 			{/* Animated background */}
 			<div className="absolute inset-0 opacity-30">
 				<div className="absolute top-1/4 right-1/4 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-pulse" />
-				<div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-				<div className="absolute top-1/2 left-1/2 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+				<div
+					className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"
+					style={{ animationDelay: "1s" }}
+				/>
+				<div
+					className="absolute top-1/2 left-1/2 w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl animate-pulse"
+					style={{ animationDelay: "2s" }}
+				/>
 			</div>
 
 			{/* Floating tags */}
@@ -15,16 +21,28 @@ export function HeroSection() {
 				<div className="absolute top-1/3 right-1/4 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm border border-white/20 animate-float">
 					● systemic alternative
 				</div>
-				<div className="absolute top-1/2 right-1/3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm border border-white/20 animate-float" style={{ animationDelay: '0.5s' }}>
+				<div
+					className="absolute top-1/2 right-1/3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm border border-white/20 animate-float"
+					style={{ animationDelay: "0.5s" }}
+				>
 					● dispersion alpha
 				</div>
-				<div className="absolute bottom-1/3 left-1/4 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm border border-white/20 animate-float" style={{ animationDelay: '1s' }}>
+				<div
+					className="absolute bottom-1/3 left-1/4 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm border border-white/20 animate-float"
+					style={{ animationDelay: "1s" }}
+				>
 					● systemic trend
 				</div>
-				<div className="absolute bottom-1/4 right-1/3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm border border-white/20 animate-float" style={{ animationDelay: '1.5s' }}>
+				<div
+					className="absolute bottom-1/4 right-1/3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm border border-white/20 animate-float"
+					style={{ animationDelay: "1.5s" }}
+				>
 					● volatility relative
 				</div>
-				<div className="absolute top-1/4 left-1/3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm border border-white/20 animate-float" style={{ animationDelay: '2s' }}>
+				<div
+					className="absolute top-1/4 left-1/3 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm border border-white/20 animate-float"
+					style={{ animationDelay: "2s" }}
+				>
 					● risk mitigation
 				</div>
 			</div>
@@ -36,7 +54,9 @@ export function HeroSection() {
 				</p>
 
 				<h1 className="text-6xl md:text-7xl font-bold mb-6 text-white leading-tight">
-					Customized Earn<br />Solutions At Scale
+					Customized Earn
+					<br />
+					Solutions At Scale
 				</h1>
 
 				<div className="flex items-center justify-center gap-4 mt-8">

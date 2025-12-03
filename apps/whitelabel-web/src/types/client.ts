@@ -3,7 +3,7 @@
  * Based on PRODUCT_OWNER_FLOW.md - clients table schema
  */
 
-export type RiskTier = 'low' | 'moderate' | 'high'
+export type RiskTier = "low" | "moderate" | "high"
 
 export interface Client {
 	id: string

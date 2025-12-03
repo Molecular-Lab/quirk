@@ -12,6 +12,9 @@
 		"preview": "vite preview"
 	},
 	"dependencies": {
+		"@dnd-kit/core": "^6.3.1",
+		"@dnd-kit/sortable": "^10.0.0",
+		"@dnd-kit/utilities": "^3.2.2",
 		"@privy-io/react-auth": "^1.98.1",
 		"@proxify/core": "workspace:*",
 		"@tanstack/react-query": "catalog:",
@@ -25,6 +28,7 @@
 		"react-dom": "^19.1.0",
 		"recharts": "^2.15.1",
 		"tailwind-merge": "^3.3.1",
+		"viem": "^2.40.3",
 		"zod": "catalog:",
 		"zustand": "^5.0.8"
 	},

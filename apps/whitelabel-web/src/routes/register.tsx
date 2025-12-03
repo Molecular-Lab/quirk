@@ -1,7 +1,7 @@
-import StrategySelectionPage from '@/feature/registration/StrategySelectionPage'
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute } from "@tanstack/react-router"
 
+import StrategySelectionPage from "@/feature/registration/StrategySelectionPage"
 
-export const Route = createFileRoute('/register')({
-  component: StrategySelectionPage,
+export const Route = createFileRoute("/register")({
+	component: StrategySelectionPage,
 })

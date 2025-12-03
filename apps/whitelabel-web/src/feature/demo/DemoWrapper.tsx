@@ -4,20 +4,22 @@
  * Falls back to manual configuration via DemoSettings
  */
 
-import { useEffect } from 'react'
-import { useUserStore } from '@/store/userStore'
-import { useClientContext } from '@/store/clientContextStore'
-import { DemoClientApp } from './DemoClientApp'
+import { useEffect } from "react"
+
+import { useClientContext } from "@/store/clientContextStore"
+import { useUserStore } from "@/store/userStore"
+
+import { DemoClientApp } from "./DemoClientApp"
 
 export function DemoWrapper() {
 	const { activeProductId, getActiveOrganization, apiKey } = useUserStore()
-	const { setClientContext, hasContext, syncToLocalStorage } = useClientContext()
+	const { setClientContext, syncToLocalStorage } = useClientContext()
 
 	// Initialize client context when component mounts or when active product changes
 	useEffect(() => {
 		const org = getActiveOrganization()
 
-		console.log('[DemoWrapper] Initializing client context:', {
+		console.log("[DemoWrapper] Initializing client context:", {
 			activeProductId,
 			org: org
 				? {
@@ -39,7 +41,7 @@ export function DemoWrapper() {
 				businessType: org.businessType,
 			})
 		} else {
-			console.warn('[DemoWrapper] Missing client context data:', {
+			console.warn("[DemoWrapper] Missing client context data:", {
 				hasOrg: !!org,
 				hasProductId: !!activeProductId,
 				hasApiKey: !!apiKey,

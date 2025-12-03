@@ -3,7 +3,7 @@
  * Based on PRODUCT_OWNER_FLOW.md - defi_allocations table schema
  */
 
-export type ProtocolName = 'aave' | 'compound' | 'curve' | 'uniswap'
+export type ProtocolName = "aave" | "compound" | "curve" | "uniswap"
 
 export interface DefiAllocation {
 	id: string
@@ -29,7 +29,7 @@ export interface ProtocolStatus {
 export interface DefiProtocolStatus {
 	protocol: ProtocolName
 	name: string
-	riskLevel: 'low' | 'moderate' | 'high'
+	riskLevel: "low" | "moderate" | "high"
 	allocationPercent: number
 	amountDeployed: number
 	currentValue: number
@@ -44,7 +44,7 @@ export interface DefiProtocolStatus {
  * Risk tier configuration
  */
 export interface RiskTierConfig {
-	riskTier: 'low' | 'moderate' | 'high'
+	riskTier: "low" | "moderate" | "high"
 	allocations: {
 		protocol: ProtocolName
 		percent: number

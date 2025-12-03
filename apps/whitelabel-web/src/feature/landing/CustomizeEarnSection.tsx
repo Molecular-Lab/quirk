@@ -3,9 +3,7 @@ export function CustomizeEarnSection() {
 		<section className="py-20 bg-white">
 			<div className="max-w-7xl mx-auto px-6">
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-bold text-gray-900 mb-4">
-						Customize Earn Solution At Scale
-					</h2>
+					<h2 className="text-5xl font-bold text-gray-900 mb-4">Customize Earn Solution At Scale</h2>
 					<p className="text-xl text-gray-600 max-w-3xl mx-auto">
 						Build your own yield product with our institutional-grade infrastructure
 					</p>

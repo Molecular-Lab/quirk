@@ -1,0 +1,44 @@
+{
+  "name": "@proxify/b2b-sdk",
+  "version": "1.0.0",
+  "description": "Official TypeScript SDK for Proxify B2B API",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "dev": "tsup src/index.ts --format cjs,esm --dts --watch",
+    "lint": "eslint src/**/*.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "proxify",
+    "defi",
+    "yield",
+    "b2b",
+    "sdk",
+    "api-client"
+  ],
+  "author": "Proxify",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "tsup": "^8.0.1",
+    "typescript": "^5.3.3"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

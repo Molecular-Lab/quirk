@@ -9,6 +9,7 @@
 
 export * from "./client";
 export * from "./common";
+export * from "./defi-protocol";
 export * from "./deposit";
 export * from "./user";
 export * from "./user-vault";

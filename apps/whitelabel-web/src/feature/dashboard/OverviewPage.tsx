@@ -1,106 +1,111 @@
-import { useState, useEffect } from 'react'
-import { LineChart, Line, XAxis, Tooltip, ResponsiveContainer } from 'recharts'
-import TimeFilter, { type TimeRange } from '../../components/dashboard/TimeFilter'
-import { b2bApiClient } from '@/api/b2bClient'
-import { useClientContext } from '@/store/clientContextStore'
+import { useEffect, useState } from "react"
+
+import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis } from "recharts"
+
+import { b2bApiClient } from "@/api/b2bClient"
+import { useClientContext } from "@/store/clientContextStore"
+
+import TimeFilter, { type TimeRange } from "../../components/dashboard/TimeFilter"
 
 // Mock data generators
 const generateMockData = (range: TimeRange) => {
-  const now = new Date()
-  const data: Array<{ date: string; tvl: number; users: number; apy: number; revenue: number }> = []
-  
-  let days = 7
-  let dateFormat: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' }
-  
-  if (range === 'daily') days = 7
-  else if (range === 'weekly') days = 12 * 7 // 12 weeks
-  else if (range === 'monthly') days = 12 * 30 // 12 months
-  else if (range === 'yearly') days = 5 * 365 // 5 years
-  
-  for (let i = days; i >= 0; i--) {
-    const date = new Date(now)
-    date.setDate(date.getDate() - i)
-    
-    let dateLabel = date.toLocaleDateString('en-US', dateFormat)
-    if (range === 'monthly') dateLabel = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-    if (range === 'yearly') dateLabel = date.getFullYear().toString()
-    
-    // Generate realistic growth curves
-    const progress = 1 - (i / days)
-    const tvl = 50000 + (progress * 450000) + (Math.random() * 50000)
-    const users = Math.floor(100 + (progress * 4900) + (Math.random() * 200))
-    const apy = 8 + (Math.random() * 7) // 8-15%
-    const revenue = tvl * 0.015 // 1.5% of TVL
-    
-    data.push({
-      date: dateLabel,
-      tvl: Math.floor(tvl),
-      users,
-      apy: parseFloat(apy.toFixed(2)),
-      revenue: Math.floor(revenue),
-    })
-  }
-  
-  return data
+	const now = new Date()
+	const data: { date: string; tvl: number; users: number; apy: number; revenue: number }[] = []
+
+	let days = 7
+	const dateFormat: Intl.DateTimeFormatOptions = { month: "short", day: "numeric" }
+
+	if (range === "daily") days = 7
+	else if (range === "weekly")
+		days = 12 * 7 // 12 weeks
+	else if (range === "monthly")
+		days = 12 * 30 // 12 months
+	else if (range === "yearly") days = 5 * 365 // 5 years
+
+	for (let i = days; i >= 0; i--) {
+		const date = new Date(now)
+		date.setDate(date.getDate() - i)
+
+		let dateLabel = date.toLocaleDateString("en-US", dateFormat)
+		if (range === "monthly") dateLabel = date.toLocaleDateString("en-US", { month: "short", year: "numeric" })
+		if (range === "yearly") dateLabel = date.getFullYear().toString()
+
+		// Generate realistic growth curves
+		const progress = 1 - i / days
+		const tvl = 50000 + progress * 450000 + Math.random() * 50000
+		const users = Math.floor(100 + progress * 4900 + Math.random() * 200)
+		const apy = 8 + Math.random() * 7 // 8-15%
+		const revenue = tvl * 0.015 // 1.5% of TVL
+
+		data.push({
+			date: dateLabel,
+			tvl: Math.floor(tvl),
+			users,
+			apy: parseFloat(apy.toFixed(2)),
+			revenue: Math.floor(revenue),
+		})
+	}
+
+	return data
 }
 
 const MOCK_STRATEGIES = [
-  { name: 'Balanced Portfolio', value: 45000, return: '+12.5%', color: 'bg-blue-500' },
-  { name: 'Conservative Fund', value: 30000, return: '+8.2%', color: 'bg-green-500' },
-  { name: 'Aggressive Yield', value: 25000, return: '+18.7%', color: 'bg-purple-500' },
+	{ name: "Balanced Portfolio", value: 45000, return: "+12.5%", color: "bg-blue-500" },
+	{ name: "Conservative Fund", value: 30000, return: "+8.2%", color: "bg-green-500" },
+	{ name: "Aggressive Yield", value: 25000, return: "+18.7%", color: "bg-purple-500" },
 ]
 
 const MOCK_END_USERS = [
-  {
-    id: '1',
-    name: 'Alice Chen',
-    walletAddress: '0x742d...a3f9',
-    stakedAmount: 15000,
-    apyEarned: 450,
-    status: 'active',
-    joinDate: '2024-10-15',
-    apy: 12.5,
-  },
-  {
-    id: '2',
-    name: 'Bob Martinez',
-    walletAddress: '0x8a3c...b2d1',
-    stakedAmount: 8500,
-    apyEarned: 255,
-    status: 'active',
-    joinDate: '2024-11-01',
-    apy: 11.8,
-  },
-  {
-    id: '3',
-    name: 'Carol Wu',
-    walletAddress: '0x1f7e...c8a2',
-    stakedAmount: 22000,
-    apyEarned: 770,
-    status: 'active',
-    joinDate: '2024-09-28',
-    apy: 13.2,
-  },
-  {
-    id: '4',
-    name: 'David Kim',
-    walletAddress: '0x9d2b...f4e3',
-    stakedAmount: 12500,
-    apyEarned: 375,
-    status: 'active',
-    joinDate: '2024-11-08',
-    apy: 10.9,
-  },
-  {
-    id: '5',
-    name: 'Emma Johnson',
-    walletAddress: '0x5c8a...d1b7',
-    stakedAmount: 6800,
-    apyEarned: 204,
-    status: 'active',
-    joinDate: '2024-11-12',
-    apy: 11.5,
-  },
+	{
+		id: "1",
+		name: "Alice Chen",
+		walletAddress: "0x742d...a3f9",
+		stakedAmount: 15000,
+		apyEarned: 450,
+		status: "active",
+		joinDate: "2024-10-15",
+		apy: 12.5,
+	},
+	{
+		id: "2",
+		name: "Bob Martinez",
+		walletAddress: "0x8a3c...b2d1",
+		stakedAmount: 8500,
+		apyEarned: 255,
+		status: "active",
+		joinDate: "2024-11-01",
+		apy: 11.8,
+	},
+	{
+		id: "3",
+		name: "Carol Wu",
+		walletAddress: "0x1f7e...c8a2",
+		stakedAmount: 22000,
+		apyEarned: 770,
+		status: "active",
+		joinDate: "2024-09-28",
+		apy: 13.2,
+	},
+	{
+		id: "4",
+		name: "David Kim",
+		walletAddress: "0x9d2b...f4e3",
+		stakedAmount: 12500,
+		apyEarned: 375,
+		status: "active",
+		joinDate: "2024-11-08",
+		apy: 10.9,
+	},
+	{
+		id: "5",
+		name: "Emma Johnson",
+		walletAddress: "0x5c8a...d1b7",
+		stakedAmount: 6800,
+		apyEarned: 204,
+		status: "active",
+		joinDate: "2024-11-12",
+		apy: 11.5,
+	},
 ]
 
 interface DashboardMetrics {
@@ -121,18 +126,18 @@ interface DashboardMetrics {
 		apy: string
 		vaults: number
 	}
-	strategies: Array<{
+	strategies: {
 		category: string
 		target: number
 		allocated: number
 		isActive: boolean
-	}>
+	}[]
 }
 
 export function OverviewPage() {
 	const { clientId } = useClientContext()
-	const [timeRange, setTimeRange] = useState<TimeRange>('daily')
-	const [selectedMetric, setSelectedMetric] = useState<'tvl' | 'users' | 'apy' | 'revenue'>('tvl')
+	const [timeRange, setTimeRange] = useState<TimeRange>("daily")
+	const [selectedMetric, setSelectedMetric] = useState<"tvl" | "users" | "apy" | "revenue">("tvl")
 	const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null)
 	const [, setIsLoading] = useState(true)
 
@@ -147,10 +152,10 @@ export function OverviewPage() {
 			try {
 				setIsLoading(true)
 				const response = await b2bApiClient.getDashboardMetrics(clientId)
-				console.log('[OverviewPage] Dashboard metrics:', response)
+				console.log("[OverviewPage] Dashboard metrics:", response)
 				setDashboardMetrics(response as DashboardMetrics)
 			} catch (error) {
-				console.error('[OverviewPage] Failed to fetch dashboard metrics:', error)
+				console.error("[OverviewPage] Failed to fetch dashboard metrics:", error)
 			} finally {
 				setIsLoading(false)
 			}
@@ -167,44 +172,44 @@ export function OverviewPage() {
 	const totalUsers = dashboardMetrics ? dashboardMetrics.stats.totalUsers : latestData.users
 	const avgAPY = dashboardMetrics ? parseFloat(dashboardMetrics.stats.apy) : latestData.apy
 	const totalRevenue = dashboardMetrics ? parseFloat(dashboardMetrics.revenue.total) : latestData.revenue
-	
+
 	const metrics = {
 		tvl: {
-			label: 'Total Assets Under Management',
+			label: "Total Assets Under Management",
 			value: `$${totalValue.toLocaleString()}`,
 			change: dashboardMetrics
 				? `Available: $${parseFloat(dashboardMetrics.fundStages.available).toLocaleString()} | Staked: $${parseFloat(dashboardMetrics.fundStages.staked).toLocaleString()}`
-				: '+$52,340 (+15.2%)',
-			color: '#00D9A3',
+				: "+$52,340 (+15.2%)",
+			color: "#00D9A3",
 		},
 		users: {
-			label: 'Total Users',
+			label: "Total Users",
 			value: totalUsers.toLocaleString(),
 			change: dashboardMetrics
 				? `Active: ${dashboardMetrics.stats.activeUsers} | Vaults: ${dashboardMetrics.stats.vaults}`
-				: '+342 (+7.1%)',
-			color: '#3B82F6',
+				: "+342 (+7.1%)",
+			color: "#3B82F6",
 		},
 		apy: {
-			label: 'Average APY',
+			label: "Average APY",
 			value: `${avgAPY.toFixed(2)}%`,
 			change: dashboardMetrics
 				? `Weighted avg across ${dashboardMetrics.stats.vaults} vaults`
-				: '+1.2% from last period',
-			color: '#8B5CF6',
+				: "+1.2% from last period",
+			color: "#8B5CF6",
 		},
 		revenue: {
-			label: 'Total Revenue Generated',
+			label: "Total Revenue Generated",
 			value: `$${totalRevenue.toLocaleString()}`,
 			change: dashboardMetrics
 				? `Your cut (${dashboardMetrics.revenue.clientSharePercent}%): $${parseFloat(dashboardMetrics.revenue.clientShare).toLocaleString()}`
-				: '+$845 (+12.3%)',
-			color: '#F59E0B',
+				: "+$845 (+12.3%)",
+			color: "#F59E0B",
 		},
 	}
-	
+
 	const currentMetric = metrics[selectedMetric]
-	
+
 	return (
 		<div className="min-h-full bg-white">
 			<div className="max-w-[1400px] mx-auto px-6 py-8">
@@ -220,11 +225,11 @@ export function OverviewPage() {
 						<div
 							key={key}
 							className={`bg-gray-50 rounded-2xl p-6 cursor-pointer transition-all ${
-								selectedMetric === key
-									? 'ring-2 ring-blue-500 shadow-lg'
-									: 'hover:shadow-md'
+								selectedMetric === key ? "ring-2 ring-blue-500 shadow-lg" : "hover:shadow-md"
 							}`}
-							onClick={() => setSelectedMetric(key as typeof selectedMetric)}
+							onClick={() => {
+								setSelectedMetric(key as typeof selectedMetric)
+							}}
 						>
 							<div className="text-xs font-medium text-gray-500 mb-2">{metric.label}</div>
 							<div className="text-3xl font-bold text-gray-900 mb-1">{metric.value}</div>
@@ -239,25 +244,21 @@ export function OverviewPage() {
 					<div className="lg:col-span-2 bg-gray-50 rounded-3xl p-6">
 						<div className="flex items-start justify-between mb-6">
 							<div>
-								<div className="text-gray-500 text-xs font-medium mb-1">
-									{currentMetric.label}
-								</div>
-								<div className="text-[56px] font-bold text-gray-900 leading-none mb-2">
-									{currentMetric.value}
-								</div>
-								<div className="text-sm text-primary-500 font-medium">
-									{currentMetric.change}
-								</div>
+								<div className="text-gray-500 text-xs font-medium mb-1">{currentMetric.label}</div>
+								<div className="text-[56px] font-bold text-gray-900 leading-none mb-2">{currentMetric.value}</div>
+								<div className="text-sm text-primary-500 font-medium">{currentMetric.change}</div>
 							</div>
 							<div className="flex gap-1">
-								{(['tvl', 'users', 'apy', 'revenue'] as const).map((metric) => (
+								{(["tvl", "users", "apy", "revenue"] as const).map((metric) => (
 									<button
 										key={metric}
-										onClick={() => setSelectedMetric(metric)}
+										onClick={() => {
+											setSelectedMetric(metric)
+										}}
 										className={`px-2.5 py-1 text-xs rounded-md transition-colors ${
 											selectedMetric === metric
-												? 'font-semibold text-gray-900 bg-white'
-												: 'text-gray-500 hover:text-gray-900 hover:bg-white'
+												? "font-semibold text-gray-900 bg-white"
+												: "text-gray-500 hover:text-gray-900 hover:bg-white"
 										}`}
 									>
 										{metric.toUpperCase()}
@@ -273,16 +274,16 @@ export function OverviewPage() {
 										dataKey="date"
 										axisLine={false}
 										tickLine={false}
-										tick={{ fill: '#9ca3af', fontSize: 11 }}
+										tick={{ fill: "#9ca3af", fontSize: 11 }}
 										dy={10}
 									/>
 									<Tooltip
 										contentStyle={{
-											backgroundColor: 'white',
-											border: '1px solid #e5e7eb',
-											borderRadius: '12px',
-											padding: '8px 12px',
-											fontSize: '12px',
+											backgroundColor: "white",
+											border: "1px solid #e5e7eb",
+											borderRadius: "12px",
+											padding: "8px 12px",
+											fontSize: "12px",
 										}}
 									/>
 									<Line
@@ -307,24 +308,24 @@ export function OverviewPage() {
 								{dashboardMetrics ? dashboardMetrics.strategies.length : 3}
 							</div>
 							<div className="space-y-2">
-								{dashboardMetrics ? (
-									dashboardMetrics.strategies.map((strategy, idx) => (
-										<div key={idx} className="flex items-center justify-between gap-2">
-											<div className="flex items-center gap-2">
-												<div className={`w-2 h-2 rounded-full ${idx === 0 ? 'bg-blue-500' : idx === 1 ? 'bg-green-500' : 'bg-purple-500'}`}></div>
-												<span className="text-xs text-gray-600">{strategy.category}</span>
+								{dashboardMetrics
+									? dashboardMetrics.strategies.map((strategy, idx) => (
+											<div key={idx} className="flex items-center justify-between gap-2">
+												<div className="flex items-center gap-2">
+													<div
+														className={`w-2 h-2 rounded-full ${idx === 0 ? "bg-blue-500" : idx === 1 ? "bg-green-500" : "bg-purple-500"}`}
+													></div>
+													<span className="text-xs text-gray-600">{strategy.category}</span>
+												</div>
+												<span className="text-xs font-medium text-gray-900">{strategy.target}%</span>
 											</div>
-											<span className="text-xs font-medium text-gray-900">{strategy.target}%</span>
-										</div>
-									))
-								) : (
-									MOCK_STRATEGIES.map((strategy, idx) => (
-										<div key={idx} className="flex items-center gap-2">
-											<div className={`w-2 h-2 rounded-full ${strategy.color}`}></div>
-											<span className="text-xs text-gray-600">{strategy.name}</span>
-										</div>
-									))
-								)}
+										))
+									: MOCK_STRATEGIES.map((strategy, idx) => (
+											<div key={idx} className="flex items-center gap-2">
+												<div className={`w-2 h-2 rounded-full ${strategy.color}`}></div>
+												<span className="text-xs text-gray-600">{strategy.name}</span>
+											</div>
+										))}
 							</div>
 						</div>
 
@@ -362,7 +363,8 @@ export function OverviewPage() {
 										${MOCK_STRATEGIES.reduce((sum, s) => sum + s.value, 0).toLocaleString()}
 									</div>
 									<div className="text-sm text-green-600 font-medium">
-										+{((MOCK_STRATEGIES.reduce((sum, s) => sum + s.value, 0) / 90000) * 100 - 100).toFixed(1)}% Total Return
+										+{((MOCK_STRATEGIES.reduce((sum, s) => sum + s.value, 0) / 90000) * 100 - 100).toFixed(1)}% Total
+										Return
 									</div>
 								</>
 							)}
@@ -447,7 +449,13 @@ export function OverviewPage() {
 										</span>
 									</td>
 									<td className="py-4 px-5">
-										<span className="text-gray-600 text-sm">{new Date(user.joinDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+										<span className="text-gray-600 text-sm">
+											{new Date(user.joinDate).toLocaleDateString("en-US", {
+												month: "short",
+												day: "numeric",
+												year: "numeric",
+											})}
+										</span>
 									</td>
 								</tr>
 							))}
@@ -468,12 +476,8 @@ export function OverviewPage() {
 					<button className="pb-3 text-sm font-semibold text-gray-900 border-b-2 border-gray-900 -mb-px">
 						Active (1)
 					</button>
-					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">
-						Drafts (0)
-					</button>
-					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">
-						Archived (0)
-					</button>
+					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">Drafts (0)</button>
+					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">Archived (0)</button>
 				</div>
 
 				{/* Table */}

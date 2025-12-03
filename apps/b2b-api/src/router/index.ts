@@ -6,6 +6,7 @@ import type { initServer } from "@ts-rest/express";
 import { b2bContract } from "@proxify/b2b-api-core";
 import { createClientRouter } from "./client.router";
 import { createDashboardRouter } from "./dashboard.router";
+import { createDeFiProtocolRouter } from "./defi-protocol.router";
 import { createVaultRouter } from "./vault.router";
 import { createUserRouter } from "./user.router";
 import { createDepositRouter } from "./deposit.router";
@@ -13,6 +14,7 @@ import { createWithdrawalRouter } from "./withdrawal.router";
 import { createUserVaultRouter } from "./user-vault.router";
 import { createPrivyAccountRouter } from "./privy-account.router";
 import type { ClientService } from "../service/client.service";
+import type { DeFiProtocolService } from "../service/defi-protocol.service";
 import type { VaultService } from "../service/vault.service";
 import type { UserService } from "../service/user.service";
 import type { DepositService } from "../service/deposit.service";
@@ -24,6 +26,7 @@ export const createMainRouter = (
 	s: ReturnType<typeof initServer>,
 	services: {
 		clientService: ClientService;
+		defiProtocolService: DeFiProtocolService;
 		vaultService: VaultService;
 		userService: UserService;
 		depositService: DepositService;
@@ -35,6 +38,7 @@ export const createMainRouter = (
 	return s.router(b2bContract, {
 		client: createClientRouter(s, services.clientService),
 		dashboard: createDashboardRouter(s, services.vaultService, services.userService),
+		defiProtocol: createDeFiProtocolRouter(s, services.defiProtocolService),
 		vault: createVaultRouter(s, services.vaultService),
 		user: createUserRouter(s, services.userService, services.userVaultService),
 		userVault: createUserVaultRouter(s, services.userVaultService),

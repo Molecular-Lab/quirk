@@ -9,10 +9,10 @@ export type Network = "sepolia" | "base-sepolia" | "mainnet" | "base"
  * Blockscout base URLs for different networks
  */
 const BLOCKSCOUT_URLS: Record<Network, string> = {
-    sepolia: "https://eth-sepolia.blockscout.com",
-    "base-sepolia": "https://base-sepolia.blockscout.com",
-    mainnet: "https://eth.blockscout.com",
-    base: "https://base.blockscout.com",
+	sepolia: "https://eth-sepolia.blockscout.com",
+	"base-sepolia": "https://base-sepolia.blockscout.com",
+	mainnet: "https://eth.blockscout.com",
+	base: "https://base.blockscout.com",
 }
 
 /**
@@ -31,12 +31,12 @@ const BLOCKSCOUT_URLS: Record<Network, string> = {
  * // => "https://base-sepolia.blockscout.com/address/0xabc..."
  */
 export function getBlockscoutUrl(
-    type: "tx" | "address" | "token",
-    hash: string | Address,
-    network: Network = "sepolia"
+	type: "tx" | "address" | "token",
+	hash: string | Address,
+	network: Network = "sepolia",
 ): string {
-    const baseUrl = BLOCKSCOUT_URLS[network]
-    return `${baseUrl}/${type}/${hash}`
+	const baseUrl = BLOCKSCOUT_URLS[network]
+	return `${baseUrl}/${type}/${hash}`
 }
 
 /**
@@ -50,12 +50,12 @@ export function getBlockscoutUrl(
  * openBlockscout("tx", txHash, "sepolia")
  */
 export function openBlockscout(
-    type: "tx" | "address" | "token",
-    hash: string | Address,
-    network: Network = "sepolia"
+	type: "tx" | "address" | "token",
+	hash: string | Address,
+	network: Network = "sepolia",
 ): void {
-    const url = getBlockscoutUrl(type, hash, network)
-    window.open(url, "_blank", "noopener,noreferrer")
+	const url = getBlockscoutUrl(type, hash, network)
+	window.open(url, "_blank", "noopener,noreferrer")
 }
 
 /**
@@ -67,10 +67,10 @@ export function openBlockscout(
  * @returns Promise that resolves when URL is copied
  */
 export async function copyBlockscoutUrl(
-    type: "tx" | "address" | "token",
-    hash: string | Address,
-    network: Network = "sepolia"
+	type: "tx" | "address" | "token",
+	hash: string | Address,
+	network: Network = "sepolia",
 ): Promise<void> {
-    const url = getBlockscoutUrl(type, hash, network)
-    await navigator.clipboard.writeText(url)
+	const url = getBlockscoutUrl(type, hash, network)
+	await navigator.clipboard.writeText(url)
 }

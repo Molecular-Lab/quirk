@@ -11,6 +11,10 @@ const envSchema = z.object({
 	LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),
 	DEPLOYER_PRIVATE_KEY: z.string().optional(),
 	PRIVATE_KEY: z.string().optional(),
+	// Blockchain configuration
+	CHAIN_ID: z.string().default("84532"), // Base Sepolia
+	RPC_URL: z.string().default("https://sepolia.base.org"),
+	BASE_SEPOLIA_RPC_URL: z.string().default("https://sepolia.base.org"),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -23,4 +27,5 @@ if (!parsedEnv.success) {
 export const ENV = {
 	...parsedEnv.data,
 	PORT: parseInt(parsedEnv.data.PORT, 10),
+	CHAIN_ID: parseInt(parsedEnv.data.CHAIN_ID, 10),
 };

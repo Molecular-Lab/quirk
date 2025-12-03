@@ -15,12 +15,8 @@ export function PortfoliosListPage() {
 					<button className="pb-3 text-sm font-semibold text-gray-900 border-b-2 border-gray-900 -mb-px">
 						Active (1)
 					</button>
-					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">
-						Drafts (0)
-					</button>
-					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">
-						Archived (0)
-					</button>
+					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">Drafts (0)</button>
+					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">Archived (0)</button>
 				</div>
 
 				{/* Table */}

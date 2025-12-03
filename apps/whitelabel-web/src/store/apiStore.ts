@@ -3,11 +3,11 @@
  * Manages API testing state and credentials
  */
 
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
 
 export interface ApiTestRequest {
-	method: 'GET' | 'POST' | 'PUT' | 'DELETE'
+	method: "GET" | "POST" | "PUT" | "DELETE"
 	endpoint: string
 	body?: string
 	description?: string
@@ -53,7 +53,7 @@ export interface ApiTestState {
 
 const initialState = {
 	apiKey: null,
-	baseUrl: 'http://localhost:3002',
+	baseUrl: "http://localhost:3002",
 	currentRequest: null,
 	isLoading: false,
 	error: null,
@@ -68,7 +68,7 @@ export const useApiStore = create<ApiTestState>()(
 			setApiKey: (apiKey) => {
 				set({ apiKey })
 				// Also sync to localStorage for b2bApiClient
-				localStorage.setItem('b2b:api_key', apiKey)
+				localStorage.setItem("b2b:api_key", apiKey)
 			},
 
 			setBaseUrl: (url) => set({ baseUrl: url }),
@@ -91,17 +91,17 @@ export const useApiStore = create<ApiTestState>()(
 			// Sync API key from userStore
 			syncFromUserStore: () => {
 				// Import userStore to get current API key
-				import('./userStore').then(({ useUserStore }) => {
+				import("./userStore").then(({ useUserStore }) => {
 					const userApiKey = useUserStore.getState().apiKey
 					if (userApiKey) {
 						set({ apiKey: userApiKey })
-						localStorage.setItem('b2b:api_key', userApiKey)
+						localStorage.setItem("b2b:api_key", userApiKey)
 					}
 				})
 			},
 		}),
 		{
-			name: 'proxify-api-testing',
+			name: "proxify-api-testing",
 			partialize: (state) => ({
 				apiKey: state.apiKey,
 				baseUrl: state.baseUrl,
@@ -120,7 +120,7 @@ export function useApiKey(): string | null {
 
 	// Try localStorage as fallback
 	if (!apiStoreKey) {
-		return localStorage.getItem('b2b:api_key')
+		return localStorage.getItem("b2b:api_key")
 	}
 
 	return apiStoreKey
@@ -130,7 +130,7 @@ export function useApiKey(): string | null {
  * Sync API key from userStore (call this on app init)
  */
 export function syncApiKeyFromUserStore() {
-	import('./userStore').then(({ useUserStore }) => {
+	import("./userStore").then(({ useUserStore }) => {
 		const userApiKey = useUserStore.getState().apiKey
 		if (userApiKey) {
 			useApiStore.getState().setApiKey(userApiKey)
