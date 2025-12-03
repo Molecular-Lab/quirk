@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link } from "@tanstack/react-router"
 
 export function NewHeroSection() {
 	return (
@@ -11,8 +11,8 @@ export function NewHeroSection() {
 						onboard users to digital assets
 					</h1>
 					<p className="text-xl text-gray-600 mb-10 leading-relaxed">
-						White-label DeFi yield infrastructure for apps. Turn idle balances into yield-generating
-						assets with institutional-grade custody and compliance.
+						White-label DeFi yield infrastructure for apps. Turn idle balances into yield-generating assets with
+						institutional-grade custody and compliance.
 					</p>
 					<div className="flex items-center justify-center gap-4">
 						<Link

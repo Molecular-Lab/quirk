@@ -3,8 +3,8 @@
  * Based on PRODUCT_OWNER_FLOW.md - AI agent for market insights
  */
 
-export type InsightSeverity = 'info' | 'warning' | 'critical'
-export type InsightCategory = 'market' | 'risk' | 'opportunity' | 'rebalance'
+export type InsightSeverity = "info" | "warning" | "critical"
+export type InsightCategory = "market" | "risk" | "opportunity" | "rebalance"
 
 export interface AIInsight {
 	id: string
@@ -22,8 +22,8 @@ export interface MarketConditions {
 	curveAPY: string
 	compoundAPY: string
 	uniswapAPY: string
-	volatility: 'low' | 'medium' | 'high'
-	sentiment: 'bearish' | 'neutral' | 'bullish'
+	volatility: "low" | "medium" | "high"
+	sentiment: "bearish" | "neutral" | "bullish"
 	updatedAt: string
 }
 
@@ -31,7 +31,7 @@ export interface RebalanceRecommendation {
 	currentAllocation: Record<string, number>
 	recommendedAllocation: Record<string, number>
 	expectedAPYImprovement: string
-	riskChange: 'lower' | 'same' | 'higher'
+	riskChange: "lower" | "same" | "higher"
 	reason: string
 }
 

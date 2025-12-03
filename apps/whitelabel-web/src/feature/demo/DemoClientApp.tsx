@@ -1,11 +1,14 @@
-import { useState } from 'react'
-import { Home, TrendingUp, Wallet } from 'lucide-react'
-import { useNavigate } from '@tanstack/react-router'
-import { b2bApiClient } from '@/api/b2bClient'
-import { useDemoStore } from '@/store/demoStore'
-import { useClientContext } from '@/store/clientContextStore'
-import { DepositModal } from './DepositModal'
-import { DemoSettings } from './DemoSettings'
+import { useState } from "react"
+
+import { useNavigate } from "@tanstack/react-router"
+import { Home, TrendingUp, Wallet } from "lucide-react"
+
+import { b2bApiClient } from "@/api/b2bClient"
+import { useClientContext } from "@/store/clientContextStore"
+import { useDemoStore } from "@/store/demoStore"
+
+import { DemoSettings } from "./DemoSettings"
+import { DepositModal } from "./DepositModal"
 
 interface Transaction {
 	id: string
@@ -81,7 +84,7 @@ export function DemoClientApp() {
 	const [touchEnd, setTouchEnd] = useState(0)
 
 	// Get client context (productId, clientId, apiKey)
-	const { productId, clientId, apiKey, hasApiKey } = useClientContext()
+	const { productId, hasApiKey } = useClientContext()
 
 	// Get demo-specific state from demoStore
 	const {
@@ -100,8 +103,8 @@ export function DemoClientApp() {
 	const merchantBalance = 12458.32
 
 	const cards = [
-		{ id: 'merchant', title: 'Merchant', transactions: revenueTransactions },
-		{ id: 'savings', title: 'Quirk Earn', transactions: savingsTransactions },
+		{ id: "merchant", title: "Merchant", transactions: revenueTransactions },
+		{ id: "savings", title: "Quirk Earn", transactions: savingsTransactions },
 	]
 
 	const handleTouchStart = (e: React.TouchEvent) => {
@@ -125,8 +128,8 @@ export function DemoClientApp() {
 	}
 
 	const currentCard = cards[currentCardIndex]
-	const isMerchantCard = currentCard.id === 'merchant'
-	const isSavingsCard = currentCard.id === 'savings'
+	const isMerchantCard = currentCard.id === "merchant"
+	const isSavingsCard = currentCard.id === "savings"
 
 	const handleStartEarning = async () => {
 		setIsCreatingAccount(true)
@@ -135,17 +138,17 @@ export function DemoClientApp() {
 		try {
 			// Check if we have client context
 			if (!productId) {
-				throw new Error('No product ID configured. Please set up via Demo Settings.')
+				throw new Error("No product ID configured. Please set up via Demo Settings.")
 			}
 
 			if (!hasApiKey()) {
-				throw new Error('No API key configured. Please set up via Demo Settings.')
+				throw new Error("No API key configured. Please set up via Demo Settings.")
 			}
 
 			// Generate a unique client user ID for demo
 			const demoUserId = `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
-			console.log('[DemoClientApp] Creating end-user account:', {
+			console.log("[DemoClientApp] Creating end-user account:", {
 				productId,
 				clientUserId: demoUserId,
 			})
@@ -154,71 +157,71 @@ export function DemoClientApp() {
 			const response = await b2bApiClient.createUser({
 				clientId: productId, // Note: API parameter is named clientId but expects productId
 				clientUserId: demoUserId,
-				email: 'demo@example.com', // Optional demo email
+				email: "demo@example.com", // Optional demo email
 			})
 
-			console.log('[DemoClientApp] End-user created successfully:', response)
+			console.log("[DemoClientApp] End-user created successfully:", response)
 
 			// Store the end user ID in demoStore
-			if (response && typeof response === 'object' && 'id' in response) {
+			if (response && typeof response === "object" && "id" in response) {
 				setEndUser({
 					endUserId: response.id as string,
 					endUserClientUserId: demoUserId,
 				})
 			} else {
-				throw new Error('Invalid response from API')
+				throw new Error("Invalid response from API")
 			}
 		} catch (err) {
-			console.error('[DemoClientApp] Failed to create end-user:', err)
-			setError(err instanceof Error ? err.message : 'Failed to create account. Please try again.')
+			console.error("[DemoClientApp] Failed to create end-user:", err)
+			setError(err instanceof Error ? err.message : "Failed to create account. Please try again.")
 			setIsCreatingAccount(false)
 		}
 	}
 
 	const handleDeposit = async (amount: number) => {
 		if (!endUserId) {
-			throw new Error('No end-user account found. Please create an account first.')
+			throw new Error("No end-user account found. Please create an account first.")
 		}
 
 		setIsDepositing(true)
 		setError(null)
 
 		try {
-			console.log('[DemoClientApp] Creating deposit order:', {
+			console.log("[DemoClientApp] Creating deposit order:", {
 				userId: endUserId,
 				amount: amount.toString(),
-				currency: 'USD',
-				chain: 'base',
-				token: 'USDC',
+				currency: "USD",
+				chain: "base",
+				token: "USDC",
 			})
 
 			// Call the API to create deposit order
 			const response = await b2bApiClient.createDeposit({
 				user_id: endUserId,
 				amount: amount.toString(),
-				currency: 'USD',
-				chain: 'base',
-				token: 'USDC',
-				payment_method: 'proxify_gateway',
+				currency: "USD",
+				chain: "base",
+				token: "USDC",
+				payment_method: "proxify_gateway",
 			})
 
-			console.log('[DemoClientApp] Deposit order created:', response)
+			console.log("[DemoClientApp] Deposit order created:", response)
 
 			// Add to deposit history in demoStore
-			if (response && typeof response === 'object' && 'orderId' in response) {
+			if (response && typeof response === "object" && "orderId" in response) {
 				addDeposit({
 					orderId: response.orderId as string,
 					amount: amount.toString(),
-					currency: 'USD',
-					status: 'pending',
+					currency: "USD",
+					status: "pending",
 					createdAt: new Date().toISOString(),
 				})
 			}
 
 			// Success - modal will show success UI
 		} catch (err) {
-			console.error('[DemoClientApp] Failed to create deposit:', err)
-			setError(err instanceof Error ? err.message : 'Failed to create deposit. Please try again.')
+			console.error("[DemoClientApp] Failed to create deposit:", err)
+			setError(err instanceof Error ? err.message : "Failed to create deposit. Please try again.")
 		} finally {
 			setIsDepositing(false)
 		}
@@ -266,9 +269,7 @@ export function DemoClientApp() {
 							{/* Savings View - Pure Numbers */}
 							<div className="mb-2">
 								<p className="text-sm text-gray-500 mb-1">USDC Balance</p>
-								<h2 className="text-6xl font-bold text-gray-900 mb-3">
-									{hasEarnAccount ? '$10,821.00' : '$0.00'}
-								</h2>
+								<h2 className="text-6xl font-bold text-gray-900 mb-3">{hasEarnAccount ? "$10,821.00" : "$0.00"}</h2>
 								{hasEarnAccount && (
 									<div className="flex items-center gap-2">
 										<span className="text-green-600 font-medium">+$400.00</span>
@@ -285,9 +286,11 @@ export function DemoClientApp() {
 					{cards.map((_, index) => (
 						<button
 							key={index}
-							onClick={() => setCurrentCardIndex(index)}
+							onClick={() => {
+								setCurrentCardIndex(index)
+							}}
 							className={`h-2 rounded-full transition-all ${
-								index === currentCardIndex ? 'w-6 bg-gray-900' : 'w-2 bg-gray-300'
+								index === currentCardIndex ? "w-6 bg-gray-900" : "w-2 bg-gray-300"
 							}`}
 						/>
 					))}
@@ -303,7 +306,7 @@ export function DemoClientApp() {
 								disabled={isCreatingAccount}
 								className="w-full bg-gray-900 hover:bg-gray-800 text-white py-5 rounded-2xl font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 							>
-								{isCreatingAccount ? 'Creating Account...' : 'Start Earning'}
+								{isCreatingAccount ? "Creating Account..." : "Start Earning"}
 							</button>
 							{error && (
 								<div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">
@@ -319,7 +322,9 @@ export function DemoClientApp() {
 						hasEarnAccount && (
 							<div className="flex items-center gap-3">
 								<button
-									onClick={() => setIsDepositModalOpen(true)}
+									onClick={() => {
+										setIsDepositModalOpen(true)
+									}}
 									className="flex-1 bg-gray-900 hover:bg-gray-800 text-white py-4 rounded-2xl font-medium text-base transition-colors"
 								>
 									Deposit
@@ -337,7 +342,7 @@ export function DemoClientApp() {
 					<div className="px-5 mb-6">
 						<div className="flex items-center justify-between mb-4">
 							<h3 className="text-lg font-bold text-gray-900">
-								{isSavingsCard ? 'Transactions' : 'Merchant Transactions'}
+								{isSavingsCard ? "Transactions" : "Merchant Transactions"}
 							</h3>
 							<button className="text-gray-400 hover:text-gray-600 transition-colors">→</button>
 						</div>
@@ -358,7 +363,7 @@ export function DemoClientApp() {
 										</div>
 									</div>
 									<div className="text-right">
-										<p className={`text-base font-bold ${tx.isPositive ? 'text-green-600' : 'text-gray-900'}`}>
+										<p className={`text-base font-bold ${tx.isPositive ? "text-green-600" : "text-gray-900"}`}>
 											{tx.amount}
 										</p>
 									</div>
@@ -387,7 +392,9 @@ export function DemoClientApp() {
 			{/* Deposit Modal */}
 			<DepositModal
 				isOpen={isDepositModalOpen}
-				onClose={() => setIsDepositModalOpen(false)}
+				onClose={() => {
+					setIsDepositModalOpen(false)
+				}}
 				onDeposit={handleDeposit}
 				merchantBalance={merchantBalance}
 			/>

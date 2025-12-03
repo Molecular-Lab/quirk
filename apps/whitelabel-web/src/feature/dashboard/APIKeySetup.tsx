@@ -1,8 +1,10 @@
-import { useState } from 'react'
-import { Key, Copy, RefreshCw, Eye, EyeOff } from 'lucide-react'
-import { b2bApiClient } from '@/api/b2bClient'
-import { useUserStore } from '@/store/userStore'
-import { useDemoStore } from '@/store/demoStore'
+import { useState } from "react"
+
+import { Copy, Eye, EyeOff, Key, RefreshCw } from "lucide-react"
+
+import { b2bApiClient } from "@/api/b2bClient"
+import { useDemoStore } from "@/store/demoStore"
+import { useUserStore } from "@/store/userStore"
 
 export function APIKeySetup() {
 	const { activeProductId, apiKey, setApiKey, getActiveOrganization } = useUserStore()
@@ -16,7 +18,7 @@ export function APIKeySetup() {
 
 	const handleGenerateApiKey = async () => {
 		if (!activeProductId) {
-			setError('No active organization selected')
+			setError("No active organization selected")
 			return
 		}
 
@@ -24,20 +26,20 @@ export function APIKeySetup() {
 		setError(null)
 
 		try {
-			console.log('[APIKeySetup] Generating API key for:', activeProductId)
+			console.log("[APIKeySetup] Generating API key for:", activeProductId)
 
 			const response = await b2bApiClient.regenerateApiKey(activeProductId)
 
-			console.log('[APIKeySetup] API key generated:', response)
+			console.log("[APIKeySetup] API key generated:", response)
 
-			if (response && typeof response === 'object' && 'api_key' in response) {
+			if (response && typeof response === "object" && "api_key" in response) {
 				const newApiKey = response.api_key as string
 
 				// Save to userStore
 				setApiKey(newApiKey)
 
 				// Save to localStorage for b2bApiClient
-				localStorage.setItem('b2b:api_key', newApiKey)
+				localStorage.setItem("b2b:api_key", newApiKey)
 
 				// Update demoStore context
 				if (org) {
@@ -48,13 +50,13 @@ export function APIKeySetup() {
 					})
 				}
 
-				console.log('[APIKeySetup] API key saved successfully')
+				console.log("[APIKeySetup] API key saved successfully")
 			} else {
-				throw new Error('Invalid response from API')
+				throw new Error("Invalid response from API")
 			}
 		} catch (err) {
-			console.error('[APIKeySetup] Failed to generate API key:', err)
-			setError(err instanceof Error ? err.message : 'Failed to generate API key')
+			console.error("[APIKeySetup] Failed to generate API key:", err)
+			setError(err instanceof Error ? err.message : "Failed to generate API key")
 		} finally {
 			setIsGenerating(false)
 		}
@@ -64,13 +66,15 @@ export function APIKeySetup() {
 		if (apiKey) {
 			navigator.clipboard.writeText(apiKey)
 			setCopied(true)
-			setTimeout(() => setCopied(false), 2000)
+			setTimeout(() => {
+				setCopied(false)
+			}, 2000)
 		}
 	}
 
 	const maskApiKey = (key: string) => {
 		if (key.length <= 12) return key
-		return `${key.substring(0, 12)}${'•'.repeat(key.length - 12)}`
+		return `${key.substring(0, 12)}${"•".repeat(key.length - 12)}`
 	}
 
 	return (
@@ -95,9 +99,11 @@ export function APIKeySetup() {
 								{showKey ? apiKey : maskApiKey(apiKey)}
 							</div>
 							<button
-								onClick={() => setShowKey(!showKey)}
+								onClick={() => {
+									setShowKey(!showKey)
+								}}
 								className="p-3 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-								title={showKey ? 'Hide key' : 'Show key'}
+								title={showKey ? "Hide key" : "Show key"}
 							>
 								{showKey ? <EyeOff className="w-5 h-5 text-gray-600" /> : <Eye className="w-5 h-5 text-gray-600" />}
 							</button>
@@ -126,8 +132,8 @@ export function APIKeySetup() {
 						disabled={isGenerating}
 						className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
 					>
-						<RefreshCw className={`w-5 h-5 ${isGenerating ? 'animate-spin' : ''}`} />
-						{isGenerating ? 'Regenerating...' : 'Regenerate API Key'}
+						<RefreshCw className={`w-5 h-5 ${isGenerating ? "animate-spin" : ""}`} />
+						{isGenerating ? "Regenerating..." : "Regenerate API Key"}
 					</button>
 				</>
 			) : (
@@ -147,7 +153,7 @@ export function APIKeySetup() {
 						className="w-full bg-purple-600 hover:bg-purple-700 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
 					>
 						<Key className="w-5 h-5" />
-						{isGenerating ? 'Generating...' : 'Generate API Key'}
+						{isGenerating ? "Generating..." : "Generate API Key"}
 					</button>
 				</>
 			)}

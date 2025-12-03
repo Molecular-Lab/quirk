@@ -417,6 +417,90 @@ export async function updateClientVaultAPY(sql: Sql, args: UpdateClientVaultAPYA
     await sql.unsafe(updateClientVaultAPYQuery, [args.id, args.apy_7d, args.apy_30d]);
 }
 
+export const listActiveVaultsForIndexUpdateQuery = `-- name: ListActiveVaultsForIndexUpdate :many
+SELECT
+  id,
+  client_id,
+  chain,
+  token_symbol,
+  current_index,
+  total_staked_balance,
+  strategies,
+  last_index_update
+FROM client_vaults
+WHERE is_active = true
+  AND total_staked_balance > 0
+ORDER BY last_index_update ASC`;
+
+export interface ListActiveVaultsForIndexUpdateRow {
+    id: string;
+    clientId: string;
+    chain: string;
+    tokenSymbol: string;
+    currentIndex: string;
+    totalStakedBalance: string;
+    strategies: any | null;
+    lastIndexUpdate: Date;
+}
+
+export async function listActiveVaultsForIndexUpdate(sql: Sql): Promise<ListActiveVaultsForIndexUpdateRow[]> {
+    return (await sql.unsafe(listActiveVaultsForIndexUpdateQuery, []).values()).map(row => ({
+        id: row[0],
+        clientId: row[1],
+        chain: row[2],
+        tokenSymbol: row[3],
+        currentIndex: row[4],
+        totalStakedBalance: row[5],
+        strategies: row[6],
+        lastIndexUpdate: row[7]
+    }));
+}
+
+export const getVaultHistoricalIndexQuery = `-- name: GetVaultHistoricalIndex :one
+SELECT current_index, last_index_update
+FROM client_vaults
+WHERE id = $1
+  AND last_index_update >= NOW() - INTERVAL '1 day' * $2
+ORDER BY last_index_update ASC
+LIMIT 1`;
+
+export interface GetVaultHistoricalIndexArgs {
+    id: string;
+    daysBack: string | null;
+}
+
+export interface GetVaultHistoricalIndexRow {
+    currentIndex: string;
+    lastIndexUpdate: Date;
+}
+
+export async function getVaultHistoricalIndex(sql: Sql, args: GetVaultHistoricalIndexArgs): Promise<GetVaultHistoricalIndexRow | null> {
+    const rows = await sql.unsafe(getVaultHistoricalIndexQuery, [args.id, args.daysBack]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        currentIndex: row[0],
+        lastIndexUpdate: row[1]
+    };
+}
+
+export const updateTotalStakedBalanceQuery = `-- name: UpdateTotalStakedBalance :exec
+UPDATE client_vaults
+SET total_staked_balance = $2,
+    updated_at = now()
+WHERE id = $1`;
+
+export interface UpdateTotalStakedBalanceArgs {
+    id: string;
+    totalStakedBalance: string;
+}
+
+export async function updateTotalStakedBalance(sql: Sql, args: UpdateTotalStakedBalanceArgs): Promise<void> {
+    await sql.unsafe(updateTotalStakedBalanceQuery, [args.id, args.totalStakedBalance]);
+}
+
 export const addPendingDepositToVaultQuery = `-- name: AddPendingDepositToVault :exec
 UPDATE client_vaults
 SET pending_deposit_balance = pending_deposit_balance + $2,

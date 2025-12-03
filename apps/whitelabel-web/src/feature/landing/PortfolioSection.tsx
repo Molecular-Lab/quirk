@@ -1,14 +1,12 @@
-import { Shield, Scale, Target } from 'lucide-react'
-import { Link } from '@tanstack/react-router'
+import { Link } from "@tanstack/react-router"
+import { Scale, Shield, Target } from "lucide-react"
 
 export function PortfolioSection() {
 	return (
 		<section id="solutions" className="py-24 px-6 bg-white">
 			<div className="max-w-7xl mx-auto">
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-bold text-gray-900 mb-4">
-						One Platform, Many Portfolios
-					</h2>
+					<h2 className="text-5xl font-bold text-gray-900 mb-4">One Platform, Many Portfolios</h2>
 					<p className="text-xl text-gray-600 max-w-3xl mx-auto">
 						Delivering customizable risk-adjusted yield for digital assets
 					</p>
@@ -21,12 +19,17 @@ export function PortfolioSection() {
 							<Shield className="w-7 h-7 text-blue-600" />
 						</div>
 						<h3 className="text-xl font-bold text-gray-900 mb-3">
-							Capital<br />Preservation
+							Capital
+							<br />
+							Preservation
 						</h3>
 						<ul className="space-y-2 text-gray-700 text-sm">
 							<li>• Low volatility</li>
 							<li>• Daily liquidity</li>
-							<li>• Ideal for fintechs offering savings alternative, corporate treasury, exchanges seeking stable client yield</li>
+							<li>
+								• Ideal for fintechs offering savings alternative, corporate treasury, exchanges seeking stable client
+								yield
+							</li>
 						</ul>
 					</div>
 
@@ -36,7 +39,9 @@ export function PortfolioSection() {
 							<Scale className="w-7 h-7 text-purple-600" />
 						</div>
 						<h3 className="text-xl font-bold text-gray-900 mb-3">
-							Balanced<br />Yield
+							Balanced
+							<br />
+							Yield
 						</h3>
 						<ul className="space-y-2 text-gray-700 text-sm">
 							<li>• Optimized return vs risk</li>
@@ -51,7 +56,8 @@ export function PortfolioSection() {
 							<Target className="w-7 h-7 text-green-600" />
 						</div>
 						<h3 className="text-xl font-bold text-gray-900 mb-3">
-							Enhanced Return<br />& Alpha
+							Enhanced Return
+							<br />& Alpha
 						</h3>
 						<ul className="space-y-2 text-gray-700 text-sm">
 							<li>• Alpha-seeking yield strategies</li>
@@ -67,7 +73,11 @@ export function PortfolioSection() {
 
 						<div className="relative z-10">
 							<h3 className="text-xl font-bold text-white mb-3">
-								Custom Solutions<br />that scale with<br />your needs
+								Custom Solutions
+								<br />
+								that scale with
+								<br />
+								your needs
 							</h3>
 							<p className="text-gray-300 text-sm mb-6">
 								Tailored yield strategies designed for your specific requirements

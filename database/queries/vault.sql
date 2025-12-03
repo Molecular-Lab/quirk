@@ -90,6 +90,38 @@ SET apy_7d = $2,
     updated_at = now()
 WHERE id = $1;
 
+-- name: ListActiveVaultsForIndexUpdate :many
+-- Get all active vaults with staked balance for daily index updates
+SELECT
+  id,
+  client_id,
+  chain,
+  token_symbol,
+  current_index,
+  total_staked_balance,
+  strategies,
+  last_index_update
+FROM client_vaults
+WHERE is_active = true
+  AND total_staked_balance > 0
+ORDER BY last_index_update ASC;
+
+-- name: GetVaultHistoricalIndex :one
+-- Get historical index for APY calculation
+SELECT current_index, last_index_update
+FROM client_vaults
+WHERE id = $1
+  AND last_index_update >= NOW() - INTERVAL '1 day' * sqlc.arg(days_back)
+ORDER BY last_index_update ASC
+LIMIT 1;
+
+-- name: UpdateTotalStakedBalance :exec
+-- Update total staked balance (after deposit/withdrawal)
+UPDATE client_vaults
+SET total_staked_balance = $2,
+    updated_at = now()
+WHERE id = $1;
+
 -- name: AddPendingDepositToVault :exec
 -- Add to pending balance and increment total shares
 UPDATE client_vaults

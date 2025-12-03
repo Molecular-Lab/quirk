@@ -9,8 +9,7 @@ export function IntegrationSection() {
 						Unlock New Revenue
 					</h2>
 					<p className="text-xl text-gray-600 max-w-3xl mx-auto">
-						Help onboarding your end-users to digital assets and create a new revenue stream for your
-						business
+						Help onboarding your end-users to digital assets and create a new revenue stream for your business
 					</p>
 				</div>
 
@@ -19,8 +18,7 @@ export function IntegrationSection() {
 						<div className="text-4xl mb-4">🚀</div>
 						<h3 className="text-2xl font-bold text-gray-900 mb-4">Quick Setup</h3>
 						<p className="text-gray-600 leading-relaxed mb-6">
-							Integrate our SDK in under 30 minutes. No blockchain expertise required—we handle all the
-							complexity.
+							Integrate our SDK in under 30 minutes. No blockchain expertise required—we handle all the complexity.
 						</p>
 						<div className="bg-white rounded-2xl p-4 border border-gray-200">
 							<code className="text-sm text-gray-700">
@@ -40,8 +38,8 @@ export function IntegrationSection() {
 						<div className="text-4xl mb-4">💰</div>
 						<h3 className="text-2xl font-bold text-gray-900 mb-4">New Revenue Stream</h3>
 						<p className="text-gray-600 leading-relaxed mb-6">
-							Earn revenue share from yield generated on your users' idle balances. Typical clients earn
-							$2,000-$10,000 monthly.
+							Earn revenue share from yield generated on your users' idle balances. Typical clients earn $2,000-$10,000
+							monthly.
 						</p>
 						<div className="space-y-3">
 							<div className="flex items-center justify-between">

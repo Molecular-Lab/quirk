@@ -4,7 +4,7 @@
  * Index grows as DeFi protocols generate yield
  */
 
-import type { RiskTier } from './client'
+import type { RiskTier } from "./client"
 
 export interface VaultIndex {
 	id: string

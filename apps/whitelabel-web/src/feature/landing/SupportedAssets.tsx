@@ -1,12 +1,12 @@
 export function SupportedAssets() {
 	const assets = [
-		{ symbol: 'USDC', name: 'USD Coin', color: 'text-blue-600' },
-		{ symbol: 'USDT', name: 'Tether', color: 'text-green-600' },
-		{ symbol: 'BTC', name: 'Bitcoin', color: 'text-orange-500' },
-		{ symbol: 'ETH', name: 'Ethereum', color: 'text-blue-500' },
-		{ symbol: 'LINK', name: 'Chainlink', color: 'text-blue-600' },
-		{ symbol: 'DOGE', name: 'Dogecoin', color: 'text-yellow-500' },
-		{ symbol: 'XRP', name: 'Ripple', color: 'text-blue-400' },
+		{ symbol: "USDC", name: "USD Coin", color: "text-blue-600" },
+		{ symbol: "USDT", name: "Tether", color: "text-green-600" },
+		{ symbol: "BTC", name: "Bitcoin", color: "text-orange-500" },
+		{ symbol: "ETH", name: "Ethereum", color: "text-blue-500" },
+		{ symbol: "LINK", name: "Chainlink", color: "text-blue-600" },
+		{ symbol: "DOGE", name: "Dogecoin", color: "text-yellow-500" },
+		{ symbol: "XRP", name: "Ripple", color: "text-blue-400" },
 	]
 
 	return (
@@ -21,7 +21,9 @@ export function SupportedAssets() {
 									key={asset.symbol}
 									className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-gray-200"
 								>
-									<div className={`w-8 h-8 rounded-full ${asset.color} bg-opacity-10 flex items-center justify-center font-bold ${asset.color}`}>
+									<div
+										className={`w-8 h-8 rounded-full ${asset.color} bg-opacity-10 flex items-center justify-center font-bold ${asset.color}`}
+									>
 										{asset.symbol.charAt(0)}
 									</div>
 									<span className="text-sm font-medium text-gray-700">{asset.symbol}</span>

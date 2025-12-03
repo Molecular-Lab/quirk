@@ -3,9 +3,7 @@ export function AccruedInterest() {
 		<div className="px-6 mb-6">
 			<div className="bg-gray-900 rounded-2xl p-5 border border-gray-800">
 				<div className="flex items-center justify-between mb-3">
-					<h3 className="text-white font-semibold text-lg">
-						Accrued Interest
-					</h3>
+					<h3 className="text-white font-semibold text-lg">Accrued Interest</h3>
 					<span className="text-xs text-gray-500">Last 30 days</span>
 				</div>
 
@@ -34,9 +32,7 @@ export function AccruedInterest() {
 							</div>
 						</div>
 						<div className="text-right">
-							<p className="text-green-400 text-sm font-semibold">
-								+17.27 THB
-							</p>
+							<p className="text-green-400 text-sm font-semibold">+17.27 THB</p>
 							<p className="text-gray-500 text-xs">5.2% APY</p>
 						</div>
 					</div>

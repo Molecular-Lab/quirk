@@ -36,6 +36,7 @@ import { createExpressEndpoints } from "@ts-rest/express";
 import { ENV } from "./env";
 import { logger } from "./logger";
 import { ClientService } from "./service/client.service";
+import { DeFiProtocolService } from "./service/defi-protocol.service";
 import { VaultService } from "./service/vault.service";
 import { UserService } from "./service/user.service";
 import { DepositService } from "./service/deposit.service";
@@ -141,6 +142,7 @@ async function main() {
 
 	// 4. Initialize Services
 	const clientService = new ClientService(clientUseCase);
+	const defiProtocolService = new DeFiProtocolService(ENV.CHAIN_ID); // Pass chain ID, not RPC URL
 	const vaultService = new VaultService(vaultUseCase);
 	const userService = new UserService(userUseCase);
 	const depositService = new DepositService(depositUseCase);
@@ -156,6 +158,7 @@ async function main() {
 	// 6. Create routers
 	const router = createMainRouter(s, {
 		clientService,
+		defiProtocolService,
 		vaultService,
 		userService,
 		depositService,

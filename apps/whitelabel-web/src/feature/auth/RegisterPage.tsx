@@ -1,14 +1,15 @@
-import { useState } from 'react'
-import { Link } from '@tanstack/react-router'
-import { Building2, Mail, Lock, User, ArrowRight } from 'lucide-react'
+import { useState } from "react"
+
+import { Link } from "@tanstack/react-router"
+import { ArrowRight, Building2, Lock, Mail, User } from "lucide-react"
 
 export function RegisterPage() {
 	const [formData, setFormData] = useState({
-		companyName: '',
-		fullName: '',
-		email: '',
-		password: '',
-		confirmPassword: '',
+		companyName: "",
+		fullName: "",
+		email: "",
+		password: "",
+		confirmPassword: "",
 	})
 	const [loading, setLoading] = useState(false)
 
@@ -16,38 +17,31 @@ export function RegisterPage() {
 		e.preventDefault()
 
 		if (formData.password !== formData.confirmPassword) {
-			alert('Passwords do not match')
+			alert("Passwords do not match")
 			return
 		}
 
 		setLoading(true)
 
 		// TODO: Implement registration and custodial wallet creation
-		console.log('Register:', formData)
+		console.log("Register:", formData)
 
 		// Simulate API call
 		await new Promise((resolve) => setTimeout(resolve, 1500))
 		setLoading(false)
 	}
 
-	const updateField = (field: keyof typeof formData) => (
-		e: React.ChangeEvent<HTMLInputElement>
-	) => {
+	const updateField = (field: keyof typeof formData) => (e: React.ChangeEvent<HTMLInputElement>) => {
 		setFormData((prev) => ({ ...prev, [field]: e.target.value }))
 	}
 
 	return (
 		<div>
-			<h2 className="text-2xl font-bold text-gray-900 mb-6">
-				Create your account
-			</h2>
+			<h2 className="text-2xl font-bold text-gray-900 mb-6">Create your account</h2>
 
 			<form onSubmit={handleSubmit} className="space-y-4">
 				<div>
-					<label
-						htmlFor="companyName"
-						className="block text-sm font-medium text-gray-700 mb-1"
-					>
+					<label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1">
 						Company name
 					</label>
 					<div className="relative">
@@ -57,7 +51,7 @@ export function RegisterPage() {
 							type="text"
 							required
 							value={formData.companyName}
-							onChange={updateField('companyName')}
+							onChange={updateField("companyName")}
 							className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
 							placeholder="Acme Inc."
 						/>
@@ -65,10 +59,7 @@ export function RegisterPage() {
 				</div>
 
 				<div>
-					<label
-						htmlFor="fullName"
-						className="block text-sm font-medium text-gray-700 mb-1"
-					>
+					<label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
 						Full name
 					</label>
 					<div className="relative">
@@ -78,7 +69,7 @@ export function RegisterPage() {
 							type="text"
 							required
 							value={formData.fullName}
-							onChange={updateField('fullName')}
+							onChange={updateField("fullName")}
 							className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
 							placeholder="John Doe"
 						/>
@@ -86,10 +77,7 @@ export function RegisterPage() {
 				</div>
 
 				<div>
-					<label
-						htmlFor="email"
-						className="block text-sm font-medium text-gray-700 mb-1"
-					>
+					<label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
 						Email address
 					</label>
 					<div className="relative">
@@ -99,7 +87,7 @@ export function RegisterPage() {
 							type="email"
 							required
 							value={formData.email}
-							onChange={updateField('email')}
+							onChange={updateField("email")}
 							className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
 							placeholder="you@company.com"
 						/>
@@ -107,10 +95,7 @@ export function RegisterPage() {
 				</div>
 
 				<div>
-					<label
-						htmlFor="password"
-						className="block text-sm font-medium text-gray-700 mb-1"
-					>
+					<label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
 						Password
 					</label>
 					<div className="relative">
@@ -120,7 +105,7 @@ export function RegisterPage() {
 							type="password"
 							required
 							value={formData.password}
-							onChange={updateField('password')}
+							onChange={updateField("password")}
 							className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
 							placeholder="Minimum 8 characters"
 							minLength={8}
@@ -129,10 +114,7 @@ export function RegisterPage() {
 				</div>
 
 				<div>
-					<label
-						htmlFor="confirmPassword"
-						className="block text-sm font-medium text-gray-700 mb-1"
-					>
+					<label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
 						Confirm password
 					</label>
 					<div className="relative">
@@ -142,7 +124,7 @@ export function RegisterPage() {
 							type="password"
 							required
 							value={formData.confirmPassword}
-							onChange={updateField('confirmPassword')}
+							onChange={updateField("confirmPassword")}
 							className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
 							placeholder="Re-enter password"
 						/>
@@ -156,11 +138,11 @@ export function RegisterPage() {
 						className="w-4 h-4 mt-0.5 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
 					/>
 					<span className="ml-2 text-sm text-gray-600">
-						I agree to the{' '}
+						I agree to the{" "}
 						<a href="#" className="text-blue-600 hover:text-blue-700">
 							Terms of Service
-						</a>{' '}
-						and{' '}
+						</a>{" "}
+						and{" "}
 						<a href="#" className="text-blue-600 hover:text-blue-700">
 							Privacy Policy
 						</a>
@@ -172,13 +154,13 @@ export function RegisterPage() {
 					disabled={loading}
 					className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 				>
-					{loading ? 'Creating account...' : 'Create account'}
+					{loading ? "Creating account..." : "Create account"}
 					{!loading && <ArrowRight className="w-4 h-4" />}
 				</button>
 			</form>
 
 			<p className="mt-6 text-center text-sm text-gray-600">
-				Already have an account?{' '}
+				Already have an account?{" "}
 				<Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium">
 					Sign in
 				</Link>

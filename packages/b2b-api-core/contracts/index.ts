@@ -7,6 +7,7 @@ import { initContract } from "@ts-rest/core";
 
 import { clientContract } from "./client";
 import { dashboardContract } from "./dashboard";
+import { defiProtocolContract } from "./defi-protocol";
 import { depositContract } from "./deposit";
 import { privyAccountContract } from "./privy-account";
 import { userContract } from "./user";
@@ -20,6 +21,7 @@ export const b2bContract = c.router(
 	{
 		client: clientContract,
 		dashboard: dashboardContract,
+		defiProtocol: defiProtocolContract,
 		vault: vaultContract,
 		user: userContract,
 		userVault: userVaultContract,
@@ -34,6 +36,7 @@ export const b2bContract = c.router(
 
 export * from "./client";
 export * from "./dashboard";
+export * from "./defi-protocol";
 export * from "./vault";
 export * from "./user";
 export * from "./user-vault";

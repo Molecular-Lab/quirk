@@ -2,13 +2,13 @@
  * Centralized Type Exports
  */
 
-export * from './client'
-export * from './end-user'
-export * from './vault-index'
-export * from './defi-protocol'
-export * from './transaction'
-export * from './ai-insights'
-export * from './registration'
+export * from "./ai-insights"
+export * from "./client"
+export * from "./defi-protocol"
+export * from "./end-user"
+export * from "./registration"
+export * from "./transaction"
+export * from "./vault-index"
 
 /**
  * Common API response types
@@ -55,5 +55,5 @@ export interface ClientProfile {
 	activeUsers: number
 	currentAPY: number
 	allTimeReturn: number
-	riskTier: 'low' | 'moderate' | 'high'
+	riskTier: "low" | "moderate" | "high"
 }

@@ -1,6 +1,6 @@
 .PHONY: help db-start db-stop db-restart db-logs db-connect db-reset db-clean install dev test clean \
-        migrate-up migrate-down migrate-force migrate-version migrate-create \
-        sqlc-generate sqlc-go sqlc-ts migrate-install check-migrate
+        migrate-up migrate-down migrate-reset migrate-force migrate-version migrate-create \
+        sqlc-generate sqlc-go sqlc-ts migrate-install check-migrate setup setup-clean
 
 # Default target
 .DEFAULT_GOAL := help
@@ -197,8 +197,22 @@ migrate-install: ## Install golang-migrate (macOS)
 
 migrate-up: check-migrate ## Run all pending migrations
 	@echo "$(COLOR_GREEN)🔄 Running migrations UP...$(COLOR_RESET)"
-	@migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" up
-	@echo "$(COLOR_GREEN)✅ Migrations completed!$(COLOR_RESET)"
+	@migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" up || echo "$(COLOR_YELLOW)⚠️  Migrations already applied or error occurred$(COLOR_RESET)"
+	@echo "$(COLOR_GREEN)✅ Migrations check completed!$(COLOR_RESET)"
+
+migrate-reset: check-migrate ## Reset migrations (drop all tables and re-run)
+	@echo "$(COLOR_YELLOW)⚠️  WARNING: This will drop all tables and re-run migrations!$(COLOR_RESET)"
+	@read -p "Are you sure? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		echo "$(COLOR_YELLOW)🗑️  Dropping all tables...$(COLOR_RESET)"; \
+		migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" drop -f; \
+		echo "$(COLOR_GREEN)🔄 Running migrations fresh...$(COLOR_RESET)"; \
+		migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" up; \
+		echo "$(COLOR_GREEN)✅ Migrations reset complete!$(COLOR_RESET)"; \
+	else \
+		echo "$(COLOR_YELLOW)❌ Cancelled$(COLOR_RESET)"; \
+	fi
 
 migrate-down: check-migrate ## Rollback last migration
 	@echo "$(COLOR_YELLOW)⚠️  Rolling back last migration...$(COLOR_RESET)"
@@ -388,8 +402,32 @@ setup: install db-start migrate-up sqlc-generate seed-protocols ## Complete setu
 	@echo "  make seed-test-client - Create test data"
 	@echo ""
 
-setup-fresh: db-clean docker-up setup ## Fresh setup (clean + setup from scratch)
-	@echo "$(COLOR_GREEN)$(COLOR_BOLD)✅ Fresh setup complete!$(COLOR_RESET)"
+setup-clean: ## Fresh setup (clean database + re-run everything)
+	@echo "$(COLOR_YELLOW)🧹 Starting fresh setup...$(COLOR_RESET)"
+	@echo "$(COLOR_CYAN)This will:$(COLOR_RESET)"
+	@echo "  1. Stop database"
+	@echo "  2. Remove database volumes"
+	@echo "  3. Start fresh database"
+	@echo "  4. Run migrations"
+	@echo "  5. Generate code"
+	@echo "  6. Seed protocols"
+	@read -p "Continue? [y/N] " -n 1 -r; \
+	echo; \
+	if [[ $$REPLY =~ ^[Yy]$$ ]]; then \
+		docker-compose down -v 2>/dev/null || true; \
+		$(MAKE) db-start; \
+		$(MAKE) migrate-up; \
+		$(MAKE) sqlc-generate; \
+		$(MAKE) seed-protocols; \
+		echo ""; \
+		echo "$(COLOR_GREEN)$(COLOR_BOLD)✅ Fresh setup complete!$(COLOR_RESET)"; \
+		echo "$(COLOR_CYAN)Backend is ready! Start with:$(COLOR_RESET)"; \
+		echo "  cd apps/b2b-api && pnpm dev"; \
+	else \
+		echo "$(COLOR_YELLOW)❌ Cancelled$(COLOR_RESET)"; \
+	fi
+
+setup-fresh: setup-clean ## Alias for setup-clean
 
 ##@ Cleanup
 

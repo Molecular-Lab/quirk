@@ -10,8 +10,8 @@ export function CustodySection() {
 							with Privy
 						</h2>
 						<p className="text-xl text-gray-600 mb-8 leading-relaxed">
-							Institutional-grade MPC (Multi-Party Computation) custody ensures your users' funds are
-							always protected. No single point of failure, fully audited security infrastructure.
+							Institutional-grade MPC (Multi-Party Computation) custody ensures your users' funds are always protected.
+							No single point of failure, fully audited security infrastructure.
 						</p>
 						<ul className="space-y-4">
 							<li className="flex items-start gap-3">
@@ -31,9 +31,7 @@ export function CustodySection() {
 								</div>
 								<div>
 									<h4 className="font-semibold text-gray-900 mb-1">SOC 2 Compliant</h4>
-									<p className="text-gray-600">
-										Audited infrastructure meeting enterprise security standards
-									</p>
+									<p className="text-gray-600">Audited infrastructure meeting enterprise security standards</p>
 								</div>
 							</li>
 							<li className="flex items-start gap-3">
@@ -42,9 +40,7 @@ export function CustodySection() {
 								</div>
 								<div>
 									<h4 className="font-semibold text-gray-900 mb-1">Insurance Coverage</h4>
-									<p className="text-gray-600">
-										Assets protected by industry-leading custody insurance policies
-									</p>
+									<p className="text-gray-600">Assets protected by industry-leading custody insurance policies</p>
 								</div>
 							</li>
 						</ul>

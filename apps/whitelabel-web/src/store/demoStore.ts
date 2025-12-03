@@ -9,207 +9,201 @@
  * - API key sync with b2bApiClient
  */
 
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { create } from "zustand"
+import { persist } from "zustand/middleware"
 
 export interface DemoState {
-  // Client context (from dashboard selection)
-  activeProductId: string | null
-  activeClientId: string | null // Internal UUID
-  activeApiKey: string | null
+	// Client context (from dashboard selection)
+	activeProductId: string | null
+	activeClientId: string | null // Internal UUID
+	activeApiKey: string | null
 
-  // End-user state (created via "Start Earning")
-  endUserId: string | null
-  endUserClientUserId: string | null // The demo_user_xxx ID
-  hasEarnAccount: boolean
+	// End-user state (created via "Start Earning")
+	endUserId: string | null
+	endUserClientUserId: string | null // The demo_user_xxx ID
+	hasEarnAccount: boolean
 
-  // UI state
-  isCreatingAccount: boolean
-  isDepositing: boolean
-  error: string | null
+	// UI state
+	isCreatingAccount: boolean
+	isDepositing: boolean
+	error: string | null
 
-  // Deposit history (for demo)
-  deposits: Array<{
-    orderId: string
-    amount: string
-    currency: string
-    status: 'pending' | 'completed' | 'failed'
-    createdAt: string
-  }>
+	// Deposit history (for demo)
+	deposits: {
+		orderId: string
+		amount: string
+		currency: string
+		status: "pending" | "completed" | "failed"
+		createdAt: string
+	}[]
 }
 
 export interface DemoStore extends DemoState {
-  // Setters
-  setClientContext: (data: {
-    productId: string
-    clientId: string
-    apiKey: string
-  }) => void
+	// Setters
+	setClientContext: (data: { productId: string; clientId: string; apiKey: string }) => void
 
-  setEndUser: (data: {
-    endUserId: string
-    endUserClientUserId: string
-  }) => void
+	setEndUser: (data: { endUserId: string; endUserClientUserId: string }) => void
 
-  setHasEarnAccount: (hasAccount: boolean) => void
-  setIsCreatingAccount: (isCreating: boolean) => void
-  setIsDepositing: (isDepositing: boolean) => void
-  setError: (error: string | null) => void
+	setHasEarnAccount: (hasAccount: boolean) => void
+	setIsCreatingAccount: (isCreating: boolean) => void
+	setIsDepositing: (isDepositing: boolean) => void
+	setError: (error: string | null) => void
 
-  addDeposit: (deposit: {
-    orderId: string
-    amount: string
-    currency: string
-    status: 'pending' | 'completed' | 'failed'
-    createdAt: string
-  }) => void
+	addDeposit: (deposit: {
+		orderId: string
+		amount: string
+		currency: string
+		status: "pending" | "completed" | "failed"
+		createdAt: string
+	}) => void
 
-  // Sync API key to localStorage for b2bApiClient
-  syncApiKey: () => void
+	// Sync API key to localStorage for b2bApiClient
+	syncApiKey: () => void
 
-  // Getters
-  hasClientContext: () => boolean
-  canStartEarning: () => boolean
-  canDeposit: () => boolean
+	// Getters
+	hasClientContext: () => boolean
+	canStartEarning: () => boolean
+	canDeposit: () => boolean
 
-  // Reset
-  resetEndUser: () => void
-  resetDemo: () => void
+	// Reset
+	resetEndUser: () => void
+	resetDemo: () => void
 }
 
 const initialState: DemoState = {
-  activeProductId: null,
-  activeClientId: null,
-  activeApiKey: null,
-  endUserId: null,
-  endUserClientUserId: null,
-  hasEarnAccount: false,
-  isCreatingAccount: false,
-  isDepositing: false,
-  error: null,
-  deposits: [],
+	activeProductId: null,
+	activeClientId: null,
+	activeApiKey: null,
+	endUserId: null,
+	endUserClientUserId: null,
+	hasEarnAccount: false,
+	isCreatingAccount: false,
+	isDepositing: false,
+	error: null,
+	deposits: [],
 }
 
 export const useDemoStore = create<DemoStore>()(
-  persist(
-    (set, get) => ({
-      ...initialState,
+	persist(
+		(set, get) => ({
+			...initialState,
 
-      // Set client context from dashboard
-      setClientContext: (data) => {
-        console.log('[DemoStore] Setting client context:', {
-          productId: data.productId,
-          clientId: data.clientId,
-          apiKey: data.apiKey.substring(0, 12) + '...',
-        })
+			// Set client context from dashboard
+			setClientContext: (data) => {
+				console.log("[DemoStore] Setting client context:", {
+					productId: data.productId,
+					clientId: data.clientId,
+					apiKey: data.apiKey.substring(0, 12) + "...",
+				})
 
-        set({
-          activeProductId: data.productId,
-          activeClientId: data.clientId,
-          activeApiKey: data.apiKey,
-        })
+				set({
+					activeProductId: data.productId,
+					activeClientId: data.clientId,
+					activeApiKey: data.apiKey,
+				})
 
-        // Sync API key to localStorage for b2bApiClient
-        localStorage.setItem('b2b:api_key', data.apiKey)
-        console.log('[DemoStore] API key synced to localStorage')
-      },
+				// Sync API key to localStorage for b2bApiClient
+				localStorage.setItem("b2b:api_key", data.apiKey)
+				console.log("[DemoStore] API key synced to localStorage")
+			},
 
-      // Set end-user after "Start Earning"
-      setEndUser: (data) => {
-        console.log('[DemoStore] Setting end-user:', {
-          endUserId: data.endUserId,
-          clientUserId: data.endUserClientUserId,
-        })
+			// Set end-user after "Start Earning"
+			setEndUser: (data) => {
+				console.log("[DemoStore] Setting end-user:", {
+					endUserId: data.endUserId,
+					clientUserId: data.endUserClientUserId,
+				})
 
-        set({
-          endUserId: data.endUserId,
-          endUserClientUserId: data.endUserClientUserId,
-          hasEarnAccount: true,
-          isCreatingAccount: false,
-          error: null,
-        })
-      },
+				set({
+					endUserId: data.endUserId,
+					endUserClientUserId: data.endUserClientUserId,
+					hasEarnAccount: true,
+					isCreatingAccount: false,
+					error: null,
+				})
+			},
 
-      setHasEarnAccount: (hasAccount) => {
-        set({ hasEarnAccount: hasAccount })
-      },
+			setHasEarnAccount: (hasAccount) => {
+				set({ hasEarnAccount: hasAccount })
+			},
 
-      setIsCreatingAccount: (isCreating) => {
-        set({ isCreatingAccount: isCreating })
-      },
+			setIsCreatingAccount: (isCreating) => {
+				set({ isCreatingAccount: isCreating })
+			},
 
-      setIsDepositing: (isDepositing) => {
-        set({ isDepositing: isDepositing })
-      },
+			setIsDepositing: (isDepositing) => {
+				set({ isDepositing: isDepositing })
+			},
 
-      setError: (error) => {
-        set({ error })
-      },
+			setError: (error) => {
+				set({ error })
+			},
 
-      addDeposit: (deposit) => {
-        const deposits = get().deposits
-        set({
-          deposits: [deposit, ...deposits],
-        })
-      },
+			addDeposit: (deposit) => {
+				const deposits = get().deposits
+				set({
+					deposits: [deposit, ...deposits],
+				})
+			},
 
-      // Sync API key to localStorage (for b2bApiClient)
-      syncApiKey: () => {
-        const apiKey = get().activeApiKey
-        if (apiKey) {
-          localStorage.setItem('b2b:api_key', apiKey)
-          console.log('[DemoStore] API key synced to localStorage:', apiKey.substring(0, 12) + '...')
-        }
-      },
+			// Sync API key to localStorage (for b2bApiClient)
+			syncApiKey: () => {
+				const apiKey = get().activeApiKey
+				if (apiKey) {
+					localStorage.setItem("b2b:api_key", apiKey)
+					console.log("[DemoStore] API key synced to localStorage:", apiKey.substring(0, 12) + "...")
+				}
+			},
 
-      // Check if client context is set
-      hasClientContext: () => {
-        const { activeProductId, activeClientId, activeApiKey } = get()
-        return !!(activeProductId && activeClientId && activeApiKey)
-      },
+			// Check if client context is set
+			hasClientContext: () => {
+				const { activeProductId, activeClientId, activeApiKey } = get()
+				return !!(activeProductId && activeClientId && activeApiKey)
+			},
 
-      // Check if can start earning
-      canStartEarning: () => {
-        const { hasEarnAccount, isCreatingAccount } = get()
-        return get().hasClientContext() && !hasEarnAccount && !isCreatingAccount
-      },
+			// Check if can start earning
+			canStartEarning: () => {
+				const { hasEarnAccount, isCreatingAccount } = get()
+				return get().hasClientContext() && !hasEarnAccount && !isCreatingAccount
+			},
 
-      // Check if can deposit
-      canDeposit: () => {
-        const { hasEarnAccount, isDepositing } = get()
-        return get().hasClientContext() && hasEarnAccount && !isDepositing
-      },
+			// Check if can deposit
+			canDeposit: () => {
+				const { hasEarnAccount, isDepositing } = get()
+				return get().hasClientContext() && hasEarnAccount && !isDepositing
+			},
 
-      // Reset end-user state (for testing)
-      resetEndUser: () => {
-        set({
-          endUserId: null,
-          endUserClientUserId: null,
-          hasEarnAccount: false,
-          isCreatingAccount: false,
-          error: null,
-        })
-      },
+			// Reset end-user state (for testing)
+			resetEndUser: () => {
+				set({
+					endUserId: null,
+					endUserClientUserId: null,
+					hasEarnAccount: false,
+					isCreatingAccount: false,
+					error: null,
+				})
+			},
 
-      // Reset entire demo state
-      resetDemo: () => {
-        set(initialState)
-        localStorage.removeItem('b2b:api_key')
-      },
-    }),
-    {
-      name: 'proxify-demo-state',
-      partialize: (state) => ({
-        activeProductId: state.activeProductId,
-        activeClientId: state.activeClientId,
-        activeApiKey: state.activeApiKey,
-        endUserId: state.endUserId,
-        endUserClientUserId: state.endUserClientUserId,
-        hasEarnAccount: state.hasEarnAccount,
-        deposits: state.deposits,
-      }) as Partial<DemoStore>,
-    },
-  ),
+			// Reset entire demo state
+			resetDemo: () => {
+				set(initialState)
+				localStorage.removeItem("b2b:api_key")
+			},
+		}),
+		{
+			name: "proxify-demo-state",
+			partialize: (state) =>
+				({
+					activeProductId: state.activeProductId,
+					activeClientId: state.activeClientId,
+					activeApiKey: state.activeApiKey,
+					endUserId: state.endUserId,
+					endUserClientUserId: state.endUserClientUserId,
+					hasEarnAccount: state.hasEarnAccount,
+					deposits: state.deposits,
+				}) as Partial<DemoStore>,
+		},
+	),
 )
 
 /**

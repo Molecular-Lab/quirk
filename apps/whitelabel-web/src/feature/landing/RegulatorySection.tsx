@@ -1,15 +1,14 @@
-import { Users, Building2 } from 'lucide-react'
+import { Building2, Users } from "lucide-react"
 
 export function RegulatorySection() {
 	return (
 		<section className="py-24 px-6 bg-gray-50">
 			<div className="max-w-7xl mx-auto">
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-bold text-gray-900 mb-4">
-						Regulatory Ready
-					</h2>
+					<h2 className="text-5xl font-bold text-gray-900 mb-4">Regulatory Ready</h2>
 					<p className="text-xl text-gray-600 max-w-3xl mx-auto">
-						Proxify meets you where you are—with options for full compliance coverage or direct control. FATF, MICA, SEC-aligned.
+						Proxify meets you where you are—with options for full compliance coverage or direct control. FATF, MICA,
+						SEC-aligned.
 					</p>
 				</div>
 
@@ -24,7 +23,9 @@ export function RegulatorySection() {
 								<Users className="w-8 h-8 text-white" />
 							</div>
 							<h3 className="text-2xl font-bold mb-4">
-								Proxify Faces<br />the Client
+								Proxify Faces
+								<br />
+								the Client
 							</h3>
 							<ul className="space-y-3 text-gray-200">
 								<li>• Fintech startups without licenses</li>
@@ -45,7 +46,9 @@ export function RegulatorySection() {
 								<Building2 className="w-8 h-8 text-white" />
 							</div>
 							<h3 className="text-2xl font-bold mb-4">
-								Partner Faces<br />the Client
+								Partner Faces
+								<br />
+								the Client
 							</h3>
 							<ul className="space-y-3 text-gray-200">
 								<li>• Regulated wallets, exchanges</li>

@@ -4,6 +4,7 @@ import { DollarSign, RefreshCw, Sparkles, UserPlus, Users, Zap } from "lucide-re
 
 import { b2bApiClient } from "@/api/b2bClient"
 import { useClientContext } from "@/store/clientContextStore"
+
 import { OnRampModal } from "./OnRampModal"
 
 interface DepositOrder {
@@ -29,10 +30,10 @@ export function OperationsDashboard() {
 
 	useEffect(() => {
 		// Log client context for debugging
-		console.log('[OperationsDashboard] Client context:', {
+		console.log("[OperationsDashboard] Client context:", {
 			hasContext: hasContext(),
 			hasApiKey: hasApiKey(),
-			clientId: clientId?.substring(0, 8) + '...',
+			clientId: clientId?.substring(0, 8) + "...",
 			productId,
 		})
 
@@ -45,15 +46,15 @@ export function OperationsDashboard() {
 
 		// Check if API key is available
 		if (!hasApiKey()) {
-			console.error('[OperationsDashboard] ❌ No API key available')
-			setError('API key not configured. Please configure via Demo Settings.')
+			console.error("[OperationsDashboard] ❌ No API key available")
+			setError("API key not configured. Please configure via Demo Settings.")
 			setIsLoading(false)
 			return
 		}
 
 		try {
 			// Add timestamp to prevent browser caching
-			const timestamp = forceRefresh ? `?_t=${Date.now()}` : ''
+			const timestamp = forceRefresh ? `?_t=${Date.now()}` : ""
 			console.log(`[OperationsDashboard] Loading pending orders (forceRefresh=${forceRefresh})${timestamp}`)
 
 			const response = await b2bApiClient.listPendingDeposits()
@@ -84,7 +85,7 @@ export function OperationsDashboard() {
 			}
 		} catch (error) {
 			console.error("[OperationsDashboard] Failed to load orders:", error)
-			setError(error instanceof Error ? error.message : 'Failed to load pending deposits')
+			setError(error instanceof Error ? error.message : "Failed to load pending deposits")
 			setOrders([])
 		} finally {
 			setIsLoading(false)
@@ -230,7 +231,9 @@ export function OperationsDashboard() {
 									<UserPlus className="w-6 h-6 text-blue-600" />
 									<h2 className="text-xl font-bold text-gray-900">Pending User Onboarding Requests</h2>
 								</div>
-								<p className="text-sm text-gray-600 mt-1">Select orders and click "Onboard Selected" to process via on-ramp</p>
+								<p className="text-sm text-gray-600 mt-1">
+									Select orders and click "Onboard Selected" to process via on-ramp
+								</p>
 							</div>
 							<div className="flex items-center gap-3">
 								{/* Refresh Button */}
@@ -240,7 +243,7 @@ export function OperationsDashboard() {
 									className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2 disabled:opacity-50"
 									title="Refresh pending orders"
 								>
-									<RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
+									<RefreshCw className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`} />
 									Refresh
 								</button>
 
@@ -309,7 +312,9 @@ export function OperationsDashboard() {
 										<input
 											type="checkbox"
 											checked={selectedOrderIds.has(order.orderId)}
-											onChange={() => handleToggleSelect(order.orderId)}
+											onChange={() => {
+												handleToggleSelect(order.orderId)
+											}}
 											className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
 										/>
 
@@ -353,11 +358,13 @@ export function OperationsDashboard() {
 			{/* On-Ramp Modal */}
 			<OnRampModal
 				isOpen={isOnboardingModalOpen}
-				onClose={() => setIsOnboardingModalOpen(false)}
+				onClose={() => {
+					setIsOnboardingModalOpen(false)
+				}}
 				selectedOrderIds={Array.from(selectedOrderIds)}
 				orders={orders}
 				onComplete={() => {
-					console.log('[OperationsDashboard] Deposit completed - refreshing orders list')
+					console.log("[OperationsDashboard] Deposit completed - refreshing orders list")
 
 					// Clear selection
 					setSelectedOrderIds(new Set())

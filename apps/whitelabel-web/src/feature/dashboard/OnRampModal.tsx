@@ -1,51 +1,53 @@
-import { useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
-import { X, ArrowDown, Check, ChevronDown, ExternalLink } from 'lucide-react'
-import { b2bApiClient } from '@/api/b2bClient'
-import usdcLogo from '@/assets/usd-coin-usdc-logo.png'
+import { useState } from "react"
+
+import { useMutation } from "@tanstack/react-query"
+import { ArrowDown, Check, ChevronDown, ExternalLink, X } from "lucide-react"
+
+import { b2bApiClient } from "@/api/b2bClient"
+import usdcLogo from "@/assets/usd-coin-usdc-logo.png"
 
 interface OnRampModalProps {
 	isOpen: boolean
 	onClose: () => void
 	selectedOrderIds: string[]
-	orders: Array<{
+	orders: {
 		orderId: string
 		amount: string
 		currency: string
-	}>
+	}[]
 	onComplete: () => void
 }
 
 const FIAT_CURRENCIES = [
-	{ code: 'USD', name: 'US Dollar', symbol: '$', toUsdRate: 1.0 },
-	{ code: 'SGD', name: 'Singapore Dollar', symbol: 'S$', toUsdRate: 0.74 }, // 1 SGD = 0.74 USD
-	{ code: 'EUR', name: 'Euro', symbol: '€', toUsdRate: 1.09 }, // 1 EUR = 1.09 USD
-	{ code: 'THB', name: 'Thai Baht', symbol: '฿', toUsdRate: 0.029 }, // 1 THB = 0.029 USD
-	{ code: 'TWD', name: 'Taiwan Dollar', symbol: 'NT$', toUsdRate: 0.031 }, // 1 TWD = 0.031 USD
-	{ code: 'KRW', name: 'Korean Won', symbol: '₩', toUsdRate: 0.00071 }, // 1 KRW = 0.00071 USD
+	{ code: "USD", name: "US Dollar", symbol: "$", toUsdRate: 1.0 },
+	{ code: "SGD", name: "Singapore Dollar", symbol: "S$", toUsdRate: 0.74 }, // 1 SGD = 0.74 USD
+	{ code: "EUR", name: "Euro", symbol: "€", toUsdRate: 1.09 }, // 1 EUR = 1.09 USD
+	{ code: "THB", name: "Thai Baht", symbol: "฿", toUsdRate: 0.029 }, // 1 THB = 0.029 USD
+	{ code: "TWD", name: "Taiwan Dollar", symbol: "NT$", toUsdRate: 0.031 }, // 1 TWD = 0.031 USD
+	{ code: "KRW", name: "Korean Won", symbol: "₩", toUsdRate: 0.00071 }, // 1 KRW = 0.00071 USD
 ]
 
 const CRYPTO_TOKENS = [
-	{ symbol: 'USDC', name: 'USD Coin', enabled: true },
-	{ symbol: 'USDT', name: 'Tether', enabled: false },
-	{ symbol: 'PYUSD', name: 'PayPal USD', enabled: false },
-	{ symbol: 'BTC', name: 'Bitcoin', enabled: false },
-	{ symbol: 'ETH', name: 'Ethereum', enabled: false },
-	{ symbol: 'SOL', name: 'Solana', enabled: false },
+	{ symbol: "USDC", name: "USD Coin", enabled: true },
+	{ symbol: "USDT", name: "Tether", enabled: false },
+	{ symbol: "PYUSD", name: "PayPal USD", enabled: false },
+	{ symbol: "BTC", name: "Bitcoin", enabled: false },
+	{ symbol: "ETH", name: "Ethereum", enabled: false },
+	{ symbol: "SOL", name: "Solana", enabled: false },
 ]
 
 export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onComplete }: OnRampModalProps) {
-	const [fiatCurrency, setFiatCurrency] = useState('USD')
-	const [cryptoToken, setCryptoToken] = useState('USDC')
-	const [step, setStep] = useState<'select' | 'summary' | 'processing' | 'success'>('select')
+	const [fiatCurrency, setFiatCurrency] = useState("USD")
+	const [cryptoToken, setCryptoToken] = useState("USDC")
+	const [step, setStep] = useState<"select" | "summary" | "processing" | "success">("select")
 
 	// Mutation hook for batch completing deposits
 	const batchCompleteMutation = useMutation({
 		mutationFn: async (data: { orderIds: string[]; paidCurrency: string }) => {
-			console.log('[OnRampModal] Starting batch purchase for orders:', selectedOrders)
+			console.log("[OnRampModal] Starting batch purchase for orders:", selectedOrders)
 			const response = await b2bApiClient.batchCompleteDeposits(data)
 
-			console.log('[OnRampModal] Batch complete response:', response)
+			console.log("[OnRampModal] Batch complete response:", response)
 			console.log(`✅ ${data.orderIds.length} orders completed`)
 			console.log(`💰 Total USDC transferred: ${response.totalUSDC}`)
 			console.log(`🏦 Custodial wallet: ${response.custodialWallet}`)
@@ -54,28 +56,28 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 			return response
 		},
 		onSuccess: (data) => {
-			console.log('[OnRampModal] Mutation success:', data)
-			console.log('[OnRampModal] ✅ Deposit completed - Balance will update automatically')
+			console.log("[OnRampModal] Mutation success:", data)
+			console.log("[OnRampModal] ✅ Deposit completed - Balance will update automatically")
 
 			// Show success after brief delay
 			setTimeout(() => {
-				setStep('success')
+				setStep("success")
 			}, 1000)
 		},
 		onError: (error) => {
-			console.error('[OnRampModal] Mutation error:', error)
+			console.error("[OnRampModal] Mutation error:", error)
 			// Still show success for demo purposes
 			setTimeout(() => {
-				setStep('success')
+				setStep("success")
 			}, 1000)
 		},
 	})
 
 	// Reset state when modal closes
 	const handleClose = () => {
-		setStep('select')
-		setFiatCurrency('USD')
-		setCryptoToken('USDC')
+		setStep("select")
+		setFiatCurrency("USD")
+		setCryptoToken("USDC")
 		batchCompleteMutation.reset()
 		onClose()
 	}
@@ -96,11 +98,11 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 	const fiatAmount = usdcAmount / selectedFiatCurrency.toUsdRate
 
 	const handleContinue = () => {
-		setStep('summary')
+		setStep("summary")
 	}
 
 	const handlePurchase = () => {
-		setStep('processing')
+		setStep("processing")
 
 		// Execute batch complete mutation
 		batchCompleteMutation.mutate({
@@ -120,17 +122,14 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 				{/* Header */}
 				<div className="p-6 border-b border-gray-200">
 					<div className="flex items-center justify-between">
-						{step !== 'select' && (
+						{step !== "select" && (
 							<h2 className="text-2xl font-bold text-gray-900">
-								{step === 'summary' && 'Order Summary'}
-								{step === 'processing' && 'Processing Payment...'}
-								{step === 'success' && 'Payment Successful!'}
+								{step === "summary" && "Order Summary"}
+								{step === "processing" && "Processing Payment..."}
+								{step === "success" && "Payment Successful!"}
 							</h2>
 						)}
-						<button
-							onClick={handleClose}
-							className="p-2 hover:bg-gray-100 rounded-lg transition-colors ml-auto"
-						>
+						<button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors ml-auto">
 							<X className="w-5 h-5 text-gray-500" />
 						</button>
 					</div>
@@ -138,7 +137,7 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 
 				{/* Content */}
 				<div className="p-6">
-					{step === 'select' && (
+					{step === "select" && (
 						<div className="space-y-4">
 							{/* From (Fiat) */}
 							<div className="bg-gray-50 rounded-2xl p-4 border border-gray-200">
@@ -153,7 +152,9 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 									<div className="relative">
 										<select
 											value={fiatCurrency}
-											onChange={(e) => setFiatCurrency(e.target.value)}
+											onChange={(e) => {
+												setFiatCurrency(e.target.value)
+											}}
 											className="appearance-none bg-white border-2 border-gray-300 rounded-xl pl-4 pr-10 py-3 text-base font-bold text-gray-900 cursor-pointer hover:border-gray-400 transition-colors shadow-sm"
 										>
 											{FIAT_CURRENCIES.map((currency) => (
@@ -203,9 +204,9 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 													key={token.symbol}
 													value={token.symbol}
 													disabled={!token.enabled}
-													className={!token.enabled ? 'text-gray-400' : ''}
+													className={!token.enabled ? "text-gray-400" : ""}
 												>
-													{token.symbol} {!token.enabled && '(Soon)'}
+													{token.symbol} {!token.enabled && "(Soon)"}
 												</option>
 											))}
 										</select>
@@ -225,7 +226,7 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 						</div>
 					)}
 
-					{step === 'summary' && (
+					{step === "summary" && (
 						<div className="space-y-4">
 							{/* Order Summary */}
 							<div className="border border-gray-200 rounded-xl p-4">
@@ -269,7 +270,7 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 						</div>
 					)}
 
-					{step === 'processing' && (
+					{step === "processing" && (
 						<div className="py-12 text-center">
 							<div className="inline-block animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-600 mb-4"></div>
 							<h3 className="text-lg font-semibold text-gray-900 mb-2">Processing your payment...</h3>
@@ -277,14 +278,15 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 						</div>
 					)}
 
-					{step === 'success' && (
+					{step === "success" && (
 						<div className="py-8 text-center">
 							<div className="inline-flex items-center justify-center w-20 h-20 bg-green-100 rounded-full mb-4">
 								<Check className="w-10 h-10 text-green-600" />
 							</div>
 							<h3 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h3>
 							<p className="text-gray-600 mb-6">
-								{selectedOrderIds.length} order{selectedOrderIds.length > 1 ? 's have' : ' has'} been processed successfully.
+								{selectedOrderIds.length} order{selectedOrderIds.length > 1 ? "s have" : " has"} been processed
+								successfully.
 							</p>
 							<div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
 								<div className="flex justify-between text-sm mb-2">
