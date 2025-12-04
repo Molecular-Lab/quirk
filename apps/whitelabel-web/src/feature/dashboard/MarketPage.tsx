@@ -1,7 +1,6 @@
 import { CategorySection } from "../../components/market/CategorySection"
 import { ExecutorSection } from "../../components/market/ExecutorSection"
 import { ProtocolCard } from "../../components/market/ProtocolCard"
-import ChatBot from "../../components/registration/ChatBot"
 import { useAllDeFiProtocols } from "../../hooks/useDeFiProtocols"
 import { useMockUSDCBalance } from "../../hooks/useMockUSDCBalance"
 
@@ -105,6 +104,11 @@ export function MarketPage() {
 		)
 	}
 
+	// Placeholder for AI analysis (now handled by FloatingConcierge)
+	const handleAnalysisComplete = (data: any) => {
+		console.log("AI Analysis:", data)
+	}
+
 	return (
 		<div className="min-h-screen bg-gray-50 text-gray-900">
 			<div className="max-w-[1600px] mx-auto px-6 py-8">
@@ -140,24 +144,12 @@ export function MarketPage() {
 					</div>
 				</div>
 
-				<div className="grid grid-cols-12 gap-6">
-					{/* Left Column: AI Chat + Executor */}
-					<div className="col-span-12 lg:col-span-5 xl:col-span-4 space-y-6">
-						{/* AI Chat */}
-						<div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden h-[500px]">
-							<ChatBot
-								onAnalysisComplete={(data) => {
-									console.log("AI Analysis:", data)
-								}}
-							/>
-						</div>
+				<div className="space-y-6">
+					{/* Executor Section */}
+					<ExecutorSection protocols={protocols} onDeploy={handleDeploy} />
 
-						{/* Executor Section */}
-						<ExecutorSection protocols={protocols} onDeploy={handleDeploy} />
-					</div>
-
-					{/* Right Column: Market Categories */}
-					<div className="col-span-12 lg:col-span-7 xl:col-span-8 space-y-6">
+					{/* Market Categories */}
+					<div className="space-y-6">
 						{/* Stats Overview */}
 						<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 							<div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">

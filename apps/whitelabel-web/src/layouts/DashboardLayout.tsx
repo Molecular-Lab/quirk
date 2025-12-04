@@ -4,6 +4,8 @@ import { usePrivy } from "@privy-io/react-auth"
 import { Link, Outlet, useNavigate } from "@tanstack/react-router"
 import { Aperture, BookText, LayoutDashboard, LogOut, Menu, Settings, Shield, Sparkles, X } from "lucide-react"
 
+import { FloatingConcierge } from "@/components/chat/FloatingConcierge"
+
 const navigation = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
 	{ name: "Explore", href: "/dashboard/explore", icon: Aperture },
@@ -255,6 +257,9 @@ export function DashboardLayout() {
 					</nav>
 				</div>
 			</div>
+
+			{/* Floating AI Concierge */}
+			<FloatingConcierge />
 		</div>
 	)
 }
