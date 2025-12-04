@@ -29,6 +29,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
+import { FloatingConcierge } from "@/components/chat/FloatingConcierge"
+
 const navigation = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
 	{ name: "Explore", href: "/dashboard/explore", icon: Aperture },
@@ -259,6 +261,9 @@ export function DashboardLayout() {
 					</nav>
 				</div>
 			</div>
+
+			{/* Floating AI Concierge */}
+			<FloatingConcierge />
 		</div>
 	)
 }
