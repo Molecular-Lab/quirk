@@ -258,6 +258,41 @@ async function main() {
 		res.json({ message: "Test endpoint works!", body: req.body });
 	});
 
+	// Optimize endpoint for yield strategy recommendations
+	app.post("/api/v1/defi/optimize", async (req, res) => {
+		try {
+			const { riskProfile, token = "USDC", chainId = 8453 } = req.body;
+
+			if (!riskProfile || !riskProfile.level) {
+				return res.status(400).json({
+					error: "Missing required field: riskProfile.level",
+					message: "Please provide riskProfile with level: 'conservative' | 'moderate' | 'aggressive'"
+				});
+			}
+
+			const level = riskProfile.level;
+
+			if (!['conservative', 'moderate', 'aggressive'].includes(level)) {
+				return res.status(400).json({
+					error: "Invalid risk level",
+					message: "Risk level must be one of: conservative, moderate, aggressive"
+				});
+			}
+
+			logger.info("Optimizing allocation", { riskProfile: level, token, chainId });
+
+			const result = await defiProtocolService.optimizeAllocation(token, chainId, level);
+
+			res.json(result);
+		} catch (error: any) {
+			logger.error("Failed to optimize allocation", { error: error.message });
+			res.status(500).json({
+				error: "Optimization failed",
+				message: error.message
+			});
+		}
+	});
+
 	// 9. Health check endpoint
 	app.get("/health", async (_req, res) => {
 		try {

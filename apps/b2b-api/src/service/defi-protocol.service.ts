@@ -3,8 +3,8 @@
  * Fetches real-time metrics from AAVE, Compound, Morpho using yield-engine
  */
 
-import { AaveAdapter, CompoundAdapter, MorphoAdapter } from '@proxify/yield-engine'
-import type { YieldOpportunity, ProtocolMetrics } from '@proxify/yield-engine'
+import { AaveAdapter, CompoundAdapter, MorphoAdapter, YieldOptimizer } from '@proxify/yield-engine'
+import type { YieldOpportunity, ProtocolMetrics, RiskProfile } from '@proxify/yield-engine'
 
 export interface ProtocolData {
 	// Identity
@@ -33,6 +33,23 @@ export interface ProtocolData {
 
 	// Raw metrics for "Raw Data" view
 	rawMetrics?: YieldOpportunity
+}
+
+export interface OptimizedAllocation {
+	protocol: 'aave' | 'compound' | 'morpho'
+	percentage: number
+	expectedAPY: string
+	tvl: string
+	rationale: string
+}
+
+export interface OptimizationResult {
+	riskLevel: 'conservative' | 'moderate' | 'aggressive'
+	allocation: OptimizedAllocation[]
+	expectedBlendedAPY: string
+	confidence: number
+	strategy: string
+	timestamp: number
 }
 
 export class DeFiProtocolService {
@@ -70,6 +87,7 @@ export class DeFiProtocolService {
 			const adapter = this.getAaveAdapter(chainId)
 			const metrics = await adapter.getMetrics(token, chainId) // Returns YieldOpportunity
 			const protocolMetrics = await adapter.getProtocolMetrics(chainId) // Returns ProtocolMetrics
+			const metrics = await this.aaveAdapter.getMetrics(token, chainId)
 
 			// Calculate utilization from protocol-level metrics
 			const tvl = parseFloat(protocolMetrics.tvlUSD || '0')
@@ -77,9 +95,13 @@ export class DeFiProtocolService {
 			const totalBorrowed = parseFloat(protocolMetrics.totalBorrowsUSD || '0')
 			const totalSupplied = tvl // TVL = total supplied
 			const utilization = totalSupplied > 0 ? (totalBorrowed / totalSupplied) * 100 : 0
+			// Parse metrics
+			const tvl = parseFloat(metrics.tvl)
+			const liquidity = parseFloat(metrics.liquidity)
+			const utilization = metrics.utilization ? parseFloat(metrics.utilization) : 0
 
 			// Determine risk and status
-			const { risk, status, health } = this.calculateRiskMetrics(utilization, totalSupplied)
+			const { risk, status, health } = this.calculateRiskMetrics(utilization, tvl)
 
 			return {
 				protocol: 'aave',
@@ -87,10 +109,10 @@ export class DeFiProtocolService {
 				chainId,
 				supplyAPY: metrics.supplyAPY,
 				borrowAPY: metrics.borrowAPY,
-				tvl: protocolMetrics.tvlUSD,
-				liquidity: protocolMetrics.availableLiquidityUSD,
-				totalSupplied: totalSupplied.toFixed(2),
-				totalBorrowed: totalBorrowed.toFixed(2),
+				tvl: metrics.tvl,
+				liquidity: metrics.liquidity,
+				totalSupplied: metrics.tvl, // TVL represents total supplied
+				totalBorrowed: (tvl - liquidity).toFixed(2), // Calculated from TVL - available liquidity
 				utilization: utilization.toFixed(2),
 				risk,
 				status,
@@ -109,19 +131,15 @@ export class DeFiProtocolService {
 	 */
 	async fetchCompoundMetrics(token: string, chainId: number): Promise<ProtocolData> {
 		try {
-			const adapter = this.getCompoundAdapter(chainId)
-			const metrics = await adapter.getMetrics(token, chainId) // Returns YieldOpportunity
-			const protocolMetrics = await adapter.getProtocolMetrics(chainId) // Returns ProtocolMetrics
+			const metrics = await this.compoundAdapter.getMetrics(token, chainId)
 
-			// Calculate utilization from protocol-level metrics
-			const tvl = parseFloat(protocolMetrics.tvlUSD || '0')
-			const availableLiquidity = parseFloat(protocolMetrics.availableLiquidityUSD || '0')
-			const totalBorrowed = parseFloat(protocolMetrics.totalBorrowsUSD || '0')
-			const totalSupplied = tvl // TVL = total supplied
-			const utilization = totalSupplied > 0 ? (totalBorrowed / totalSupplied) * 100 : 0
+			// Parse metrics
+			const tvl = parseFloat(metrics.tvl)
+			const liquidity = parseFloat(metrics.liquidity)
+			const utilization = metrics.utilization ? parseFloat(metrics.utilization) : 0
 
 			// Determine risk and status
-			const { risk, status, health } = this.calculateRiskMetrics(utilization, totalSupplied)
+			const { risk, status, health } = this.calculateRiskMetrics(utilization, tvl)
 
 			return {
 				protocol: 'compound',
@@ -129,10 +147,10 @@ export class DeFiProtocolService {
 				chainId,
 				supplyAPY: metrics.supplyAPY,
 				borrowAPY: metrics.borrowAPY,
-				tvl: protocolMetrics.tvlUSD,
-				liquidity: protocolMetrics.availableLiquidityUSD,
-				totalSupplied: totalSupplied.toFixed(2),
-				totalBorrowed: totalBorrowed.toFixed(2),
+				tvl: metrics.tvl,
+				liquidity: metrics.liquidity,
+				totalSupplied: metrics.tvl, // TVL represents total supplied
+				totalBorrowed: (tvl - liquidity).toFixed(2), // Calculated from TVL - available liquidity
 				utilization: utilization.toFixed(2),
 				risk,
 				status,
@@ -151,28 +169,26 @@ export class DeFiProtocolService {
 	 */
 	async fetchMorphoMetrics(token: string, chainId: number): Promise<ProtocolData> {
 		try {
-			const adapter = this.getMorphoAdapter(chainId)
-			const metrics = await adapter.getMetrics(token, chainId) // Returns YieldOpportunity
-			const protocolMetrics = await adapter.getProtocolMetrics(chainId) // Returns ProtocolMetrics
+			const metrics = await this.morphoAdapter.getMetrics(token, chainId)
 
-			// Calculate utilization from protocol-level metrics
-			const tvl = parseFloat(protocolMetrics.tvlUSD || '0')
-			const availableLiquidity = parseFloat(protocolMetrics.availableLiquidityUSD || '0')
-			const totalBorrowed = parseFloat(protocolMetrics.totalBorrowsUSD || '0')
-			const totalSupplied = tvl // TVL = total supplied
-			const utilization = totalSupplied > 0 ? (totalBorrowed / totalSupplied) * 100 : 0
+			// Parse metrics
+			const tvl = parseFloat(metrics.tvl)
+			const liquidity = parseFloat(metrics.liquidity)
+			const utilization = metrics.utilization ? parseFloat(metrics.utilization) : 0
 
 			// Determine risk and status
-			const { risk, status, health } = this.calculateRiskMetrics(utilization, totalSupplied)
+			const { risk, status, health } = this.calculateRiskMetrics(utilization, tvl)
 
 			return {
 				protocol: 'morpho',
 				token,
 				chainId,
 				supplyAPY: metrics.supplyAPY,
-				tvl: protocolMetrics.tvlUSD,
-				liquidity: protocolMetrics.availableLiquidityUSD,
-				totalSupplied: totalSupplied.toFixed(2),
+				borrowAPY: metrics.borrowAPY,
+				tvl: metrics.tvl,
+				liquidity: metrics.liquidity,
+				totalSupplied: metrics.tvl, // TVL represents total supplied
+				totalBorrowed: (tvl - liquidity).toFixed(2), // Calculated from TVL - available liquidity
 				utilization: utilization.toFixed(2),
 				risk,
 				status,
@@ -200,6 +216,156 @@ export class DeFiProtocolService {
 		return results
 			.filter((result): result is PromiseFulfilledResult<ProtocolData> => result.status === 'fulfilled')
 			.map((result) => result.value)
+	}
+
+	/**
+	 * Optimize portfolio allocation based on risk profile
+	 */
+	async optimizeAllocation(
+		token: string,
+		chainId: number,
+		riskProfile: 'conservative' | 'moderate' | 'aggressive'
+	): Promise<OptimizationResult> {
+		const optimizer = new YieldOptimizer()
+
+		// Fetch all protocols to get current data
+		const protocols = await this.fetchAllProtocols(token, chainId)
+
+		if (protocols.length === 0) {
+			throw new Error('No protocols available for optimization')
+		}
+
+		// Run optimizer
+		const riskProfileConfig: Partial<RiskProfile> = {
+			level: riskProfile,
+		}
+
+		const result = await optimizer.optimizePosition(
+			'dummy-wallet', // No real wallet needed for strategy recommendation
+			token,
+			chainId,
+			riskProfileConfig
+		)
+
+		// Convert ranked opportunities to percentage allocations
+		const allocation = this.calculatePercentageAllocation(result.rankedOpportunities, riskProfile, protocols)
+
+		// Calculate blended APY
+		const blendedAPY = allocation.reduce((sum, alloc) => {
+			return sum + (parseFloat(alloc.expectedAPY) * alloc.percentage) / 100
+		}, 0)
+
+		return {
+			riskLevel: riskProfile,
+			allocation,
+			expectedBlendedAPY: blendedAPY.toFixed(2),
+			confidence: result.confidence,
+			strategy: result.strategy,
+			timestamp: result.timestamp,
+		}
+	}
+
+	/**
+	 * Calculate percentage allocation based on risk profile and ranked opportunities
+	 */
+	private calculatePercentageAllocation(
+		rankedOpportunities: YieldOpportunity[],
+		riskProfile: 'conservative' | 'moderate' | 'aggressive',
+		protocols: ProtocolData[]
+	): OptimizedAllocation[] {
+		// Sort protocols by APY to ensure we have all 3 protocols available
+		const sortedProtocols = [...protocols].sort((a, b) => parseFloat(b.supplyAPY) - parseFloat(a.supplyAPY))
+
+		if (sortedProtocols.length === 0) {
+			return []
+		}
+
+		// Ensure we have all 3 protocols - use sorted protocols directly
+		const firstProtocol = sortedProtocols[0]
+		const secondProtocol = sortedProtocols[1] || sortedProtocols[0]
+		const thirdProtocol = sortedProtocols[2] || sortedProtocols[1] || sortedProtocols[0]
+
+		// Different allocation strategies based on risk profile
+		const allocations: OptimizedAllocation[] = []
+
+		if (riskProfile === 'conservative') {
+			// Conservative: Prioritize established protocols (Aave/Compound), minimal exposure to Morpho
+			allocations.push({
+				protocol: firstProtocol.protocol,
+				percentage: 50,
+				expectedAPY: firstProtocol.supplyAPY,
+				tvl: firstProtocol.tvl,
+				rationale: 'Primary allocation to highest yielding established protocol',
+			})
+
+			allocations.push({
+				protocol: secondProtocol.protocol,
+				percentage: 30,
+				expectedAPY: secondProtocol.supplyAPY,
+				tvl: secondProtocol.tvl,
+				rationale: 'Secondary allocation for diversification',
+			})
+
+			allocations.push({
+				protocol: thirdProtocol.protocol,
+				percentage: 20,
+				expectedAPY: thirdProtocol.supplyAPY,
+				tvl: thirdProtocol.tvl,
+				rationale: 'Conservative hedge',
+			})
+		} else if (riskProfile === 'moderate') {
+			// Moderate: Balanced approach
+			allocations.push({
+				protocol: firstProtocol.protocol,
+				percentage: 45,
+				expectedAPY: firstProtocol.supplyAPY,
+				tvl: firstProtocol.tvl,
+				rationale: 'Highest APY with acceptable risk',
+			})
+
+			allocations.push({
+				protocol: secondProtocol.protocol,
+				percentage: 35,
+				expectedAPY: secondProtocol.supplyAPY,
+				tvl: secondProtocol.tvl,
+				rationale: 'Established protocol with high TVL',
+			})
+
+			allocations.push({
+				protocol: thirdProtocol.protocol,
+				percentage: 20,
+				expectedAPY: thirdProtocol.supplyAPY,
+				tvl: thirdProtocol.tvl,
+				rationale: 'Diversification',
+			})
+		} else {
+			// Aggressive: Maximize yield
+			allocations.push({
+				protocol: firstProtocol.protocol,
+				percentage: 60,
+				expectedAPY: firstProtocol.supplyAPY,
+				tvl: firstProtocol.tvl,
+				rationale: 'Maximum yield - highest APY protocol',
+			})
+
+			allocations.push({
+				protocol: secondProtocol.protocol,
+				percentage: 30,
+				expectedAPY: secondProtocol.supplyAPY,
+				tvl: secondProtocol.tvl,
+				rationale: 'Secondary high-yield opportunity',
+			})
+
+			allocations.push({
+				protocol: thirdProtocol.protocol,
+				percentage: 10,
+				expectedAPY: thirdProtocol.supplyAPY,
+				tvl: thirdProtocol.tvl,
+				rationale: 'Minimal diversification',
+			})
+		}
+
+		return allocations
 	}
 
 	/**
