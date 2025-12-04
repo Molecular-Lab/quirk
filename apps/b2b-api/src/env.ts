@@ -12,8 +12,8 @@ const envSchema = z.object({
 	DEPLOYER_PRIVATE_KEY: z.string().optional(),
 	PRIVATE_KEY: z.string().optional(),
 	// Blockchain configuration
-	CHAIN_ID: z.string().default("84532"), // Base Sepolia
-	RPC_URL: z.string().default("https://sepolia.base.org"),
+	CHAIN_ID: z.string().default("8453"), // Base Mainnet
+	RPC_URL: z.string().default("https://mainnet.base.org"),
 	BASE_SEPOLIA_RPC_URL: z.string().default("https://sepolia.base.org"),
 });
 
