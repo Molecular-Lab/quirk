@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import axios from "axios"
+import { useFloatingConcierge } from "../../contexts/FloatingConciergeContext"
 
 const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8000"
 
@@ -10,7 +11,7 @@ interface ChatMessage {
 }
 
 export function FloatingConcierge() {
-	const [isOpen, setIsOpen] = useState(false)
+	const { isOpen, setIsOpen: setContextIsOpen, contextMessage, clearContext } = useFloatingConcierge()
 	const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
 		{
 			role: "assistant",
@@ -22,6 +23,7 @@ export function FloatingConcierge() {
 	const [isSending, setIsSending] = useState(false)
 	const [sessionId] = useState(() => `session-${Date.now()}`)
 	const messagesEndRef = useRef<HTMLDivElement>(null)
+	const hasProcessedContext = useRef(false)
 
 	// Auto-scroll to bottom when new messages arrive
 	useEffect(() => {
@@ -30,12 +32,29 @@ export function FloatingConcierge() {
 		}
 	}, [chatMessages, isOpen])
 
-	const sendMessage = async () => {
-		if (!chatInput.trim() || isSending) return
+	// Handle context message from ContextualAIPanel
+	useEffect(() => {
+		if (isOpen && contextMessage && !hasProcessedContext.current) {
+			hasProcessedContext.current = true
+			setChatInput(contextMessage)
+			// Auto-send the context message
+			setTimeout(() => {
+				sendMessageWithText(contextMessage)
+				clearContext()
+			}, 500)
+		}
+		if (!isOpen) {
+			hasProcessedContext.current = false
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [isOpen, contextMessage])
+
+	const sendMessageWithText = async (messageText: string) => {
+		if (!messageText.trim() || isSending) return
 
 		const userMessage: ChatMessage = {
 			role: "user",
-			content: chatInput,
+			content: messageText,
 			timestamp: new Date(),
 		}
 
@@ -45,7 +64,7 @@ export function FloatingConcierge() {
 
 		try {
 			const response = await axios.post(`${AGENT_API_URL}/agent`, {
-				message: chatInput,
+				message: messageText,
 				session_id: sessionId,
 			})
 
@@ -70,6 +89,11 @@ export function FloatingConcierge() {
 		}
 	}
 
+	const sendMessage = async () => {
+		if (!chatInput.trim() || isSending) return
+		await sendMessageWithText(chatInput)
+	}
+
 	const SUGGESTED_QUESTIONS = [
 		"What is the risk of Morpho?",
 		"Compare AAVE vs Compound",
@@ -82,7 +106,7 @@ export function FloatingConcierge() {
 			{!isOpen ? (
 				// Minimized Square Button
 				<button
-					onClick={() => setIsOpen(true)}
+					onClick={() => setContextIsOpen(true)}
 					className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all duration-200 flex flex-col items-center justify-center gap-0.5"
 				>
 					<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -110,7 +134,7 @@ export function FloatingConcierge() {
 							</div>
 						</div>
 						<button
-							onClick={() => setIsOpen(false)}
+							onClick={() => setContextIsOpen(false)}
 							className="text-white/80 hover:text-white transition-colors"
 						>
 							<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

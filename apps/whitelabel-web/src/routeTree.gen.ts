@@ -18,6 +18,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as PaymentSessionOrderIdRouteImport } from './routes/payment-session.$orderId'
+import { Route as DashboardYieldRouteImport } from './routes/dashboard/yield'
 import { Route as DashboardOnboardingRouteImport } from './routes/dashboard.onboarding'
 import { Route as DashboardMarketRouteImport } from './routes/dashboard/market'
 import { Route as DashboardIntegrationRouteImport } from './routes/dashboard/integration'
@@ -76,6 +77,11 @@ const PaymentSessionOrderIdRoute = PaymentSessionOrderIdRouteImport.update({
   id: '/payment-session/$orderId',
   path: '/payment-session/$orderId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardYieldRoute = DashboardYieldRouteImport.update({
+  id: '/yield',
+  path: '/yield',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardOnboardingRoute = DashboardOnboardingRouteImport.update({
   id: '/onboarding',
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/dashboard/yield': typeof DashboardYieldRoute
   '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
@@ -185,6 +192,7 @@ export interface FileRoutesByTo {
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/dashboard/yield': typeof DashboardYieldRoute
   '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard': typeof DashboardIndexRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
@@ -210,6 +218,7 @@ export interface FileRoutesById {
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/dashboard/yield': typeof DashboardYieldRoute
   '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard/': typeof DashboardIndexRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
@@ -236,6 +245,7 @@ export interface FileRouteTypes {
     | '/dashboard/integration'
     | '/dashboard/market'
     | '/dashboard/onboarding'
+    | '/dashboard/yield'
     | '/payment-session/$orderId'
     | '/dashboard/'
     | '/dashboard/portfolios/$id'
@@ -259,6 +269,7 @@ export interface FileRouteTypes {
     | '/dashboard/integration'
     | '/dashboard/market'
     | '/dashboard/onboarding'
+    | '/dashboard/yield'
     | '/payment-session/$orderId'
     | '/dashboard'
     | '/dashboard/portfolios/$id'
@@ -283,6 +294,7 @@ export interface FileRouteTypes {
     | '/dashboard/integration'
     | '/dashboard/market'
     | '/dashboard/onboarding'
+    | '/dashboard/yield'
     | '/payment-session/$orderId'
     | '/dashboard/'
     | '/dashboard/portfolios/$id'
@@ -368,6 +380,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/payment-session/$orderId'
       preLoaderRoute: typeof PaymentSessionOrderIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/dashboard/yield': {
+      id: '/dashboard/yield'
+      path: '/yield'
+      fullPath: '/dashboard/yield'
+      preLoaderRoute: typeof DashboardYieldRouteImport
+      parentRoute: typeof DashboardRoute
     }
     '/dashboard/onboarding': {
       id: '/dashboard/onboarding'
@@ -471,6 +490,7 @@ interface DashboardRouteChildren {
   DashboardIntegrationRoute: typeof DashboardIntegrationRoute
   DashboardMarketRoute: typeof DashboardMarketRoute
   DashboardOnboardingRoute: typeof DashboardOnboardingRoute
+  DashboardYieldRoute: typeof DashboardYieldRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardPortfoliosIdRoute: typeof DashboardPortfoliosIdRoute
   DashboardSettingsApiKeysRoute: typeof DashboardSettingsApiKeysRoute
@@ -488,6 +508,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardIntegrationRoute: DashboardIntegrationRoute,
   DashboardMarketRoute: DashboardMarketRoute,
   DashboardOnboardingRoute: DashboardOnboardingRoute,
+  DashboardYieldRoute: DashboardYieldRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardPortfoliosIdRoute: DashboardPortfoliosIdRoute,
   DashboardSettingsApiKeysRoute: DashboardSettingsApiKeysRoute,

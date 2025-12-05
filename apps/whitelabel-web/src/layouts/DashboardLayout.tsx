@@ -5,11 +5,11 @@ import { Link, Outlet, useNavigate } from "@tanstack/react-router"
 import { Aperture, BookText, LayoutDashboard, LogOut, Menu, Settings, Shield, Sparkles, X } from "lucide-react"
 
 import { FloatingConcierge } from "@/components/chat/FloatingConcierge"
+import { FloatingConciergeProvider } from "@/contexts/FloatingConciergeContext"
 
 const navigation = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-	{ name: "Explore", href: "/dashboard/explore", icon: Aperture },
-	{ name: "Market", href: "/dashboard/market", icon: Sparkles },
+	{ name: "Yield Manager", href: "/dashboard/yield", icon: Sparkles },
 	{ name: "Integration", href: "/dashboard/integration", icon: BookText },
 	{ name: "Settings", href: "/dashboard/settings", icon: Settings },
 	{ name: "Onboarding", href: "/dashboard/onboarding", icon: Shield },
@@ -31,7 +31,8 @@ export function DashboardLayout() {
 		console.log("User changed:", user)
 	}, [user])
 	return (
-		<div className="h-screen flex overflow-hidden bg-gray-50">
+		<FloatingConciergeProvider>
+			<div className="h-screen flex overflow-hidden bg-gray-50">
 			{/* Desktop sidebar - Icon only style like Glider */}
 			<div className="hidden lg:flex lg:flex-shrink-0">
 				<div className="flex flex-col w-[72px] bg-white border-r border-gray-200">
@@ -261,5 +262,6 @@ export function DashboardLayout() {
 			{/* Floating AI Concierge */}
 			<FloatingConcierge />
 		</div>
+		</FloatingConciergeProvider>
 	)
 }
