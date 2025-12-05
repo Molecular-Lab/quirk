@@ -1,22 +1,10 @@
 import { CategorySection } from "../../components/market/CategorySection"
-import { ExecutorSection } from "../../components/market/ExecutorSection"
 import { ProtocolCard } from "../../components/market/ProtocolCard"
 import { useAllDeFiProtocols } from "../../hooks/useDeFiProtocols"
 import { useMockUSDCBalance } from "../../hooks/useMockUSDCBalance"
 
 // TODO: Get custodial wallet address from user context/auth
 const CUSTODIAL_WALLET_ADDRESS = import.meta.env.VITE_CUSTODIAL_WALLET_ADDRESS
-
-// Types for mock categories
-interface YieldOpportunity {
-	protocol: string
-	token: string
-	supplyAPY: string
-	tvl: string
-	risk: "Low" | "Medium" | "High"
-	type: "Lending" | "Staking" | "LP" | "Vault"
-	status: "healthy" | "warning" | "critical"
-}
 
 // Mock data for non-DeFi categories (will be replaced with real data later)
 const MOCK_CATEGORIES = [
@@ -95,20 +83,6 @@ export function MarketPage() {
 	// Calculate total TVL from real protocols
 	const totalTVL = protocols.reduce((sum, p) => sum + parseFloat(p.tvl || "0"), 0)
 
-	// Handle deployment
-	const handleDeploy = (selectedProtocols: string[]) => {
-		console.log("Deploying to protocols:", selectedProtocols)
-		// TODO: Implement actual deployment logic
-		alert(
-			`Deployment to ${selectedProtocols.join(", ")} initiated!\n\nThis is a mock deployment. Real implementation coming in Phase 4.`,
-		)
-	}
-
-	// Placeholder for AI analysis (now handled by FloatingConcierge)
-	const handleAnalysisComplete = (data: any) => {
-		console.log("AI Analysis:", data)
-	}
-
 	return (
 		<div className="min-h-screen bg-gray-50 text-gray-900">
 			<div className="max-w-[1600px] mx-auto px-6 py-8">
@@ -145,9 +119,6 @@ export function MarketPage() {
 				</div>
 
 				<div className="space-y-6">
-					{/* Executor Section */}
-					<ExecutorSection protocols={protocols} onDeploy={handleDeploy} />
-
 					{/* Market Categories */}
 					<div className="space-y-6">
 						{/* Stats Overview */}
@@ -248,7 +219,15 @@ export function MarketPage() {
 													<span className="text-xs text-gray-600 bg-gray-100 px-2 py-0.5 rounded-full">{opp.type}</span>
 												</div>
 											</div>
-											<div className="text-xs font-medium px-2 py-1 rounded-full bg-green-100 text-green-700">
+											<div
+												className={`text-xs font-medium px-2 py-1 rounded-full ${
+													opp.risk === "Low"
+														? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+														: opp.risk === "Medium"
+															? "bg-amber-50 text-amber-700 border border-amber-200"
+															: "bg-rose-50 text-rose-700 border border-rose-200"
+												}`}
+											>
 												{opp.risk} Risk
 											</div>
 										</div>
@@ -287,10 +266,10 @@ export function MarketPage() {
 											<div
 												className={`text-xs font-medium px-2 py-1 rounded-full ${
 													opp.risk === "Low"
-														? "bg-green-100 text-green-700"
+														? "bg-emerald-50 text-emerald-700 border border-emerald-200"
 														: opp.risk === "Medium"
-															? "bg-yellow-100 text-yellow-700"
-															: "bg-red-100 text-red-700"
+															? "bg-amber-50 text-amber-700 border border-amber-200"
+															: "bg-rose-50 text-rose-700 border border-rose-200"
 												}`}
 											>
 												{opp.risk} Risk

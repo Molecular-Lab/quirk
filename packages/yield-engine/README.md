@@ -204,13 +204,13 @@ packages/yield-engine/
 - ✅ Comprehensive unit and integration tests
 
 ### 📋 Phase 5: Aggregator & Optimizer (Planned)
-- [ ] Yield aggregator (combines all protocols)
-- [ ] Optimization engine
-- [ ] Rebalancing logic
+- ✅ Yield aggregator (combines all protocols)
+- ✅ Optimization engine
+- ✅ Rebalancing logic
 
 ### 📋 Phase 6: API & MCP Integration (Planned)
-- [ ] REST API endpoints
-- [ ] MCP server for AI agents
+- ✅ REST API endpoints
+- ✅ MCP server for AI agents
 
 ## Contributing
 

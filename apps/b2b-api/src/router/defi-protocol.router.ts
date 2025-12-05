@@ -84,28 +84,72 @@ export const createDeFiProtocolRouter = (s: ReturnType<typeof initServer>, defiS
 			}
 		},
 
-		// Get Morpho only
-		getMorpho: async ({ query }) => {
-			try {
-				const token = query.token
-				const chainId = parseInt(query.chainId, 10)
+	// Get Morpho only
+	getMorpho: async ({ query }) => {
+		try {
+			const token = query.token
+			const chainId = parseInt(query.chainId, 10)
 
-				const data = await defiService.fetchMorphoMetrics(token, chainId)
+			const data = await defiService.fetchMorphoMetrics(token, chainId)
 
+			return {
+				status: 200,
+				body: data,
+			}
+		} catch (error) {
+			console.error('Error fetching Morpho metrics:', error)
+			return {
+				status: 500,
+				body: {
+					error: 'Failed to fetch Morpho metrics',
+					message: error instanceof Error ? error.message : 'Unknown error',
+				},
+			}
+		}
+	},
+
+	// Optimize allocation
+	optimize: async ({ body }) => {
+		try {
+			const { token, chainId, riskLevel } = body
+
+			// Validate inputs
+			if (!token || !chainId) {
 				return {
-					status: 200,
-					body: data,
-				}
-			} catch (error) {
-				console.error('Error fetching Morpho metrics:', error)
-				return {
-					status: 500,
+					status: 400,
 					body: {
-						error: 'Failed to fetch Morpho metrics',
-						message: error instanceof Error ? error.message : 'Unknown error',
+						error: 'Invalid request',
+						message: 'token and chainId are required',
 					},
 				}
 			}
-		},
-	})
+
+			if (!['conservative', 'moderate', 'aggressive'].includes(riskLevel)) {
+				return {
+					status: 400,
+					body: {
+						error: 'Invalid risk level',
+						message: 'riskLevel must be one of: conservative, moderate, aggressive',
+					},
+				}
+			}
+
+			const result = await defiService.optimizeAllocation(token, chainId, riskLevel)
+
+			return {
+				status: 200,
+				body: result,
+			}
+		} catch (error) {
+			console.error('Error optimizing allocation:', error)
+			return {
+				status: 500,
+				body: {
+					error: 'Failed to optimize allocation',
+					message: error instanceof Error ? error.message : 'Unknown error',
+				},
+			}
+		}
+	},
+})
 }
