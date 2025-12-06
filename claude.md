@@ -1,18 +1,18 @@
-# Proxify - White-Label DeFi Yield Platform
+# Quirk - Earn-as-a-Service Platform
 
-> **For complete product vision, see `PRODUCT_OWNER_FLOW.md`** | **For coding standards, see `~/.claude/CLAUDE.md` (Go monorepo best practices)**
+> **Earn Anywhere. Save Everywhere.**
 
-## 🎯 Quick Reference
+## 🎯 What We're Building
 
-**What We're Building:** B2B2C white-label DeFi yield platform for apps with idle user cash
+**Quirk** is an Earn-as-a-Service platform that allows any business to embed Earn-in-App into their product. We enable end-users to earn yield on their idle cash anywhere, eliminating the traditional barrier that earning has to stay in banking or investment applications.
 
 **Core Model:**
-- Product Owners register → Get custodial wallet + SDK
-- Embed SDK in their app → End-users deposit fiat → USDC
-- Pooled custodial funds → DeFi protocols (AAVE, Curve, Compound, Uniswap)
-- Index-based accounting → Fair yield distribution → White-label dashboard
+- B2B: Provide rails infrastructure for businesses to offer DeFi yield without building infrastructure or handling compliance
+- B2B2C: Enable users to have savings earning yield wherever they use their money (E-commerce, Creators, Freelance, Gaming)
+- Privy MPC Wallets → StableCoin (USDC/USDT) → DeFi Protocols (AAVE, Compound, Morpho)
+- AI-powered yield strategies (Conservative, Moderate, Morpho, Custom)
 
-**Target:** E-commerce, Streaming, Freelancer, Gaming, Subscription platforms
+**Target:** Fintech apps, Gig Workers/Freelance Platforms, Creator Platforms, E-commerce Platforms
 
 ## 📚 Documentation Structure
 
@@ -32,54 +32,71 @@
 └── /apps/proxify-contract          # V2 smart contract code (archived)
 ```
 
-## 🚀 Current Phase: V4 - White-Label DeFi Platform
+## 🎯 Opportunity
 
-**Goal:** Build B2B2C yield platform with custodial pooling
+- **StableCoin Growth:** StableCoins are accelerating adoption into Traditional Finance systems
+- **DeFi Market Validation:** DeFi protocols deliver 3-5% APY on StableCoins with billions in TVL and millions of active wallets, proving real product-market fit
+- **Users Trapped in Ecosystems:** Users are increasingly aware of financial management but savings options only exist in banking/investment apps, not where they actually earn income
+- **Proven Enterprise Model:** Shopify partners with multiple financial institutions (Yield, Stripe, Fifth Third Bank, Celtic Bank) to enable financial products while focusing on core business
+- **$300B+ Idle Cash Waiting:** Across E-commerce merchants, Creators, Gig workers, Freelancers, and Payroll - massive idle cash floating with 0% earnings
+
+## 🎯 Problem
+
+- **Infrastructure Complexity:** Building in-house StableCoin infrastructure requires resources, regulatory compliance, and enterprise-grade treasury management
+- **Knowledge Gap:** Even if businesses understand StableCoin & DeFi advantages, implementation requires deep expertise across different financial layers
+- **Compliance Nightmare:** Expanding into StableCoin infrastructure means navigating complex regulations
+
+## 💡 Solution
+
+- **B2B:** Earn-as-a-Service providing rails infrastructure allowing any business to offer Earn-in-App, access DeFi yield, and treasury management without building infrastructure or handling compliance
+- **B2B2C:** Enable users to feel they can have a savings account earning yield anywhere, eliminating the limitation that earning has to stay in banking/investment applications
+
+## 🚀 Current Development Phase
+
+**Goal:** Build Earn-as-a-Service platform with AI-powered yield strategies
 
 **Key Features:**
-- ✅ Client registration & whitelisting
-- ✅ Privy custodial wallet per client
-- ✅ SDK for embedding (@proxify/sdk)
-- ✅ On-ramp: MoonPay/Apple Pay (V1), Internal gateway (V2)
-- ✅ Index-based accounting (like vault shares, off-chain)
-- ✅ DeFi execution: AAVE, Curve, Compound, Uniswap
-- ✅ White-label dashboard (Glider.Fi style UI)
-- ✅ AI agent for market insights
+- ✅ Client registration & onboarding via Quirk Dashboard
+- ✅ Privy MPC custodial wallet (Server-Side Corporate Wallet per client)
+- ✅ SDK for embedding (@quirk/sdk)
+- ✅ AI Yield Strategy Agent (Conservative, Moderate, Morpho, Custom)
+- ✅ DeFi execution: AAVE, Compound, Morpho
+- ✅ On/Off ramp integration (TransFi, ZeroHash, Bridge, Magic)
+- ✅ White-label dashboard with analytics & AI insights
+- ✅ Ledger-based internal accounting (Earn Balance tracking)
 
-**See:** `PRODUCT_OWNER_FLOW.md` for complete details
+## 🏗️ Product Flow
 
-## 🏗️ Architecture Summary
+### Phase 1: Client Setup (One-Time)
+1. **Client Onboarding:** Client registers on Quirk Dashboard
+2. **Wallet Creation:** Quirk (via Privy) creates Server-Side MPC Wallet (Corporate Wallet) for Client
+3. **SDK Integration:** Client embeds Quirk SDK in their app
 
-```
-Product Owner Registration
-    ↓
-Privy Custodial Wallet Created (holds all end-user funds)
-    ↓
-SDK Embedded in Client App (E-commerce, Streaming, etc.)
-    ↓
-End-User Deposits: $100 Fiat → 100 USDC
-    ↓
-Pooled Custody: All users' USDC in one wallet
-    ↓
-Index-Based Tracking:
-    • user_deposits table (PostgreSQL)
-    • entry_index (locked at deposit)
-    • current_index (grows with yield)
-    • value = (balance × current_index) / entry_index
-    ↓
-DeFi Deployment:
-    • 70% AAVE (low risk)
-    • 20% Curve (moderate risk)
-    • 10% Uniswap (high risk)
-    ↓
-Yield Distribution: Index grows, all users earn proportionally
-    ↓
-White-Label Dashboard: Portfolio, Analytics, AI Insights
-```
+### Phase 2: Yield Strategy Agent
+1. **Strategy Selection:** Client chooses from 4 strategies:
+   - Conservative (60% AAVE, 25% Compound, 15% Morpho)
+   - Moderate (balanced allocation)
+   - Morpho (Morpho-focused)
+   - Custom (client-defined weights)
+2. **Execution:** AI Agent calculates weighted risk distribution across protocols
+3. **Storage:** Strategy configuration saved in backend
 
-**Key Principle:** Custodial aggregation + Index accounting + No smart contracts (off-chain only)
+### Phase 3: User Deposit + Staking (Inflow)
+1. **User Action:** User clicks "Deposit $100" in Client App
+2. **Ledger Update:** Client App deducts $100 from Fiat Balance → Credits "Earn Balance" (internal DB)
+3. **Quirk API Call:** Client sends webhook: `User_Deposit: $100`
+4. **On-Ramp:** Client sends funds to wallet via SDK (batch requests to minimize fees)
+   - *Demo: Manual on-ramp by client*
+5. **DeFi Deployment:** Privy Server SDK signs & executes transactions (USDC/USDT) in batch
+   - *Demo: Manual staking by client*
 
-**See:** `PRODUCT_OWNER_FLOW.md` - Section "Technical Architecture"
+### Phase 4: User Withdrawal (Outflow)
+1. **User Action:** User requests "Withdraw $100" → Returns to default app balance
+2. **Unstaking:** Client calls Quirk API → Backend unstakes $100 + Gas → Wallet
+3. **Off-Ramp:** Wallet USDC → Off-Ramp Provider → Client's registered bank account
+   - *Demo: Manual off-ramp by client*
+
+**Key Principle:** Privy MPC Custody + AI Yield Strategies + Ledger-based Accounting
 
 ## 🔒 Security Priorities
 
@@ -98,13 +115,16 @@ White-Label Dashboard: Portfolio, Analytics, AI Insights
 ## 💡 Core Positioning
 
 ```
-We ARE:  White-label DeFi yield infrastructure for apps
-We're NOT: Direct-to-consumer wallet app
+We ARE:  Earn-as-a-Service infrastructure for any app
+We're NOT: Direct-to-consumer investment app
 
-We DO:  Turn idle app balances into yield-generating assets
-We DON'T: Compete with end-user wallet apps
+We DO:  Enable businesses to offer DeFi yield without building infrastructure
+We DON'T: Require businesses to handle compliance or treasury management
 
-Think: Stripe for DeFi yield
+We ENABLE: Users to earn yield anywhere they use their money
+We ELIMINATE: The barrier that earning must stay in banks/investment apps
+
+Think: Stripe for DeFi Yield + Plaid for Earn-in-App
 ```
 
 ## 📋 Quick Start
@@ -116,39 +136,85 @@ Think: Stripe for DeFi yield
 
 ## 🎯 Target Clients & Use Cases
 
-1. **E-Commerce Platforms** - Yield on seller pending payouts
-2. **Streaming Platforms** - Creator revenue earns until withdrawal
-3. **Freelancer Platforms** - Escrow funds earn yield
-4. **Gaming Platforms** - Idle in-game balance earns
-5. **Subscription SaaS** - Annual billing float earns yield
+1. **Fintech Apps** - Embedded yield for user balances
+2. **Gig Workers/Freelance Platforms** - Escrow funds earn yield until payout
+3. **Creators Platforms** - Creator revenue earns until withdrawal
+4. **E-commerce Platforms** - Seller pending payouts generate yield
+
+**Customer Personas:** [View on Miro](https://miro.com/app/board/uXjVJoTZufk=/)
+
+## 💵 Business Model
+
+**Revenue Streams:**
+- **Platform Fees:** ~1.5% AUM (Assets Under Management)
+- **Performance Fees:** 10% of APY generated
+- **AI/Data Subscription:** Market analysis & DeFi insights (long-term)
 
 **Example ROI:**
-- Client has $500K AUM (Assets Under Management)
-- 7% APY average yield
-- Client earns $2,712/month passive income
-- Proxify takes 7% yield share + $499 SaaS fee
+- Client has $500K AUM
+- 5% APY average yield = $25K/year
+- Client earns yield on idle cash
+- Quirk earns: Platform fees (~$7.5K) + Performance fees ($2.5K) = ~$10K/year per client
 
-**See:** `PRODUCT_OWNER_FLOW.md` - Section "Target Clients & Use Cases"
+## 💵 Regulatory Compliance (Singapore)
+
+### Required Licenses
+
+1. **MPIL (Major Payment Institution License)**
+   - Covers: Custody + On/Off ramp + Transfer
+   - Cost: ~$300-400K
+   - Reference: [MAS MPIL License](https://www.mas.gov.sg/regulation/payments/major-payment-institution-licence)
+   - Legal Doc: [Payment Services Act 2019](https://sso.agc.gov.sg/Act/PSA2019)
+
+2. **CMS (Capital Markets Services License)**
+   - Covers: Fund Management
+   - Cost: ~$250K
+   - Reference: [MAS CMS License](https://www.mas.gov.sg/regulation/capital-markets/cms-licence)
+   - Legal Doc: [Securities and Futures Act 2001](https://sso.agc.gov.sg/Act/SFA2001)
+
+**Total Licensing Cost:** ~$550-650K
+
+**Reference:** Sygnum Bank - [Crypto Yield Fund](https://www.sygnum.com/asset-management/crypto-yield-fund/)
+
+## 💭 On/Off Ramp Providers
+
+- **[TransFi](https://www.transfi.com/)** - Stablecoins & Cross-Border Payment Solutions
+- **[ZeroHash](https://zerohash.com/)** - Transactions at the Speed of Ideas
+- **[Bridge](https://www.bridge.xyz/)** - Stablecoin Infrastructure and APIs
+- **[Magic Labs](https://magic.link/)** - Fastest Way to Build Onchain
+
+## 🏁 Competitors (Indirect)
+
+- **[Coinchange](https://www.coinchange.io/)** - Crypto Yield API for Fintechs & Funds
 
 ## ⚡ Development Standards
 
 **All code must follow production-grade patterns from `~/.claude/CLAUDE.md`:**
 
 - Go monorepo structure with workspace
-- PostgreSQL for index tracking + user deposits
-- Fiber v2 for HTTP services
-- Viem for DeFi protocol interactions
-- React + Vite + TypeScript for white-label dashboard
+- PostgreSQL for ledger tracking + client/user data
+- Fiber v2 for HTTP services (B2B API)
+- Privy SDK for MPC wallet management
+- Viem for DeFi protocol interactions (AAVE, Compound, Morpho)
+- React + Vite + TypeScript for Quirk Dashboard
 - TurboRepo + PNPM for builds
+- On/Off ramp integration (TransFi, ZeroHash, Bridge, Magic)
 
 ## 📜 Version History
 
 - **V1 (Archived):** Smart contract DeFi yield aggregator with on-chain accounting
 - **V2 (Archived):** Enhanced V1 with oracle-based index updates
 - **V3 (Archived):** Wallet custodial API provider (Privy-based, no DeFi)
-- **V4 (Current):** White-label DeFi platform with custodial pooling + index accounting (off-chain)
+- **V4 (Current):** Quirk - Earn-as-a-Service platform with AI yield strategies + MPC custody
 
 **Archived Versions:** See `/docs/archive/` for old business models
+
+## 📊 Additional Resources
+
+- **[Miro Customer Persona Board](https://miro.com/app/board/uXjVJoTZufk=/)** - Target customer analysis
+- **Tech Stack Documentation** - See `/docs/technical/`
+- **Roadmap** - Product development timeline
+- **Shopify APY Rewards Reference** - [Shopify Balance Rewards](https://help.shopify.com/en/manual/finance/shopify-balance/rewards/apy-rewards)
 
 ## 🎓 CODING WORK STYLE (IMPORTANT!)
 
@@ -253,7 +319,8 @@ Show me your attempt."
 
 ---
 
-**Last Updated:** 2025-11-12
+**Last Updated:** 2025-12-06
 **Status:** MVP Development
-**Version:** 3.0 (Product Shift: Wallet Custodial Provider via Privy)
-**V2 Vision:** DeFi Yield Aggregator (archived in `/docs/archive/v2-defi-aggregator/`)
+**Version:** 4.0 - Quirk: Earn-as-a-Service Platform
+**Product:** Enabling businesses to embed DeFi yield without infrastructure complexity
+**Vision:** Earn Anywhere. Save Everywhere.
