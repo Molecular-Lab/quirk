@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { useNavigate, useParams } from "@tanstack/react-router"
 import { AlertCircle, ArrowLeft, Building2, Check, Clock, Copy, CreditCard, Loader2 } from "lucide-react"
 
-import { b2bApiClient } from "@/api/b2bClient"
+import { getDepositByOrderId, mockConfirmFiatDeposit } from "@/api/b2bClientHelpers"
 
 interface PaymentInstructions {
 	paymentMethod: "bank_transfer"
@@ -48,7 +48,7 @@ export function PaymentSessionPage() {
 		const fetchDeposit = async () => {
 			try {
 				setLoading(true)
-				const response = await b2bApiClient.getDepositByOrderId(orderId)
+				const response = await getDepositByOrderId(orderId)
 				setDeposit(response as DepositDetails)
 			} catch (err) {
 				console.error("Failed to fetch deposit:", err)
@@ -85,7 +85,7 @@ export function PaymentSessionPage() {
 			await new Promise((resolve) => setTimeout(resolve, 3000))
 
 			// Call mock confirm endpoint
-			await b2bApiClient.mockConfirmFiatDeposit(orderId, {
+			await mockConfirmFiatDeposit(orderId, {
 				bankTransactionId: `BANK-${Date.now()}`,
 				paidAmount: deposit.paymentInstructions.amount,
 				paidCurrency: deposit.paymentInstructions.currency,

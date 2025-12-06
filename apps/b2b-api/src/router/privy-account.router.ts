@@ -16,7 +16,7 @@ export const createPrivyAccountRouter = (
 		// POST /privy-accounts
 		createOrUpdate: async ({ body }: { body: any }) => {
 			try {
-				logger.info("[PrivyAccountRouter] Creating or updating Privy account", { 
+				logger.info("[PrivyAccountRouter] Creating or updating Privy account", {
 					privyOrganizationId: body.privyOrganizationId,
 					hasWalletAddress: !!body.privyWalletAddress,
 					hasEmail: !!body.privyEmail,
@@ -94,9 +94,39 @@ export const createPrivyAccountRouter = (
 			}
 		},
 
-		// GET /privy-accounts/:privyOrganizationId
-		getByOrgId: async ({ params }: { params: { privyOrganizationId: string } }) => {
+		// GET /privy-accounts/:privyOrganizationId (Dashboard only)
+		getByOrgId: async ({ params, req }: { params: { privyOrganizationId: string }; req: any }) => {
 			try {
+				// ✅ Dashboard only: Validate user owns this Privy account
+				const privySession = (req as any).privy;
+				if (!privySession) {
+					logger.warn("[Privy Account Router] No Privy session found", {
+						requestedOrgId: params.privyOrganizationId,
+					});
+					return {
+						status: 401 as const,
+						body: {
+							success: false,
+							error: "Authentication required",
+						},
+					};
+				}
+
+				// Verify user is requesting their own account
+				if (privySession.organizationId !== params.privyOrganizationId) {
+					logger.warn("[Privy Account Router] User attempting to access another account", {
+						requestedOrgId: params.privyOrganizationId,
+						authenticatedOrgId: privySession.organizationId,
+					});
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							error: "Access denied - can only access your own account",
+						},
+					};
+				}
+
 				logger.info("[PrivyAccountRouter] Getting Privy account by organization ID", {
 					privyOrganizationId: params.privyOrganizationId,
 				});

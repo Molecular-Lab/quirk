@@ -2,7 +2,7 @@ import { useEffect, useState } from "react"
 
 import { DollarSign, RefreshCw, Sparkles, UserPlus, Users, Zap } from "lucide-react"
 
-import { b2bApiClient } from "@/api/b2bClient"
+import { listPendingDeposits } from "@/api/b2bClientHelpers"
 import { useClientContext } from "@/store/clientContextStore"
 
 import { OnRampModal } from "./OnRampModal"
@@ -57,7 +57,7 @@ export function OperationsDashboard() {
 			const timestamp = forceRefresh ? `?_t=${Date.now()}` : ""
 			console.log(`[OperationsDashboard] Loading pending orders (forceRefresh=${forceRefresh})${timestamp}`)
 
-			const response = await b2bApiClient.listPendingDeposits()
+			const response = await listPendingDeposits()
 			console.log("[OperationsDashboard] Pending deposits response:", response)
 
 			// API returns { deposits: [...], summary: [...] }

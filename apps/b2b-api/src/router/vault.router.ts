@@ -126,21 +126,83 @@ export const createVaultRouter = (
 		},
 
 		// POST /vaults/:id/index/update
-		updateIndexWithYield: async ({ params, body }: { params: { id: string }; body: any }) => {
+		updateIndexWithYield: async ({ params, body, req }: { params: { id: string }; body: any; req?: any }) => {
 			try {
+				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
+				const apiKeyClient = (req as any)?.client;
+				const privySession = (req as any)?.privy;
+
+				// Get vault to verify ownership
+				const vault = await vaultService.getVaultById(params.id);
+				if (!vault) {
+					return {
+						status: 404 as const,
+						body: {
+							success: false,
+							error: "Vault not found",
+						},
+					};
+				}
+
+				// Verify authorization
+				// For API key: vault must belong to this client
+				if (apiKeyClient) {
+					if (vault.clientId !== apiKeyClient.id) {
+						logger.warn("API key client attempting to update another client's vault", {
+							apiKeyClientId: apiKeyClient.id,
+							vaultClientId: vault.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: {
+								success: false,
+								error: "Not authorized to update this vault",
+							},
+						};
+					}
+				}
+				// For Privy: vault must belong to one of the organization's products
+				else if (privySession) {
+					const productIds = privySession.products.map((p: any) => p.id);
+					if (!productIds.includes(vault.clientId)) {
+						logger.warn("Privy user attempting to update vault from outside organization", {
+							privyOrgId: privySession.organizationId,
+							vaultClientId: vault.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: {
+								success: false,
+								error: "Not authorized to update this vault",
+							},
+						};
+					}
+				}
+				// No auth found
+				else {
+					logger.error("Authentication missing for update vault yield");
+					return {
+						status: 401 as const,
+						body: {
+							success: false,
+							error: "Authentication required",
+						},
+					};
+				}
+
 				await vaultService.updateIndexWithYield(params.id, body.yieldAmount);
 
-				const vault = await vaultService.getVaultById(params.id);
+				const updatedVault = await vaultService.getVaultById(params.id);
 
 				// Calculate yield per share: yieldAmount / totalShares
 				const yieldAmount = parseFloat(body.yieldAmount);
-				const totalShares = parseFloat(vault?.totalShares || "1");
+				const totalShares = parseFloat(updatedVault?.totalShares || "1");
 				const yieldPerShare = (yieldAmount / totalShares).toFixed(18);
 
 				return {
 					status: 200 as const,
 					body: {
-						newIndex: vault?.currentIndex || "0",
+						newIndex: updatedVault?.currentIndex || "0",
 						yieldPerShare: yieldPerShare,
 					},
 				};

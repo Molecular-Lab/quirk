@@ -4,7 +4,7 @@ import { usePrivy } from "@privy-io/react-auth"
 import { useNavigate } from "@tanstack/react-router"
 import { AlertCircle, Plus, Trash2 } from "lucide-react"
 
-import { b2bApiClient } from "@/api/b2bClient"
+import { configureBankAccounts, configureStrategies, registerClient } from "@/api/b2bClientHelpers"
 import { type BankAccount, useOnboardingStore } from "@/store/onboardingStore"
 import { useUserStore } from "@/store/userStore"
 
@@ -62,7 +62,7 @@ export function BankAccountForm() {
 			const privyWalletAddress = user.wallet?.address || ""
 
 			// Step 1: Register client
-			const clientResponse = await b2bApiClient.registerClient({
+			const clientResponse = await registerClient({
 				companyName: companyInfo.companyName,
 				businessType: companyInfo.businessType,
 				description: companyInfo.description || undefined,
@@ -77,7 +77,7 @@ export function BankAccountForm() {
 			// Extract product ID from response
 			const productId =
 				typeof clientResponse === "object" && clientResponse && "productId" in clientResponse
-					? (clientResponse.productId as string)
+					? clientResponse.productId
 					: ""
 
 			if (!productId) {
@@ -102,10 +102,10 @@ export function BankAccountForm() {
 				strategyAllocations[0].target += diff
 			}
 
-			await b2bApiClient.configureStrategies(productId, {
+			await configureStrategies(productId, {
 				chain: "8453", // Base
-				token: "USDC",
 				token_address: "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913", // USDC on Base
+				token_symbol: "USDC",
 				strategies: strategyAllocations.map((s) => ({
 					category: s.category as "lending" | "lp" | "staking",
 					target: s.target,
@@ -114,21 +114,22 @@ export function BankAccountForm() {
 
 			// Step 3: Configure bank accounts if provided
 			if (includeBanking && bankingInfo.accounts.length > 0) {
-				await b2bApiClient.configureBankAccounts(productId, {
-					bankAccounts: bankingInfo.accounts.map((account) => ({
-						currency: account.currency,
+				await configureBankAccounts(
+					productId,
+					bankingInfo.accounts.map((account) => ({
+						currency: account.currency as any,
 						bank_name: account.bank_name,
 						account_number: account.account_number,
 						account_name: account.account_name,
 						bank_details: account.bank_details,
 					})),
-				})
+				)
 			}
 
 			// Step 4: Add to user store
 			if (typeof clientResponse === "object" && clientResponse) {
 				addOrganization({
-					id: "id" in clientResponse ? (clientResponse.id as string) : "",
+					id: "id" in clientResponse ? clientResponse.id : "",
 					productId,
 					companyName: companyInfo.companyName,
 					businessType: companyInfo.businessType,

@@ -3,7 +3,7 @@ import { useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { Home, TrendingUp, Wallet } from "lucide-react"
 
-import { b2bApiClient } from "@/api/b2bClient"
+import { createFiatDeposit, createUser } from "@/api/b2bClientHelpers"
 import { useClientContext } from "@/store/clientContextStore"
 import { useDemoStore } from "@/store/demoStore"
 
@@ -154,8 +154,7 @@ export function DemoClientApp() {
 			})
 
 			// Call the API to create end-user account
-			const response = await b2bApiClient.createUser({
-				clientId: productId, // Note: API parameter is named clientId but expects productId
+			const response = await createUser(productId, {
 				clientUserId: demoUserId,
 				email: "demo@example.com", // Optional demo email
 			})
@@ -165,7 +164,7 @@ export function DemoClientApp() {
 			// Store the end user ID in demoStore
 			if (response && typeof response === "object" && "id" in response) {
 				setEndUser({
-					endUserId: response.id as string,
+					endUserId: response.id,
 					endUserClientUserId: demoUserId,
 				})
 			} else {
@@ -191,18 +190,15 @@ export function DemoClientApp() {
 				userId: endUserId,
 				amount: amount.toString(),
 				currency: "USD",
-				chain: "base",
-				token: "USDC",
+				tokenSymbol: "USDC",
 			})
 
 			// Call the API to create deposit order
-			const response = await b2bApiClient.createDeposit({
-				user_id: endUserId,
+			const response = await createFiatDeposit({
+				userId: endUserId,
 				amount: amount.toString(),
 				currency: "USD",
-				chain: "base",
-				token: "USDC",
-				payment_method: "proxify_gateway",
+				tokenSymbol: "USDC",
 			})
 
 			console.log("[DemoClientApp] Deposit order created:", response)
@@ -210,7 +206,7 @@ export function DemoClientApp() {
 			// Add to deposit history in demoStore
 			if (response && typeof response === "object" && "orderId" in response) {
 				addDeposit({
-					orderId: response.orderId as string,
+					orderId: response.orderId,
 					amount: amount.toString(),
 					currency: "USD",
 					status: "pending",
