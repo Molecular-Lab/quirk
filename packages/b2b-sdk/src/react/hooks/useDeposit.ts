@@ -1,7 +1,10 @@
-import { useCallback, useMemo } from 'react'
-import { useQuirkContext } from '../QuirkContext'
-import { useAsyncAction } from './useAsyncAction'
-import type { Deposit, CreateFiatDepositRequest, InitiateCryptoDepositRequest } from '../../types'
+import { useCallback, useMemo } from "react"
+
+import { useQuirkContext } from "../QuirkContext"
+
+import { useAsyncAction } from "./useAsyncAction"
+
+import type { CreateFiatDepositRequest, Deposit, InitiateCryptoDepositRequest } from "../../types"
 
 export interface UseDepositReturn {
 	/**
@@ -79,28 +82,20 @@ export function useDeposit(): UseDepositReturn {
 		async (params: CreateFiatDepositRequest) => {
 			return sdk.deposits.createFiat(params)
 		},
-		[sdk]
+		[sdk],
 	)
 
-	const {
-		execute: createFiat,
-		loading: fiatLoading,
-		error: fiatError,
-	} = useAsyncAction(createFiatAction)
+	const { execute: createFiat, loading: fiatLoading, error: fiatError } = useAsyncAction(createFiatAction)
 
 	// Create crypto deposit action
 	const createCryptoAction = useCallback(
 		async (params: InitiateCryptoDepositRequest) => {
 			return sdk.deposits.initiateCrypto(params)
 		},
-		[sdk]
+		[sdk],
 	)
 
-	const {
-		execute: createCrypto,
-		loading: cryptoLoading,
-		error: cryptoError,
-	} = useAsyncAction(createCryptoAction)
+	const { execute: createCrypto, loading: cryptoLoading, error: cryptoError } = useAsyncAction(createCryptoAction)
 
 	// Combine loading and error states
 	const loading = useMemo(() => fiatLoading || cryptoLoading, [fiatLoading, cryptoLoading])
