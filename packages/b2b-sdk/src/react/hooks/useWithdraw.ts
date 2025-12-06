@@ -1,7 +1,10 @@
-import { useCallback } from 'react'
-import { useQuirkContext } from '../QuirkContext'
-import { useAsyncAction } from './useAsyncAction'
-import type { Withdrawal, CreateWithdrawalRequest } from '../../types'
+import { useCallback } from "react"
+
+import { useQuirkContext } from "../QuirkContext"
+
+import { useAsyncAction } from "./useAsyncAction"
+
+import type { CreateWithdrawalRequest, Withdrawal } from "../../types"
 
 export interface UseWithdrawReturn {
 	/**
@@ -79,7 +82,7 @@ export function useWithdraw(): UseWithdrawReturn {
 		async (params: CreateWithdrawalRequest) => {
 			return sdk.withdrawals.create(params)
 		},
-		[sdk]
+		[sdk],
 	)
 
 	const { execute: create, loading, error } = useAsyncAction(createAction)

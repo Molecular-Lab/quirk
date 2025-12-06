@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useCallback, useState } from "react"
 
 export interface AsyncActionState {
 	loading: boolean
@@ -30,9 +30,7 @@ export interface AsyncActionReturn<T extends (...args: any[]) => Promise<any>> {
  * }
  * ```
  */
-export function useAsyncAction<T extends (...args: any[]) => Promise<any>>(
-	actionFn: T
-): AsyncActionReturn<T> {
+export function useAsyncAction<T extends (...args: any[]) => Promise<any>>(actionFn: T): AsyncActionReturn<T> {
 	const [loading, setLoading] = useState(false)
 	const [error, setError] = useState<Error | null>(null)
 
@@ -52,7 +50,7 @@ export function useAsyncAction<T extends (...args: any[]) => Promise<any>>(
 				throw error
 			}
 		},
-		[actionFn]
+		[actionFn],
 	) as T
 
 	const reset = useCallback(() => {

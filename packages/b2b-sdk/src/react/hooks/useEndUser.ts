@@ -1,14 +1,17 @@
-import { useCallback, useMemo } from 'react'
-import { useQuirkContext } from '../QuirkContext'
-import { useAsyncAction } from './useAsyncAction'
-import type { User, CreateUserRequest } from '../../types'
+import { useCallback, useMemo } from "react"
+
+import { useQuirkContext } from "../QuirkContext"
+
+import { useAsyncAction } from "./useAsyncAction"
+
+import type { CreateUserRequest, User } from "../../types"
 
 export interface UseEndUserReturn {
 	/**
 	 * Create or get existing end-user
 	 * Automatically injects productId from context
 	 */
-	create: (params: Omit<CreateUserRequest, 'clientId'>) => Promise<User>
+	create: (params: Omit<CreateUserRequest, "clientId">) => Promise<User>
 
 	/**
 	 * Get end-user by internal user ID
@@ -61,34 +64,26 @@ export function useEndUser(): UseEndUserReturn {
 
 	// Create action
 	const createAction = useCallback(
-		async (params: Omit<CreateUserRequest, 'clientId'>) => {
+		async (params: Omit<CreateUserRequest, "clientId">) => {
 			return sdk.users.createOrGet({
 				...params,
 				clientId: productId,
 			})
 		},
-		[sdk, productId]
+		[sdk, productId],
 	)
 
-	const {
-		execute: create,
-		loading: createLoading,
-		error: createError,
-	} = useAsyncAction(createAction)
+	const { execute: create, loading: createLoading, error: createError } = useAsyncAction(createAction)
 
 	// Get action
 	const getAction = useCallback(
 		async (userId: string) => {
 			return sdk.users.getById(userId)
 		},
-		[sdk]
+		[sdk],
 	)
 
-	const {
-		execute: get,
-		loading: getLoading,
-		error: getError,
-	} = useAsyncAction(getAction)
+	const { execute: get, loading: getLoading, error: getError } = useAsyncAction(getAction)
 
 	// Combine loading and error states
 	const loading = useMemo(() => createLoading || getLoading, [createLoading, getLoading])
