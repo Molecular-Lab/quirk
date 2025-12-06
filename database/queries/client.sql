@@ -95,6 +95,7 @@ INSERT INTO client_organizations (
   business_type,
   description,
   website_url,
+  customer_tier,
   api_key_hash,
   api_key_prefix,
   webhook_urls,
@@ -109,7 +110,7 @@ INSERT INTO client_organizations (
   bank_accounts
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16, $17, $18
+  $11, $12, $13, $14, $15, $16, $17, $18, $19
 )
 RETURNING *;
 
@@ -119,6 +120,7 @@ SET company_name = COALESCE(sqlc.narg('company_name'), company_name),
     business_type = COALESCE(sqlc.narg('business_type'), business_type),
     description = COALESCE(sqlc.narg('description'), description),
     website_url = COALESCE(sqlc.narg('website_url'), website_url),
+    customer_tier = COALESCE(sqlc.narg('customer_tier'), customer_tier),
     webhook_urls = COALESCE(sqlc.narg('webhook_urls'), webhook_urls),
     webhook_secret = COALESCE(sqlc.narg('webhook_secret'), webhook_secret),
     custom_strategy = COALESCE(sqlc.narg('custom_strategy'), custom_strategy),

@@ -1,6 +1,6 @@
 /**
- * Proxify SDK - Main Client
- * Official TypeScript SDK for Proxify B2B API
+ * Quirk SDK - Main Client
+ * Official TypeScript SDK for Quirk B2B API - Earn-as-a-Service Platform
  */
 
 import { HttpClient } from './utils/http-client'
@@ -17,18 +17,18 @@ import type { SDKConfig } from './types'
  * Default API base URLs
  */
 const DEFAULT_BASE_URLS = {
-  production: 'https://api.proxify.io', // Update with actual production URL
-  sandbox: 'https://api-sandbox.proxify.io', // Update with actual sandbox URL
+  production: 'https://api.quirk.io', // Update with actual production URL
+  sandbox: 'https://api-sandbox.quirk.io', // Update with actual sandbox URL
 }
 
 /**
- * Proxify SDK Client
+ * Quirk SDK Client
  *
  * @example
  * ```typescript
- * import { ProxifySDK } from '@proxify/b2b-sdk'
+ * import { QuirkSDK } from '@quirk/b2b-sdk'
  *
- * const sdk = new ProxifySDK({
+ * const sdk = new QuirkSDK({
  *   apiKey: 'your-api-key',
  *   environment: 'production'
  * })
@@ -48,7 +48,7 @@ const DEFAULT_BASE_URLS = {
  * })
  * ```
  */
-export class ProxifySDK {
+export class QuirkSDK {
   private httpClient: HttpClient
 
   // Resource instances
@@ -61,7 +61,7 @@ export class ProxifySDK {
   public readonly dashboard: DashboardResource
 
   /**
-   * Initialize Proxify SDK
+   * Initialize Quirk SDK
    *
    * @param config - SDK configuration
    */
