@@ -1,12 +1,13 @@
 /**
- * Proxify B2B SDK
- * Official TypeScript SDK for Proxify B2B API
+ * Quirk B2B SDK
+ * Official TypeScript SDK for Quirk B2B API - Earn-as-a-Service Platform
  *
  * @packageDocumentation
  */
 
 // Main SDK client
-export { ProxifySDK } from './client'
+export { QuirkSDK } from './client'
+export { QuirkSDK as ProxifySDK } from './client' // Backward compatibility alias
 
 // Resource classes
 export { ClientResource } from './resources/clients'
@@ -16,6 +17,17 @@ export { DepositResource } from './resources/deposits'
 export { WithdrawalResource } from './resources/withdrawals'
 export { DeFiResource } from './resources/defi'
 export { DashboardResource } from './resources/dashboard'
+
+// React components and hooks (optional - requires React)
+export { QuirkProvider } from './react/QuirkProvider'
+export type { QuirkProviderProps } from './react/QuirkProvider'
+export { useQuirkContext } from './react/QuirkContext'
+export { useEndUser } from './react/hooks/useEndUser'
+export type { UseEndUserReturn } from './react/hooks/useEndUser'
+export { useDeposit } from './react/hooks/useDeposit'
+export type { UseDepositReturn } from './react/hooks/useDeposit'
+export { useWithdraw } from './react/hooks/useWithdraw'
+export type { UseWithdrawReturn } from './react/hooks/useWithdraw'
 
 // Error classes
 export {
@@ -112,4 +124,4 @@ export type {
 } from './types'
 
 // Default export
-export { ProxifySDK as default } from './client'
+export { QuirkSDK as default } from './client'

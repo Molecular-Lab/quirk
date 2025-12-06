@@ -1,24 +1,26 @@
-# @proxify/b2b-sdk
+# @quirk/b2b-sdk
 
-Official TypeScript SDK for Proxify B2B API - White-Label DeFi Yield Platform
+Official TypeScript SDK for Quirk B2B API - Earn-as-a-Service Platform
+
+> **Earn Anywhere. Save Everywhere.**
 
 ## Installation
 
 ```bash
-npm install @proxify/b2b-sdk
+npm install @quirk/b2b-sdk
 # or
-yarn add @proxify/b2b-sdk
+yarn add @quirk/b2b-sdk
 # or
-pnpm add @proxify/b2b-sdk
+pnpm add @quirk/b2b-sdk
 ```
 
 ## Quick Start
 
 ```typescript
-import { ProxifySDK } from '@proxify/b2b-sdk'
+import { QuirkSDK } from '@quirk/b2b-sdk'
 
 // Initialize SDK
-const sdk = new ProxifySDK({
+const sdk = new QuirkSDK({
   apiKey: 'your-api-key',
   environment: 'production', // or 'sandbox'
 })
@@ -42,6 +44,7 @@ const deposit = await sdk.deposits.createFiat({
 
 - [Installation](#installation)
 - [Quick Start](#quick-start)
+- [React Integration](#react-integration) ⭐ NEW
 - [Authentication](#authentication)
 - [Client Management](#client-management)
 - [User Management](#user-management)
@@ -53,18 +56,240 @@ const deposit = await sdk.deposits.createFiat({
 - [Error Handling](#error-handling)
 - [TypeScript Support](#typescript-support)
 
+## React Integration
+
+⭐ **New!** The SDK now includes React hooks for seamless integration in React applications.
+
+### Setup Provider
+
+Wrap your app with `QuirkProvider`:
+
+```tsx
+import { QuirkProvider } from '@quirk/b2b-sdk'
+
+function App() {
+  return (
+    <QuirkProvider
+      apiKey={import.meta.env.VITE_QUIRK_API_KEY}
+      productId={import.meta.env.VITE_QUIRK_PRODUCT_ID}
+      environment="production"
+    >
+      <YourApp />
+    </QuirkProvider>
+  )
+}
+```
+
+### Available Hooks
+
+#### `useEndUser()` - User Management
+
+```tsx
+import { useEndUser } from '@quirk/b2b-sdk'
+
+function CreateUserButton() {
+  const { create, get, loading, error } = useEndUser()
+
+  const handleCreate = async () => {
+    try {
+      // productId is automatically injected from Provider
+      const user = await create({
+        clientUserId: 'user_123',
+        email: 'user@example.com'
+      })
+      console.log('User created:', user)
+    } catch (err) {
+      console.error('Failed:', err)
+    }
+  }
+
+  return (
+    <button onClick={handleCreate} disabled={loading}>
+      {loading ? 'Creating...' : 'Create User'}
+    </button>
+  )
+}
+```
+
+#### `useDeposit()` - Deposit Management
+
+```tsx
+import { useDeposit } from '@quirk/b2b-sdk'
+
+function DepositButton() {
+  const { createFiat, createCrypto, loading, error } = useDeposit()
+
+  const handleFiatDeposit = async () => {
+    const deposit = await createFiat({
+      userId: 'user_123',
+      amount: '1000.00',
+      currency: 'USD',
+      tokenSymbol: 'USDC'
+    })
+
+    // Show payment instructions to user
+    console.log(deposit.paymentInstructions)
+  }
+
+  const handleCryptoDeposit = async () => {
+    const deposit = await createCrypto({
+      userId: 'user_123',
+      chain: '8453',
+      tokenAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      tokenSymbol: 'USDC',
+      amount: '500.00'
+    })
+
+    // Show wallet address to user
+    console.log('Send to:', deposit.custodialWalletAddress)
+  }
+
+  if (error) return <div>Error: {error.message}</div>
+
+  return (
+    <>
+      <button onClick={handleFiatDeposit} disabled={loading}>
+        {loading ? 'Processing...' : 'Deposit via Bank'}
+      </button>
+      <button onClick={handleCryptoDeposit} disabled={loading}>
+        {loading ? 'Processing...' : 'Deposit Crypto'}
+      </button>
+    </>
+  )
+}
+```
+
+#### `useWithdraw()` - Withdrawal Management
+
+```tsx
+import { useWithdraw } from '@quirk/b2b-sdk'
+
+function WithdrawButton() {
+  const { create, loading, error } = useWithdraw()
+
+  const handleWithdraw = async () => {
+    const withdrawal = await create({
+      userId: 'user_123',
+      vaultId: 'base-0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+      amount: '500.00',
+      withdrawal_method: 'crypto',
+      destination_address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb0',
+      chain: '8453',
+      token_address: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'
+    })
+
+    console.log('Withdrawal pending:', withdrawal.id)
+  }
+
+  return (
+    <button onClick={handleWithdraw} disabled={loading}>
+      {loading ? 'Processing...' : 'Withdraw'}
+    </button>
+  )
+}
+```
+
+### Complete React Example
+
+```tsx
+import { QuirkProvider, useEndUser, useDeposit } from '@quirk/b2b-sdk'
+import { useState } from 'react'
+
+// App wrapper
+function App() {
+  return (
+    <QuirkProvider
+      apiKey="prod_pk_xxxxx"
+      productId="prod_xxxxx"
+    >
+      <Dashboard />
+    </QuirkProvider>
+  )
+}
+
+// Dashboard component
+function Dashboard() {
+  const [userId, setUserId] = useState<string | null>(null)
+  const { create: createUser, loading: userLoading } = useEndUser()
+  const { createFiat, loading: depositLoading, error } = useDeposit()
+
+  const handleSignup = async (email: string) => {
+    const user = await createUser({
+      clientUserId: email,
+      email
+    })
+    setUserId(user.id)
+  }
+
+  const handleDeposit = async (amount: string) => {
+    if (!userId) return
+
+    const deposit = await createFiat({
+      userId,
+      amount,
+      currency: 'USD',
+      tokenSymbol: 'USDC'
+    })
+
+    alert(`Please transfer to: ${deposit.paymentInstructions.accountNumber}`)
+  }
+
+  if (error) {
+    return <div className="error">{error.message}</div>
+  }
+
+  return (
+    <div>
+      {!userId ? (
+        <button onClick={() => handleSignup('user@example.com')} disabled={userLoading}>
+          Sign Up
+        </button>
+      ) : (
+        <button onClick={() => handleDeposit('1000.00')} disabled={depositLoading}>
+          Deposit $1000
+        </button>
+      )}
+    </div>
+  )
+}
+```
+
+### Hook Features
+
+All hooks automatically handle:
+
+- ✅ **Loading states** - `loading` boolean for UI feedback
+- ✅ **Error handling** - `error` object with typed errors
+- ✅ **Auto-inject productId** - No need to pass it manually
+- ✅ **Type safety** - Full TypeScript support
+- ✅ **Memoization** - Optimized re-renders
+
+### TypeScript Support
+
+```tsx
+import type {
+  UseEndUserReturn,
+  UseDepositReturn,
+  UseWithdrawReturn
+} from '@quirk/b2b-sdk'
+
+const userHook: UseEndUserReturn = useEndUser()
+const depositHook: UseDepositReturn = useDeposit()
+const withdrawHook: UseWithdrawReturn = useWithdraw()
+```
+
 ## Authentication
 
 The SDK uses API key authentication. Your API key is automatically included in all requests.
 
 ```typescript
-const sdk = new ProxifySDK({
+const sdk = new QuirkSDK({
   apiKey: 'prod_sk_xxxxxxxxxxxxx',
   environment: 'production',
 })
 
 // For sandbox/testing
-const sandboxSdk = new ProxifySDK({
+const sandboxSdk = new QuirkSDK({
   apiKey: 'sand_sk_xxxxxxxxxxxxx',
   environment: 'sandbox',
 })
@@ -452,14 +677,14 @@ The SDK provides typed error classes for better error handling:
 
 ```typescript
 import {
-  ProxifySDK,
+  QuirkSDK,
   AuthenticationError,
   ValidationError,
   NotFoundError,
   RateLimitError,
   ServerError,
   NetworkError,
-} from '@proxify/b2b-sdk'
+} from '@quirk/b2b-sdk'
 
 try {
   const user = await sdk.users.getById('invalid_id')
@@ -494,7 +719,7 @@ import type {
   Currency,
   DepositStatus,
   WithdrawalMethod,
-} from '@proxify/b2b-sdk'
+} from '@quirk/b2b-sdk'
 
 // All types are exported and available
 const currency: Currency = 'USD'
@@ -504,7 +729,7 @@ const status: DepositStatus = 'completed'
 ## Configuration Options
 
 ```typescript
-const sdk = new ProxifySDK({
+const sdk = new QuirkSDK({
   // Required
   apiKey: 'your-api-key',
 
@@ -519,9 +744,9 @@ const sdk = new ProxifySDK({
 ## Complete Example: E-commerce Integration
 
 ```typescript
-import { ProxifySDK, Currency } from '@proxify/b2b-sdk'
+import { QuirkSDK, Currency } from '@quirk/b2b-sdk'
 
-const sdk = new ProxifySDK({
+const sdk = new QuirkSDK({
   apiKey: process.env.PROXIFY_API_KEY!,
   environment: 'production',
 })
@@ -572,13 +797,13 @@ await handleSellerPayout('seller_123', 5000, 'USD')
 
 ## API Reference
 
-For complete API documentation, visit: [https://docs.proxify.io](https://docs.proxify.io)
+For complete API documentation, visit: [https://docs.quirk.io](https://docs.quirk.io)
 
 ## Support
 
 - GitHub: [https://github.com/proxify/b2b-sdk](https://github.com/proxify/b2b-sdk)
-- Documentation: [https://docs.proxify.io](https://docs.proxify.io)
-- Email: support@proxify.io
+- Documentation: [https://docs.quirk.io](https://docs.quirk.io)
+- Email: support@quirk.io
 
 ## License
 
