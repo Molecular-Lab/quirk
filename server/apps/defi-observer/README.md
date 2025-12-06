@@ -1,1 +1,0 @@
-All APY Getter logic
