@@ -10,46 +10,35 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
-import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as GetStartedRouteImport } from './routes/get-started'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as PaymentSessionOrderIdRouteImport } from './routes/payment-session.$orderId'
-import { Route as DashboardOnboardingRouteImport } from './routes/dashboard.onboarding'
+import { Route as DashboardProductConfigRouteImport } from './routes/dashboard/product-config'
+import { Route as DashboardOperationsRouteImport } from './routes/dashboard.operations'
 import { Route as DashboardMarketRouteImport } from './routes/dashboard/market'
 import { Route as DashboardIntegrationRouteImport } from './routes/dashboard/integration'
 import { Route as DashboardExploreRouteImport } from './routes/dashboard/explore'
 import { Route as DashboardDocsRouteImport } from './routes/dashboard/docs'
 import { Route as DashboardApiTestingRouteImport } from './routes/dashboard/api-testing'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
-import { Route as DashboardSettingsIndexRouteImport } from './routes/dashboard/settings/index'
+import { Route as DashboardProductsIndexRouteImport } from './routes/dashboard/products/index'
 import { Route as DashboardPortfoliosIndexRouteImport } from './routes/dashboard/portfolios/index'
-import { Route as DashboardSettingsRiskConfigRouteImport } from './routes/dashboard/settings/risk-config'
-import { Route as DashboardSettingsBillingRouteImport } from './routes/dashboard/settings/billing'
-import { Route as DashboardSettingsApiKeysRouteImport } from './routes/dashboard/settings/api-keys'
+import { Route as DashboardProductsProductIdRouteImport } from './routes/dashboard/products/$productId'
 import { Route as DashboardPortfoliosIdRouteImport } from './routes/dashboard/portfolios/$id'
+import { Route as AuthenticatedOnboardingCreateProductRouteImport } from './routes/_authenticated/onboarding/create-product'
 
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OnboardingRoute = OnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const GetStartedRoute = GetStartedRouteImport.update({
-  id: '/get-started',
-  path: '/get-started',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DemoRoute = DemoRouteImport.update({
@@ -60,6 +49,10 @@ const DemoRoute = DemoRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -77,9 +70,14 @@ const PaymentSessionOrderIdRoute = PaymentSessionOrderIdRouteImport.update({
   path: '/payment-session/$orderId',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DashboardOnboardingRoute = DashboardOnboardingRouteImport.update({
-  id: '/onboarding',
-  path: '/onboarding',
+const DashboardProductConfigRoute = DashboardProductConfigRouteImport.update({
+  id: '/product-config',
+  path: '/product-config',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOperationsRoute = DashboardOperationsRouteImport.update({
+  id: '/operations',
+  path: '/operations',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardMarketRoute = DashboardMarketRouteImport.update({
@@ -112,9 +110,9 @@ const DashboardAnalyticsRoute = DashboardAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => DashboardRoute,
 } as any)
-const DashboardSettingsIndexRoute = DashboardSettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
+const DashboardProductsIndexRoute = DashboardProductsIndexRouteImport.update({
+  id: '/products/',
+  path: '/products/',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardPortfoliosIndexRoute =
@@ -123,22 +121,10 @@ const DashboardPortfoliosIndexRoute =
     path: '/portfolios/',
     getParentRoute: () => DashboardRoute,
   } as any)
-const DashboardSettingsRiskConfigRoute =
-  DashboardSettingsRiskConfigRouteImport.update({
-    id: '/settings/risk-config',
-    path: '/settings/risk-config',
-    getParentRoute: () => DashboardRoute,
-  } as any)
-const DashboardSettingsBillingRoute =
-  DashboardSettingsBillingRouteImport.update({
-    id: '/settings/billing',
-    path: '/settings/billing',
-    getParentRoute: () => DashboardRoute,
-  } as any)
-const DashboardSettingsApiKeysRoute =
-  DashboardSettingsApiKeysRouteImport.update({
-    id: '/settings/api-keys',
-    path: '/settings/api-keys',
+const DashboardProductsProductIdRoute =
+  DashboardProductsProductIdRouteImport.update({
+    id: '/products/$productId',
+    path: '/products/$productId',
     getParentRoute: () => DashboardRoute,
   } as any)
 const DashboardPortfoliosIdRoute = DashboardPortfoliosIdRouteImport.update({
@@ -146,14 +132,18 @@ const DashboardPortfoliosIdRoute = DashboardPortfoliosIdRouteImport.update({
   path: '/portfolios/$id',
   getParentRoute: () => DashboardRoute,
 } as any)
+const AuthenticatedOnboardingCreateProductRoute =
+  AuthenticatedOnboardingCreateProductRouteImport.update({
+    id: '/onboarding/create-product',
+    path: '/onboarding/create-product',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
   '/demo': typeof DemoRoute
-  '/get-started': typeof GetStartedRoute
   '/login': typeof LoginRoute
-  '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/api-testing': typeof DashboardApiTestingRoute
@@ -161,22 +151,20 @@ export interface FileRoutesByFullPath {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
-  '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/dashboard/operations': typeof DashboardOperationsRoute
+  '/dashboard/product-config': typeof DashboardProductConfigRoute
   '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/onboarding/create-product': typeof AuthenticatedOnboardingCreateProductRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
-  '/dashboard/settings/api-keys': typeof DashboardSettingsApiKeysRoute
-  '/dashboard/settings/billing': typeof DashboardSettingsBillingRoute
-  '/dashboard/settings/risk-config': typeof DashboardSettingsRiskConfigRoute
+  '/dashboard/products/$productId': typeof DashboardProductsProductIdRoute
   '/dashboard/portfolios': typeof DashboardPortfoliosIndexRoute
-  '/dashboard/settings': typeof DashboardSettingsIndexRoute
+  '/dashboard/products': typeof DashboardProductsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/demo': typeof DemoRoute
-  '/get-started': typeof GetStartedRoute
   '/login': typeof LoginRoute
-  '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/api-testing': typeof DashboardApiTestingRoute
@@ -184,24 +172,23 @@ export interface FileRoutesByTo {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
-  '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/dashboard/operations': typeof DashboardOperationsRoute
+  '/dashboard/product-config': typeof DashboardProductConfigRoute
   '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/onboarding/create-product': typeof AuthenticatedOnboardingCreateProductRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
-  '/dashboard/settings/api-keys': typeof DashboardSettingsApiKeysRoute
-  '/dashboard/settings/billing': typeof DashboardSettingsBillingRoute
-  '/dashboard/settings/risk-config': typeof DashboardSettingsRiskConfigRoute
+  '/dashboard/products/$productId': typeof DashboardProductsProductIdRoute
   '/dashboard/portfolios': typeof DashboardPortfoliosIndexRoute
-  '/dashboard/settings': typeof DashboardSettingsIndexRoute
+  '/dashboard/products': typeof DashboardProductsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
   '/demo': typeof DemoRoute
-  '/get-started': typeof GetStartedRoute
   '/login': typeof LoginRoute
-  '/onboarding': typeof OnboardingRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/api-testing': typeof DashboardApiTestingRoute
@@ -209,15 +196,15 @@ export interface FileRoutesById {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
-  '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/dashboard/operations': typeof DashboardOperationsRoute
+  '/dashboard/product-config': typeof DashboardProductConfigRoute
   '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/_authenticated/onboarding/create-product': typeof AuthenticatedOnboardingCreateProductRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
-  '/dashboard/settings/api-keys': typeof DashboardSettingsApiKeysRoute
-  '/dashboard/settings/billing': typeof DashboardSettingsBillingRoute
-  '/dashboard/settings/risk-config': typeof DashboardSettingsRiskConfigRoute
+  '/dashboard/products/$productId': typeof DashboardProductsProductIdRoute
   '/dashboard/portfolios/': typeof DashboardPortfoliosIndexRoute
-  '/dashboard/settings/': typeof DashboardSettingsIndexRoute
+  '/dashboard/products/': typeof DashboardProductsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -225,9 +212,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/demo'
-    | '/get-started'
     | '/login'
-    | '/onboarding'
     | '/register'
     | '/dashboard/analytics'
     | '/dashboard/api-testing'
@@ -235,22 +220,20 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
-    | '/dashboard/onboarding'
+    | '/dashboard/operations'
+    | '/dashboard/product-config'
     | '/payment-session/$orderId'
     | '/dashboard/'
+    | '/onboarding/create-product'
     | '/dashboard/portfolios/$id'
-    | '/dashboard/settings/api-keys'
-    | '/dashboard/settings/billing'
-    | '/dashboard/settings/risk-config'
+    | '/dashboard/products/$productId'
     | '/dashboard/portfolios'
-    | '/dashboard/settings'
+    | '/dashboard/products'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/demo'
-    | '/get-started'
     | '/login'
-    | '/onboarding'
     | '/register'
     | '/dashboard/analytics'
     | '/dashboard/api-testing'
@@ -258,23 +241,22 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
-    | '/dashboard/onboarding'
+    | '/dashboard/operations'
+    | '/dashboard/product-config'
     | '/payment-session/$orderId'
     | '/dashboard'
+    | '/onboarding/create-product'
     | '/dashboard/portfolios/$id'
-    | '/dashboard/settings/api-keys'
-    | '/dashboard/settings/billing'
-    | '/dashboard/settings/risk-config'
+    | '/dashboard/products/$productId'
     | '/dashboard/portfolios'
-    | '/dashboard/settings'
+    | '/dashboard/products'
   id:
     | '__root__'
     | '/'
+    | '/_authenticated'
     | '/dashboard'
     | '/demo'
-    | '/get-started'
     | '/login'
-    | '/onboarding'
     | '/register'
     | '/dashboard/analytics'
     | '/dashboard/api-testing'
@@ -282,24 +264,23 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
-    | '/dashboard/onboarding'
+    | '/dashboard/operations'
+    | '/dashboard/product-config'
     | '/payment-session/$orderId'
     | '/dashboard/'
+    | '/_authenticated/onboarding/create-product'
     | '/dashboard/portfolios/$id'
-    | '/dashboard/settings/api-keys'
-    | '/dashboard/settings/billing'
-    | '/dashboard/settings/risk-config'
+    | '/dashboard/products/$productId'
     | '/dashboard/portfolios/'
-    | '/dashboard/settings/'
+    | '/dashboard/products/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
   DemoRoute: typeof DemoRoute
-  GetStartedRoute: typeof GetStartedRoute
   LoginRoute: typeof LoginRoute
-  OnboardingRoute: typeof OnboardingRoute
   RegisterRoute: typeof RegisterRoute
   PaymentSessionOrderIdRoute: typeof PaymentSessionOrderIdRoute
 }
@@ -313,25 +294,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RegisterRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/onboarding': {
-      id: '/onboarding'
-      path: '/onboarding'
-      fullPath: '/onboarding'
-      preLoaderRoute: typeof OnboardingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/get-started': {
-      id: '/get-started'
-      path: '/get-started'
-      fullPath: '/get-started'
-      preLoaderRoute: typeof GetStartedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/demo': {
@@ -346,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -369,11 +343,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaymentSessionOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/dashboard/onboarding': {
-      id: '/dashboard/onboarding'
-      path: '/onboarding'
-      fullPath: '/dashboard/onboarding'
-      preLoaderRoute: typeof DashboardOnboardingRouteImport
+    '/dashboard/product-config': {
+      id: '/dashboard/product-config'
+      path: '/product-config'
+      fullPath: '/dashboard/product-config'
+      preLoaderRoute: typeof DashboardProductConfigRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/operations': {
+      id: '/dashboard/operations'
+      path: '/operations'
+      fullPath: '/dashboard/operations'
+      preLoaderRoute: typeof DashboardOperationsRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/market': {
@@ -418,11 +399,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAnalyticsRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/settings/': {
-      id: '/dashboard/settings/'
-      path: '/settings'
-      fullPath: '/dashboard/settings'
-      preLoaderRoute: typeof DashboardSettingsIndexRouteImport
+    '/dashboard/products/': {
+      id: '/dashboard/products/'
+      path: '/products'
+      fullPath: '/dashboard/products'
+      preLoaderRoute: typeof DashboardProductsIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/portfolios/': {
@@ -432,25 +413,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPortfoliosIndexRouteImport
       parentRoute: typeof DashboardRoute
     }
-    '/dashboard/settings/risk-config': {
-      id: '/dashboard/settings/risk-config'
-      path: '/settings/risk-config'
-      fullPath: '/dashboard/settings/risk-config'
-      preLoaderRoute: typeof DashboardSettingsRiskConfigRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/settings/billing': {
-      id: '/dashboard/settings/billing'
-      path: '/settings/billing'
-      fullPath: '/dashboard/settings/billing'
-      preLoaderRoute: typeof DashboardSettingsBillingRouteImport
-      parentRoute: typeof DashboardRoute
-    }
-    '/dashboard/settings/api-keys': {
-      id: '/dashboard/settings/api-keys'
-      path: '/settings/api-keys'
-      fullPath: '/dashboard/settings/api-keys'
-      preLoaderRoute: typeof DashboardSettingsApiKeysRouteImport
+    '/dashboard/products/$productId': {
+      id: '/dashboard/products/$productId'
+      path: '/products/$productId'
+      fullPath: '/dashboard/products/$productId'
+      preLoaderRoute: typeof DashboardProductsProductIdRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/portfolios/$id': {
@@ -460,8 +427,28 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardPortfoliosIdRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/_authenticated/onboarding/create-product': {
+      id: '/_authenticated/onboarding/create-product'
+      path: '/onboarding/create-product'
+      fullPath: '/onboarding/create-product'
+      preLoaderRoute: typeof AuthenticatedOnboardingCreateProductRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
   }
 }
+
+interface AuthenticatedRouteChildren {
+  AuthenticatedOnboardingCreateProductRoute: typeof AuthenticatedOnboardingCreateProductRoute
+}
+
+const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedOnboardingCreateProductRoute:
+    AuthenticatedOnboardingCreateProductRoute,
+}
+
+const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
+  AuthenticatedRouteChildren,
+)
 
 interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
@@ -470,14 +457,13 @@ interface DashboardRouteChildren {
   DashboardExploreRoute: typeof DashboardExploreRoute
   DashboardIntegrationRoute: typeof DashboardIntegrationRoute
   DashboardMarketRoute: typeof DashboardMarketRoute
-  DashboardOnboardingRoute: typeof DashboardOnboardingRoute
+  DashboardOperationsRoute: typeof DashboardOperationsRoute
+  DashboardProductConfigRoute: typeof DashboardProductConfigRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardPortfoliosIdRoute: typeof DashboardPortfoliosIdRoute
-  DashboardSettingsApiKeysRoute: typeof DashboardSettingsApiKeysRoute
-  DashboardSettingsBillingRoute: typeof DashboardSettingsBillingRoute
-  DashboardSettingsRiskConfigRoute: typeof DashboardSettingsRiskConfigRoute
+  DashboardProductsProductIdRoute: typeof DashboardProductsProductIdRoute
   DashboardPortfoliosIndexRoute: typeof DashboardPortfoliosIndexRoute
-  DashboardSettingsIndexRoute: typeof DashboardSettingsIndexRoute
+  DashboardProductsIndexRoute: typeof DashboardProductsIndexRoute
 }
 
 const DashboardRouteChildren: DashboardRouteChildren = {
@@ -487,14 +473,13 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardExploreRoute: DashboardExploreRoute,
   DashboardIntegrationRoute: DashboardIntegrationRoute,
   DashboardMarketRoute: DashboardMarketRoute,
-  DashboardOnboardingRoute: DashboardOnboardingRoute,
+  DashboardOperationsRoute: DashboardOperationsRoute,
+  DashboardProductConfigRoute: DashboardProductConfigRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardPortfoliosIdRoute: DashboardPortfoliosIdRoute,
-  DashboardSettingsApiKeysRoute: DashboardSettingsApiKeysRoute,
-  DashboardSettingsBillingRoute: DashboardSettingsBillingRoute,
-  DashboardSettingsRiskConfigRoute: DashboardSettingsRiskConfigRoute,
+  DashboardProductsProductIdRoute: DashboardProductsProductIdRoute,
   DashboardPortfoliosIndexRoute: DashboardPortfoliosIndexRoute,
-  DashboardSettingsIndexRoute: DashboardSettingsIndexRoute,
+  DashboardProductsIndexRoute: DashboardProductsIndexRoute,
 }
 
 const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
@@ -503,11 +488,10 @@ const DashboardRouteWithChildren = DashboardRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRoute: AuthenticatedRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
   DemoRoute: DemoRoute,
-  GetStartedRoute: GetStartedRoute,
   LoginRoute: LoginRoute,
-  OnboardingRoute: OnboardingRoute,
   RegisterRoute: RegisterRoute,
   PaymentSessionOrderIdRoute: PaymentSessionOrderIdRoute,
 }

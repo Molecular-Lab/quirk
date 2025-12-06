@@ -30,10 +30,57 @@ export const createClientRouter = (
 		return []
 	}
 
+	// Helper: Validate Privy access to productId
+	const validatePrivyAccess = (req: any, productId: string): boolean => {
+		const privySession = (req as any).privy;
+		if (!privySession) {
+			logger.warn("[Client Router] No Privy session found", { productId });
+			return false;
+		}
+		const productIds = privySession.products.map((p: any) => p.productId);
+		const hasAccess = productIds.includes(productId);
+		if (!hasAccess) {
+			logger.warn("[Client Router] Dashboard user attempting to access unauthorized product", {
+				requestedProductId: productId,
+				authorizedProductIds: productIds,
+			});
+		}
+		return hasAccess;
+	}
+
+	// Helper: Validate Privy access to clientId
+	const validatePrivyAccessById = (req: any, clientId: string): boolean => {
+		const privySession = (req as any).privy;
+		if (!privySession) {
+			logger.warn("[Client Router] No Privy session found", { clientId });
+			return false;
+		}
+		const productIds = privySession.products.map((p: any) => p.id);
+		const hasAccess = productIds.includes(clientId);
+		if (!hasAccess) {
+			logger.warn("[Client Router] Dashboard user attempting to access unauthorized client", {
+				requestedClientId: clientId,
+				authorizedProductIds: productIds,
+			});
+		}
+		return hasAccess;
+	}
+
 	return s.router(b2bContract.client, {
-		// GET /clients/:id
-		getById: async ({ params }: { params: { id: string } }) => {
+		// GET /clients/:id (Dashboard only)
+		getById: async ({ params, req }: { params: { id: string }; req: any }) => {
 			try {
+				// ✅ Dashboard only: Validate Privy access
+				if (!validatePrivyAccessById(req, params.id)) {
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							error: "Access denied - client not in your organization",
+						},
+					};
+				}
+
 				const client = await clientService.getClientByProductId(params.id);
 
 				if (!client) {
@@ -77,9 +124,20 @@ export const createClientRouter = (
 			}
 		},
 
-		// GET /clients/product/:productId
-		getByProductId: async ({ params }: { params: { productId: string } }) => {
+		// GET /clients/product/:productId (Dashboard only)
+		getByProductId: async ({ params, req }: { params: { productId: string }; req: any }) => {
 			try {
+				// ✅ Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							error: "Access denied - product not in your organization",
+						},
+					};
+				}
+
 				const client = await clientService.getClientByProductId(params.productId);
 
 				if (!client) {
@@ -171,9 +229,20 @@ export const createClientRouter = (
 			}
 		},
 
-		// POST /clients/product/:productId/regenerate-api-key
-		regenerateApiKey: async ({ params }: { params: { productId: string } }) => {
+		// POST /clients/product/:productId/regenerate-api-key (Dashboard only)
+		regenerateApiKey: async ({ params, req }: { params: { productId: string }; req: any }) => {
 			try {
+				// ✅ Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							error: "Access denied - product not in your organization",
+						},
+					};
+				}
+
 				logger.info("Regenerating API key for product", { productId: params.productId });
 
 				const result = await clientService.regenerateApiKey(params.productId);
@@ -283,6 +352,8 @@ export const createClientRouter = (
 					businessType: body.businessType,
 					description: body.description || null,
 					websiteUrl: body.websiteUrl || null,
+					customerTier: body.customerTier || null, // AUM tier: 0-1K | 1K-10K | etc.
+					strategyRanking: body.strategyRanking || null, // Array of strategy IDs
 
 					// Webhook configuration (API key is auto-generated)
 					webhookUrls: body.webhookUrls || null,
@@ -307,16 +378,16 @@ export const createClientRouter = (
 
 				const client = await clientService.createClient(request);
 
-				logger.info("Client created successfully", { 
-					clientId: client.id, 
+				logger.info("Client created successfully", {
+					clientId: client.id,
 					productId,
-					// No API key yet - user must generate via FLOW 0
+					apiKeyReturned: !!client.api_key, // API key auto-generated and returned once
 				});
 
 				// Normalize bankAccounts (DB may store JSON string)
 				const bankAccounts = normalizeBankAccounts(client.bankAccounts)
 
-				// Return response WITHOUT api_key (user must call FLOW 0 to generate)
+				// Return response WITH api_key (shown only once!)
 				return {
 					status: 201 as const,
 					body: {
@@ -334,7 +405,7 @@ export const createClientRouter = (
 						isSandbox: client.isSandbox || false,
 						createdAt: client.createdAt.toISOString(),
 						updatedAt: client.updatedAt.toISOString(),
-						// ✅ NO api_key field! User must call FLOW 0 to generate API key
+						apiKey: client.api_key, // ✅ Include API key (shown only once during registration!)
 					},
 				};
 			} catch (error: any) {
@@ -465,9 +536,17 @@ export const createClientRouter = (
 			}
 		},
 
-		// FLOW 2: Configure Vault Strategies
-		configureStrategies: async ({ params, body }: { params: { productId: string }; body: any }) => {
+		// FLOW 2: Configure Vault Strategies (Dashboard only)
+		configureStrategies: async ({ params, body, req }: { params: { productId: string }; body: any; req: any }) => {
 			try {
+				// ✅ Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
 				logger.info("Configuring vault strategies", { productId: params.productId, body });
 
 				// Validate strategies sum to 100%
@@ -523,9 +602,17 @@ export const createClientRouter = (
 		// SEPARATE CONFIG ENDPOINTS (3 cards on Settings page)
 		// ============================================
 
-		// 1. Update organization info only
-		updateOrganizationInfo: async ({ params, body }: { params: { productId: string }; body: any }) => {
+		// 1. Update organization info only (Dashboard only)
+		updateOrganizationInfo: async ({ params, body, req }: { params: { productId: string }; body: any; req: any }) => {
 			try {
+				// ✅ Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
 				logger.info("Updating organization info", { productId: params.productId, body });
 
 				const result = await clientService.updateOrganizationInfo(params.productId, body);
@@ -564,9 +651,17 @@ export const createClientRouter = (
 			}
 		},
 
-		// 2. Update supported currencies only
-		updateSupportedCurrencies: async ({ params, body }: { params: { productId: string }; body: { supportedCurrencies: string[] } }) => {
+		// 2. Update supported currencies only (Dashboard only)
+		updateSupportedCurrencies: async ({ params, body, req }: { params: { productId: string }; body: { supportedCurrencies: string[] }; req: any }) => {
 			try {
+				// ✅ Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
 				logger.info("Updating supported currencies", { productId: params.productId, currencies: body.supportedCurrencies });
 
 				await clientService.updateSupportedCurrencies(params.productId, body.supportedCurrencies);
@@ -595,9 +690,20 @@ export const createClientRouter = (
 			}
 		},
 
-		// 3. Configure bank accounts for fiat withdrawals (off-ramp)
-		configureBankAccounts: async ({ params, body }: { params: { productId: string }; body: { bankAccounts: any[] } }) => {
+		// 3. Configure bank accounts for fiat withdrawals (off-ramp) (Dashboard only)
+		configureBankAccounts: async ({ params, body, req }: { params: { productId: string }; body: { bankAccounts: any[] }; req: any }) => {
 			try {
+				// ✅ Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							error: "Access denied - product not in your organization",
+						},
+					};
+				}
+
 				logger.info("Configuring bank accounts", { productId: params.productId, bankAccountsCount: body.bankAccounts.length });
 
 				// Get client by productId
@@ -651,9 +757,20 @@ export const createClientRouter = (
 			}
 		},
 
-		// Get bank accounts for a client
-		getBankAccounts: async ({ params }: { params: { productId: string } }) => {
+		// Get bank accounts for a client (Dashboard only)
+		getBankAccounts: async ({ params, req }: { params: { productId: string }; req: any }) => {
 			try {
+				// ✅ Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							error: "Access denied - product not in your organization",
+						},
+					};
+				}
+
 				const client = await clientService.getClientByProductId(params.productId);
 				if (!client) {
 					return {

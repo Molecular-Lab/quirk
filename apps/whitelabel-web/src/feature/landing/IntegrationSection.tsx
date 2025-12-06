@@ -15,7 +15,6 @@ export function IntegrationSection() {
 
 				<div className="grid md:grid-cols-2 gap-8 mb-12">
 					<div className="bg-gray-50 rounded-3xl p-10 border border-gray-100">
-						<div className="text-4xl mb-4">🚀</div>
 						<h3 className="text-2xl font-bold text-gray-900 mb-4">Quick Setup</h3>
 						<p className="text-gray-600 leading-relaxed mb-6">
 							Integrate our SDK in under 30 minutes. No blockchain expertise required—we handle all the complexity.
@@ -35,7 +34,6 @@ export function IntegrationSection() {
 					</div>
 
 					<div className="bg-gray-50 rounded-3xl p-10 border border-gray-100">
-						<div className="text-4xl mb-4">💰</div>
 						<h3 className="text-2xl font-bold text-gray-900 mb-4">New Revenue Stream</h3>
 						<p className="text-gray-600 leading-relaxed mb-6">
 							Earn revenue share from yield generated on your users' idle balances. Typical clients earn $2,000-$10,000

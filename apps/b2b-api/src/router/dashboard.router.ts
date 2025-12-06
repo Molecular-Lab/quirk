@@ -16,8 +16,12 @@ export const createDashboardRouter = (
 ): any => {
 	return s.router(b2bContract.dashboard, {
 		// GET /dashboard/metrics
-		getMetrics: async ({ query }: { query: { clientId?: string } }) => {
+		getMetrics: async ({ query, req }: { query: { clientId?: string }; req?: any }) => {
 			try {
+				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
+				const apiKeyClient = (req as any)?.client;
+				const privySession = (req as any)?.privy;
+
 				const clientId = query.clientId;
 				if (!clientId) {
 					return {
@@ -29,7 +33,55 @@ export const createDashboardRouter = (
 					};
 				}
 
-				logger.info(`[Dashboard] Fetching metrics for client: ${clientId}`);
+				// Verify authorization
+				// For API key: clientId must match authenticated client
+				if (apiKeyClient) {
+					if (clientId !== apiKeyClient.id) {
+						logger.warn("API key client attempting to view another client's dashboard", {
+							apiKeyClientId: apiKeyClient.id,
+							requestedClientId: clientId,
+						});
+						return {
+							status: 403 as const,
+							body: {
+								success: false,
+								error: "Not authorized to view this client's dashboard",
+							},
+						};
+					}
+				}
+				// For Privy: clientId must belong to one of the organization's products
+				else if (privySession) {
+					const productIds = privySession.products.map((p: any) => p.id);
+					if (!productIds.includes(clientId)) {
+						logger.warn("Privy user attempting to view dashboard from outside organization", {
+							privyOrgId: privySession.organizationId,
+							requestedClientId: clientId,
+						});
+						return {
+							status: 403 as const,
+							body: {
+								success: false,
+								error: "Not authorized to view this client's dashboard",
+							},
+						};
+					}
+				}
+				// No auth found
+				else {
+					logger.error("Authentication missing for dashboard metrics");
+					return {
+						status: 401 as const,
+						body: {
+							success: false,
+							error: "Authentication required",
+						},
+					};
+				}
+
+				logger.info(`[Dashboard] Fetching metrics for client: ${clientId}`, {
+					authType: apiKeyClient ? "api_key" : "privy",
+				});
 
 				// Get all client vaults (multi-chain, multi-token)
 				const vaults = await vaultService.listClientVaults(clientId);

@@ -15,11 +15,21 @@ export const createUserRouter = (
 	userVaultService: UserVaultService // ✅ Added to fetch vaults
 ) => {
 	return s.router(b2bContract.user, {
-		// POST /users - Get or create user
-		getOrCreate: async ({ body }) => {
+		// POST /users - Get or create user (SDK only)
+		getOrCreate: async ({ body, req }) => {
 			try {
+				// ✅ SDK ONLY: Extract clientId from authenticated request (API key middleware)
+				const apiKeyClient = (req as any).client;
+				if (!apiKeyClient) {
+					logger.error("[User Router] Client ID missing from authenticated request");
+					return {
+						status: 401 as const,
+						body: { error: "Authentication failed - client ID not found" },
+					};
+				}
+
 				const user = await userService.getOrCreateUser({
-					clientId: body.clientId, // ✅ Can be productId or UUID
+					clientId: apiKeyClient.id, // ✅ Use authenticated client ID (not from body)
 					userId: body.clientUserId,
 					userType: "custodial", // ✅ B2B escrow - we manage custodial wallets
 					userWalletAddress: body.walletAddress,
@@ -90,9 +100,47 @@ export const createUserRouter = (
 			}
 		},
 
-		// GET /users/client/:clientId/user/:clientUserId
-		getByClientUserId: async ({ params }) => {
+		// GET /users/client/:clientId/user/:clientUserId (SDK primary, Dashboard secondary)
+		getByClientUserId: async ({ params, req }) => {
 			try {
+				// ✅ Dual Auth: Check for both API key (SDK) and Privy (Dashboard)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
+				// Validate access
+				if (apiKeyClient) {
+					// SDK: Only allow access to own client's users
+					if (params.clientId !== apiKeyClient.id) {
+						logger.warn("[User Router] SDK client attempting to access other client's user", {
+							requestedClientId: params.clientId,
+							authenticatedClientId: apiKeyClient.id,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Access denied - cannot view other clients' users" },
+						};
+					}
+				} else if (privySession) {
+					// Dashboard: Check if clientId belongs to any product under this organization
+					const productIds = privySession.products.map((p: any) => p.id);
+					if (!productIds.includes(params.clientId)) {
+						logger.warn("[User Router] Dashboard user attempting to access unauthorized client's user", {
+							requestedClientId: params.clientId,
+							authorizedProductIds: productIds,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Access denied - client not in your organization" },
+						};
+					}
+				} else {
+					// No auth present (should not happen due to server.ts middleware)
+					return {
+						status: 401 as const,
+						body: { error: "Authentication required" },
+					};
+				}
+
 				const user = await userService.getUserByClientAndUserId(
 					params.clientId,
 					params.clientUserId
@@ -119,8 +167,46 @@ export const createUserRouter = (
 		},
 
 		// GET /users/client/:clientId - List users
-		listByClient: async ({ params, query }) => {
+		listByClient: async ({ params, query, req }) => {
 			try {
+				// ✅ Dual Auth: Check for both API key (SDK) and Privy (Dashboard)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
+				// Validate access
+				if (apiKeyClient) {
+					// SDK: Only allow access to own client's users
+					if (params.clientId !== apiKeyClient.id) {
+						logger.warn("[User Router] SDK client attempting to list other client's users", {
+							requestedClientId: params.clientId,
+							authenticatedClientId: apiKeyClient.id,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Access denied - cannot list other clients' users" },
+						};
+					}
+				} else if (privySession) {
+					// Dashboard: Check if clientId belongs to any product under this organization
+					const productIds = privySession.products.map((p: any) => p.id);
+					if (!productIds.includes(params.clientId)) {
+						logger.warn("[User Router] Dashboard user attempting to list unauthorized client's users", {
+							requestedClientId: params.clientId,
+							authorizedProductIds: productIds,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Access denied - client not in your organization" },
+						};
+					}
+				} else {
+					// No auth present (should not happen due to server.ts middleware)
+					return {
+						status: 401 as const,
+						body: { error: "Authentication required" },
+					};
+				}
+
 				const limit = query?.limit ? parseInt(query.limit) : 50;
 				const offset = query?.offset ? parseInt(query.offset) : 0;
 
@@ -169,9 +255,17 @@ export const createUserRouter = (
 		},
 
 		// GET /users/:userId/balance - Simplified balance (with chain/token filter)
-		getBalance: async ({ params, query }) => {
+		getBalance: async ({ params, query, req }) => {
 			try {
-				logger.info("Getting user balance", { userId: params.userId, query });
+				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
+				logger.info("Getting user balance", {
+					userId: params.userId,
+					query,
+					authType: apiKeyClient ? "api_key" : privySession ? "privy" : "none",
+				});
 
 				// Get portfolio (simplified - aggregated totals, no multi-chain)
 				const portfolio = await userService.getUserPortfolio(params.userId);
@@ -180,6 +274,43 @@ export const createUserRouter = (
 					return {
 						status: 404 as const,
 						body: { error: "User not found" },
+					};
+				}
+
+				// Verify authorization
+				// For API key: user must belong to this client
+				if (apiKeyClient) {
+					if (portfolio.clientId !== apiKeyClient.id) {
+						logger.warn("API key client attempting to access another client's user balance", {
+							apiKeyClientId: apiKeyClient.id,
+							userClientId: portfolio.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Not authorized to view this user's balance" },
+						};
+					}
+				}
+				// For Privy: user must belong to one of the organization's products
+				else if (privySession) {
+					const productIds = privySession.products.map((p: any) => p.id);
+					if (!productIds.includes(portfolio.clientId)) {
+						logger.warn("Privy user attempting to access user from outside organization", {
+							privyOrgId: privySession.organizationId,
+							userClientId: portfolio.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Not authorized to view this user's balance" },
+						};
+					}
+				}
+				// No auth found
+				else {
+					logger.error("Authentication missing for get user balance");
+					return {
+						status: 401 as const,
+						body: { error: "Authentication required" },
 					};
 				}
 
@@ -211,9 +342,16 @@ export const createUserRouter = (
 		},
 
 		// GET /users/:userId/vaults - List all user vaults
-		listVaults: async ({ params }) => {
+		listVaults: async ({ params, req }) => {
 			try {
-				logger.info("Listing user vaults", { userId: params.userId });
+				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
+				logger.info("Listing user vaults", {
+					userId: params.userId,
+					authType: apiKeyClient ? "api_key" : privySession ? "privy" : "none",
+				});
 
 				// Get portfolio (simplified - aggregated totals)
 				const portfolio = await userService.getUserPortfolio(params.userId);
@@ -222,6 +360,43 @@ export const createUserRouter = (
 					return {
 						status: 404 as const,
 						body: { error: "User not found" },
+					};
+				}
+
+				// Verify authorization
+				// For API key: user must belong to this client
+				if (apiKeyClient) {
+					if (portfolio.clientId !== apiKeyClient.id) {
+						logger.warn("API key client attempting to access another client's user vaults", {
+							apiKeyClientId: apiKeyClient.id,
+							userClientId: portfolio.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Not authorized to view this user's vaults" },
+						};
+					}
+				}
+				// For Privy: user must belong to one of the organization's products
+				else if (privySession) {
+					const productIds = privySession.products.map((p: any) => p.id);
+					if (!productIds.includes(portfolio.clientId)) {
+						logger.warn("Privy user attempting to access user from outside organization", {
+							privyOrgId: privySession.organizationId,
+							userClientId: portfolio.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Not authorized to view this user's vaults" },
+						};
+					}
+				}
+				// No auth found
+				else {
+					logger.error("Authentication missing for list user vaults");
+					return {
+						status: 401 as const,
+						body: { error: "Authentication required" },
 					};
 				}
 

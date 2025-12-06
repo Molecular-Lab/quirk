@@ -22,6 +22,8 @@ export const CreateClientDto = z.object({
 	businessType: z.string(),
 	description: z.string().optional(),
 	websiteUrl: z.string().url().optional(),
+	customerTier: z.enum(["0-1K", "1K-10K", "10K-100K", "100K-1M", "1M+"]).optional(),
+	strategyRanking: z.array(z.string()).optional(), // Array of strategy IDs in order of preference
 	walletType: z.enum(["MANAGED", "USER_OWNED"]),
 	chain: z.string().optional(), // Optional chain for initial vault(s), defaults to "8453" (Base)
 	vaultsToCreate: z.enum(["usdc", "usdt", "both"]).optional(), // Which vaults to create, defaults to "both"
@@ -65,7 +67,24 @@ export const UpdateOrganizationInfoDto = z.object({
 	companyName: z.string().min(1).optional(),
 	businessType: z.string().optional(),
 	description: z.string().optional().nullable(),
-	websiteUrl: z.string().url().optional().nullable(),
+	websiteUrl: z
+		.string()
+		.optional()
+		.nullable()
+		.refine(
+			(val) => {
+				// Allow null, undefined, or empty string
+				if (!val || val === '') return true
+				// If provided, validate URL format
+				try {
+					new URL(val)
+					return true
+				} catch {
+					return false
+				}
+			},
+			{ message: 'Invalid URL format' }
+		),
 });
 
 // Update supported currencies only
@@ -95,6 +114,7 @@ export const ClientDto = z.object({
 	businessType: z.string(),
 	description: z.string().nullable(),
 	websiteUrl: z.string().nullable(),
+	customerTier: z.string().nullable().optional(),
 	walletType: z.string(),
 	privyOrganizationId: z.string(),
 	isActive: z.boolean(),

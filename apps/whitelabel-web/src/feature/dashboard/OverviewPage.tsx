@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react"
 
+import { Link } from "@tanstack/react-router"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis } from "recharts"
 
-import { b2bApiClient } from "@/api/b2bClient"
+import { getDashboardMetrics } from "@/api/b2bClientHelpers"
 import { useClientContext } from "@/store/clientContextStore"
 
 import TimeFilter, { type TimeRange } from "../../components/dashboard/TimeFilter"
@@ -151,7 +152,7 @@ export function OverviewPage() {
 
 			try {
 				setIsLoading(true)
-				const response = await b2bApiClient.getDashboardMetrics(clientId)
+				const response = await getDashboardMetrics(clientId)
 				console.log("[OverviewPage] Dashboard metrics:", response)
 				setDashboardMetrics(response as DashboardMetrics)
 			} catch (error) {
@@ -466,9 +467,12 @@ export function OverviewPage() {
 				{/* Portfolios Section */}
 				<div className="flex items-center justify-between mb-5 mt-10">
 					<h2 className="text-[28px] font-bold text-gray-900">My Portfolios</h2>
-					<button className="bg-primary-500 hover:bg-primary-600 text-white px-5 py-2.5 rounded-full font-medium text-sm transition-colors">
+					<Link
+						to="/onboarding/create-product"
+						className="bg-primary-500 hover:bg-primary-600 text-white px-5 py-2.5 rounded-full font-medium text-sm transition-colors inline-block"
+					>
 						Create new portfolio
-					</button>
+					</Link>
 				</div>
 
 				{/* Tabs */}

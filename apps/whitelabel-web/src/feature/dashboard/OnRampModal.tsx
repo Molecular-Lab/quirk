@@ -3,7 +3,7 @@ import { useState } from "react"
 import { useMutation } from "@tanstack/react-query"
 import { ArrowDown, Check, ChevronDown, ExternalLink, X } from "lucide-react"
 
-import { b2bApiClient } from "@/api/b2bClient"
+import { batchCompleteDeposits } from "@/api/b2bClientHelpers"
 import usdcLogo from "@/assets/usd-coin-usdc-logo.png"
 
 interface OnRampModalProps {
@@ -45,7 +45,7 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 	const batchCompleteMutation = useMutation({
 		mutationFn: async (data: { orderIds: string[]; paidCurrency: string }) => {
 			console.log("[OnRampModal] Starting batch purchase for orders:", selectedOrders)
-			const response = await b2bApiClient.batchCompleteDeposits(data)
+			const response = await batchCompleteDeposits(data)
 
 			console.log("[OnRampModal] Batch complete response:", response)
 			console.log(`✅ ${data.orderIds.length} orders completed`)

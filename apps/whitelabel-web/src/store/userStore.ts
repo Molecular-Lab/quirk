@@ -35,6 +35,7 @@ interface UserCredentials {
 	// User's Organizations (MULTIPLE per Privy user)
 	organizations: Organization[] // Array of orgs (e.g., GrabPay, GrabFood, GrabMart)
 	activeProductId: string | null // Currently selected organization
+	isOrganizationsLoaded: boolean // Whether organizations have been loaded from API (not just cache)
 
 	// API Credentials (per organization)
 	apiKey: string | null // sk_live_xxx
@@ -63,7 +64,6 @@ export interface UserStore extends UserCredentials {
 	// Getters
 	isAuthenticated: () => boolean
 	hasOrganizations: () => boolean
-	hasApiKey: () => boolean
 
 	// Reset
 	clearCredentials: () => void
@@ -76,6 +76,7 @@ const initialState: UserCredentials = {
 	walletType: null,
 	organizations: [],
 	activeProductId: null,
+	isOrganizationsLoaded: false,
 	apiKey: null,
 	webhookSecret: null,
 }
@@ -118,19 +119,17 @@ export const useUserStore = create<UserStore>()(
 				if (org) {
 					set({ activeProductId: productId })
 
-					// Sync to clientContextStore
+					// Sync to clientContextStore (no API key needed for dashboard auth)
 					import("./clientContextStore").then(({ useClientContext }) => {
-						const apiKey = get().apiKey
 						console.log("[UserStore] Switching active organization:", {
 							productId,
 							companyName: org.companyName,
-							hasApiKey: !!apiKey,
 						})
 
 						useClientContext.getState().setClientContext({
 							clientId: org.id,
 							productId: org.productId,
-							apiKey: apiKey || "",
+							apiKey: "", // Not used for dashboard auth (Privy session instead)
 							companyName: org.companyName,
 							businessType: org.businessType,
 						})
@@ -156,12 +155,12 @@ export const useUserStore = create<UserStore>()(
 				}
 
 				try {
-					// Import b2bApiClient dynamically to avoid circular dependencies
-					const { b2bApiClient } = await import("@/api/b2bClient")
+					// Import helper function to avoid circular dependencies
+					const { listOrganizationsByPrivyId } = await import("@/api/b2bClientHelpers")
 
 					console.log("[UserStore] Loading organizations for Privy ID:", privyOrganizationId)
 
-					const response = await b2bApiClient.listOrganizationsByPrivyId(privyOrganizationId)
+					const response = await listOrganizationsByPrivyId(privyOrganizationId)
 
 					// Response is already an array from the backend
 					const organizations = Array.isArray(response) ? response : []
@@ -189,14 +188,34 @@ export const useUserStore = create<UserStore>()(
 						updatedAt: org.updatedAt,
 					}))
 
+					// Auto-heal: Validate cached activeProductId exists in loaded orgs
+					const currentActiveProductId = get().activeProductId
+					const activeProductExists = currentActiveProductId
+						? mappedOrgs.some((org) => org.productId === currentActiveProductId)
+						: false
+
+					const newActiveProductId = activeProductExists
+						? currentActiveProductId // Keep current if valid
+						: mappedOrgs.length > 0
+							? mappedOrgs[0].productId // Use first org if current is invalid
+							: null // No orgs available
+
+					if (!activeProductExists && currentActiveProductId) {
+						console.warn(
+							`[UserStore] Cached productId ${currentActiveProductId} not found in organizations, resetting to ${newActiveProductId}`,
+						)
+					}
+
 					set({
 						organizations: mappedOrgs,
-						activeProductId: mappedOrgs.length > 0 ? mappedOrgs[0].productId : null,
+						activeProductId: newActiveProductId,
+						isOrganizationsLoaded: true, // Mark as loaded from API
 					})
 
 					console.log("[UserStore] Organizations loaded successfully:", {
 						total: mappedOrgs.length,
-						activeProductId: mappedOrgs.length > 0 ? mappedOrgs[0].productId : null,
+						activeProductId: newActiveProductId,
+						isOrganizationsLoaded: true,
 					})
 				} catch (error) {
 					console.error("[UserStore] Failed to load organizations:", error)
@@ -205,30 +224,13 @@ export const useUserStore = create<UserStore>()(
 				}
 			},
 
-			// Set API key for current organization
+			// Set API key for current organization (stored for SDK docs only)
 			setApiKey: (apiKey, webhookSecret) => {
 				set({
 					apiKey,
 					webhookSecret,
 				})
-
-				// Sync to clientContextStore
-				const activeOrg = get().getActiveOrganization()
-				if (activeOrg) {
-					import("./clientContextStore").then(({ useClientContext }) => {
-						console.log("[UserStore] API key updated, syncing to clientContextStore")
-
-						useClientContext.getState().setClientContext({
-							clientId: activeOrg.id,
-							productId: activeOrg.productId,
-							apiKey: apiKey,
-							companyName: activeOrg.companyName,
-							businessType: activeOrg.businessType,
-						})
-
-						console.log("[UserStore] ✅ API key synced to clientContextStore")
-					})
-				}
+				console.log("[UserStore] API key stored (for SDK documentation only)")
 			},
 
 			// Check if user is authenticated with Privy
@@ -239,11 +241,6 @@ export const useUserStore = create<UserStore>()(
 			// Check if user has any organizations
 			hasOrganizations: () => {
 				return get().organizations.length > 0
-			},
-
-			// Check if user has API key
-			hasApiKey: () => {
-				return !!get().apiKey
 			},
 
 			// Clear all credentials (logout)
