@@ -3,7 +3,7 @@ export function PortfoliosSection() {
 		{
 			title: "Capital Preservation",
 			icon: "🛡️",
-			gradient: "from-green-400 to-emerald-500",
+			color: "blue",
 			features: [
 				"Low volatility",
 				"Daily liquidity",
@@ -13,7 +13,7 @@ export function PortfoliosSection() {
 		{
 			title: "Balanced Yield",
 			icon: "⚖️",
-			gradient: "from-blue-400 to-indigo-500",
+			color: "purple",
 			features: [
 				"Optimized return vs risk",
 				"Actively managed allocations",
@@ -23,7 +23,7 @@ export function PortfoliosSection() {
 		{
 			title: "Enhanced Return & Alpha",
 			icon: "🎯",
-			gradient: "from-purple-400 to-pink-500",
+			color: "green",
 			features: [
 				"Alpha-seeking yield strategies",
 				"Directional market exposure",
@@ -33,57 +33,56 @@ export function PortfoliosSection() {
 		{
 			title: "Custom Solutions",
 			icon: "💼",
-			gradient: "from-indigo-400 to-purple-500",
+			color: "cyan",
 			isCustom: true,
 			features: ["Tailored to your needs", "Scale as you grow", "White-label ready"],
 		},
 	]
 
 	return (
-		<section className="py-20 bg-white">
-			<div className="max-w-7xl mx-auto px-6">
+		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-green-50/40 to-white flex items-center">
+			<div className="max-w-7xl mx-auto px-6 w-full">
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-semibold text-gray-900 mb-4">
-						One Platform,
-						<span className="bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
-							{" "}
-							Many Portfolios
-						</span>
-					</h2>
-					<p className="text-xl text-gray-600 max-w-3xl mx-auto">
+					<h2 className="text-5xl font-bold text-gray-950 mb-4">One Platform, Many Portfolios</h2>
+					<p className="text-xl text-gray-700 max-w-3xl mx-auto">
 						Delivering customizable risk-adjusted yield for digital assets
 					</p>
 				</div>
 
 				<div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-					{portfolios.map((portfolio, idx) => (
-						<div
-							key={idx}
-							className="bg-white rounded-2xl p-8 shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 border border-gray-100"
-						>
+					{portfolios.map((portfolio, idx) => {
+						const borderColors = {
+							blue: "border-blue-500",
+							purple: "border-purple-500",
+							green: "border-green-500",
+							cyan: "border-cyan-500",
+						}
+
+						return (
 							<div
-								className={`w-14 h-14 bg-gradient-to-r ${portfolio.gradient} rounded-2xl flex items-center justify-center mb-6 shadow-md`}
+								key={idx}
+								className={`bg-white/90 backdrop-blur-md border-t-4 ${borderColors[portfolio.color]} border-x border-b border-gray-150 rounded-xl p-8 hover:shadow-md hover:border-gray-200 transition-all`}
 							>
-								<span className="text-3xl">{portfolio.icon}</span>
+								<div className="text-3xl mb-6">{portfolio.icon}</div>
+								<h3 className="text-xl font-bold text-gray-950 mb-4">{portfolio.title}</h3>
+
+								<ul className="space-y-2">
+									{portfolio.features.map((feature, featureIdx) => (
+										<li key={featureIdx} className="text-gray-700 text-sm flex items-start">
+											<span className="text-gray-500 mr-2">•</span>
+											<span>{feature}</span>
+										</li>
+									))}
+								</ul>
+
+								{portfolio.isCustom && (
+									<button className="mt-6 w-full bg-gray-900 text-white px-4 py-3 rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm hover:shadow-md">
+										Contact us
+									</button>
+								)}
 							</div>
-							<h3 className="text-xl font-bold text-gray-900 mb-4">{portfolio.title}</h3>
-
-							<ul className="space-y-2">
-								{portfolio.features.map((feature, featureIdx) => (
-									<li key={featureIdx} className="text-gray-600 text-sm flex items-start">
-										<span className="text-blue-500 mr-2">•</span>
-										<span>{feature}</span>
-									</li>
-								))}
-							</ul>
-
-							{portfolio.isCustom && (
-								<button className="mt-6 w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white px-4 py-2 rounded-xl hover:from-blue-600 hover:to-indigo-600 transition-all font-medium">
-									Contact us
-								</button>
-							)}
-						</div>
-					))}
+						)
+					})}
 				</div>
 			</div>
 		</section>

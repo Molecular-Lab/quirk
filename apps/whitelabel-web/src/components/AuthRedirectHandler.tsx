@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 
 import { usePrivy } from "@privy-io/react-auth"
 import { useNavigate } from "@tanstack/react-router"
@@ -15,21 +15,41 @@ export function AuthRedirectHandler() {
 	const { ready, authenticated, user } = usePrivy()
 	const { intendedDestination, isFromGetStarted, clearAuthFlow } = useAuthFlowStore()
 	const { loadOrganizations, privyOrganizationId } = useUserStore()
+	const hasLoadedOrgs = useRef(false)
+	const hasRedirected = useRef(false)
 
-	// Load organizations when user is authenticated
+	// Load organizations when user is authenticated (only once)
 	useEffect(() => {
-		if (authenticated && user && privyOrganizationId) {
+		if (authenticated && user && privyOrganizationId && !hasLoadedOrgs.current) {
 			console.log("[AuthRedirectHandler] User authenticated, loading organizations...")
+			hasLoadedOrgs.current = true
 			void loadOrganizations()
 		}
-	}, [authenticated, user, privyOrganizationId, loadOrganizations])
+		// Note: loadOrganizations is a zustand store function (stable, don't include in deps)
+	}, [authenticated, user, privyOrganizationId])
+
+	// Reset flag when user logs out
+	useEffect(() => {
+		if (!authenticated) {
+			hasLoadedOrgs.current = false
+			hasRedirected.current = false
+		}
+	}, [authenticated])
 
 	useEffect(() => {
 		// Only proceed if Privy is ready and user just authenticated
 		if (!ready || !authenticated) return
 
+		// Only redirect once per session
+		if (hasRedirected.current) return
+
+		// Only redirect if there's a destination set
+		if (!intendedDestination && !isFromGetStarted) return
+
 		// Handle post-authentication redirect
 		const handleRedirect = async () => {
+			hasRedirected.current = true
+
 			// Small delay to ensure authentication is fully processed
 			await new Promise((resolve) => setTimeout(resolve, 100))
 
@@ -45,7 +65,8 @@ export function AuthRedirectHandler() {
 		}
 
 		handleRedirect()
-	}, [ready, authenticated, intendedDestination, isFromGetStarted, navigate, clearAuthFlow])
+		// Note: navigate and clearAuthFlow are stable functions (don't include in deps)
+	}, [ready, authenticated, intendedDestination, isFromGetStarted])
 
 	return null
 }

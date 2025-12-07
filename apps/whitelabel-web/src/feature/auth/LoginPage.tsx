@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react"
-import toast from "react-hot-toast"
 
 import { usePrivy, useWallets } from "@privy-io/react-auth"
 import { useNavigate } from "@tanstack/react-router"
 import { Eye, EyeOff, Sparkles } from "lucide-react"
+import { toast } from "sonner"
 
 import { listOrganizationsByPrivyId } from "@/api/b2bClientHelpers"
 import { useCreatePrivyAccount, usePrivyAccount } from "@/hooks/privy/usePrivyAccount"
@@ -16,7 +16,7 @@ export function LoginPage() {
 	const [hasSavedToDatabase, setHasSavedToDatabase] = useState(false)
 	const [isCheckingProduct, setIsCheckingProduct] = useState(false)
 	const hasCheckedProduct = useRef(false)
-	const { setPrivyCredentials, loadOrganizations, privyOrganizationId } = useUserStore()
+	const { setPrivyCredentials, loadOrganizations, syncToClientStore, privyOrganizationId } = useUserStore()
 
 	// UI state
 	const [showPassword, setShowPassword] = useState(false)
@@ -46,7 +46,7 @@ export function LoginPage() {
 		// If the account exists in the DB, update UserStore
 		if (existingAccount) {
 			if (!hasSavedToDatabase && embeddedWallet) {
-				const walletType = user.wallet ? "USER_OWNED" : "MANAGED"
+				const walletType: "MANAGED" | "USER_OWNED" = user.wallet ? "USER_OWNED" : "MANAGED"
 				setPrivyCredentials({
 					privyOrganizationId: user.id,
 					privyEmail: user.email?.address,
@@ -55,8 +55,10 @@ export function LoginPage() {
 				})
 				setHasSavedToDatabase(true)
 
-				// Load user's organizations from database
-				void loadOrganizations()
+				// Load user's organizations from database and sync to clientContextStore
+				loadOrganizations().then(() => {
+					syncToClientStore()
+				})
 			}
 			return
 		}
@@ -67,7 +69,7 @@ export function LoginPage() {
 		// Save to database
 		const saveToDatabase = async () => {
 			try {
-				const walletType = user.wallet ? "USER_OWNED" : "MANAGED"
+				const walletType: "MANAGED" | "USER_OWNED" = user.wallet ? "USER_OWNED" : "MANAGED"
 
 				const payload = {
 					privyOrganizationId: user.id,
@@ -87,8 +89,9 @@ export function LoginPage() {
 
 				setHasSavedToDatabase(true)
 
-				// Load user's organizations from database
-				void loadOrganizations()
+				// Load user's organizations from database and sync to clientContextStore
+				await loadOrganizations()
+				syncToClientStore()
 			} catch (error) {
 				console.error("Error creating Privy account:", error)
 			}
@@ -103,9 +106,8 @@ export function LoginPage() {
 		existingAccount,
 		isCheckingAccount,
 		hasSavedToDatabase,
-		setPrivyCredentials,
-		createPrivyAccount,
-		loadOrganizations,
+		// Note: setPrivyCredentials, createPrivyAccount, loadOrganizations, syncToClientStore
+		// are zustand/react-query functions (stable, don't include in deps)
 	])
 
 	// Check if user has product after successful login

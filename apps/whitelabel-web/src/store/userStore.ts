@@ -12,6 +12,8 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
+import { useClientContextStore } from "./clientContextStore"
+
 export interface Organization {
 	id: string // Internal UUID
 	productId: string // prod_xxx - PRIMARY identifier for API calls
@@ -19,6 +21,7 @@ export interface Organization {
 	businessType: string
 	description?: string
 	websiteUrl?: string
+	apiKeyPrefix?: string | null // First 8-12 chars of API key (e.g., "test_pk_abc123...")
 	isActive: boolean
 	isSandbox: boolean
 	createdAt: string
@@ -65,8 +68,9 @@ export interface UserStore extends UserCredentials {
 	isAuthenticated: () => boolean
 	hasOrganizations: () => boolean
 
-	// Reset
+	// Reset & Sync
 	clearCredentials: () => void
+	syncToClientStore: () => void
 }
 
 const initialState: UserCredentials = {
@@ -90,13 +94,11 @@ export const useUserStore = create<UserStore>()(
 			setPrivyCredentials: (data) => {
 				set({
 					privyOrganizationId: data.privyOrganizationId,
-					privyEmail: data.privyEmail || null,
-					privyWalletAddress: data.privyWalletAddress || null,
-					walletType: data.walletType || null,
+					privyEmail: data.privyEmail ?? null,
+					privyWalletAddress: data.privyWalletAddress ?? null,
+					walletType: data.walletType ?? null,
 				})
-			},
-
-			// Add a new organization (after creating one)
+			}, // Add a new organization (after creating one)
 			addOrganization: (org) => {
 				const orgs = get().organizations
 				set({
@@ -120,21 +122,17 @@ export const useUserStore = create<UserStore>()(
 					set({ activeProductId: productId })
 
 					// Sync to clientContextStore (no API key needed for dashboard auth)
-					import("./clientContextStore").then(({ useClientContext }) => {
-						console.log("[UserStore] Switching active organization:", {
-							productId,
-							companyName: org.companyName,
-						})
+					useClientContextStore.getState().setClientContext({
+						clientId: org.id,
+						productId: org.productId,
+						apiKey: "", // Not used for dashboard auth (Privy session instead)
+						companyName: org.companyName,
+						businessType: org.businessType,
+					})
 
-						useClientContext.getState().setClientContext({
-							clientId: org.id,
-							productId: org.productId,
-							apiKey: "", // Not used for dashboard auth (Privy session instead)
-							companyName: org.companyName,
-							businessType: org.businessType,
-						})
-
-						console.log("[UserStore] ✅ Synced to clientContextStore")
+					console.log("[UserStore] ✅ Synced active organization to clientContextStore:", {
+						productId: org.productId,
+						companyName: org.companyName,
 					})
 				}
 			},
@@ -142,10 +140,8 @@ export const useUserStore = create<UserStore>()(
 			// Get currently active organization
 			getActiveOrganization: () => {
 				const { organizations, activeProductId } = get()
-				return organizations.find((o) => o.productId === activeProductId) || null
-			},
-
-			// Load all organizations for the authenticated Privy user from database
+				return organizations.find((o) => o.productId === activeProductId) ?? null
+			}, // Load all organizations for the authenticated Privy user from database
 			loadOrganizations: async () => {
 				const privyOrganizationId = get().privyOrganizationId
 
@@ -180,15 +176,13 @@ export const useUserStore = create<UserStore>()(
 						productId: org.productId,
 						companyName: org.companyName,
 						businessType: org.businessType,
-						description: org.description || undefined,
-						websiteUrl: org.websiteUrl || undefined,
+						description: org.description ?? undefined,
+						websiteUrl: org.websiteUrl ?? undefined,
 						isActive: org.isActive,
 						isSandbox: org.isSandbox,
 						createdAt: org.createdAt,
 						updatedAt: org.updatedAt,
-					}))
-
-					// Auto-heal: Validate cached activeProductId exists in loaded orgs
+					})) // Auto-heal: Validate cached activeProductId exists in loaded orgs
 					const currentActiveProductId = get().activeProductId
 					const activeProductExists = currentActiveProductId
 						? mappedOrgs.some((org) => org.productId === currentActiveProductId)
@@ -243,9 +237,33 @@ export const useUserStore = create<UserStore>()(
 				return get().organizations.length > 0
 			},
 
-			// Clear all credentials (logout)
+			// Clear all credentials (logout) and sync to clientContextStore
 			clearCredentials: () => {
 				set(initialState)
+
+				// Sync reset to clientContextStore
+				useClientContextStore.getState().clearContext()
+				console.log("[UserStore] ✅ Cleared credentials and synced to clientContextStore")
+			},
+
+			// Sync current state to clientContextStore (call after loadOrganizations)
+			syncToClientStore: () => {
+				const { organizations, activeProductId } = get()
+				const activeOrg = organizations.find((o) => o.productId === activeProductId)
+
+				if (activeOrg) {
+					useClientContextStore.getState().setClientContext({
+						clientId: activeOrg.id,
+						productId: activeOrg.productId,
+						apiKey: "", // Dashboard uses Privy auth, not API key
+						companyName: activeOrg.companyName,
+						businessType: activeOrg.businessType,
+					})
+					console.log("[UserStore] ✅ Synced active organization to clientContextStore:", {
+						productId: activeOrg.productId,
+						companyName: activeOrg.companyName,
+					})
+				}
 			},
 		}),
 		{

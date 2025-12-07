@@ -5,6 +5,7 @@ import { useNavigate } from "@tanstack/react-router"
 import { AlertCircle, Plus, Trash2 } from "lucide-react"
 
 import { configureBankAccounts, configureStrategies, registerClient } from "@/api/b2bClientHelpers"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type BankAccount, useOnboardingStore } from "@/store/onboardingStore"
 import { useUserStore } from "@/store/userStore"
 
@@ -59,14 +60,14 @@ export function BankAccountForm() {
 
 			const privyOrganizationId = user.id
 			const privyEmail = user.email?.address
-			const privyWalletAddress = user.wallet?.address || ""
+			const privyWalletAddress = user.wallet?.address ?? ""
 
 			// Step 1: Register client
 			const clientResponse = await registerClient({
 				companyName: companyInfo.companyName,
 				businessType: companyInfo.businessType,
-				description: companyInfo.description || undefined,
-				websiteUrl: companyInfo.websiteUrl || undefined,
+				description: companyInfo.description ?? undefined,
+				websiteUrl: companyInfo.websiteUrl ?? undefined,
 				privyOrganizationId,
 				privyEmail,
 				privyWalletAddress,
@@ -217,19 +218,22 @@ export function BankAccountForm() {
 						<label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">
 							Currency
 						</label>
-						<select
-							id="currency"
+						<Select
 							value={newAccount.currency}
-							onChange={(e) => {
-								setNewAccount({ ...newAccount, currency: e.target.value })
+							onValueChange={(value) => {
+								setNewAccount({ ...newAccount, currency: value })
 							}}
-							className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
 						>
-							<option value="USD">USD</option>
-							<option value="EUR">EUR</option>
-							<option value="GBP">GBP</option>
-							<option value="THB">THB</option>
-						</select>
+							<SelectTrigger className="w-full">
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="USD">USD</SelectItem>
+								<SelectItem value="EUR">EUR</SelectItem>
+								<SelectItem value="GBP">GBP</SelectItem>
+								<SelectItem value="THB">THB</SelectItem>
+							</SelectContent>
+						</Select>
 					</div>
 
 					<div>
@@ -243,7 +247,7 @@ export function BankAccountForm() {
 							onChange={(e) => {
 								setNewAccount({ ...newAccount, bank_name: e.target.value })
 							}}
-							className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+							className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 							placeholder="Chase Bank"
 						/>
 					</div>
@@ -259,7 +263,7 @@ export function BankAccountForm() {
 							onChange={(e) => {
 								setNewAccount({ ...newAccount, account_name: e.target.value })
 							}}
-							className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+							className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 							placeholder="John Doe"
 						/>
 					</div>
@@ -275,7 +279,7 @@ export function BankAccountForm() {
 							onChange={(e) => {
 								setNewAccount({ ...newAccount, account_number: e.target.value })
 							}}
-							className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+							className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 							placeholder="123456789"
 						/>
 					</div>
@@ -291,7 +295,7 @@ export function BankAccountForm() {
 							onChange={(e) => {
 								setNewAccount({ ...newAccount, swift_code: e.target.value })
 							}}
-							className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900"
+							className="block w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
 							placeholder="CHASUS33"
 						/>
 					</div>
@@ -332,7 +336,7 @@ export function BankAccountForm() {
 							void handleComplete(true)
 						}}
 						disabled={isSubmitting || bankingInfo.accounts.length === 0}
-						className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+						className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
 					>
 						{isSubmitting ? "Creating Product..." : "Complete Setup →"}
 					</button>

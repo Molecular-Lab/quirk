@@ -229,6 +229,75 @@ export async function configureStrategies(
 	throw new Error("Failed to configure strategies")
 }
 
+/**
+ * Bulk apply strategy to all products
+ */
+export async function bulkApplyStrategy(data: {
+	chain: string
+	token_address: string
+	token_symbol?: string
+	strategies: { category: StrategyCategory; target: number }[]
+}) {
+	const { status, body } = await b2bApiClient.client.bulkApplyStrategy({
+		body: data,
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to bulk apply strategy")
+}
+
+/**
+ * Get product strategies (preferences and customization)
+ */
+export async function getProductStrategies(productId: string) {
+	const { status, body } = await b2bApiClient.client.getProductStrategies({
+		params: { productId },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get product strategies")
+}
+
+/**
+ * Update product strategy customization
+ */
+export async function updateProductStrategiesCustomization(
+	productId: string,
+	strategies: Record<string, Record<string, number>>,
+) {
+	const { status, body } = await b2bApiClient.client.updateProductStrategiesCustomization({
+		params: { productId },
+		body: { strategies },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to update product strategies")
+}
+
+/**
+ * Get effective product strategies (customization if set, otherwise preferences)
+ */
+export async function getEffectiveProductStrategies(productId: string) {
+	const { status, body } = await b2bApiClient.client.getEffectiveProductStrategies({
+		params: { productId },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get effective product strategies")
+}
+
 // ============================================
 // PRIVY ACCOUNT ENDPOINTS
 // ============================================
@@ -393,7 +462,7 @@ export async function createUser(
 export async function getUserBalance(userId: string, params?: { chain?: string; token?: string }) {
 	const { status, body } = await b2bApiClient.user.getBalance({
 		params: { userId },
-		query: params || {},
+		query: params ?? {},
 	})
 
 	if (status === 200) {

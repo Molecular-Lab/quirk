@@ -48,9 +48,9 @@ export function TradingStrategiesSection() {
 			{
 				data: [allocations.defi, allocations.liquidityPool, allocations.cefi],
 				backgroundColor: [
-					"#3b82f6", // Blue for DeFi
-					"#6b7280", // Gray for Place LP
-					"#1e293b", // Dark blue/slate for CeFi
+					"#3B82F6", // Accent blue for DeFi (primary segment)
+					"#7C7C7C", // gray-700 for Place LP
+					"#C8C8C8", // gray-200 for CeFi
 				],
 				borderColor: "#ffffff",
 				borderWidth: 4,
@@ -87,19 +87,15 @@ export function TradingStrategiesSection() {
 	}
 
 	return (
-		<section className="py-20 bg-gradient-to-b from-white to-gray-50">
-			<div className="max-w-7xl mx-auto px-6">
+		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-purple-50/40 to-white flex items-center">
+			<div className="max-w-7xl mx-auto px-6 w-full">
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-semibold text-gray-900">
-						Customized Earn
-						<span className="bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
-							{" "}
-							Strategies
-						</span>
-					</h2>
+					<h2 className="text-5xl font-bold text-gray-950">Customized Earn Strategies</h2>
 				</div>
 
-				<div className="bg-gradient-to-br from-gray-50 to-white rounded-3xl p-12 shadow-xl border border-gray-100">
+				<div className="relative bg-white/90 backdrop-blur-md rounded-xl p-12 shadow-sm border border-gray-150 overflow-hidden">
+					{/* Subtle gradient accent */}
+					<div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-blue-200/40 to-transparent" />
 					<div className="grid lg:grid-cols-2 gap-16 items-center">
 						{/* Chart Section */}
 						<div className="relative">
@@ -108,9 +104,7 @@ export function TradingStrategiesSection() {
 									<Doughnut data={chartData} options={chartOptions} />
 									<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
 										<div className="text-center">
-											<div className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-												{totalAllocation}%
-											</div>
+											<div className="text-5xl font-bold text-gray-950">{totalAllocation}%</div>
 											<div className="text-sm text-gray-500 mt-2 font-medium">Allocated</div>
 										</div>
 									</div>
@@ -121,18 +115,18 @@ export function TradingStrategiesSection() {
 						{/* Controls Section */}
 						<div className="space-y-8">
 							<div>
-								<h3 className="text-2xl font-bold text-gray-900 mb-2">Portfolio Distribution</h3>
-								<p className="text-gray-600">Adjust sliders to simulate different allocation strategies</p>
+								<h3 className="text-2xl font-bold text-gray-950 mb-2">Portfolio Distribution</h3>
+								<p className="text-gray-700">Adjust sliders to simulate different allocation strategies</p>
 							</div>
 							<div className="space-y-8">
 								{/* DeFi */}
 								<div className="space-y-3">
 									<div className="flex items-center justify-between">
 										<div>
-											<label className="text-gray-900 font-semibold text-lg">DeFi</label>
+											<label className="text-gray-950 font-semibold text-lg">DeFi</label>
 										</div>
 										<div className="flex items-center gap-1">
-											<span className="text-2xl font-bold text-gray-900">{allocations.defi}</span>
+											<span className="text-2xl font-bold text-gray-950">{allocations.defi}</span>
 											<span className="text-gray-500 text-lg">%</span>
 										</div>
 									</div>
@@ -146,7 +140,7 @@ export function TradingStrategiesSection() {
 										min="0"
 										max="100"
 										style={{
-											background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${allocations.defi}%, #f3f4f6 ${allocations.defi}%, #f3f4f6 100%)`,
+											background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${allocations.defi}%, #E3E3E3 ${allocations.defi}%, #E3E3E3 100%)`,
 										}}
 									/>
 								</div>
@@ -155,10 +149,10 @@ export function TradingStrategiesSection() {
 								<div className="space-y-3">
 									<div className="flex items-center justify-between">
 										<div>
-											<label className="text-gray-900 font-semibold text-lg">Liquidity Provider</label>
+											<label className="text-gray-950 font-semibold text-lg">Liquidity Provider</label>
 										</div>
 										<div className="flex items-center gap-1">
-											<span className="text-2xl font-bold text-gray-900">{allocations.liquidityPool}</span>
+											<span className="text-2xl font-bold text-gray-950">{allocations.liquidityPool}</span>
 											<span className="text-gray-500 text-lg">%</span>
 										</div>
 									</div>
@@ -172,7 +166,7 @@ export function TradingStrategiesSection() {
 										min="0"
 										max="100"
 										style={{
-											background: `linear-gradient(to right, #6b7280 0%, #6b7280 ${allocations.liquidityPool}%, #f3f4f6 ${allocations.liquidityPool}%, #f3f4f6 100%)`,
+											background: `linear-gradient(to right, #7C7C7C 0%, #7C7C7C ${allocations.liquidityPool}%, #E3E3E3 ${allocations.liquidityPool}%, #E3E3E3 100%)`,
 										}}
 									/>
 								</div>
@@ -181,10 +175,10 @@ export function TradingStrategiesSection() {
 								<div className="space-y-3">
 									<div className="flex items-center justify-between">
 										<div>
-											<label className="text-gray-900 font-semibold text-lg">CeFi</label>
+											<label className="text-gray-950 font-semibold text-lg">CeFi</label>
 										</div>
 										<div className="flex items-center gap-1">
-											<span className="text-2xl font-bold text-gray-900">{allocations.cefi}</span>
+											<span className="text-2xl font-bold text-gray-950">{allocations.cefi}</span>
 											<span className="text-gray-500 text-lg">%</span>
 										</div>
 									</div>
@@ -198,7 +192,7 @@ export function TradingStrategiesSection() {
 										min="0"
 										max="100"
 										style={{
-											background: `linear-gradient(to right, #1e293b 0%, #1e293b ${allocations.cefi}%, #f3f4f6 ${allocations.cefi}%, #f3f4f6 100%)`,
+											background: `linear-gradient(to right, #C8C8C8 0%, #C8C8C8 ${allocations.cefi}%, #E3E3E3 ${allocations.cefi}%, #E3E3E3 100%)`,
 										}}
 									/>
 								</div>

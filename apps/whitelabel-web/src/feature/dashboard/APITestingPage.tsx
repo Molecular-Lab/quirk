@@ -21,6 +21,7 @@ import {
 	updateSupportedCurrencies,
 	updateVaultYield,
 } from "@/api/b2bClientHelpers"
+import { useClientContextStore } from "@/store/clientContextStore"
 import { type Organization, useUserStore } from "@/store/userStore"
 
 // Type for client registration response
@@ -69,30 +70,26 @@ const saveApiKeyForOrg = (
 	console.log("[API Keys] 📦 All stored keys:", Object.keys(allKeys))
 
 	// Sync to userStore (this will also trigger clientContextStore sync)
-	import("@/store/userStore").then(({ useUserStore }) => {
-		const { setApiKey, activeProductId } = useUserStore.getState()
+	const { setApiKey: setUserApiKey, activeProductId } = useUserStore.getState()
 
-		// Only update if this is for the currently active organization
-		if (activeProductId === productId) {
-			setApiKey(apiKey)
-			// eslint-disable-next-line no-console
-			console.log("[API Keys] ✅ Synced to userStore (which syncs to clientContextStore)")
-		}
-	})
+	// Only update if this is for the currently active organization
+	if (activeProductId === productId) {
+		setUserApiKey(apiKey)
+		// eslint-disable-next-line no-console
+		console.log("[API Keys] ✅ Synced to userStore (which syncs to clientContextStore)")
+	}
 
 	// Also directly sync to clientContextStore if we have org data
 	if (orgData) {
-		import("@/store/clientContextStore").then(({ useClientContext }) => {
-			useClientContext.getState().setClientContext({
-				clientId: orgData.id,
-				productId: productId,
-				apiKey: apiKey,
-				companyName: orgData.companyName,
-				businessType: orgData.businessType,
-			})
-			// eslint-disable-next-line no-console
-			console.log("[API Keys] ✅ Synced to clientContextStore directly")
+		useClientContextStore.getState().setClientContext({
+			clientId: orgData.id,
+			productId: productId,
+			apiKey: apiKey,
+			companyName: orgData.companyName,
+			businessType: orgData.businessType,
 		})
+		// eslint-disable-next-line no-console
+		console.log("[API Keys] ✅ Synced to clientContextStore directly")
 	}
 }
 
@@ -1085,15 +1082,15 @@ export function APITestingPage() {
 					// eslint-disable-next-line no-console
 					console.log("[API Test] Loading bank accounts for organization:", activeProductId)
 					const orgData = await getOrganizationByProductId(activeProductId)
-					const existingBankAccounts = (orgData as any)?.bank_accounts || (orgData as any)?.bankAccounts || []
+					const existingBankAccounts = ((orgData as any)?.bank_accounts || (orgData as any)?.bankAccounts) ?? []
 
 					if (existingBankAccounts.length > 0) {
 						// Map backend format (snake_case) to frontend format (camelCase)
 						const mappedAccounts = existingBankAccounts.map((ba: any) => ({
-							currency: ba.currency || "",
-							bank_name: ba.bank_name || ba.bankName || "",
-							account_number: ba.account_number || ba.accountNumber || "",
-							account_name: ba.account_name || ba.accountName || "",
+							currency: ba.currency ?? "",
+							bank_name: (ba.bank_name || ba.bankName) ?? "",
+							account_number: (ba.account_number || ba.accountNumber) ?? "",
+							account_name: (ba.account_name || ba.accountName) ?? "",
 							bank_details:
 								ba.bank_details || ba.bankDetails ? JSON.stringify(ba.bank_details || ba.bankDetails, null, 2) : "",
 						}))
@@ -1310,8 +1307,8 @@ export function APITestingPage() {
 						privyOrganizationId: privyOrganizationId,
 						privyWalletAddress: privyWalletAddress, // ✅ From privy_accounts table via UserStore
 						privyEmail: privyEmail ?? undefined, // ✅ From privy_accounts table via UserStore
-						description: params.description || undefined,
-						websiteUrl: params.websiteUrl || undefined,
+						description: params.description ?? undefined,
+						websiteUrl: params.websiteUrl ?? undefined,
 						// ✅ Don't send supportedCurrencies and bankAccounts during registration
 						// These will be configured separately via FLOW 1B and FLOW 1D
 					})
@@ -1422,7 +1419,7 @@ export function APITestingPage() {
 					console.log("[API Test] Updating supported currencies for:", activeProductId)
 
 					// Parse currencies from comma-separated string or multiselect
-					const currenciesString = params.supportedCurrencies || ""
+					const currenciesString = params.supportedCurrencies ?? ""
 					const supportedCurrencies = currenciesString
 						.split(",")
 						.map((c: string) => c.trim())
@@ -1466,8 +1463,8 @@ export function APITestingPage() {
 
 					data = await createUser(activeProductId, {
 						clientUserId: params.clientUserId, // Client's internal user ID (e.g., driver ID)
-						email: params.email || undefined,
-						walletAddress: params.walletAddress || undefined,
+						email: params.email ?? undefined,
+						walletAddress: params.walletAddress ?? undefined,
 					})
 
 					// eslint-disable-next-line no-console
@@ -1515,8 +1512,8 @@ export function APITestingPage() {
 				// FLOW 5: Get User Balance
 				case "balance-get":
 					data = await getUserBalance(params.user_id, {
-						chain: params.chain || undefined,
-						token: params.token || undefined,
+						chain: params.chain ?? undefined,
+						token: params.token ?? undefined,
 					})
 					break
 
@@ -1532,9 +1529,9 @@ export function APITestingPage() {
 						vaultId: params.vaultId,
 						amount: params.amount,
 						withdrawal_method: params.withdrawal_method as "crypto" | "fiat_to_client" | "fiat_to_end_user",
-						destination_address: params.destination_address || undefined,
+						destination_address: params.destination_address ?? undefined,
 						destination_currency:
-							(params.destination_currency as "SGD" | "USD" | "EUR" | "THB" | "TWD" | "KRW" | undefined) || undefined,
+							(params.destination_currency as "SGD" | "USD" | "EUR" | "THB" | "TWD" | "KRW" | undefined) ?? undefined,
 						end_user_bank_account: params.end_user_bank_account ? JSON.parse(params.end_user_bank_account) : undefined,
 					})
 					break
@@ -1886,7 +1883,7 @@ export function APITestingPage() {
 								}
 							}}
 							disabled={!authenticated || loadingOrgs}
-							className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+							className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							<RefreshCw size={14} className={loadingOrgs ? "animate-spin" : ""} />
 							{loadingOrgs ? "Loading..." : "Reload"}
@@ -1916,7 +1913,7 @@ export function APITestingPage() {
 											<div className="flex items-center gap-2 mb-2">
 												<h4 className="text-base font-semibold text-gray-900">{org.companyName}</h4>
 												{org.productId === activeProductId && (
-													<span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-600 text-white">
+													<span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500 text-white">
 														Active
 													</span>
 												)}
@@ -2278,7 +2275,7 @@ export function APITestingPage() {
 																	) : param.type === "multiselect" && param.options ? (
 																		<div className="space-y-2">
 																			<div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md min-h-[38px] bg-white">
-																				{(currentFormData[param.name] || "")
+																				{(currentFormData[param.name] ?? "")
 																					.split(",")
 																					.filter(Boolean)
 																					.map((selected: string) => {
@@ -2292,7 +2289,7 @@ export function APITestingPage() {
 																								<button
 																									type="button"
 																									onClick={() => {
-																										const current = (currentFormData[param.name] || "")
+																										const current = (currentFormData[param.name] ?? "")
 																											.split(",")
 																											.filter(Boolean)
 																											.map((s: string) => s.trim())
@@ -2311,7 +2308,7 @@ export function APITestingPage() {
 																				value=""
 																				onChange={(e) => {
 																					if (e.target.value) {
-																						const current = (currentFormData[param.name] || "")
+																						const current = (currentFormData[param.name] ?? "")
 																							.split(",")
 																							.filter(Boolean)
 																							.map((s: string) => s.trim())
@@ -2327,7 +2324,7 @@ export function APITestingPage() {
 																				{param.options
 																					.filter(
 																						(option) =>
-																							!(currentFormData[param.name] || "")
+																							!(currentFormData[param.name] ?? "")
 																								.split(",")
 																								.map((s: string) => s.trim())
 																								.includes(option.value),
@@ -2363,7 +2360,7 @@ export function APITestingPage() {
 												<button
 													onClick={() => executeRequest(endpoint)}
 													disabled={loading === endpoint.id}
-													className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+													className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
 												>
 													<Play size={16} />
 													{loading === endpoint.id ? "Executing..." : "Execute"}

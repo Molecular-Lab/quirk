@@ -11,12 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
-import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as DemoIndexRouteImport } from './routes/demo/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as PaymentSessionOrderIdRouteImport } from './routes/payment-session.$orderId'
+import { Route as DemoGigWorkersRouteImport } from './routes/demo/gig-workers'
+import { Route as DemoEcommerceRouteImport } from './routes/demo/ecommerce'
+import { Route as DemoCreatorsRouteImport } from './routes/demo/creators'
 import { Route as DashboardProductConfigRouteImport } from './routes/dashboard/product-config'
 import { Route as DashboardOperationsRouteImport } from './routes/dashboard.operations'
 import { Route as DashboardMarketRouteImport } from './routes/dashboard/market'
@@ -41,11 +44,6 @@ const LoginRoute = LoginRouteImport.update({
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const DemoRoute = DemoRouteImport.update({
-  id: '/demo',
-  path: '/demo',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -60,6 +58,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DemoIndexRoute = DemoIndexRouteImport.update({
+  id: '/demo/',
+  path: '/demo/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardIndexRoute = DashboardIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -68,6 +71,21 @@ const DashboardIndexRoute = DashboardIndexRouteImport.update({
 const PaymentSessionOrderIdRoute = PaymentSessionOrderIdRouteImport.update({
   id: '/payment-session/$orderId',
   path: '/payment-session/$orderId',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoGigWorkersRoute = DemoGigWorkersRouteImport.update({
+  id: '/demo/gig-workers',
+  path: '/demo/gig-workers',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoEcommerceRoute = DemoEcommerceRouteImport.update({
+  id: '/demo/ecommerce',
+  path: '/demo/ecommerce',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoCreatorsRoute = DemoCreatorsRouteImport.update({
+  id: '/demo/creators',
+  path: '/demo/creators',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardProductConfigRoute = DashboardProductConfigRouteImport.update({
@@ -142,7 +160,6 @@ const AuthenticatedOnboardingCreateProductRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRouteWithChildren
-  '/demo': typeof DemoRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -153,8 +170,12 @@ export interface FileRoutesByFullPath {
   '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/operations': typeof DashboardOperationsRoute
   '/dashboard/product-config': typeof DashboardProductConfigRoute
+  '/demo/creators': typeof DemoCreatorsRoute
+  '/demo/ecommerce': typeof DemoEcommerceRoute
+  '/demo/gig-workers': typeof DemoGigWorkersRoute
   '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/demo': typeof DemoIndexRoute
   '/onboarding/create-product': typeof AuthenticatedOnboardingCreateProductRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
   '/dashboard/products/$productId': typeof DashboardProductsProductIdRoute
@@ -163,7 +184,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/demo': typeof DemoRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -174,8 +194,12 @@ export interface FileRoutesByTo {
   '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/operations': typeof DashboardOperationsRoute
   '/dashboard/product-config': typeof DashboardProductConfigRoute
+  '/demo/creators': typeof DemoCreatorsRoute
+  '/demo/ecommerce': typeof DemoEcommerceRoute
+  '/demo/gig-workers': typeof DemoGigWorkersRoute
   '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard': typeof DashboardIndexRoute
+  '/demo': typeof DemoIndexRoute
   '/onboarding/create-product': typeof AuthenticatedOnboardingCreateProductRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
   '/dashboard/products/$productId': typeof DashboardProductsProductIdRoute
@@ -187,7 +211,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/dashboard': typeof DashboardRouteWithChildren
-  '/demo': typeof DemoRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
@@ -198,8 +221,12 @@ export interface FileRoutesById {
   '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/operations': typeof DashboardOperationsRoute
   '/dashboard/product-config': typeof DashboardProductConfigRoute
+  '/demo/creators': typeof DemoCreatorsRoute
+  '/demo/ecommerce': typeof DemoEcommerceRoute
+  '/demo/gig-workers': typeof DemoGigWorkersRoute
   '/payment-session/$orderId': typeof PaymentSessionOrderIdRoute
   '/dashboard/': typeof DashboardIndexRoute
+  '/demo/': typeof DemoIndexRoute
   '/_authenticated/onboarding/create-product': typeof AuthenticatedOnboardingCreateProductRoute
   '/dashboard/portfolios/$id': typeof DashboardPortfoliosIdRoute
   '/dashboard/products/$productId': typeof DashboardProductsProductIdRoute
@@ -211,7 +238,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/dashboard'
-    | '/demo'
     | '/login'
     | '/register'
     | '/dashboard/analytics'
@@ -222,8 +248,12 @@ export interface FileRouteTypes {
     | '/dashboard/market'
     | '/dashboard/operations'
     | '/dashboard/product-config'
+    | '/demo/creators'
+    | '/demo/ecommerce'
+    | '/demo/gig-workers'
     | '/payment-session/$orderId'
     | '/dashboard/'
+    | '/demo'
     | '/onboarding/create-product'
     | '/dashboard/portfolios/$id'
     | '/dashboard/products/$productId'
@@ -232,7 +262,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/demo'
     | '/login'
     | '/register'
     | '/dashboard/analytics'
@@ -243,8 +272,12 @@ export interface FileRouteTypes {
     | '/dashboard/market'
     | '/dashboard/operations'
     | '/dashboard/product-config'
+    | '/demo/creators'
+    | '/demo/ecommerce'
+    | '/demo/gig-workers'
     | '/payment-session/$orderId'
     | '/dashboard'
+    | '/demo'
     | '/onboarding/create-product'
     | '/dashboard/portfolios/$id'
     | '/dashboard/products/$productId'
@@ -255,7 +288,6 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/dashboard'
-    | '/demo'
     | '/login'
     | '/register'
     | '/dashboard/analytics'
@@ -266,8 +298,12 @@ export interface FileRouteTypes {
     | '/dashboard/market'
     | '/dashboard/operations'
     | '/dashboard/product-config'
+    | '/demo/creators'
+    | '/demo/ecommerce'
+    | '/demo/gig-workers'
     | '/payment-session/$orderId'
     | '/dashboard/'
+    | '/demo/'
     | '/_authenticated/onboarding/create-product'
     | '/dashboard/portfolios/$id'
     | '/dashboard/products/$productId'
@@ -279,10 +315,13 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   DashboardRoute: typeof DashboardRouteWithChildren
-  DemoRoute: typeof DemoRoute
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  DemoCreatorsRoute: typeof DemoCreatorsRoute
+  DemoEcommerceRoute: typeof DemoEcommerceRoute
+  DemoGigWorkersRoute: typeof DemoGigWorkersRoute
   PaymentSessionOrderIdRoute: typeof PaymentSessionOrderIdRoute
+  DemoIndexRoute: typeof DemoIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -299,13 +338,6 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/demo': {
-      id: '/demo'
-      path: '/demo'
-      fullPath: '/demo'
-      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -329,6 +361,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/demo/': {
+      id: '/demo/'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboard/': {
       id: '/dashboard/'
       path: '/'
@@ -341,6 +380,27 @@ declare module '@tanstack/react-router' {
       path: '/payment-session/$orderId'
       fullPath: '/payment-session/$orderId'
       preLoaderRoute: typeof PaymentSessionOrderIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/gig-workers': {
+      id: '/demo/gig-workers'
+      path: '/demo/gig-workers'
+      fullPath: '/demo/gig-workers'
+      preLoaderRoute: typeof DemoGigWorkersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/ecommerce': {
+      id: '/demo/ecommerce'
+      path: '/demo/ecommerce'
+      fullPath: '/demo/ecommerce'
+      preLoaderRoute: typeof DemoEcommerceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/creators': {
+      id: '/demo/creators'
+      path: '/demo/creators'
+      fullPath: '/demo/creators'
+      preLoaderRoute: typeof DemoCreatorsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard/product-config': {
@@ -490,10 +550,13 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   DashboardRoute: DashboardRouteWithChildren,
-  DemoRoute: DemoRoute,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  DemoCreatorsRoute: DemoCreatorsRoute,
+  DemoEcommerceRoute: DemoEcommerceRoute,
+  DemoGigWorkersRoute: DemoGigWorkersRoute,
   PaymentSessionOrderIdRoute: PaymentSessionOrderIdRoute,
+  DemoIndexRoute: DemoIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

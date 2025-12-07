@@ -29,16 +29,11 @@ export function EndUserEarningSection() {
 	]
 
 	return (
-		<section className="py-20 bg-white">
-			<div className="max-w-7xl mx-auto px-6">
+		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-blue-50/40 to-white flex items-center">
+			<div className="max-w-7xl mx-auto px-6 w-full">
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-semibold text-gray-900 mb-6">
-						Enable Your Users to
-						<span className="block mt-2 bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
-							Earn Anywhere
-						</span>
-					</h2>
-					<p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+					<h2 className="text-5xl font-bold text-gray-950 mb-6">Enable Your Users to Earn Anywhere</h2>
+					<p className="text-xl text-gray-700 max-w-3xl mx-auto leading-relaxed">
 						Transform idle balances into yield-generating assets. Your users shouldn't need separate banking apps to
 						earn—let them earn right where they transact.
 					</p>
@@ -48,46 +43,47 @@ export function EndUserEarningSection() {
 					{features.map((feature, idx) => {
 						const Icon = feature.icon
 						return (
-							<div key={idx} className="bg-gray-50 rounded-2xl p-8 hover:bg-gray-100 transition-all">
-								<div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mb-6 shadow-sm">
-									<Icon className="w-6 h-6 text-gray-700" />
-								</div>
-								<h3 className="text-lg font-semibold text-gray-900 mb-3">{feature.title}</h3>
-								<p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
+							<div
+								key={idx}
+								className="bg-white/90 backdrop-blur-md border border-gray-150 rounded-xl p-8 hover:shadow-md hover:border-gray-200 transition-all"
+							>
+								<Icon className="w-8 h-8 text-gray-700 mb-6" />
+								<h3 className="text-lg font-semibold text-gray-950 mb-3">{feature.title}</h3>
+								<p className="text-gray-700 text-sm leading-relaxed">{feature.description}</p>
 							</div>
 						)
 					})}
 				</div>
 
 				{/* Use Cases */}
-				<div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-12">
-					<h3 className="text-2xl font-semibold text-gray-900 mb-8 text-center">
+				<div className="bg-gray-50 border border-gray-200 rounded-xl p-12">
+					<h3 className="text-2xl font-semibold text-gray-950 mb-8 text-center">
 						Unlock $300B+ in Idle Cash Across Industries
 					</h3>
 					<div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-						<div className="bg-white rounded-xl p-6 shadow-sm">
-							<h4 className="font-semibold text-gray-900 mb-2">E-Commerce Platforms</h4>
-							<p className="text-gray-600 text-sm">Merchant payouts earn yield until withdrawal</p>
+						<div className="bg-white rounded-xl p-6 border border-gray-150 shadow-sm">
+							<h4 className="font-semibold text-gray-950 mb-2">E-Commerce Platforms</h4>
+							<p className="text-gray-700 text-sm">Merchant payouts earn yield until withdrawal</p>
 						</div>
-						<div className="bg-white rounded-xl p-6 shadow-sm">
-							<h4 className="font-semibold text-gray-900 mb-2">Creator Platforms</h4>
-							<p className="text-gray-600 text-sm">Creator revenues generate returns automatically</p>
+						<div className="bg-white rounded-xl p-6 border border-gray-150 shadow-sm">
+							<h4 className="font-semibold text-gray-950 mb-2">Creator Platforms</h4>
+							<p className="text-gray-700 text-sm">Creator revenues generate returns automatically</p>
 						</div>
-						<div className="bg-white rounded-xl p-6 shadow-sm">
-							<h4 className="font-semibold text-gray-900 mb-2">Gig Economy Apps</h4>
-							<p className="text-gray-600 text-sm">Driver earnings grow between withdrawals</p>
+						<div className="bg-white rounded-xl p-6 border border-gray-150 shadow-sm">
+							<h4 className="font-semibold text-gray-950 mb-2">Gig Economy Apps</h4>
+							<p className="text-gray-700 text-sm">Driver earnings grow between withdrawals</p>
 						</div>
-						<div className="bg-white rounded-xl p-6 shadow-sm">
-							<h4 className="font-semibold text-gray-900 mb-2">Freelance Platforms</h4>
-							<p className="text-gray-600 text-sm">Escrow funds earn while projects complete</p>
+						<div className="bg-white rounded-xl p-6 border border-gray-150 shadow-sm">
+							<h4 className="font-semibold text-gray-950 mb-2">Freelance Platforms</h4>
+							<p className="text-gray-700 text-sm">Escrow funds earn while projects complete</p>
 						</div>
-						<div className="bg-white rounded-xl p-6 shadow-sm">
-							<h4 className="font-semibold text-gray-900 mb-2">Gaming Platforms</h4>
-							<p className="text-gray-600 text-sm">In-game balances generate passive income</p>
+						<div className="bg-white rounded-xl p-6 border border-gray-150 shadow-sm">
+							<h4 className="font-semibold text-gray-950 mb-2">Gaming Platforms</h4>
+							<p className="text-gray-700 text-sm">In-game balances generate passive income</p>
 						</div>
-						<div className="bg-white rounded-xl p-6 shadow-sm">
-							<h4 className="font-semibold text-gray-900 mb-2">SaaS Platforms</h4>
-							<p className="text-gray-600 text-sm">Subscription float earns between billing cycles</p>
+						<div className="bg-white rounded-xl p-6 border border-gray-150 shadow-sm">
+							<h4 className="font-semibold text-gray-950 mb-2">SaaS Platforms</h4>
+							<p className="text-gray-700 text-sm">Subscription float earns between billing cycles</p>
 						</div>
 					</div>
 				</div>

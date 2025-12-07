@@ -110,7 +110,7 @@ export function StrategiesPage() {
 	}
 
 	const updateAllocation = (id: string, value: string) => {
-		const numValue = parseInt(value) || 0
+		const numValue = parseInt(value) ?? 0
 		const constrainedValue = Math.min(Math.max(0, numValue), 100)
 
 		setStrategies((prev) => prev.map((s) => (s.id === id ? { ...s, allocation: constrainedValue } : s)))
