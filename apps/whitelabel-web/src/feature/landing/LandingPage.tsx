@@ -101,7 +101,7 @@ export function LandingPage() {
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 					<Link to="/" className="flex items-center gap-2 group">
 						<div className="relative p-2 -m-2 rounded-lg hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 transition-all">
-							<Sparkles className="size-6 text-gray-700 group-hover:text-blue-500 transition-colors cursor-pointer" />
+							<Sparkles className="size-6 text-gray-700 group-hover:text-gray-500 transition-colors cursor-pointer" />
 						</div>
 					</Link>
 					<nav className="hidden md:flex items-center gap-6">
