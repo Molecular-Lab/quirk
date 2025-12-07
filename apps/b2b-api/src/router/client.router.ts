@@ -104,6 +104,7 @@ export const createClientRouter = (
 						websiteUrl: client.websiteUrl || null,
 						walletType: client.privyWalletType, // ✅ From JOIN
 						privyOrganizationId: client.privyOrganizationId,
+						apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
 						supportedCurrencies: client.supportedCurrencies || [],
 						bankAccounts: normalizeBankAccounts(client.bankAccounts),
 						isActive: client.isActive,
@@ -161,6 +162,7 @@ export const createClientRouter = (
 						websiteUrl: client.websiteUrl || null,
 						walletType: client.privyWalletType, // ✅ From JOIN
 						privyOrganizationId: client.privyOrganizationId,
+						apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
 						supportedCurrencies: client.supportedCurrencies || [],
 						bankAccounts: normalizeBankAccounts(client.bankAccounts),
 						isActive: client.isActive,
@@ -200,6 +202,7 @@ export const createClientRouter = (
 					websiteUrl: client.websiteUrl || null,
 					walletType: client.privyWalletType, // ✅ From JOIN
 					privyOrganizationId: client.privyOrganizationId,
+					apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix for "Generated" status
 					supportedCurrencies: client.supportedCurrencies || [],
 					// Normalize bankAccounts (may be JSON string from DB)
 					bankAccounts: normalizeBankAccounts(client.bankAccounts),
@@ -598,6 +601,97 @@ export const createClientRouter = (
 			}
 		},
 
+		// Bulk apply strategy to all products (Dashboard only)
+		bulkApplyStrategy: async ({ body, req }: { body: any; req: any }) => {
+			try {
+				// ✅ Dashboard only: Requires Privy authentication
+				const privySession = (req as any).privy;
+				if (!privySession) {
+					logger.warn("[Bulk Apply Strategy] No Privy session found");
+					return {
+						status: 401 as const,
+						body: { success: false, error: "Authentication required" },
+					};
+				}
+
+				logger.info("[Bulk Apply Strategy] Starting bulk strategy application", {
+					privyOrgId: privySession.organizationId,
+					productsCount: privySession.products.length,
+					strategies: body.strategies,
+				});
+
+				// Validate strategies sum to 100%
+				const totalAllocation = body.strategies.reduce(
+					(sum: number, s: any) => sum + s.target,
+					0
+				);
+
+				if (totalAllocation !== 100) {
+					logger.error("[Bulk Apply Strategy] Invalid strategy allocation", { totalAllocation });
+					return {
+						status: 400 as const,
+						body: {
+							success: false,
+							error: `Strategy allocation must sum to 100%, got ${totalAllocation}%`,
+						},
+					};
+				}
+
+				const productsUpdated: string[] = [];
+				const productsFailed: Array<{ productId: string; error: string }> = [];
+
+				// Apply strategy to each product's vault
+				for (const product of privySession.products) {
+					try {
+						const tokenSymbol = body.token_symbol || 'UNKNOWN';
+
+						await clientService.configureStrategies(product.productId, {
+							chain: body.chain,
+							tokenAddress: body.token_address,
+							tokenSymbol: tokenSymbol,
+							strategies: body.strategies,
+						});
+
+						productsUpdated.push(product.productId);
+						logger.info("[Bulk Apply Strategy] Successfully updated product", {
+							productId: product.productId,
+							companyName: product.companyName,
+						});
+					} catch (error: any) {
+						productsFailed.push({
+							productId: product.productId,
+							error: error.message,
+						});
+						logger.warn("[Bulk Apply Strategy] Failed to update product", {
+							productId: product.productId,
+							error: error.message,
+						});
+					}
+				}
+
+				logger.info("[Bulk Apply Strategy] Completed", {
+					totalProducts: privySession.products.length,
+					successCount: productsUpdated.length,
+					failedCount: productsFailed.length,
+				});
+
+				return {
+					status: 200 as const,
+					body: {
+						success: true,
+						productsUpdated,
+						message: `Strategy applied to ${productsUpdated.length} of ${privySession.products.length} product(s)`,
+					},
+				};
+			} catch (error: any) {
+				logger.error("[Bulk Apply Strategy] Error", { error: error.message, body });
+				return {
+					status: 400 as const,
+					body: { success: false, error: error.message || "Failed to bulk apply strategy" },
+				};
+			}
+		},
+
 		// ============================================
 		// SEPARATE CONFIG ENDPOINTS (3 cards on Settings page)
 		// ============================================
@@ -801,6 +895,101 @@ export const createClientRouter = (
 						success: false,
 						error: error.message || "Failed to get bank accounts",
 					},
+				};
+			}
+		},
+
+		// ============================================
+		// PRODUCT-LEVEL STRATEGY ENDPOINTS
+		// ============================================
+
+		getProductStrategies: async ({ params, req }: { params: { productId: string }; req: any }) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied" },
+					};
+				}
+
+				const strategies = await clientService.getProductStrategies(params.productId);
+
+				return {
+					status: 200 as const,
+					body: {
+						productId: params.productId,
+						preferences: strategies.preferences,
+						customization: strategies.customization,
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting product strategies", { error: error.message, params });
+				return {
+					status: 404 as const,
+					body: { success: false, error: error.message || "Failed to get product strategies" },
+				};
+			}
+		},
+
+		updateProductStrategiesCustomization: async ({
+			params,
+			body,
+			req,
+		}: {
+			params: { productId: string };
+			body: { strategies: Record<string, Record<string, number>> };
+			req: any;
+		}) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied" },
+					};
+				}
+
+				const result = await clientService.updateProductStrategiesCustomization(
+					params.productId,
+					body.strategies
+				);
+
+				return { status: 200 as const, body: result };
+			} catch (error: any) {
+				logger.error("Error updating product strategies", { error: error.message, params, body });
+				return {
+					status: 400 as const,
+					body: { success: false, error: error.message || "Failed to update product strategies" },
+				};
+			}
+		},
+
+		getEffectiveProductStrategies: async ({ params, req }: { params: { productId: string }; req: any }) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied" },
+					};
+				}
+
+				const result = await clientService.getEffectiveProductStrategies(params.productId);
+
+				return {
+					status: 200 as const,
+					body: {
+						productId: params.productId,
+						strategies: result.strategies,
+						source: result.source,
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting effective product strategies", { error: error.message, params });
+				return {
+					status: 404 as const,
+					body: { success: false, error: error.message || "Failed to get effective product strategies" },
 				};
 			}
 		},

@@ -18,69 +18,57 @@ export const createDashboardRouter = (
 		// GET /dashboard/metrics
 		getMetrics: async ({ query, req }: { query: { clientId?: string }; req?: any }) => {
 			try {
-				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
-				const apiKeyClient = (req as any)?.client;
+				// ✅ Dashboard uses Privy UUID authentication only
 				const privySession = (req as any)?.privy;
 
-				const clientId = query.clientId;
-				if (!clientId) {
-					return {
-						status: 400 as const,
-						body: {
-							success: false,
-							error: "clientId is required",
-						},
-					};
-				}
-
-				// Verify authorization
-				// For API key: clientId must match authenticated client
-				if (apiKeyClient) {
-					if (clientId !== apiKeyClient.id) {
-						logger.warn("API key client attempting to view another client's dashboard", {
-							apiKeyClientId: apiKeyClient.id,
-							requestedClientId: clientId,
-						});
-						return {
-							status: 403 as const,
-							body: {
-								success: false,
-								error: "Not authorized to view this client's dashboard",
-							},
-						};
-					}
-				}
-				// For Privy: clientId must belong to one of the organization's products
-				else if (privySession) {
-					const productIds = privySession.products.map((p: any) => p.id);
-					if (!productIds.includes(clientId)) {
-						logger.warn("Privy user attempting to view dashboard from outside organization", {
-							privyOrgId: privySession.organizationId,
-							requestedClientId: clientId,
-						});
-						return {
-							status: 403 as const,
-							body: {
-								success: false,
-								error: "Not authorized to view this client's dashboard",
-							},
-						};
-					}
-				}
-				// No auth found
-				else {
-					logger.error("Authentication missing for dashboard metrics");
+				// Require Privy authentication for dashboard
+				if (!privySession) {
+					logger.error("Dashboard requires Privy authentication", { path: req?.path });
 					return {
 						status: 401 as const,
 						body: {
 							success: false,
-							error: "Authentication required",
+							error: "Privy authentication required for dashboard access",
+						},
+					};
+				}
+
+				// Auto-select first product if clientId not provided
+				const clientId = query.clientId || privySession.products[0]?.id;
+
+				if (!clientId) {
+					logger.warn("No products found for Privy organization", {
+						privyOrgId: privySession.organizationId,
+					});
+					return {
+						status: 404 as const,
+						body: {
+							success: false,
+							error: "No products found for your organization",
+						},
+					};
+				}
+
+				// Verify clientId belongs to this Privy organization
+				const productIds = privySession.products.map((p: any) => p.id);
+				if (!productIds.includes(clientId)) {
+					logger.warn("Privy user attempting to view dashboard from outside organization", {
+						privyOrgId: privySession.organizationId,
+						requestedClientId: clientId,
+						availableProducts: productIds,
+					});
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							error: "Not authorized to view this product's dashboard",
 						},
 					};
 				}
 
 				logger.info(`[Dashboard] Fetching metrics for client: ${clientId}`, {
-					authType: apiKeyClient ? "api_key" : "privy",
+					authType: "privy",
+					privyOrgId: privySession.organizationId,
 				});
 
 				// Get all client vaults (multi-chain, multi-token)
