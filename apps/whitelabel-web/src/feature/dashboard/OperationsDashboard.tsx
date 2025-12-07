@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { DollarSign, RefreshCw, Sparkles, UserPlus, Users, Zap } from "lucide-react"
 
 import { listPendingDeposits } from "@/api/b2bClientHelpers"
-import { useClientContext } from "@/store/clientContextStore"
+import { useClientContextStore } from "@/store/clientContextStore"
 
 import { OnRampModal } from "./OnRampModal"
 
@@ -26,7 +26,7 @@ export function OperationsDashboard() {
 	const [isOnboardingModalOpen, setIsOnboardingModalOpen] = useState(false)
 
 	// Get client context for API authentication
-	const { clientId, productId, hasContext, hasApiKey } = useClientContext()
+	const { clientId, productId, hasContext, hasApiKey } = useClientContextStore()
 
 	useEffect(() => {
 		// Log client context for debugging
@@ -144,14 +144,12 @@ export function OperationsDashboard() {
 			{/* Header */}
 			<div className="bg-white border-b border-gray-200">
 				<div className="max-w-7xl mx-auto px-6 py-6">
-					<div className="flex items-center gap-3">
-						<div className="p-3 bg-blue-100 rounded-xl">
-							<Users className="w-8 h-8 text-blue-600" />
+					<div className="border-b border-gray-150 pb-4">
+						<div className="flex items-center gap-2 mb-1">
+							<Users className="w-6 h-6 text-gray-400" />
+							<h1 className="text-3xl font-bold text-gray-950">Client Onboarding</h1>
 						</div>
-						<div>
-							<h1 className="text-3xl font-bold text-gray-900">Client Onboarding</h1>
-							<p className="text-gray-600 mt-1">Review and onboard end-user deposit requests</p>
-						</div>
+						<p className="text-gray-600 mt-1">Review and onboard end-user deposit requests</p>
 					</div>
 				</div>
 			</div>
@@ -159,12 +157,10 @@ export function OperationsDashboard() {
 			<div className="max-w-7xl mx-auto px-6 py-8">
 				{/* Summary Cards */}
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-					<div className="bg-white rounded-2xl p-6 border border-blue-200 shadow-sm hover:shadow-md transition-shadow">
+					<div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
 						<div className="flex items-center justify-between mb-2">
 							<p className="text-sm font-medium text-gray-600">New Users Waiting</p>
-							<div className="p-2 bg-blue-50 rounded-lg">
-								<UserPlus className="w-5 h-5 text-blue-600" />
-							</div>
+							<UserPlus className="w-5 h-5 text-gray-400" />
 						</div>
 						<p className="text-3xl font-bold text-gray-900">{totalPendingOrders}</p>
 						<p className="text-xs text-gray-500 mt-1">
@@ -172,12 +168,10 @@ export function OperationsDashboard() {
 						</p>
 					</div>
 
-					<div className="bg-white rounded-2xl p-6 border border-green-200 shadow-sm hover:shadow-md transition-shadow">
+					<div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
 						<div className="flex items-center justify-between mb-2">
 							<p className="text-sm font-medium text-gray-600">Total Onboarding Value</p>
-							<div className="p-2 bg-green-50 rounded-lg">
-								<DollarSign className="w-5 h-5 text-green-600" />
-							</div>
+							<DollarSign className="w-5 h-5 text-gray-400" />
 						</div>
 						<p className="text-3xl font-bold text-gray-900">
 							${totalPendingAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -185,12 +179,10 @@ export function OperationsDashboard() {
 						<p className="text-xs text-gray-500 mt-1">Pending USDC minting</p>
 					</div>
 
-					<div className="bg-white rounded-2xl p-6 border border-purple-200 shadow-sm hover:shadow-md transition-shadow">
+					<div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
 						<div className="flex items-center justify-between mb-2">
 							<p className="text-sm font-medium text-gray-600">Onboarding Speed</p>
-							<div className="p-2 bg-purple-50 rounded-lg">
-								<Zap className="w-5 h-5 text-purple-600" />
-							</div>
+							<Zap className="w-5 h-5 text-gray-400" />
 						</div>
 						<p className="text-3xl font-bold text-gray-900">~2 min</p>
 						<p className="text-xs text-gray-500 mt-1">Average time to activate</p>
@@ -198,11 +190,9 @@ export function OperationsDashboard() {
 				</div>
 
 				{/* AI Onboarding Insights */}
-				<div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-2xl p-6 border border-purple-200 mb-8 shadow-sm">
+				<div className="bg-white rounded-2xl p-6 border border-gray-200 mb-8 shadow-sm">
 					<div className="flex items-center gap-2 mb-3">
-						<div className="p-2 bg-purple-100 rounded-lg">
-							<Sparkles className="w-5 h-5 text-purple-600" />
-						</div>
+						<Sparkles className="w-5 h-5 text-gray-400" />
 						<h2 className="text-lg font-bold text-gray-900">AI Onboarding Insights</h2>
 					</div>
 					<div className="space-y-2">
@@ -224,7 +214,7 @@ export function OperationsDashboard() {
 
 				{/* Pending Orders List */}
 				<div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
-					<div className="px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-purple-50">
+					<div className="px-6 py-4 border-b border-gray-200 bg-white">
 						<div className="flex items-center justify-between">
 							<div>
 								<div className="flex items-center gap-2">
@@ -258,7 +248,7 @@ export function OperationsDashboard() {
 										<button
 											onClick={handleOnboardSelected}
 											disabled={selectedOrderIds.size === 0}
-											className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all shadow-md hover:shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+											className="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg font-semibold transition-all shadow-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
 										>
 											<Zap className="w-4 h-4" />
 											Onboard Selected ({selectedOrderIds.size})

@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { Building2, Globe } from "lucide-react"
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type CustomerTier, useOnboardingStore } from "@/store/onboardingStore"
 
 const BUSINESS_TYPES = [
@@ -118,7 +119,7 @@ export function CompanyInfoForm() {
 						}}
 						className={`
 							block w-full pl-10 pr-3 py-2 border rounded-lg shadow-sm
-							focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
+							focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
 							${errors.companyName ? "border-red-500" : "border-gray-300"}
 						`}
 						placeholder="Acme Corporation"
@@ -132,25 +133,28 @@ export function CompanyInfoForm() {
 				<label htmlFor="businessType" className="block text-sm font-medium text-gray-700 mb-2">
 					Business Type *
 				</label>
-				<select
-					id="businessType"
+				<Select
 					value={companyInfo.businessType}
-					onChange={(e) => {
-						setCompanyInfo({ businessType: e.target.value })
+					onValueChange={(value) => {
+						setCompanyInfo({ businessType: value })
 					}}
-					className={`
-						block w-full px-3 py-2 border rounded-lg shadow-sm
-						focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
-						${errors.businessType ? "border-red-500" : "border-gray-300"}
-					`}
 				>
-					<option value="">Select a type</option>
-					{BUSINESS_TYPES.map((type) => (
-						<option key={type} value={type}>
-							{type}
-						</option>
-					))}
-				</select>
+					<SelectTrigger
+						className={`
+							w-full
+							${errors.businessType ? "border-red-500" : ""}
+						`}
+					>
+						<SelectValue placeholder="Select a type" />
+					</SelectTrigger>
+					<SelectContent>
+						{BUSINESS_TYPES.map((type) => (
+							<SelectItem key={type} value={type}>
+								{type}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 				{errors.businessType && <p className="mt-1 text-sm text-red-600">{errors.businessType}</p>}
 			</div>
 
@@ -159,25 +163,28 @@ export function CompanyInfoForm() {
 				<label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-2">
 					Industry Vertical *
 				</label>
-				<select
-					id="industry"
+				<Select
 					value={companyInfo.industry}
-					onChange={(e) => {
-						setCompanyInfo({ industry: e.target.value })
+					onValueChange={(value) => {
+						setCompanyInfo({ industry: value })
 					}}
-					className={`
-						block w-full px-3 py-2 border rounded-lg shadow-sm
-						focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
-						${errors.industry ? "border-red-500" : "border-gray-300"}
-					`}
 				>
-					<option value="">Select an industry</option>
-					{INDUSTRIES.map((ind) => (
-						<option key={ind} value={ind}>
-							{ind}
-						</option>
-					))}
-				</select>
+					<SelectTrigger
+						className={`
+							w-full
+							${errors.industry ? "border-red-500" : ""}
+						`}
+					>
+						<SelectValue placeholder="Select an industry" />
+					</SelectTrigger>
+					<SelectContent>
+						{INDUSTRIES.map((ind) => (
+							<SelectItem key={ind} value={ind}>
+								{ind}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
 				{errors.industry && <p className="mt-1 text-sm text-red-600">{errors.industry}</p>}
 			</div>
 
@@ -199,7 +206,7 @@ export function CompanyInfoForm() {
 						}}
 						className={`
 							block w-full pl-10 pr-3 py-2 border rounded-lg shadow-sm
-							focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
+							focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
 							${errors.websiteUrl ? "border-red-500" : "border-gray-300"}
 						`}
 						placeholder="https://example.com"
@@ -236,7 +243,7 @@ export function CompanyInfoForm() {
 							key={tier.value}
 							className={`
 								flex items-start p-4 rounded-lg border-2 cursor-pointer transition-all
-								${companyInfo.customerTier === tier.value ? "border-gray-900 bg-gray-50" : "border-gray-200 hover:border-gray-300"}
+								${companyInfo.customerTier === tier.value ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}
 							`}
 						>
 							<input
@@ -247,7 +254,7 @@ export function CompanyInfoForm() {
 								onChange={(e) => {
 									setCompanyInfo({ customerTier: e.target.value as CustomerTier })
 								}}
-								className="mt-1 h-4 w-4 text-gray-900 focus:ring-gray-900"
+								className="mt-1 h-4 w-4 text-blue-500 focus:ring-blue-500"
 							/>
 							<div className="ml-3 flex-1">
 								<div className="flex items-center justify-between">
@@ -278,7 +285,7 @@ export function CompanyInfoForm() {
 						}}
 						className={`
 							block w-full pl-7 pr-3 py-2 border rounded-lg shadow-sm
-							focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent
+							focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
 							${errors.estimatedAUM ? "border-red-500" : "border-gray-300"}
 						`}
 						placeholder="1000000"
@@ -293,7 +300,7 @@ export function CompanyInfoForm() {
 				<button
 					type="submit"
 					disabled={!isStepValid(0)}
-					className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
+					className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
 				>
 					Next: Strategy Configuration →
 				</button>

@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react"
-import toast from "react-hot-toast"
+import { useState } from "react"
 
 import { Link, useNavigate } from "@tanstack/react-router"
 import { Building2, Check, Copy, Key, Loader2, Plus, RefreshCw, Settings, X } from "lucide-react"
+import { toast } from "sonner"
 
 import { useProducts } from "@/hooks/useProducts"
 import type { Organization } from "@/store/userStore"
@@ -11,19 +11,6 @@ export function ProductsListPage() {
 	const { products, isLoading, error, loadProducts, isLoaded } = useProducts()
 	const navigate = useNavigate()
 	const [copiedId, setCopiedId] = useState<string | null>(null)
-	const [apiKeys, setApiKeys] = useState<Record<string, string>>({})
-
-	// Load API keys from localStorage on mount
-	useEffect(() => {
-		const loadedKeys = localStorage.getItem("b2b:api_keys")
-		if (loadedKeys) {
-			try {
-				setApiKeys(JSON.parse(loadedKeys))
-			} catch (e) {
-				console.error("[ProductsListPage] Failed to parse API keys from localStorage")
-			}
-		}
-	}, [])
 
 	const handleCopyToClipboard = (text: string, id: string, label: string) => {
 		navigator.clipboard.writeText(text)
@@ -64,7 +51,7 @@ export function ProductsListPage() {
 					<p className="text-gray-600 mb-4">{error}</p>
 					<button
 						onClick={handleRefresh}
-						className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+						className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
 					>
 						Try Again
 					</button>
@@ -99,7 +86,7 @@ export function ProductsListPage() {
 						<h2 className="text-xl font-semibold text-gray-900 mb-2">No Products Yet</h2>
 						<p className="text-gray-600 mb-6">Create your first product to start earning yield</p>
 						<Link to="/onboarding/create-product">
-							<button className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+							<button className="inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium">
 								<Plus className="w-5 h-5" />
 								Create Product
 							</button>
@@ -108,7 +95,7 @@ export function ProductsListPage() {
 				) : (
 					<div className="space-y-4">
 						{products.map((product) => {
-							const hasApiKey = !!apiKeys[product.productId]
+							const hasApiKey = !!product.apiKeyPrefix
 
 							return (
 								<div
@@ -170,14 +157,18 @@ export function ProductsListPage() {
 													{hasApiKey ? (
 														<>
 															<code className="text-sm font-mono text-gray-900 flex-1 truncate">
-																{apiKeys[product.productId].substring(0, 20)}...
+																{product.apiKeyPrefix}...
 															</code>
 															<button
 																onClick={() => {
-																	handleCopyToClipboard(apiKeys[product.productId], `api-${product.id}`, "API Key")
+																	handleCopyToClipboard(
+																		product.apiKeyPrefix ?? "",
+																		`api-${product.id}`,
+																		"API Key Prefix",
+																	)
 																}}
 																className="p-1.5 hover:bg-gray-200 rounded transition-colors"
-																title="Copy API Key"
+																title="Copy API Key Prefix"
 															>
 																{copiedId === `api-${product.id}` ? (
 																	<Check className="w-4 h-4 text-green-600" />
@@ -185,6 +176,9 @@ export function ProductsListPage() {
 																	<Copy className="w-4 h-4 text-gray-600" />
 																)}
 															</button>
+															<span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
+																Generated
+															</span>
 														</>
 													) : (
 														<div className="flex items-center gap-2 text-sm text-orange-600">
@@ -209,7 +203,7 @@ export function ProductsListPage() {
 												onClick={() => {
 													handleConfigureClick(product)
 												}}
-												className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-medium hover:from-blue-600 hover:to-indigo-600 transition-all shadow-sm hover:shadow-md"
+												className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-all shadow-sm"
 											>
 												<Settings className="w-4 h-4" />
 												Configure Product

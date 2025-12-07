@@ -96,7 +96,7 @@ export function IntegrationPage() {
 							}`}
 						>
 							Documentation
-							{activeTab === "docs" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />}
+							{activeTab === "docs" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />}
 						</button>
 						<button
 							onClick={() => {
@@ -107,7 +107,7 @@ export function IntegrationPage() {
 							}`}
 						>
 							API Keys
-							{activeTab === "api-keys" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600" />}
+							{activeTab === "api-keys" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500" />}
 						</button>
 					</div>
 				</div>
@@ -235,7 +235,7 @@ const deposit = await client.deposits.create({
 							</div>
 
 							{/* Webhooks */}
-							<div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+							<div className="bg-blue-50 rounded-2xl p-6 border border-blue-200">
 								<h2 className="text-2xl font-bold text-gray-900 mb-4">Webhooks</h2>
 								<p className="text-gray-600 mb-4">
 									Configure webhooks to receive real-time notifications about deposit status changes.
@@ -268,7 +268,7 @@ const deposit = await client.deposits.create({
 								onClick={() => {
 									console.log("Create new API key")
 								}}
-								className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+								className="px-4 py-2 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors flex items-center gap-2"
 							>
 								<Plus className="w-4 h-4" />
 								Create New Key
@@ -329,7 +329,7 @@ const deposit = await client.deposits.create({
 									onClick={() => {
 										console.log("Create first API key")
 									}}
-									className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+									className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
 								>
 									Create Your First API Key
 								</button>

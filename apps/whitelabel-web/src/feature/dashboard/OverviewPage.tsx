@@ -4,7 +4,9 @@ import { Link } from "@tanstack/react-router"
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis } from "recharts"
 
 import { getDashboardMetrics } from "@/api/b2bClientHelpers"
-import { useClientContext } from "@/store/clientContextStore"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useUserStore } from "@/store/userStore"
 
 import TimeFilter, { type TimeRange } from "../../components/dashboard/TimeFilter"
 
@@ -51,9 +53,9 @@ const generateMockData = (range: TimeRange) => {
 }
 
 const MOCK_STRATEGIES = [
-	{ name: "Balanced Portfolio", value: 45000, return: "+12.5%", color: "bg-blue-500" },
-	{ name: "Conservative Fund", value: 30000, return: "+8.2%", color: "bg-green-500" },
-	{ name: "Aggressive Yield", value: 25000, return: "+18.7%", color: "bg-purple-500" },
+	{ name: "Balanced Portfolio", value: 45000, return: "+12.5%", color: "bg-accent" },
+	{ name: "Conservative Fund", value: 30000, return: "+8.2%", color: "bg-gray-700" },
+	{ name: "Aggressive Yield", value: 25000, return: "+18.7%", color: "bg-gray-500" },
 ]
 
 const MOCK_END_USERS = [
@@ -136,7 +138,10 @@ interface DashboardMetrics {
 }
 
 export function OverviewPage() {
-	const { clientId } = useClientContext()
+	const { getActiveOrganization } = useUserStore()
+	const activeOrg = getActiveOrganization()
+	const clientId = activeOrg?.id
+
 	const [timeRange, setTimeRange] = useState<TimeRange>("daily")
 	const [selectedMetric, setSelectedMetric] = useState<"tvl" | "users" | "apy" | "revenue">("tvl")
 	const [dashboardMetrics, setDashboardMetrics] = useState<DashboardMetrics | null>(null)
@@ -216,7 +221,7 @@ export function OverviewPage() {
 			<div className="max-w-[1400px] mx-auto px-6 py-8">
 				{/* Header with Time Filter */}
 				<div className="flex items-center justify-between mb-8">
-					<h1 className="text-[32px] font-bold text-gray-900">Dashboard</h1>
+					<h1 className="text-[32px] font-bold text-gray-950">Dashboard</h1>
 					<TimeFilter value={timeRange} onChange={setTimeRange} />
 				</div>
 
@@ -225,16 +230,18 @@ export function OverviewPage() {
 					{Object.entries(metrics).map(([key, metric]) => (
 						<div
 							key={key}
-							className={`bg-gray-50 rounded-2xl p-6 cursor-pointer transition-all ${
-								selectedMetric === key ? "ring-2 ring-blue-500 shadow-lg" : "hover:shadow-md"
+							className={`bg-white/90 backdrop-blur-md border rounded-xl p-6 cursor-pointer transition-all ${
+								selectedMetric === key
+									? "border-accent shadow-lg ring-2 ring-accent/20"
+									: "border-gray-150 hover:border-gray-200 hover:shadow-md"
 							}`}
 							onClick={() => {
 								setSelectedMetric(key as typeof selectedMetric)
 							}}
 						>
 							<div className="text-xs font-medium text-gray-500 mb-2">{metric.label}</div>
-							<div className="text-3xl font-bold text-gray-900 mb-1">{metric.value}</div>
-							<div className="text-sm text-primary-500 font-medium">{metric.change}</div>
+							<div className="text-3xl font-bold text-gray-950 mb-1">{metric.value}</div>
+							<div className="text-sm text-gray-700 font-medium">{metric.change}</div>
 						</div>
 					))}
 				</div>
@@ -242,12 +249,12 @@ export function OverviewPage() {
 				{/* Main Grid */}
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
 					{/* Chart Card */}
-					<div className="lg:col-span-2 bg-gray-50 rounded-3xl p-6">
+					<div className="lg:col-span-2 bg-white/90 backdrop-blur-md border border-gray-150 rounded-xl p-6">
 						<div className="flex items-start justify-between mb-6">
 							<div>
 								<div className="text-gray-500 text-xs font-medium mb-1">{currentMetric.label}</div>
-								<div className="text-[56px] font-bold text-gray-900 leading-none mb-2">{currentMetric.value}</div>
-								<div className="text-sm text-primary-500 font-medium">{currentMetric.change}</div>
+								<div className="text-[56px] font-bold text-gray-950 leading-none mb-2">{currentMetric.value}</div>
+								<div className="text-sm text-gray-700 font-medium">{currentMetric.change}</div>
 							</div>
 							<div className="flex gap-1">
 								{(["tvl", "users", "apy", "revenue"] as const).map((metric) => (
@@ -314,11 +321,11 @@ export function OverviewPage() {
 											<div key={idx} className="flex items-center justify-between gap-2">
 												<div className="flex items-center gap-2">
 													<div
-														className={`w-2 h-2 rounded-full ${idx === 0 ? "bg-blue-500" : idx === 1 ? "bg-green-500" : "bg-purple-500"}`}
+														className={`w-2 h-2 rounded-full ${idx === 0 ? "bg-accent" : idx === 1 ? "bg-gray-700" : "bg-gray-500"}`}
 													></div>
 													<span className="text-xs text-gray-600">{strategy.category}</span>
 												</div>
-												<span className="text-xs font-medium text-gray-900">{strategy.target}%</span>
+												<span className="text-xs font-medium text-gray-950">{strategy.target}%</span>
 											</div>
 										))
 									: MOCK_STRATEGIES.map((strategy, idx) => (
@@ -330,7 +337,7 @@ export function OverviewPage() {
 							</div>
 						</div>
 
-						<div className="bg-gray-50 rounded-3xl p-6">
+						<div className="bg-white/90 backdrop-blur-md border border-gray-150 rounded-xl p-6">
 							<div className="flex items-center justify-between mb-1">
 								<span className="text-xs font-medium text-gray-500">Fund Breakdown</span>
 							</div>
@@ -338,19 +345,19 @@ export function OverviewPage() {
 								<>
 									<div className="mb-4">
 										<div className="text-xs text-gray-500 mb-1">Available (Stage 1)</div>
-										<div className="text-2xl font-bold text-blue-600">
+										<div className="text-2xl font-bold text-gray-950">
 											${parseFloat(dashboardMetrics.fundStages.available).toLocaleString()}
 										</div>
 									</div>
 									<div className="mb-4">
 										<div className="text-xs text-gray-500 mb-1">Staked in DeFi (Stage 2)</div>
-										<div className="text-2xl font-bold text-green-600">
+										<div className="text-2xl font-bold text-gray-950">
 											${parseFloat(dashboardMetrics.fundStages.staked).toLocaleString()}
 										</div>
 									</div>
 									<div className="pt-3 border-t border-gray-200">
 										<div className="text-xs text-gray-500 mb-1">Total Revenue (Stage 3)</div>
-										<div className="text-2xl font-bold text-purple-600">
+										<div className="text-2xl font-bold text-gray-950">
 											${parseFloat(dashboardMetrics.revenue.total).toLocaleString()}
 										</div>
 										<div className="text-xs text-gray-500 mt-2">
@@ -360,10 +367,10 @@ export function OverviewPage() {
 								</>
 							) : (
 								<>
-									<div className="text-[56px] font-bold text-gray-900 leading-none mb-2">
+									<div className="text-[56px] font-bold text-gray-950 leading-none mb-2">
 										${MOCK_STRATEGIES.reduce((sum, s) => sum + s.value, 0).toLocaleString()}
 									</div>
-									<div className="text-sm text-green-600 font-medium">
+									<div className="text-sm text-gray-700 font-medium">
 										+{((MOCK_STRATEGIES.reduce((sum, s) => sum + s.value, 0) / 90000) * 100 - 100).toFixed(1)}% Total
 										Return
 									</div>
@@ -376,17 +383,17 @@ export function OverviewPage() {
 				{/* End-Users Section */}
 				<div className="flex items-center justify-between mb-5 mt-10">
 					<div>
-						<h2 className="text-[28px] font-bold text-gray-900">End-Users</h2>
+						<h2 className="text-[28px] font-bold text-gray-950">End-Users</h2>
 						<p className="text-sm text-gray-500 mt-1">Users staking through your platform</p>
 					</div>
 					<div className="flex items-center gap-3">
 						<div className="text-right">
 							<div className="text-xs text-gray-500">Total Users</div>
-							<div className="text-2xl font-bold text-gray-900">{MOCK_END_USERS.length}</div>
+							<div className="text-2xl font-bold text-gray-950">{MOCK_END_USERS.length}</div>
 						</div>
 						<div className="text-right">
 							<div className="text-xs text-gray-500">Total Staked</div>
-							<div className="text-2xl font-bold text-primary-500">
+							<div className="text-2xl font-bold text-gray-950">
 								${MOCK_END_USERS.reduce((sum, user) => sum + user.stakedAmount, 0).toLocaleString()}
 							</div>
 						</div>
@@ -395,61 +402,61 @@ export function OverviewPage() {
 
 				{/* End-Users Table */}
 				<div className="bg-white border border-gray-100 rounded-2xl overflow-hidden mb-10">
-					<table className="w-full">
-						<thead>
-							<tr className="border-b border-gray-50 bg-gray-50">
-								<th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+					<Table>
+						<TableHeader>
+							<TableRow className="border-b border-gray-50 bg-gray-50">
+								<TableHead className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 									User
-								</th>
-								<th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+								</TableHead>
+								<TableHead className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 									Wallet Address
-								</th>
-								<th className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+								</TableHead>
+								<TableHead className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 									Staked Amount
-								</th>
-								<th className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+								</TableHead>
+								<TableHead className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 									APY Earned
-								</th>
-								<th className="text-center py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+								</TableHead>
+								<TableHead className="text-center py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 									Current APY
-								</th>
-								<th className="text-center py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+								</TableHead>
+								<TableHead className="text-center py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 									Status
-								</th>
-								<th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+								</TableHead>
+								<TableHead className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 									Join Date
-								</th>
-							</tr>
-						</thead>
-						<tbody>
+								</TableHead>
+							</TableRow>
+						</TableHeader>
+						<TableBody>
 							{MOCK_END_USERS.map((user) => (
-								<tr key={user.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-									<td className="py-4 px-5">
+								<TableRow key={user.id} className="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+									<TableCell className="py-4 px-5">
 										<div className="flex items-center gap-2.5">
-											<div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold">
+											<div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold">
 												{user.name.charAt(0)}
 											</div>
 											<span className="font-semibold text-gray-900 text-sm">{user.name}</span>
 										</div>
-									</td>
-									<td className="py-4 px-5">
+									</TableCell>
+									<TableCell className="py-4 px-5">
 										<code className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">{user.walletAddress}</code>
-									</td>
-									<td className="py-4 px-5 text-right">
-										<span className="text-gray-900 font-semibold text-sm">${user.stakedAmount.toLocaleString()}</span>
-									</td>
-									<td className="py-4 px-5 text-right">
-										<span className="text-green-600 font-semibold text-sm">+${user.apyEarned.toLocaleString()}</span>
-									</td>
-									<td className="py-4 px-5 text-center">
-										<span className="text-primary-500 font-semibold text-sm">{user.apy}%</span>
-									</td>
-									<td className="py-4 px-5 text-center">
-										<span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
+									</TableCell>
+									<TableCell className="py-4 px-5 text-right">
+										<span className="text-gray-950 font-semibold text-sm">${user.stakedAmount.toLocaleString()}</span>
+									</TableCell>
+									<TableCell className="py-4 px-5 text-right">
+										<span className="text-gray-700 font-semibold text-sm">+${user.apyEarned.toLocaleString()}</span>
+									</TableCell>
+									<TableCell className="py-4 px-5 text-center">
+										<span className="text-gray-700 font-semibold text-sm">{user.apy}%</span>
+									</TableCell>
+									<TableCell className="py-4 px-5 text-center">
+										<span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">
 											Active
 										</span>
-									</td>
-									<td className="py-4 px-5">
+									</TableCell>
+									<TableCell className="py-4 px-5">
 										<span className="text-gray-600 text-sm">
 											{new Date(user.joinDate).toLocaleDateString("en-US", {
 												month: "short",
@@ -457,79 +464,115 @@ export function OverviewPage() {
 												year: "numeric",
 											})}
 										</span>
-									</td>
-								</tr>
+									</TableCell>
+								</TableRow>
 							))}
-						</tbody>
-					</table>
+						</TableBody>
+					</Table>
 				</div>
 
 				{/* Portfolios Section */}
 				<div className="flex items-center justify-between mb-5 mt-10">
-					<h2 className="text-[28px] font-bold text-gray-900">My Portfolios</h2>
-					<Link
-						to="/onboarding/create-product"
-						className="bg-primary-500 hover:bg-primary-600 text-white px-5 py-2.5 rounded-full font-medium text-sm transition-colors inline-block"
-					>
-						Create new portfolio
-					</Link>
+					<h2 className="text-[28px] font-bold text-gray-950">My Portfolios</h2>
+					<div className="flex gap-3">
+						<Link
+							to="/demo"
+							className="bg-white text-gray-950 px-5 py-2.5 rounded-lg hover:bg-gray-25 font-medium text-sm transition-all inline-block border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md"
+						>
+							Go to Demo
+						</Link>
+						<Link
+							to="/onboarding/create-product"
+							className="bg-blue-500 text-white px-5 py-2.5 rounded-lg hover:bg-blue-600 font-medium text-sm transition-all inline-block shadow-sm"
+						>
+							Create new portfolio
+						</Link>
+					</div>
 				</div>
 
-				{/* Tabs */}
-				<div className="flex gap-8 mb-4 border-b border-gray-100">
-					<button className="pb-3 text-sm font-semibold text-gray-900 border-b-2 border-gray-900 -mb-px">
-						Active (1)
-					</button>
-					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">Drafts (0)</button>
-					<button className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600">Archived (0)</button>
-				</div>
+				{/* Portfolios Tabs */}
+				<Tabs defaultValue="active" className="w-full">
+					<TabsList className="flex gap-8 mb-4 border-b border-gray-100 bg-transparent h-auto p-0 rounded-none w-full justify-start">
+						<TabsTrigger
+							value="active"
+							className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600 data-[state=active]:text-gray-900 data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-gray-900 -mb-px bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-0"
+						>
+							Active (1)
+						</TabsTrigger>
+						<TabsTrigger
+							value="drafts"
+							className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600 data-[state=active]:text-gray-900 data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-gray-900 -mb-px bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-0"
+						>
+							Drafts (0)
+						</TabsTrigger>
+						<TabsTrigger
+							value="archived"
+							className="pb-3 text-sm font-medium text-gray-400 hover:text-gray-600 data-[state=active]:text-gray-900 data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-gray-900 -mb-px bg-transparent data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none px-0"
+						>
+							Archived (0)
+						</TabsTrigger>
+					</TabsList>
 
-				{/* Table */}
-				<div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-					<table className="w-full">
-						<thead>
-							<tr className="border-b border-gray-50">
-								<th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-									Portfolio ↕
-								</th>
-								<th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-									Current Tokens
-								</th>
-								<th className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-									Current Value ↕
-								</th>
-								<th className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
-									Total Return ↕
-								</th>
-								<th className="w-24"></th>
-							</tr>
-						</thead>
-						<tbody>
-							<tr className="hover:bg-gray-50 transition-colors group">
-								<td className="py-4 px-5">
-									<div className="flex items-center gap-2.5">
-										<div className="w-2 h-2 rounded-full bg-primary-500"></div>
-										<span className="font-semibold text-gray-900 text-sm">DeFi Token Mix</span>
-									</div>
-								</td>
-								<td className="py-4 px-5">
-									<span className="text-gray-600 text-sm">-</span>
-								</td>
-								<td className="py-4 px-5 text-right">
-									<span className="text-gray-900 font-semibold text-sm">$0.00</span>
-								</td>
-								<td className="py-4 px-5 text-right">
-									<span className="text-gray-600 text-sm">-</span>
-								</td>
-								<td className="py-4 px-5 text-right">
-									<button className="px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
-										View
-									</button>
-								</td>
-							</tr>
-						</tbody>
-					</table>
-				</div>
+					<TabsContent value="active" className="mt-0">
+						<div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
+							<Table>
+								<TableHeader>
+									<TableRow className="border-b border-gray-50">
+										<TableHead className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+											Portfolio ↕
+										</TableHead>
+										<TableHead className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+											Current Tokens
+										</TableHead>
+										<TableHead className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+											Current Value ↕
+										</TableHead>
+										<TableHead className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+											Total Return ↕
+										</TableHead>
+										<TableHead className="w-24"></TableHead>
+									</TableRow>
+								</TableHeader>
+								<TableBody>
+									<TableRow className="hover:bg-gray-50 transition-colors group">
+										<TableCell className="py-4 px-5">
+											<div className="flex items-center gap-2.5">
+												<div className="w-2 h-2 rounded-full bg-primary-500"></div>
+												<span className="font-semibold text-gray-900 text-sm">DeFi Token Mix</span>
+											</div>
+										</TableCell>
+										<TableCell className="py-4 px-5">
+											<span className="text-gray-600 text-sm">-</span>
+										</TableCell>
+										<TableCell className="py-4 px-5 text-right">
+											<span className="text-gray-900 font-semibold text-sm">$0.00</span>
+										</TableCell>
+										<TableCell className="py-4 px-5 text-right">
+											<span className="text-gray-600 text-sm">-</span>
+										</TableCell>
+										<TableCell className="py-4 px-5 text-right">
+											<button className="px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100">
+												View
+											</button>
+										</TableCell>
+									</TableRow>
+								</TableBody>
+							</Table>
+						</div>
+					</TabsContent>
+
+					<TabsContent value="drafts" className="mt-0">
+						<div className="bg-white border border-gray-100 rounded-2xl overflow-hidden p-8 text-center">
+							<p className="text-gray-500">No draft portfolios</p>
+						</div>
+					</TabsContent>
+
+					<TabsContent value="archived" className="mt-0">
+						<div className="bg-white border border-gray-100 rounded-2xl overflow-hidden p-8 text-center">
+							<p className="text-gray-500">No archived portfolios</p>
+						</div>
+					</TabsContent>
+				</Tabs>
 			</div>
 		</div>
 	)

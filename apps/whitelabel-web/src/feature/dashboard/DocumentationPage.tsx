@@ -109,7 +109,7 @@ export function DocumentationPage() {
 					href="https://docs.proxify.dev"
 					target="_blank"
 					rel="noopener noreferrer"
-					className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+					className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
 				>
 					<Book className="w-4 h-4" />
 					Full Documentation
@@ -118,7 +118,7 @@ export function DocumentationPage() {
 			</div>
 
 			{/* Quick Start */}
-			<div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
+			<div className="bg-blue-50 rounded-xl p-6 border border-blue-100">
 				<h3 className="text-xl font-semibold text-gray-900 mb-4">Quick Start</h3>
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 					<div className="bg-white rounded-lg p-4">

@@ -1,5 +1,7 @@
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis } from "recharts"
 
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
 // Mock data
 const balanceData = [
 	{ date: "Nov 8", value: 10000 },
@@ -122,54 +124,54 @@ export function PortfolioDetailPage() {
 						<button className="text-sm text-primary-500 hover:text-primary-600 font-medium">View All</button>
 					</div>
 					<div className="bg-white border border-gray-100 rounded-2xl overflow-hidden">
-						<table className="w-full">
-							<thead>
-								<tr className="border-b border-gray-50">
-									<th className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+						<Table>
+							<TableHeader>
+								<TableRow className="border-b border-gray-50">
+									<TableHead className="text-left py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 										User ID
-									</th>
-									<th className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+									</TableHead>
+									<TableHead className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 										Deposits
-									</th>
-									<th className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+									</TableHead>
+									<TableHead className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 										Current Value
-									</th>
-									<th className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
+									</TableHead>
+									<TableHead className="text-right py-3.5 px-5 text-xs font-semibold text-gray-500 uppercase tracking-wide">
 										Return
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr className="hover:bg-gray-50 transition-colors">
-									<td className="py-4 px-5">
+									</TableHead>
+								</TableRow>
+							</TableHeader>
+							<TableBody>
+								<TableRow className="hover:bg-gray-50 transition-colors">
+									<TableCell className="py-4 px-5">
 										<span className="text-gray-900 font-medium text-sm">user-001</span>
-									</td>
-									<td className="py-4 px-5 text-right">
+									</TableCell>
+									<TableCell className="py-4 px-5 text-right">
 										<span className="text-gray-900 font-medium text-sm">$500</span>
-									</td>
-									<td className="py-4 px-5 text-right">
+									</TableCell>
+									<TableCell className="py-4 px-5 text-right">
 										<span className="text-gray-900 font-semibold text-sm">$503.50</span>
-									</td>
-									<td className="py-4 px-5 text-right">
+									</TableCell>
+									<TableCell className="py-4 px-5 text-right">
 										<span className="text-number-positive text-sm font-medium">+0.7%</span>
-									</td>
-								</tr>
-								<tr className="hover:bg-gray-50 transition-colors">
-									<td className="py-4 px-5">
+									</TableCell>
+								</TableRow>
+								<TableRow className="hover:bg-gray-50 transition-colors">
+									<TableCell className="py-4 px-5">
 										<span className="text-gray-900 font-medium text-sm">user-002</span>
-									</td>
-									<td className="py-4 px-5 text-right">
+									</TableCell>
+									<TableCell className="py-4 px-5 text-right">
 										<span className="text-gray-900 font-medium text-sm">$1,000</span>
-									</td>
-									<td className="py-4 px-5 text-right">
+									</TableCell>
+									<TableCell className="py-4 px-5 text-right">
 										<span className="text-gray-900 font-semibold text-sm">$1,007</span>
-									</td>
-									<td className="py-4 px-5 text-right">
+									</TableCell>
+									<TableCell className="py-4 px-5 text-right">
 										<span className="text-number-positive text-sm font-medium">+0.7%</span>
-									</td>
-								</tr>
-							</tbody>
-						</table>
+									</TableCell>
+								</TableRow>
+							</TableBody>
+						</Table>
 					</div>
 				</div>
 
