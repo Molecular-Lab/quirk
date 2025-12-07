@@ -159,6 +159,8 @@ export class B2BClientUseCase {
       webhookUrls: request.webhookUrls || null,
       webhookSecret: request.webhookSecret || null,
       customStrategy: request.strategyRanking ? JSON.stringify({ ranking: request.strategyRanking }) : request.customStrategy || null,
+      strategiesPreferences: request.strategyPreferences ? JSON.stringify(request.strategyPreferences) : null,
+      strategiesCustomization: null, // Will be set via Market Analysis dashboard
       endUserYieldPortion: request.endUserYieldPortion || null,
       platformFee: request.platformFee || null,
       performanceFee: request.performanceFee || null,
@@ -653,6 +655,76 @@ export class B2BClientUseCase {
     return {
       bankAccounts,
       supportedCurrencies,
+    };
+  }
+
+  /**
+   * Get product strategies (both preferences and customization)
+   */
+  async getProductStrategies(productId: string) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    return {
+      preferences: client.strategiesPreferences ? JSON.parse(client.strategiesPreferences) : {},
+      customization: client.strategiesCustomization ? JSON.parse(client.strategiesCustomization) : {},
+    };
+  }
+
+  /**
+   * Update product strategy customization (from Market Analysis dashboard)
+   * This overrides the initial preferences
+   */
+  async updateProductStrategiesCustomization(
+    productId: string,
+    strategies: Record<string, Record<string, number>>
+  ) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    // Update strategies_customization
+    await this.clientRepository.update(client.id, {
+      strategiesCustomization: JSON.stringify(strategies),
+    });
+
+    // Audit log
+    await this.auditRepository.create({
+      clientId: client.id,
+      userId: null,
+      actorType: 'client',
+      action: 'product_strategies_configured',
+      resourceType: 'client',
+      resourceId: client.id,
+      description: `Updated product strategies configuration`,
+      metadata: { strategies },
+      ipAddress: null,
+      userAgent: null,
+    });
+
+    return {
+      productId,
+      strategies,
+      message: 'Product strategies updated successfully',
+    };
+  }
+
+  /**
+   * Get effective product strategies
+   * Returns customization if set, otherwise preferences
+   */
+  async getEffectiveProductStrategies(productId: string) {
+    const { preferences, customization } = await this.getProductStrategies(productId);
+
+    // Return customization if it's not empty, otherwise return preferences
+    const hasCustomization = customization && Object.keys(customization).length > 0;
+
+    return {
+      strategies: hasCustomization ? customization : preferences,
+      source: hasCustomization ? 'customization' : 'preferences',
     };
   }
 }
