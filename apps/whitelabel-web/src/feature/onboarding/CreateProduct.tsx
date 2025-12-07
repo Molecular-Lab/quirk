@@ -176,7 +176,7 @@ export function CreateProduct() {
 			</div> */}
 
 			{/* Header with Back and Cancel */}
-			<header className="fixed top-0 w-full z-50 backdrop-blur-xl border-b border-gray-200/30">
+			<header className="fixed top-0 w-full z-50 backdrop-blur-xl">
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-end">
 					<div className="flex items-center gap-4">
 						{currentStep > 0 && (

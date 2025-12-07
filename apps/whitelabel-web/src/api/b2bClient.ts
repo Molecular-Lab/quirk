@@ -12,10 +12,12 @@ const getPrivyOrgId = (): string | null => {
 	try {
 		const userStore = localStorage.getItem("proxify-user-credentials")
 		if (userStore) {
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 			const parsed = JSON.parse(userStore)
+			// eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
 			return parsed.state.privyOrganizationId as string
 		}
-	} catch (e) {
+	} catch (_e) {
 		console.error("[b2bClient] Failed to get Privy org ID from store")
 	}
 	return null

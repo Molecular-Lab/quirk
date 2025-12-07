@@ -14,7 +14,7 @@ export const ClientBankAccountDto = z.object({
 	bank_name: z.string(),
 	account_number: z.string(),
 	account_name: z.string(),
-	bank_details: z.record(z.any()).optional(), // Dynamic JSONB: {swift_code, bank_code, branch_code, promptpay_id, etc.}
+	bank_details: z.record(z.string(), z.unknown()).optional(), // Dynamic JSONB: {swift_code, bank_code, branch_code, promptpay_id, etc.}
 });
 
 export const CreateClientDto = z.object({
