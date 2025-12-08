@@ -38,10 +38,10 @@ export function ProtocolCard({ data, onSelect }: ProtocolCardProps) {
 					<div
 						className={`text-xs font-medium px-2 py-1 rounded-full ${
 							data.risk === "Low"
-								? "bg-green-900/30 text-green-400"
+								? "bg-emerald-50 text-emerald-700 border border-emerald-200"
 								: data.risk === "Medium"
-									? "bg-yellow-900/30 text-yellow-400"
-									: "bg-red-900/30 text-red-400"
+									? "bg-amber-50 text-amber-700 border border-amber-200"
+									: "bg-rose-50 text-rose-700 border border-rose-200"
 						}`}
 					>
 						{data.risk} Risk

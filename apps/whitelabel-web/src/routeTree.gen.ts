@@ -17,6 +17,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoIndexRouteImport } from './routes/demo/index'
 import { Route as DashboardIndexRouteImport } from './routes/dashboard/index'
 import { Route as PaymentSessionOrderIdRouteImport } from './routes/payment-session.$orderId'
+import { Route as DashboardYieldRouteImport } from './routes/dashboard/yield'
+import { Route as DashboardOnboardingRouteImport } from './routes/dashboard.onboarding'
 import { Route as DemoGigWorkersRouteImport } from './routes/demo/gig-workers'
 import { Route as DemoEcommerceRouteImport } from './routes/demo/ecommerce'
 import { Route as DemoCreatorsRouteImport } from './routes/demo/creators'
@@ -72,6 +74,16 @@ const PaymentSessionOrderIdRoute = PaymentSessionOrderIdRouteImport.update({
   id: '/payment-session/$orderId',
   path: '/payment-session/$orderId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardYieldRoute = DashboardYieldRouteImport.update({
+  id: '/yield',
+  path: '/yield',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardOnboardingRoute = DashboardOnboardingRouteImport.update({
+  id: '/onboarding',
+  path: '/onboarding',
+  getParentRoute: () => DashboardRoute,
 } as any)
 const DemoGigWorkersRoute = DemoGigWorkersRouteImport.update({
   id: '/demo/gig-workers',
@@ -168,6 +180,8 @@ export interface FileRoutesByFullPath {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
+  '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/dashboard/yield': typeof DashboardYieldRoute
   '/dashboard/operations': typeof DashboardOperationsRoute
   '/dashboard/product-config': typeof DashboardProductConfigRoute
   '/demo/creators': typeof DemoCreatorsRoute
@@ -192,6 +206,8 @@ export interface FileRoutesByTo {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
+  '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/dashboard/yield': typeof DashboardYieldRoute
   '/dashboard/operations': typeof DashboardOperationsRoute
   '/dashboard/product-config': typeof DashboardProductConfigRoute
   '/demo/creators': typeof DemoCreatorsRoute
@@ -219,6 +235,8 @@ export interface FileRoutesById {
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
+  '/dashboard/onboarding': typeof DashboardOnboardingRoute
+  '/dashboard/yield': typeof DashboardYieldRoute
   '/dashboard/operations': typeof DashboardOperationsRoute
   '/dashboard/product-config': typeof DashboardProductConfigRoute
   '/demo/creators': typeof DemoCreatorsRoute
@@ -246,6 +264,8 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
+    | '/dashboard/onboarding'
+    | '/dashboard/yield'
     | '/dashboard/operations'
     | '/dashboard/product-config'
     | '/demo/creators'
@@ -270,6 +290,8 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
+    | '/dashboard/onboarding'
+    | '/dashboard/yield'
     | '/dashboard/operations'
     | '/dashboard/product-config'
     | '/demo/creators'
@@ -296,6 +318,8 @@ export interface FileRouteTypes {
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
+    | '/dashboard/onboarding'
+    | '/dashboard/yield'
     | '/dashboard/operations'
     | '/dashboard/product-config'
     | '/demo/creators'
@@ -382,6 +406,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PaymentSessionOrderIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/yield': {
+      id: '/dashboard/yield'
+      path: '/yield'
+      fullPath: '/dashboard/yield'
+      preLoaderRoute: typeof DashboardYieldRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/onboarding': {
+      id: '/dashboard/onboarding'
+      path: '/onboarding'
+      fullPath: '/dashboard/onboarding'
+      preLoaderRoute: typeof DashboardOnboardingRouteImport
     '/demo/gig-workers': {
       id: '/demo/gig-workers'
       path: '/demo/gig-workers'
@@ -517,6 +553,8 @@ interface DashboardRouteChildren {
   DashboardExploreRoute: typeof DashboardExploreRoute
   DashboardIntegrationRoute: typeof DashboardIntegrationRoute
   DashboardMarketRoute: typeof DashboardMarketRoute
+  DashboardOnboardingRoute: typeof DashboardOnboardingRoute
+  DashboardYieldRoute: typeof DashboardYieldRoute
   DashboardOperationsRoute: typeof DashboardOperationsRoute
   DashboardProductConfigRoute: typeof DashboardProductConfigRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
@@ -533,6 +571,8 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardExploreRoute: DashboardExploreRoute,
   DashboardIntegrationRoute: DashboardIntegrationRoute,
   DashboardMarketRoute: DashboardMarketRoute,
+  DashboardOnboardingRoute: DashboardOnboardingRoute,
+  DashboardYieldRoute: DashboardYieldRoute,
   DashboardOperationsRoute: DashboardOperationsRoute,
   DashboardProductConfigRoute: DashboardProductConfigRoute,
   DashboardIndexRoute: DashboardIndexRoute,

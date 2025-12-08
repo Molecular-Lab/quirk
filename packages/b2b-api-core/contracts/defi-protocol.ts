@@ -5,7 +5,12 @@
 
 import { initContract } from '@ts-rest/core'
 import { ErrorResponseDto } from '../dto'
-import { ProtocolDataDto, ProtocolsResponseDto } from '../dto/defi-protocol'
+import {
+	ProtocolDataDto,
+	ProtocolsResponseDto,
+	OptimizationRequestDto,
+	OptimizationResponseDto,
+} from '../dto/defi-protocol'
 
 const c = initContract()
 
@@ -56,5 +61,18 @@ export const defiProtocolContract = c.router({
 			500: ErrorResponseDto,
 		},
 		summary: 'Get Morpho protocol metrics',
+	},
+
+	// Optimize allocation based on risk profile
+	optimize: {
+		method: 'POST',
+		path: '/defi/optimize',
+		body: OptimizationRequestDto,
+		responses: {
+			200: OptimizationResponseDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Get optimized portfolio allocation based on risk profile',
 	},
 })
