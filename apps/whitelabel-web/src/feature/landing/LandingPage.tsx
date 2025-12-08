@@ -100,20 +100,23 @@ export function LandingPage() {
 			>
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 					<Link to="/" className="flex items-center gap-2 group">
-						<div className="relative p-2 -m-2 rounded-lg hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 transition-all">
-							<Sparkles className="size-6 text-gray-700 group-hover:text-gray-500 transition-colors cursor-pointer" />
+						<div className="relative p-2 -m-2 rounded-lg transition-all">
+							<Sparkles className="size-6 text-gray-500 group-hover:text-gray-800 transition-colors cursor-pointer" />
 						</div>
 					</Link>
 					<nav className="hidden md:flex items-center gap-6">
-						<Link to="/demo" className="text-gray-700 hover:text-gray-950 transition-colors font-medium">
+						<Link to="/demo" className="text-gray-500 hover:text-gray-800 transition-colors font-medium">
 							Demo
 						</Link>
-						<button onClick={handleSignIn} className="text-gray-700 hover:text-gray-950 transition-colors font-medium">
+						<button
+							onClick={handleSignIn}
+							className="text-gray-500 hover:text-gray-800 transition-colors font-medium cursor-pointer"
+						>
 							Sign In
 						</button>
 						<button
 							onClick={handleGetStarted}
-							className="bg-gray-900 text-white px-6 py-2.5 rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm hover:shadow-md"
+							className="bg-gray-900 text-white px-6 py-2.5 rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm hover:shadow-md cursor-pointer"
 						>
 							Get Started
 						</button>
