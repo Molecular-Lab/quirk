@@ -16,20 +16,60 @@ export const createDashboardRouter = (
 ): any => {
 	return s.router(b2bContract.dashboard, {
 		// GET /dashboard/metrics
-		getMetrics: async ({ query }: { query: { clientId?: string } }) => {
+		getMetrics: async ({ query, req }: { query: { clientId?: string }; req?: any }) => {
 			try {
-				const clientId = query.clientId;
-				if (!clientId) {
+				// ✅ Dashboard uses Privy UUID authentication only
+				const privySession = (req as any)?.privy;
+
+				// Require Privy authentication for dashboard
+				if (!privySession) {
+					logger.error("Dashboard requires Privy authentication", { path: req?.path });
 					return {
-						status: 400 as const,
+						status: 401 as const,
 						body: {
 							success: false,
-							error: "clientId is required",
+							error: "Privy authentication required for dashboard access",
 						},
 					};
 				}
 
-				logger.info(`[Dashboard] Fetching metrics for client: ${clientId}`);
+				// Auto-select first product if clientId not provided
+				const clientId = query.clientId || privySession.products[0]?.id;
+
+				if (!clientId) {
+					logger.warn("No products found for Privy organization", {
+						privyOrgId: privySession.organizationId,
+					});
+					return {
+						status: 404 as const,
+						body: {
+							success: false,
+							error: "No products found for your organization",
+						},
+					};
+				}
+
+				// Verify clientId belongs to this Privy organization
+				const productIds = privySession.products.map((p: any) => p.id);
+				if (!productIds.includes(clientId)) {
+					logger.warn("Privy user attempting to view dashboard from outside organization", {
+						privyOrgId: privySession.organizationId,
+						requestedClientId: clientId,
+						availableProducts: productIds,
+					});
+					return {
+						status: 403 as const,
+						body: {
+							success: false,
+							error: "Not authorized to view this product's dashboard",
+						},
+					};
+				}
+
+				logger.info(`[Dashboard] Fetching metrics for client: ${clientId}`, {
+					authType: "privy",
+					privyOrgId: privySession.organizationId,
+				});
 
 				// Get all client vaults (multi-chain, multi-token)
 				const vaults = await vaultService.listClientVaults(clientId);

@@ -169,21 +169,16 @@ export function createDepositRouter(
 		// POST /deposits/fiat/:orderId/mock-confirm - Mock payment confirmation (DEMO)
 		mockConfirmFiatDeposit: async ({ params, body, req }) => {
 			try {
-				// ✅ Extract clientId from API key
-				const clientId = (req as any).client?.id;
-				if (!clientId) {
-					logger.error("Client ID missing from authenticated request");
-					return {
-						status: 401 as const,
-						body: { error: "Authentication failed" },
-					};
-				}
+				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
 
 				logger.info("Mock payment confirmation", {
 					orderId: params.orderId,
 					bankTxId: body.bankTransactionId,
 					amount: body.paidAmount,
 					currency: body.paidCurrency,
+					authType: apiKeyClient ? "api_key" : privySession ? "privy" : "none",
 				});
 
 				// 1. Get deposit
@@ -195,11 +190,40 @@ export function createDepositRouter(
 					};
 				}
 
-				// 2. Verify deposit belongs to this client
-				if (deposit.clientId !== clientId) {
+				// 2. Verify authorization
+				// For API key: deposit must belong to this client
+				if (apiKeyClient) {
+					if (deposit.clientId !== apiKeyClient.id) {
+						logger.warn("API key client attempting to access another client's deposit", {
+							apiKeyClientId: apiKeyClient.id,
+							depositClientId: deposit.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Not authorized for this deposit" },
+						};
+					}
+				}
+				// For Privy: deposit must belong to one of the organization's products
+				else if (privySession) {
+					const productIds = privySession.products.map((p: any) => p.id);
+					if (!productIds.includes(deposit.clientId)) {
+						logger.warn("Privy user attempting to access deposit from outside organization", {
+							privyOrgId: privySession.organizationId,
+							depositClientId: deposit.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Not authorized for this deposit" },
+						};
+					}
+				}
+				// No auth found
+				else {
+					logger.error("Authentication missing for mock confirm deposit");
 					return {
-						status: 403 as const,
-						body: { error: "Not authorized for this deposit" },
+						status: 401 as const,
+						body: { error: "Authentication required" },
 					};
 				}
 
@@ -294,13 +318,19 @@ export function createDepositRouter(
 		// POST /deposits/batch-complete - Batch complete deposits (Operations Dashboard)
 		batchCompleteDeposits: async ({ body, req }) => {
 			try {
-				// ✅ Extract clientId from API key
-				const clientId = (req as any).client?.id;
+				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
+				// For Privy session: Use first product as default client
+				// (Dashboard users can batch complete across all their products)
+				const clientId = apiKeyClient?.id || privySession?.products[0]?.id;
+
 				if (!clientId) {
-					logger.error("Client ID missing from authenticated request");
+					logger.error("Authentication missing for batch complete");
 					return {
 						status: 401 as const,
-						body: { error: "Authentication failed" },
+						body: { error: "Authentication required" },
 					};
 				}
 
@@ -308,6 +338,8 @@ export function createDepositRouter(
 					orderIds: body.orderIds,
 					count: body.orderIds.length,
 					clientId,
+					authType: apiKeyClient ? "api_key" : "privy",
+					privyOrgId: privySession?.organizationId,
 				});
 
 				const completedOrders: Array<{
@@ -328,9 +360,29 @@ export function createDepositRouter(
 						continue;
 					}
 
-					// 2. Verify deposit belongs to this client
-					if (deposit.clientId !== clientId) {
-						logger.warn(`Deposit ${orderId} does not belong to client ${clientId}`);
+					// 2. Verify authorization
+					let authorized = false;
+
+					// For API key: deposit must belong to this client
+					if (apiKeyClient) {
+						authorized = deposit.clientId === apiKeyClient.id;
+						if (!authorized) {
+							logger.warn(`Deposit ${orderId} does not belong to API key client ${apiKeyClient.id}`);
+						}
+					}
+					// For Privy: deposit can belong to any of the organization's products
+					else if (privySession) {
+						const productIds = privySession.products.map((p: any) => p.id);
+						authorized = productIds.includes(deposit.clientId);
+						if (!authorized) {
+							logger.warn(`Deposit ${orderId} not in Privy org's products`, {
+								privyOrgId: privySession.organizationId,
+								depositClientId: deposit.clientId,
+							});
+						}
+					}
+
+					if (!authorized) {
 						continue;
 					}
 
@@ -602,50 +654,99 @@ export function createDepositRouter(
 		// ⚠️ MUST be BEFORE getByOrderId to avoid route conflict
 		listPending: async ({ req }) => {
 			try {
-				// ✅ Extract clientId from authenticated request
-				const clientId = (req as any).client?.id;
-				if (!clientId) {
-					logger.error("Client ID missing from authenticated request");
+				// Dual auth: Support both SDK (API key) and Dashboard (Privy)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
+				// For dashboard (Privy auth), show all deposits across all products
+				if (privySession) {
+					logger.info("Fetching pending deposits (Dashboard)", {
+						privyOrgId: privySession.organizationId,
+						productsCount: privySession.products.length
+					});
+
+					// Get ALL pending deposits (for all products under this organization)
+					const deposits = await depositService.listAllPendingDeposits();
+
+					// Filter to only deposits from this organization's products
+					const productIds = privySession.products.map((p: any) => p.id);
+					const filteredDeposits = deposits.filter((d) => productIds.includes(d.clientId));
+
+					// Map deposits to response format
+					const mappedDeposits = filteredDeposits.map((deposit) => ({
+						id: deposit.id,
+						orderId: deposit.orderId,
+						clientId: deposit.clientId,
+						userId: deposit.userId,
+						depositType: deposit.depositType as "external" | "internal",
+						amount: deposit.fiatAmount,
+						status: deposit.status as "pending" | "completed" | "failed",
+						createdAt: deposit.createdAt ? deposit.createdAt.toISOString() : new Date().toISOString(),
+						completedAt: deposit.completedAt ? deposit.completedAt.toISOString() : undefined,
+						paymentInstructions: deposit.paymentInstructions || null,
+						expectedCryptoAmount: deposit.cryptoAmount || undefined,
+						expiresAt: deposit.expiresAt ? deposit.expiresAt.toISOString() : null,
+					}));
+
+					logger.info("Pending deposits fetched successfully (Dashboard)", {
+						privyOrgId: privySession.organizationId,
+						orderCount: mappedDeposits.length,
+					});
+
 					return {
-						status: 401 as const,
+						status: 200 as const,
 						body: {
-							deposits: [],
+							deposits: mappedDeposits,
 							summary: [],
 						},
 					};
 				}
 
-				logger.info("Fetching pending deposits", { clientId });
+				// For SDK (API key), show deposits for single client only
+				if (apiKeyClient) {
+					logger.info("Fetching pending deposits (SDK)", { clientId: apiKeyClient.id });
 
-				// ✅ Get pending deposits from deposit_transactions table (for Operations Dashboard)
-				const deposits = await depositService.listAllPendingDeposits();
+					const deposits = await depositService.listAllPendingDeposits();
 
-				// Map deposits to full DepositResponseSchema format
-				const mappedDeposits = deposits.map((deposit) => ({
-					id: deposit.id,
-					orderId: deposit.orderId,
-					clientId: deposit.clientId,
-					userId: deposit.userId,
-					depositType: deposit.depositType as "external" | "internal",
-					amount: deposit.fiatAmount,
-					status: deposit.status as "pending" | "completed" | "failed",
-					createdAt: deposit.createdAt ? deposit.createdAt.toISOString() : new Date().toISOString(),
-					completedAt: deposit.completedAt ? deposit.completedAt.toISOString() : undefined,
-					paymentInstructions: deposit.paymentInstructions || null,
-					expectedCryptoAmount: deposit.cryptoAmount || undefined,
-					expiresAt: deposit.expiresAt ? deposit.expiresAt.toISOString() : null,
-				}));
+					// Filter to only this client's deposits
+					const filteredDeposits = deposits.filter((d) => d.clientId === apiKeyClient.id);
 
-				logger.info("Pending deposit orders fetched successfully", {
-					clientId,
-					orderCount: mappedDeposits.length,
-				});
+					const mappedDeposits = filteredDeposits.map((deposit) => ({
+						id: deposit.id,
+						orderId: deposit.orderId,
+						clientId: deposit.clientId,
+						userId: deposit.userId,
+						depositType: deposit.depositType as "external" | "internal",
+						amount: deposit.fiatAmount,
+						status: deposit.status as "pending" | "completed" | "failed",
+						createdAt: deposit.createdAt ? deposit.createdAt.toISOString() : new Date().toISOString(),
+						completedAt: deposit.completedAt ? deposit.completedAt.toISOString() : undefined,
+						paymentInstructions: deposit.paymentInstructions || null,
+						expectedCryptoAmount: deposit.cryptoAmount || undefined,
+						expiresAt: deposit.expiresAt ? deposit.expiresAt.toISOString() : null,
+					}));
 
+					logger.info("Pending deposits fetched successfully (SDK)", {
+						clientId: apiKeyClient.id,
+						orderCount: mappedDeposits.length,
+					});
+
+					return {
+						status: 200 as const,
+						body: {
+							deposits: mappedDeposits,
+							summary: [],
+						},
+					};
+				}
+
+				// Neither auth found
+				logger.error("Authentication missing for list pending deposits");
 				return {
-					status: 200 as const,
+					status: 401 as const,
 					body: {
-						deposits: mappedDeposits,
-						summary: [], // TODO: Calculate summary if needed
+						deposits: [],
+						summary: [],
 					},
 				};
 			} catch (error) {
@@ -731,14 +832,59 @@ export function createDepositRouter(
 
 		// GET /deposits/:orderId - Get deposit by order ID
 		// ⚠️ MUST be LAST among GET /deposits/* routes to avoid catching specific paths
-		getByOrderId: async ({ params }) => {
+		getByOrderId: async ({ params, req }) => {
 			try {
+				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
 				const deposit = await depositService.getDepositByOrderId(params.orderId);
 
 				if (!deposit) {
 					return {
 						status: 404 as const,
 						body: { success: false, error: "Deposit not found" },
+					};
+				}
+
+				// Verify authorization
+				let authorized = false;
+
+				// For API key: deposit must belong to this client
+				if (apiKeyClient) {
+					authorized = deposit.clientId === apiKeyClient.id;
+					if (!authorized) {
+						logger.warn("API key client attempting to access another client's deposit", {
+							apiKeyClientId: apiKeyClient.id,
+							depositClientId: deposit.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: { success: false, error: "Not authorized for this deposit" },
+						};
+					}
+				}
+				// For Privy: deposit can belong to any of the organization's products
+				else if (privySession) {
+					const productIds = privySession.products.map((p: any) => p.id);
+					authorized = productIds.includes(deposit.clientId);
+					if (!authorized) {
+						logger.warn("Privy user attempting to access deposit from outside organization", {
+							privyOrgId: privySession.organizationId,
+							depositClientId: deposit.clientId,
+						});
+						return {
+							status: 403 as const,
+							body: { success: false, error: "Not authorized for this deposit" },
+						};
+					}
+				}
+				// No auth found
+				else {
+					logger.error("Authentication missing for get deposit");
+					return {
+						status: 401 as const,
+						body: { success: false, error: "Authentication required" },
 					};
 				}
 

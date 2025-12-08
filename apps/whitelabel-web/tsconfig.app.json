@@ -7,16 +7,14 @@
     "module": "ESNext",
     "skipLibCheck": true,
     "rootDirs": ["src", "vite.config.ts"],
-    "baseUrl": "../../",
-
+    "baseUrl": ".",
     /* Path Aliases */
     "paths": {
-      "@/*": ["apps/whitelabel-web/src/*"],
+      "@/*": ["apps/whitelabel-web/src/*", "./src/*"],
       "@proxify/*": ["packages/*"],
       "@proxify/core": ["packages/core/index.ts"],
       "@proxify/core/*": ["packages/core/*"]
     },
-
     /* Bundler mode */
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -31,7 +29,7 @@
     "noUnusedParameters": true,
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": true
+    "noUncheckedSideEffectImports": true,
   },
   "include": ["src", "vite.config.ts"],
   "exclude": ["node_modules", "*.config.mjs", "*.config.js"]

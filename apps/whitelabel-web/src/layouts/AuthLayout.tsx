@@ -5,7 +5,7 @@ export function AuthLayout() {
 		<div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
 			<div className="w-full max-w-md">
 				<div className="text-center mb-8">
-					<h1 className="text-4xl font-bold text-blue-600 mb-2">Proxify</h1>
+					<h1 className="text-4xl font-bold text-blue-600 mb-2">Quir</h1>
 					<p className="text-gray-600">Embedded Wallet Infrastructure for Web2 Apps</p>
 				</div>
 				<div className="bg-white rounded-2xl shadow-xl p-8">

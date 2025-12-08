@@ -38,7 +38,7 @@ export const createMainRouter = (
 	return s.router(b2bContract, {
 		client: createClientRouter(s, services.clientService),
 		dashboard: createDashboardRouter(s, services.vaultService, services.userService),
-		defiProtocol: createDeFiProtocolRouter(s, services.defiProtocolService),
+		defiProtocol: createDeFiProtocolRouter(s, services.defiProtocolService) as any, // TS type path mismatch workaround
 		vault: createVaultRouter(s, services.vaultService),
 		user: createUserRouter(s, services.userService, services.userVaultService),
 		userVault: createUserVaultRouter(s, services.userVaultService),

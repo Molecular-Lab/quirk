@@ -10,6 +10,8 @@
  * - apiKey (test_pk_...)
  */
 
+import { useEffect } from "react"
+
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
@@ -57,7 +59,7 @@ const initialState: ClientContext = {
 	businessType: null,
 }
 
-export const useClientContext = create<ClientContextStore>()(
+export const useClientContextStore = create<ClientContextStore>()(
 	persist(
 		(set, get) => ({
 			...initialState,
@@ -76,11 +78,9 @@ export const useClientContext = create<ClientContextStore>()(
 					clientId: context.clientId,
 					productId: context.productId,
 					apiKey: context.apiKey,
-					companyName: context.companyName || null,
-					businessType: context.businessType || null,
-				})
-
-				// Sync to localStorage for b2bApiClient
+					companyName: context.companyName ?? null,
+					businessType: context.businessType ?? null,
+				}) // Sync to localStorage for b2bApiClient
 				localStorage.setItem("b2b:api_key", context.apiKey)
 				localStorage.setItem("b2b:product_id", context.productId)
 				localStorage.setItem("b2b:client_id", context.clientId)
@@ -151,7 +151,7 @@ export const useClientContext = create<ClientContextStore>()(
  * Checks store first, then localStorage
  */
 export function useApiKey(): string | null {
-	const apiKey = useClientContext((state) => state.apiKey)
+	const apiKey = useClientContextStore((state) => state.apiKey)
 
 	if (!apiKey) {
 		// Fallback to localStorage
@@ -165,9 +165,9 @@ export function useApiKey(): string | null {
  * Hook to ensure context is synced
  */
 export function useSyncClientContext() {
-	const { syncToLocalStorage } = useClientContext()
+	const { syncToLocalStorage } = useClientContextStore()
 
-	React.useEffect(() => {
+	useEffect(() => {
 		syncToLocalStorage()
 	}, [syncToLocalStorage])
 }

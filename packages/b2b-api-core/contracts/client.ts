@@ -166,6 +166,33 @@ export const clientContract = c.router({
 		summary: "Configure DeFi strategy allocation for client vault (by productId)",
 	},
 
+	// Bulk apply strategy to all products under authenticated Privy account
+	bulkApplyStrategy: {
+		method: "POST",
+		path: "/clients/bulk-apply-strategy",
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				productsUpdated: z.array(z.string()),
+				message: z.string(),
+			}),
+			400: ErrorResponseDto,
+			401: ErrorResponseDto,
+		},
+		body: z.object({
+			chain: z.string(),
+			token_address: z.string(),
+			token_symbol: z.string().optional(),
+			strategies: z.array(
+				z.object({
+					category: z.enum(["lending", "lp", "staking"]),
+					target: z.number().min(0).max(100),
+				}),
+			),
+		}),
+		summary: "Apply strategy to all products under authenticated Privy account (Dashboard only)",
+	},
+
 	// ============================================
 	// SEPARATE CONFIG ENDPOINTS (3 cards on Settings page)
 	// ============================================
@@ -243,5 +270,59 @@ export const clientContract = c.router({
 			404: ErrorResponseDto,
 		},
 		summary: "Get configured bank accounts for a client",
+	},
+
+	// ============================================
+	// PRODUCT-LEVEL STRATEGY ENDPOINTS
+	// ============================================
+
+	// Get product strategies (preferences and customization)
+	getProductStrategies: {
+		method: "GET",
+		path: "/products/:productId/strategies",
+		responses: {
+			200: z.object({
+				productId: z.string(),
+				preferences: z.record(z.string(), z.record(z.string(), z.number())),
+				customization: z.record(z.string(), z.record(z.string(), z.number())),
+			}),
+			404: ErrorResponseDto,
+		},
+		summary: "Get product strategy preferences and customization",
+	},
+
+	// Update product strategy customization
+	updateProductStrategiesCustomization: {
+		method: "PUT",
+		path: "/products/:productId/strategies/customization",
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				productId: z.string(),
+				strategies: z.record(z.string(), z.record(z.string(), z.number())),
+				message: z.string(),
+			}),
+			400: ErrorResponseDto,
+			404: ErrorResponseDto,
+		},
+		body: z.object({
+			strategies: z.record(z.string(), z.record(z.string(), z.number())),
+		}),
+		summary: "Update product strategy customization (from Market Analysis dashboard)",
+	},
+
+	// Get effective product strategies
+	getEffectiveProductStrategies: {
+		method: "GET",
+		path: "/products/:productId/strategies/effective",
+		responses: {
+			200: z.object({
+				productId: z.string(),
+				strategies: z.record(z.string(), z.record(z.string(), z.number())),
+				source: z.enum(["preferences", "customization"]),
+			}),
+			404: ErrorResponseDto,
+		},
+		summary: "Get effective strategies (customization if set, otherwise preferences)",
 	},
 });

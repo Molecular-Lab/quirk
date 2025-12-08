@@ -1,7 +1,7 @@
 {
-  "name": "@proxify/b2b-sdk",
+  "name": "@quirk/b2b-sdk",
   "version": "1.0.0",
-  "description": "Official TypeScript SDK for Proxify B2B API",
+  "description": "Official TypeScript SDK for Quirk B2B API - Earn-as-a-Service Platform",
   "main": "dist/index.js",
   "module": "dist/index.mjs",
   "types": "dist/index.d.ts",
@@ -12,21 +12,33 @@
     "type-check": "tsc --noEmit"
   },
   "keywords": [
-    "proxify",
+    "quirk",
+    "earn-as-a-service",
     "defi",
     "yield",
     "b2b",
     "sdk",
-    "api-client"
+    "api-client",
+    "stablecoin"
   ],
-  "author": "Proxify",
+  "author": "Quirk",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.6.2",
     "zod": "^3.22.4"
   },
+  "peerDependencies": {
+    "react": "^18.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    }
+  },
   "devDependencies": {
     "@types/node": "^20.10.5",
+    "@types/react": "^18.2.45",
+    "react": "^18.2.0",
     "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   },

@@ -5,6 +5,23 @@ import axios from "axios"
 import { Check, ChevronDown, ChevronUp, Copy, Play, RefreshCw } from "lucide-react"
 
 import { b2bApiClient } from "@/api/b2bClient"
+import {
+	configureBankAccounts,
+	configureStrategies,
+	createFiatDeposit,
+	createUser,
+	createWithdrawal,
+	getOrganizationByProductId,
+	getUserBalance,
+	getUserVaults,
+	listPendingDeposits,
+	regenerateApiKey,
+	registerClient,
+	updateOrganizationInfo,
+	updateSupportedCurrencies,
+	updateVaultYield,
+} from "@/api/b2bClientHelpers"
+import { useClientContextStore } from "@/store/clientContextStore"
 import { type Organization, useUserStore } from "@/store/userStore"
 
 // Type for client registration response
@@ -53,30 +70,26 @@ const saveApiKeyForOrg = (
 	console.log("[API Keys] 📦 All stored keys:", Object.keys(allKeys))
 
 	// Sync to userStore (this will also trigger clientContextStore sync)
-	import("@/store/userStore").then(({ useUserStore }) => {
-		const { setApiKey, activeProductId } = useUserStore.getState()
+	const { setApiKey: setUserApiKey, activeProductId } = useUserStore.getState()
 
-		// Only update if this is for the currently active organization
-		if (activeProductId === productId) {
-			setApiKey(apiKey)
-			// eslint-disable-next-line no-console
-			console.log("[API Keys] ✅ Synced to userStore (which syncs to clientContextStore)")
-		}
-	})
+	// Only update if this is for the currently active organization
+	if (activeProductId === productId) {
+		setUserApiKey(apiKey)
+		// eslint-disable-next-line no-console
+		console.log("[API Keys] ✅ Synced to userStore (which syncs to clientContextStore)")
+	}
 
 	// Also directly sync to clientContextStore if we have org data
 	if (orgData) {
-		import("@/store/clientContextStore").then(({ useClientContext }) => {
-			useClientContext.getState().setClientContext({
-				clientId: orgData.id,
-				productId: productId,
-				apiKey: apiKey,
-				companyName: orgData.companyName,
-				businessType: orgData.businessType,
-			})
-			// eslint-disable-next-line no-console
-			console.log("[API Keys] ✅ Synced to clientContextStore directly")
+		useClientContextStore.getState().setClientContext({
+			clientId: orgData.id,
+			productId: productId,
+			apiKey: apiKey,
+			companyName: orgData.companyName,
+			businessType: orgData.businessType,
 		})
+		// eslint-disable-next-line no-console
+		console.log("[API Keys] ✅ Synced to clientContextStore directly")
 	}
 }
 
@@ -1020,6 +1033,7 @@ export function APITestingPage() {
 		getActiveOrganization,
 		loadOrganizations,
 		addOrganization,
+		setApiKey,
 		// Privy account data (set by LoginPage after authentication)
 		privyOrganizationId,
 		privyEmail,
@@ -1067,16 +1081,16 @@ export function APITestingPage() {
 				try {
 					// eslint-disable-next-line no-console
 					console.log("[API Test] Loading bank accounts for organization:", activeProductId)
-					const orgData = await b2bApiClient.getOrganizationByProductId(activeProductId)
-					const existingBankAccounts = (orgData as any)?.bank_accounts || (orgData as any)?.bankAccounts || []
+					const orgData = await getOrganizationByProductId(activeProductId)
+					const existingBankAccounts = ((orgData as any)?.bank_accounts || (orgData as any)?.bankAccounts) ?? []
 
 					if (existingBankAccounts.length > 0) {
 						// Map backend format (snake_case) to frontend format (camelCase)
 						const mappedAccounts = existingBankAccounts.map((ba: any) => ({
-							currency: ba.currency || "",
-							bank_name: ba.bank_name || ba.bankName || "",
-							account_number: ba.account_number || ba.accountNumber || "",
-							account_name: ba.account_name || ba.accountName || "",
+							currency: ba.currency ?? "",
+							bank_name: (ba.bank_name || ba.bankName) ?? "",
+							account_number: (ba.account_number || ba.accountNumber) ?? "",
+							account_name: (ba.account_name || ba.accountName) ?? "",
 							bank_details:
 								ba.bank_details || ba.bankDetails ? JSON.stringify(ba.bank_details || ba.bankDetails, null, 2) : "",
 						}))
@@ -1256,7 +1270,7 @@ export function APITestingPage() {
 					console.log("[API Test] Regenerating API key for organization:", activeProductId)
 
 					// Call backend API to regenerate API key
-					data = await b2bApiClient.regenerateApiKey(activeProductId)
+					data = await regenerateApiKey(activeProductId)
 
 					// eslint-disable-next-line no-console
 					console.log("[API Test] ✅ API Key regenerated from backend:", data)
@@ -1285,7 +1299,7 @@ export function APITestingPage() {
 						)
 					}
 
-					data = await b2bApiClient.registerClient({
+					data = await registerClient({
 						companyName: params.companyName,
 						businessType: params.businessType,
 						walletType: walletType ?? "MANAGED",
@@ -1293,8 +1307,8 @@ export function APITestingPage() {
 						privyOrganizationId: privyOrganizationId,
 						privyWalletAddress: privyWalletAddress, // ✅ From privy_accounts table via UserStore
 						privyEmail: privyEmail ?? undefined, // ✅ From privy_accounts table via UserStore
-						description: params.description || undefined,
-						websiteUrl: params.websiteUrl || undefined,
+						description: params.description ?? undefined,
+						websiteUrl: params.websiteUrl ?? undefined,
 						// ✅ Don't send supportedCurrencies and bankAccounts during registration
 						// These will be configured separately via FLOW 1B and FLOW 1D
 					})
@@ -1349,7 +1363,7 @@ export function APITestingPage() {
 						}
 
 						return {
-							currency: ba.currency,
+							currency: ba.currency as "SGD" | "USD" | "EUR" | "THB" | "TWD" | "KRW",
 							bank_name: ba.bank_name,
 							account_number: ba.account_number,
 							account_name: ba.account_name,
@@ -1357,9 +1371,7 @@ export function APITestingPage() {
 						}
 					})
 
-					data = await b2bApiClient.configureBankAccounts(activeProductId, {
-						bankAccounts: bankAccountsArray,
-					})
+					data = await configureBankAccounts(activeProductId, bankAccountsArray)
 
 					// eslint-disable-next-line no-console
 					console.log("[API Test] Bank accounts configured successfully:", data)
@@ -1389,7 +1401,7 @@ export function APITestingPage() {
 					if (params.description) orgUpdateData.description = params.description
 					if (params.websiteUrl) orgUpdateData.websiteUrl = params.websiteUrl
 
-					data = await b2bApiClient.updateOrganizationInfo(activeProductId, orgUpdateData)
+					data = await updateOrganizationInfo(activeProductId, orgUpdateData)
 
 					// eslint-disable-next-line no-console
 					console.log("[API Test] Organization info updated successfully:", data)
@@ -1407,19 +1419,17 @@ export function APITestingPage() {
 					console.log("[API Test] Updating supported currencies for:", activeProductId)
 
 					// Parse currencies from comma-separated string or multiselect
-					const currenciesString = params.supportedCurrencies || ""
+					const currenciesString = params.supportedCurrencies ?? ""
 					const supportedCurrencies = currenciesString
 						.split(",")
 						.map((c: string) => c.trim())
-						.filter(Boolean)
+						.filter(Boolean) as ("SGD" | "USD" | "EUR" | "THB" | "TWD" | "KRW")[]
 
 					if (supportedCurrencies.length === 0) {
 						throw new Error("Please select at least one currency")
 					}
 
-					data = await b2bApiClient.updateSupportedCurrencies(activeProductId, {
-						supportedCurrencies,
-					})
+					data = await updateSupportedCurrencies(activeProductId, supportedCurrencies)
 
 					// eslint-disable-next-line no-console
 					console.log("[API Test] Supported currencies updated successfully:", data)
@@ -1428,11 +1438,11 @@ export function APITestingPage() {
 
 				// FLOW 2: Configure Vault Strategies
 				case "strategy-config":
-					data = await b2bApiClient.configureStrategies(params.productId, {
+					data = await configureStrategies(params.productId, {
 						chain: params.chain,
-						token: params.token, // Token symbol (USDC, USDT)
+						token_symbol: params.token, // Token symbol (USDC, USDT)
 						token_address: params.token_address,
-						strategies: JSON.parse(params.strategies) as { category: string; target: number }[],
+						strategies: JSON.parse(params.strategies) as { category: "lending" | "lp" | "staking"; target: number }[],
 					})
 					break
 
@@ -1451,11 +1461,10 @@ export function APITestingPage() {
 						walletAddress: params.walletAddress,
 					})
 
-					data = await b2bApiClient.createUser({
-						clientId: activeProductId, // Use active organization's productId
+					data = await createUser(activeProductId, {
 						clientUserId: params.clientUserId, // Client's internal user ID (e.g., driver ID)
-						email: params.email || undefined,
-						walletAddress: params.walletAddress || undefined,
+						email: params.email ?? undefined,
+						walletAddress: params.walletAddress ?? undefined,
 					})
 
 					// eslint-disable-next-line no-console
@@ -1465,64 +1474,71 @@ export function APITestingPage() {
 
 				// FLOW 4a: Initiate Deposit
 				case "deposit-initiate":
-					data = await b2bApiClient.createDeposit({
-						user_id: params.user_id,
+					data = await createFiatDeposit({
+						userId: params.user_id,
 						amount: params.amount,
-						currency: params.currency,
-						chain: params.chain,
-						token: params.token,
-						payment_method: params.payment_method,
+						currency: params.currency as "SGD" | "USD" | "EUR" | "THB" | "TWD" | "KRW",
+						tokenSymbol: params.token,
 					})
 					break
 
 				// FLOW 4b: Complete Deposit (webhook/manual)
-				case "deposit-complete":
-					data = await b2bApiClient.completeDeposit({
-						orderId: params.orderId,
-						transactionHash: params.transactionHash,
-						cryptoAmount: params.cryptoAmount,
-						chain: params.chain,
-						tokenAddress: params.tokenAddress,
+				case "deposit-complete": {
+					const { status, body } = await b2bApiClient.deposit.completeFiatDeposit({
+						params: { orderId: params.order_id },
+						body: {
+							cryptoAmount: params.crypto_amount,
+							chain: params.chain,
+							tokenAddress: params.token_address,
+							transactionHash: params.transaction_hash,
+							gatewayFee: params.gateway_fee || "0",
+							proxifyFee: params.proxify_fee || "0",
+							networkFee: params.network_fee || "0",
+							totalFees: params.total_fees || "0",
+						},
 					})
+
+					if (status === 200) {
+						data = body
+					}
 					break
+				}
 
 				// FLOW 4c: List Pending Deposits
 				case "deposits-pending":
-					data = await b2bApiClient.listPendingDeposits()
+					data = await listPendingDeposits()
 					break
 
 				// FLOW 5: Get User Balance
 				case "balance-get":
-					data = await b2bApiClient.getUserBalance(params.user_id, {
-						chain: params.chain || undefined,
-						token: params.token || undefined,
+					data = await getUserBalance(params.user_id, {
+						chain: params.chain ?? undefined,
+						token: params.token ?? undefined,
 					})
 					break
 
 				// FLOW 7: Update Vault Yield
 				case "yield-update":
-					data = await b2bApiClient.updateVaultYield(params.vault_id, {
-						yield_earned: params.yield_earned,
-						total_staked: params.total_staked,
-					})
+					data = await updateVaultYield(params.vault_id, params.yield_earned)
 					break
 
 				// FLOW 8: Initiate Withdrawal (3 Methods)
 				case "withdrawal-initiate":
-					data = await b2bApiClient.createWithdrawal({
-						user_id: params.user_id,
+					data = await createWithdrawal({
+						userId: params.user_id,
 						vaultId: params.vaultId,
 						amount: params.amount,
 						withdrawal_method: params.withdrawal_method as "crypto" | "fiat_to_client" | "fiat_to_end_user",
-						destination_address: params.destination_address || undefined,
-						destination_currency: params.destination_currency || undefined,
+						destination_address: params.destination_address ?? undefined,
+						destination_currency:
+							(params.destination_currency as "SGD" | "USD" | "EUR" | "THB" | "TWD" | "KRW" | undefined) ?? undefined,
 						end_user_bank_account: params.end_user_bank_account ? JSON.parse(params.end_user_bank_account) : undefined,
 					})
 					break
 
 				// FLOW 9: List User Vaults
 				case "vaults-list":
-					data = await b2bApiClient.getUserVaults(params.user_id)
+					data = await getUserVaults(params.user_id)
 					break
 
 				default:
@@ -1867,7 +1883,7 @@ export function APITestingPage() {
 								}
 							}}
 							disabled={!authenticated || loadingOrgs}
-							className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+							className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							<RefreshCw size={14} className={loadingOrgs ? "animate-spin" : ""} />
 							{loadingOrgs ? "Loading..." : "Reload"}
@@ -1897,7 +1913,7 @@ export function APITestingPage() {
 											<div className="flex items-center gap-2 mb-2">
 												<h4 className="text-base font-semibold text-gray-900">{org.companyName}</h4>
 												{org.productId === activeProductId && (
-													<span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-600 text-white">
+													<span className="text-xs font-semibold px-2 py-0.5 rounded bg-blue-500 text-white">
 														Active
 													</span>
 												)}
@@ -2259,7 +2275,7 @@ export function APITestingPage() {
 																	) : param.type === "multiselect" && param.options ? (
 																		<div className="space-y-2">
 																			<div className="flex flex-wrap gap-2 p-2 border border-gray-300 rounded-md min-h-[38px] bg-white">
-																				{(currentFormData[param.name] || "")
+																				{(currentFormData[param.name] ?? "")
 																					.split(",")
 																					.filter(Boolean)
 																					.map((selected: string) => {
@@ -2273,7 +2289,7 @@ export function APITestingPage() {
 																								<button
 																									type="button"
 																									onClick={() => {
-																										const current = (currentFormData[param.name] || "")
+																										const current = (currentFormData[param.name] ?? "")
 																											.split(",")
 																											.filter(Boolean)
 																											.map((s: string) => s.trim())
@@ -2292,7 +2308,7 @@ export function APITestingPage() {
 																				value=""
 																				onChange={(e) => {
 																					if (e.target.value) {
-																						const current = (currentFormData[param.name] || "")
+																						const current = (currentFormData[param.name] ?? "")
 																							.split(",")
 																							.filter(Boolean)
 																							.map((s: string) => s.trim())
@@ -2308,7 +2324,7 @@ export function APITestingPage() {
 																				{param.options
 																					.filter(
 																						(option) =>
-																							!(currentFormData[param.name] || "")
+																							!(currentFormData[param.name] ?? "")
 																								.split(",")
 																								.map((s: string) => s.trim())
 																								.includes(option.value),
@@ -2344,7 +2360,7 @@ export function APITestingPage() {
 												<button
 													onClick={() => executeRequest(endpoint)}
 													disabled={loading === endpoint.id}
-													className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+													className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
 												>
 													<Play size={16} />
 													{loading === endpoint.id ? "Executing..." : "Execute"}

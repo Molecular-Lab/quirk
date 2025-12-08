@@ -1,80 +1,204 @@
-import { StrategyCard } from "@/components/ui/StrategyCard"
+import { useState } from "react"
+import { Doughnut } from "react-chartjs-2"
+
+import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js"
+
+import type { ChartOptions } from "chart.js"
+import "./TradingStrategies.css"
+
+ChartJS.register(ArcElement, Tooltip, Legend)
 
 export function TradingStrategiesSection() {
-	const strategies = [
-		{
-			title: "CeFi Delta Neutral",
-			description:
-				'Low-volatility "core yield" block. Captures funding-rate and basis spreads with minimal market beta—perfect complement to directional sleeves.',
-			targetAudience:
-				"B2B partners—exchanges, wallets and neo-banks—seeking predictable, audit-friendly yield they can pass to end-users via API or widgets. Also suits conservative LPs needing stable-coin income without draw-down spikes.",
-			features: [
-				"Classic cash-and-carry: long spot vs. short perpetual / quarterly futures when annualised basis ≥ 6%",
-				"Volatility capture: short straddles / strangles with dynamic delta-hedge; rolls weekly to monetise time decay",
-				"All legs in 1× or no leverage; positions auto-flatten when FARM™ VaR triggers or funding reverses",
-			],
-			platforms: "Binance & OKX",
-			collateral: "USDT / USDC",
+	const [allocations, setAllocations] = useState({
+		defi: 45,
+		liquidityPool: 45,
+		cefi: 10,
+	})
+
+	const handleAllocationChange = (strategy: keyof typeof allocations, value: number) => {
+		const newAllocations = { ...allocations, [strategy]: value }
+		const total = Object.values(newAllocations).reduce((sum, val) => sum + val, 0)
+
+		// If total exceeds 100, adjust other values proportionally
+		if (total > 100) {
+			const excess = total - 100
+			const otherStrategies = Object.keys(newAllocations).filter(
+				(key) => key !== strategy,
+			) as (keyof typeof allocations)[]
+			const otherTotal = otherStrategies.reduce((sum, key) => sum + newAllocations[key], 0)
+
+			if (otherTotal > 0) {
+				otherStrategies.forEach((key) => {
+					newAllocations[key] = Math.max(
+						0,
+						Math.round(newAllocations[key] - (excess * newAllocations[key]) / otherTotal),
+					)
+				})
+			}
+		}
+
+		setAllocations(newAllocations)
+	}
+
+	const totalAllocation = Object.values(allocations).reduce((sum, val) => sum + val, 0)
+
+	const chartData = {
+		labels: ["DeFi", "Place LP", "CeFi"],
+		datasets: [
+			{
+				data: [allocations.defi, allocations.liquidityPool, allocations.cefi],
+				backgroundColor: [
+					"#3B82F6", // Accent blue for DeFi (primary segment)
+					"#7C7C7C", // gray-700 for Place LP
+					"#C8C8C8", // gray-200 for CeFi
+				],
+				borderColor: "#ffffff",
+				borderWidth: 4,
+			},
+		],
+	}
+
+	const chartOptions: ChartOptions<"doughnut"> = {
+		responsive: true,
+		maintainAspectRatio: false,
+		plugins: {
+			legend: {
+				display: false,
+			},
+			tooltip: {
+				backgroundColor: "rgba(0, 0, 0, 0.8)",
+				padding: 12,
+				cornerRadius: 8,
+				titleFont: {
+					size: 14,
+					weight: "600",
+				},
+				bodyFont: {
+					size: 13,
+				},
+				callbacks: {
+					label: function (context) {
+						return context.label + ": " + context.parsed + "%"
+					},
+				},
+			},
 		},
-		{
-			title: "DeFi Delta Neutral",
-			description:
-				"Generates yield without price-direction risk while diversifying away from CeFi counter-parties. Adds a purely on-chain return stream to a multi-manager portfolio.",
-			targetAudience:
-				"Mitigates centralized counterparty risk by extending exposure to decentralized finance strategies, thereby creating a more diversified risk profile while preserving minimal market exposure.",
-			features: [
-				"Provides liquidity and executes arbitrage on blue-chip DEXes (Uniswap v3 range orders, Pendle YT/PT basis, Drift perp funding)",
-				"Lends stablecoins on Aave & Morpho, simultaneously shorting perp or spot equivalents to keep net delta ≈ 0",
-				"All legs in 1× or no leverage; positions auto-flatten when FARM™ VaR triggers or funding reverses",
-			],
-			platforms: "Uniswap · Aave · Morpho · Pendle · Drift · Hypernative",
-			collateral: "USDT / USDC",
-			lockup: "Daily liquidity",
-		},
-		{
-			title: "CeFi Directional Hedged",
-			description:
-				"Participate in upside, cap the downside. A conservative, risk-aware programme that captures medium-term crypto price moves while keeping beta and draw-downs tightly controlled.",
-			targetAudience:
-				"High-net-worth users who want a higher return ceiling than pure market-neutral strategies, but refuse unmanaged downside volatility.",
-			features: [
-				"Zero or 1× leverage. Long-spot positions are hedged with perp shorts, listed options, or opposite-side spot",
-				"Signal engine combines trend-following, momentum and mean-reversion models—built with ML classifiers & execution algos",
-				"Positions auto-rebalanced when delta drift > 5% or VaR exceeds FARM™ limits",
-			],
-			platforms: "Binance & OKX",
-			collateral: "USDT / USDC",
-		},
-		{
-			title: "CeFi Directional with Varying Risk",
-			description:
-				"Primary return engine—deploys capital into high-conviction long or short trades, configurable from moderate to high risk-return targets.",
-			targetAudience:
-				"Clients who want explicit market exposure with choice of risk: Moderate tier for wealth managers needing directional beta with guard-rails.",
-			features: [
-				"Generates returns by taking deliberate long or short positions based on anticipated market movements",
-				"Express a clear directional view — either bullish or bearish — using technical, quantitative, fundamental, and machine learning methods",
-				"Multiple risk tiers available from moderate to aggressive, with appropriate risk controls for each level",
-			],
-			platforms: "Binance & OKX",
-			collateral: "USDT / USDC",
-		},
-	]
+		cutout: "70%",
+	}
 
 	return (
-		<section className="py-20 bg-white">
-			<div className="max-w-7xl mx-auto px-6">
+		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-purple-50/40 to-white flex items-center">
+			<div className="max-w-7xl mx-auto px-6 w-full">
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-bold text-gray-900 mb-4">Featured Trading Strategies</h2>
-					<p className="text-xl text-gray-600 max-w-3xl mx-auto">
-						Institutional-grade strategies for every risk profile
-					</p>
+					<h2 className="text-5xl font-bold text-gray-950">Customized Earn Strategies</h2>
 				</div>
 
-				<div className="grid md:grid-cols-2 gap-6">
-					{strategies.map((strategy, idx) => (
-						<StrategyCard key={idx} {...strategy} />
-					))}
+				<div className="relative bg-white/90 backdrop-blur-md rounded-xl p-12 shadow-sm border border-gray-150 overflow-hidden">
+					{/* Subtle gradient accent */}
+					<div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-transparent via-blue-200/40 to-transparent" />
+					<div className="grid lg:grid-cols-2 gap-16 items-center">
+						{/* Chart Section */}
+						<div className="relative">
+							<div className="relative h-[400px] flex items-center justify-center">
+								<div className="relative w-full h-full max-w-[380px]">
+									<Doughnut data={chartData} options={chartOptions} />
+									<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+										<div className="text-center">
+											<div className="text-5xl font-bold text-gray-950">{totalAllocation}%</div>
+											<div className="text-sm text-gray-500 mt-2 font-medium">Allocated</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{/* Controls Section */}
+						<div className="space-y-8">
+							<div>
+								<h3 className="text-2xl font-bold text-gray-950 mb-2">Portfolio Distribution</h3>
+								<p className="text-gray-700">Adjust sliders to simulate different allocation strategies</p>
+							</div>
+							<div className="space-y-8">
+								{/* DeFi */}
+								<div className="space-y-3">
+									<div className="flex items-center justify-between">
+										<div>
+											<label className="text-gray-950 font-semibold text-lg">DeFi</label>
+										</div>
+										<div className="flex items-center gap-1">
+											<span className="text-2xl font-bold text-gray-950">{allocations.defi}</span>
+											<span className="text-gray-500 text-lg">%</span>
+										</div>
+									</div>
+									<input
+										type="range"
+										value={allocations.defi}
+										onChange={(e) => {
+											handleAllocationChange("defi", Number(e.target.value))
+										}}
+										className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+										min="0"
+										max="100"
+										style={{
+											background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${allocations.defi}%, #E3E3E3 ${allocations.defi}%, #E3E3E3 100%)`,
+										}}
+									/>
+								</div>
+
+								{/* Place LP */}
+								<div className="space-y-3">
+									<div className="flex items-center justify-between">
+										<div>
+											<label className="text-gray-950 font-semibold text-lg">Liquidity Provider</label>
+										</div>
+										<div className="flex items-center gap-1">
+											<span className="text-2xl font-bold text-gray-950">{allocations.liquidityPool}</span>
+											<span className="text-gray-500 text-lg">%</span>
+										</div>
+									</div>
+									<input
+										type="range"
+										value={allocations.liquidityPool}
+										onChange={(e) => {
+											handleAllocationChange("liquidityPool", Number(e.target.value))
+										}}
+										className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+										min="0"
+										max="100"
+										style={{
+											background: `linear-gradient(to right, #7C7C7C 0%, #7C7C7C ${allocations.liquidityPool}%, #E3E3E3 ${allocations.liquidityPool}%, #E3E3E3 100%)`,
+										}}
+									/>
+								</div>
+
+								{/* CeFi */}
+								<div className="space-y-3">
+									<div className="flex items-center justify-between">
+										<div>
+											<label className="text-gray-950 font-semibold text-lg">CeFi</label>
+										</div>
+										<div className="flex items-center gap-1">
+											<span className="text-2xl font-bold text-gray-950">{allocations.cefi}</span>
+											<span className="text-gray-500 text-lg">%</span>
+										</div>
+									</div>
+									<input
+										type="range"
+										value={allocations.cefi}
+										onChange={(e) => {
+											handleAllocationChange("cefi", Number(e.target.value))
+										}}
+										className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+										min="0"
+										max="100"
+										style={{
+											background: `linear-gradient(to right, #C8C8C8 0%, #C8C8C8 ${allocations.cefi}%, #E3E3E3 ${allocations.cefi}%, #E3E3E3 100%)`,
+										}}
+									/>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
 			</div>
 		</section>

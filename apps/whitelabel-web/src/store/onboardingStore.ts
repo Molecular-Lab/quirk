@@ -186,12 +186,12 @@ export const useOnboardingStore = create<OnboardingState>()(
 							state.companyInfo.companyName.trim() &&
 							state.companyInfo.businessType.trim() &&
 							state.companyInfo.industry.trim() &&
-							state.companyInfo.customerTier &&
 							state.companyInfo.estimatedAUM.trim()
 						)
 
 					case 1: // Strategies
-						return state.strategies.priorities.length === 5
+						// Always valid since strategies are pre-populated
+						return true
 
 					case 2: // Banking (optional)
 						return true // Always valid since it's optional

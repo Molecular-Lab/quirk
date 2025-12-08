@@ -95,6 +95,7 @@ INSERT INTO client_organizations (
   business_type,
   description,
   website_url,
+  customer_tier,
   api_key_hash,
   api_key_prefix,
   webhook_urls,
@@ -109,7 +110,7 @@ INSERT INTO client_organizations (
   bank_accounts
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16, $17, $18
+  $11, $12, $13, $14, $15, $16, $17, $18, $19
 )
 RETURNING *;
 
@@ -119,6 +120,7 @@ SET company_name = COALESCE(sqlc.narg('company_name'), company_name),
     business_type = COALESCE(sqlc.narg('business_type'), business_type),
     description = COALESCE(sqlc.narg('description'), description),
     website_url = COALESCE(sqlc.narg('website_url'), website_url),
+    customer_tier = COALESCE(sqlc.narg('customer_tier'), customer_tier),
     webhook_urls = COALESCE(sqlc.narg('webhook_urls'), webhook_urls),
     webhook_secret = COALESCE(sqlc.narg('webhook_secret'), webhook_secret),
     custom_strategy = COALESCE(sqlc.narg('custom_strategy'), custom_strategy),
@@ -247,3 +249,78 @@ LEFT JOIN deposit_transactions dt ON c.id = dt.client_id
 LEFT JOIN withdrawal_transactions wt ON c.id = wt.client_id
 WHERE c.id = $1
 GROUP BY c.id, cb.available, cb.reserved;
+
+-- ============================================
+-- PRODUCT STRATEGY CONFIGURATION QUERIES
+-- ============================================
+
+-- name: GetProductStrategies :one
+-- Get both strategy preferences and customization for a product
+SELECT
+  strategies_preferences,
+  strategies_customization
+FROM client_organizations
+WHERE id = $1;
+
+-- name: GetProductStrategiesByProductID :one
+-- Get both strategy preferences and customization by product_id
+SELECT
+  strategies_preferences,
+  strategies_customization
+FROM client_organizations
+WHERE product_id = $1;
+
+-- name: UpdateProductPreferences :exec
+-- Update initial strategy preferences (from product creation form)
+UPDATE client_organizations
+SET
+  strategies_preferences = sqlc.arg(strategies_preferences)::jsonb,
+  updated_at = now()
+WHERE id = sqlc.arg(id);
+
+-- name: UpdateProductCustomization :exec
+-- Update runtime strategy customization (from Market Analysis dashboard)
+UPDATE client_organizations
+SET
+  strategies_customization = sqlc.arg(strategies_customization)::jsonb,
+  updated_at = now()
+WHERE id = sqlc.arg(id);
+
+-- name: UpdateProductCustomizationByProductID :exec
+-- Update runtime strategy customization by product_id
+UPDATE client_organizations
+SET
+  strategies_customization = sqlc.arg(strategies_customization)::jsonb,
+  updated_at = now()
+WHERE product_id = sqlc.arg(product_id);
+
+-- name: GetEffectiveProductStrategies :one
+-- Returns customization if set, otherwise preferences
+-- This is the "effective" strategy that should be used
+SELECT
+  COALESCE(
+    NULLIF(strategies_customization, '{}'::jsonb),
+    NULLIF(strategies_preferences, '{}'::jsonb),
+    '{}'::jsonb
+  ) as effective_strategies
+FROM client_organizations
+WHERE id = $1;
+
+-- name: GetEffectiveProductStrategiesByProductID :one
+-- Returns effective strategies by product_id
+SELECT
+  COALESCE(
+    NULLIF(strategies_customization, '{}'::jsonb),
+    NULLIF(strategies_preferences, '{}'::jsonb),
+    '{}'::jsonb
+  ) as effective_strategies
+FROM client_organizations
+WHERE product_id = $1;
+
+-- name: ClearProductCustomization :exec
+-- Reset customization to empty (falls back to preferences)
+UPDATE client_organizations
+SET
+  strategies_customization = '{}'::jsonb,
+  updated_at = now()
+WHERE id = $1;

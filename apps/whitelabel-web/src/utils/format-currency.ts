@@ -9,21 +9,20 @@ export function formatCurrency(
 		compact?: boolean
 	},
 ): string {
-	const { currency = "USD", decimals = 2, compact = false } = options || {}
+	const { currency = "USD", decimals = 2, compact = false } = options ?? {}
 
 	if (compact && Math.abs(value) >= 1000) {
 		return new Intl.NumberFormat("en-US", {
 			style: "currency",
-			currency,
+			currency: currency,
 			notation: "compact",
 			minimumFractionDigits: 0,
 			maximumFractionDigits: 1,
 		}).format(value)
 	}
-
 	return new Intl.NumberFormat("en-US", {
 		style: "currency",
-		currency,
+		currency: currency,
 		minimumFractionDigits: decimals,
 		maximumFractionDigits: decimals,
 	}).format(value)

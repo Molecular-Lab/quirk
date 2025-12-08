@@ -74,6 +74,13 @@ CREATE TABLE client_organizations (
   platform_fee NUMERIC(5,2),
   performance_fee NUMERIC(5,2) DEFAULT 10.00,
 
+  -- Customer Tier (from migration 000002)
+  customer_tier VARCHAR(20),
+
+  -- Product-Level Strategy Configuration (from migration 000003)
+  strategies_preferences JSONB DEFAULT '{}'::jsonb,
+  strategies_customization JSONB DEFAULT '{}'::jsonb,
+
   -- Timestamps
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
@@ -82,12 +89,18 @@ CREATE TABLE client_organizations (
 CREATE INDEX idx_client_orgs_privy_account ON client_organizations(privy_account_id);
 CREATE INDEX idx_client_orgs_product_id ON client_organizations(product_id);
 CREATE INDEX idx_client_orgs_active ON client_organizations(is_active) WHERE is_active = true;
+CREATE INDEX idx_client_orgs_customer_tier ON client_organizations(customer_tier);
+CREATE INDEX idx_client_orgs_strategies_customization ON client_organizations USING GIN (strategies_customization);
+CREATE INDEX idx_client_orgs_strategies_preferences ON client_organizations USING GIN (strategies_preferences);
 
 COMMENT ON TABLE client_organizations IS 'Product organizations - multiple per Privy user (e.g., GrabPay, GrabFood). References privy_accounts for identity.';
 COMMENT ON COLUMN client_organizations.privy_account_id IS 'Foreign key to privy_accounts (one user can have many organizations)';
 COMMENT ON COLUMN client_organizations.product_id IS 'Primary public identifier for API operations (e.g., prod_abc123)';
 COMMENT ON COLUMN client_organizations.business_type IS 'ecommerce, streaming, gaming, freelance, saas, other';
 COMMENT ON COLUMN client_organizations.end_user_yield_portion IS 'Percent of yield given to end users (e.g., 90.00)';
+COMMENT ON COLUMN client_organizations.customer_tier IS 'Customer AUM tier: 0-1K | 1K-10K | 10K-100K | 100K-1M | 1M+';
+COMMENT ON COLUMN client_organizations.strategies_preferences IS 'Initial strategy preferences captured during product creation. Format: {"defi": {"aave": 50, "compound": 30, "morpho": 20}, "cefi": {"circle": 100}, "lp": {"uniswap": 50, "sushiswap": 50}}. Sum of allocations per category should equal 100. This represents the client''s initial strategic direction.';
+COMMENT ON COLUMN client_organizations.strategies_customization IS 'Runtime strategy configuration from Market Analysis dashboard. Same format as strategies_preferences. When set, this OVERRIDES strategies_preferences. Use COALESCE(strategies_customization, strategies_preferences) to get effective strategies.';
 
 -- ============================================
 -- 2. CLIENT BALANCES (Prepaid Credits)

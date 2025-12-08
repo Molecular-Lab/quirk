@@ -183,8 +183,46 @@ export function createWithdrawalRouter(
 		},
 
 		// GET /withdrawals/client/:clientId
-		listByClient: async ({ params, query }) => {
+		listByClient: async ({ params, query, req }) => {
 			try {
+				// ✅ Dual Auth: Check for both API key (SDK) and Privy (Dashboard)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
+				// Validate access
+				if (apiKeyClient) {
+					// SDK: Only allow access to own client data
+					if (params.clientId !== apiKeyClient.id) {
+						logger.warn("[Withdrawal Router] SDK client attempting to access other client's data", {
+							requestedClientId: params.clientId,
+							authenticatedClientId: apiKeyClient.id,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Access denied - cannot view other clients' withdrawals" },
+						};
+					}
+				} else if (privySession) {
+					// Dashboard: Check if clientId belongs to any product under this organization
+					const productIds = privySession.products.map((p: any) => p.id);
+					if (!productIds.includes(params.clientId)) {
+						logger.warn("[Withdrawal Router] Dashboard user attempting to access unauthorized client", {
+							requestedClientId: params.clientId,
+							authorizedProductIds: productIds,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Access denied - client not in your organization" },
+						};
+					}
+				} else {
+					// No auth present (should not happen due to server.ts middleware)
+					return {
+						status: 401 as const,
+						body: { error: "Authentication required" },
+					};
+				}
+
 				const limit = query?.limit ? parseInt(query.limit) : 50;
 				const offset = query?.offset ? parseInt(query.offset) : 0;
 
@@ -250,12 +288,50 @@ export function createWithdrawalRouter(
 		},
 
 		// GET /withdrawals/stats/:clientId
-		getStats: async ({ params }) => {
+		getStats: async ({ params, req }) => {
 			try {
+				// ✅ Dual Auth: Check for both API key (SDK) and Privy (Dashboard)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
+				// Validate access
+				if (apiKeyClient) {
+					// SDK: Only allow access to own client data
+					if (params.clientId !== apiKeyClient.id) {
+						logger.warn("[Withdrawal Router] SDK client attempting to access other client's stats", {
+							requestedClientId: params.clientId,
+							authenticatedClientId: apiKeyClient.id,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Access denied - cannot view other clients' stats" },
+						};
+					}
+				} else if (privySession) {
+					// Dashboard: Check if clientId belongs to any product under this organization
+					const productIds = privySession.products.map((p: any) => p.id);
+					if (!productIds.includes(params.clientId)) {
+						logger.warn("[Withdrawal Router] Dashboard user attempting to access unauthorized client stats", {
+							requestedClientId: params.clientId,
+							authorizedProductIds: productIds,
+						});
+						return {
+							status: 403 as const,
+							body: { error: "Access denied - client not in your organization" },
+						};
+					}
+				} else {
+					// No auth present (should not happen due to server.ts middleware)
+					return {
+						status: 401 as const,
+						body: { error: "Authentication required" },
+					};
+				}
+
 				// Default to last 30 days
 				const endDate = new Date();
 				const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
-				
+
 				const stats = await withdrawalService.getWithdrawalStats(
 					params.clientId,
 					startDate,

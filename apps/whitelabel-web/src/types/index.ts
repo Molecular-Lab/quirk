@@ -4,6 +4,7 @@
 
 export * from "./ai-insights"
 export * from "./client"
+export * from "./currency"
 export * from "./defi-protocol"
 export * from "./end-user"
 export * from "./registration"

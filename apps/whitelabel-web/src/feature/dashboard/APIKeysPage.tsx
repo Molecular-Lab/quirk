@@ -2,6 +2,8 @@ import { useState } from "react"
 
 import { AlertCircle, Copy, Eye, EyeOff, Key, Plus, Trash2 } from "lucide-react"
 
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+
 interface APIKey {
 	id: string
 	name: string
@@ -86,7 +88,7 @@ export function APIKeysPage() {
 					onClick={() => {
 						setShowCreateModal(true)
 					}}
-					className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+					className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
 				>
 					<Plus className="w-4 h-4" />
 					Create API Key
@@ -180,42 +182,42 @@ export function APIKeysPage() {
 			</div>
 
 			{/* Create Modal */}
-			{showCreateModal && (
-				<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-					<div className="bg-white rounded-2xl p-6 max-w-md w-full">
-						<h2 className="text-2xl font-bold text-gray-900 mb-4">Create New API Key</h2>
-						<div className="mb-6">
-							<label className="block text-sm font-medium text-gray-700 mb-2">API Key Name</label>
-							<input
-								type="text"
-								value={newKeyName}
-								onChange={(e) => {
-									setNewKeyName(e.target.value)
-								}}
-								placeholder="e.g., Production API Key"
-								className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-							/>
-							<p className="text-sm text-gray-600 mt-2">Choose a descriptive name to identify this key</p>
-						</div>
-						<div className="flex gap-3">
-							<button
-								onClick={() => {
-									setShowCreateModal(false)
-								}}
-								className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-							>
-								Cancel
-							</button>
-							<button
-								onClick={createNewKey}
-								className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-							>
-								Create Key
-							</button>
-						</div>
+			<Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+				<DialogContent className="max-w-md">
+					<DialogHeader>
+						<DialogTitle className="text-2xl font-bold text-gray-900">Create New API Key</DialogTitle>
+					</DialogHeader>
+					<div className="mb-6">
+						<label className="block text-sm font-medium text-gray-700 mb-2">API Key Name</label>
+						<input
+							type="text"
+							value={newKeyName}
+							onChange={(e) => {
+								setNewKeyName(e.target.value)
+							}}
+							placeholder="e.g., Production API Key"
+							className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+						/>
+						<p className="text-sm text-gray-600 mt-2">Choose a descriptive name to identify this key</p>
 					</div>
-				</div>
-			)}
+					<div className="flex gap-3">
+						<button
+							onClick={() => {
+								setShowCreateModal(false)
+							}}
+							className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+						>
+							Cancel
+						</button>
+						<button
+							onClick={createNewKey}
+							className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+						>
+							Create Key
+						</button>
+					</div>
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }

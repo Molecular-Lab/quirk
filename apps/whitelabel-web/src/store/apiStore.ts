@@ -6,6 +6,8 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
+import { useUserStore } from "./userStore"
+
 export interface ApiTestRequest {
 	method: "GET" | "POST" | "PUT" | "DELETE"
 	endpoint: string
@@ -90,14 +92,11 @@ export const useApiStore = create<ApiTestState>()(
 
 			// Sync API key from userStore
 			syncFromUserStore: () => {
-				// Import userStore to get current API key
-				import("./userStore").then(({ useUserStore }) => {
-					const userApiKey = useUserStore.getState().apiKey
-					if (userApiKey) {
-						set({ apiKey: userApiKey })
-						localStorage.setItem("b2b:api_key", userApiKey)
-					}
-				})
+				const userApiKey = useUserStore.getState().apiKey
+				if (userApiKey) {
+					set({ apiKey: userApiKey })
+					localStorage.setItem("b2b:api_key", userApiKey)
+				}
 			},
 		}),
 		{
@@ -130,10 +129,8 @@ export function useApiKey(): string | null {
  * Sync API key from userStore (call this on app init)
  */
 export function syncApiKeyFromUserStore() {
-	import("./userStore").then(({ useUserStore }) => {
-		const userApiKey = useUserStore.getState().apiKey
-		if (userApiKey) {
-			useApiStore.getState().setApiKey(userApiKey)
-		}
-	})
+	const userApiKey = useUserStore.getState().apiKey
+	if (userApiKey) {
+		useApiStore.getState().setApiKey(userApiKey)
+	}
 }
