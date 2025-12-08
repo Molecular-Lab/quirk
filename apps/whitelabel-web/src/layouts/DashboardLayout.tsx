@@ -3,7 +3,6 @@ import { useEffect, useState } from "react"
 import { usePrivy } from "@privy-io/react-auth"
 import { Link, Outlet, useNavigate } from "@tanstack/react-router"
 import {
-	Aperture,
 	ArrowLeftRight,
 	Bell,
 	BookText,
@@ -29,10 +28,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
+import { FloatingConcierge } from "@/components/chat/FloatingConcierge"
+import { FloatingConciergeProvider } from "@/contexts/FloatingConciergeContext"
+
 const navigation = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-	{ name: "Explore", href: "/dashboard/explore", icon: Aperture },
-	{ name: "Market", href: "/dashboard/market", icon: Sparkles },
+	{ name: "Yield Manager", href: "/dashboard/yield", icon: Sparkles },
 	{ name: "Products", href: "/dashboard/products", icon: Sliders },
 	{ name: "Operations", href: "/dashboard/operations", icon: ArrowLeftRight },
 	{ name: "Integration", href: "/dashboard/integration", icon: BookText },
@@ -56,10 +57,11 @@ export function DashboardLayout() {
 	}, [user])
 
 	return (
-		<div className="h-screen flex overflow-hidden bg-white">
-			{/* Clean Minimal Sidebar */}
-			<div className="hidden lg:flex lg:flex-shrink-0">
-				<div className="flex flex-col w-[72px] bg-gray-50 border-r border-gray-200">
+		<FloatingConciergeProvider>
+			<div className="h-screen flex overflow-hidden bg-gray-50">
+				{/* Desktop sidebar - Icon only style like Glider */}
+				<div className="hidden lg:flex lg:flex-shrink-0">
+					<div className="flex flex-col w-[72px] bg-gray-50 border-r border-gray-200">
 					{/* Simple Logo */}
 					<div className="flex items-center justify-center h-16 border-b border-gray-200">
 						<div className="w-8 h-8 bg-gradient-to-br from-blue-200 via-purple-200 to-cyan-200 rounded-lg flex items-center justify-center shadow-sm">
@@ -259,6 +261,10 @@ export function DashboardLayout() {
 					</nav>
 				</div>
 			</div>
-		</div>
+
+				{/* Floating AI Concierge */}
+				<FloatingConcierge />
+			</div>
+		</FloatingConciergeProvider>
 	)
 }

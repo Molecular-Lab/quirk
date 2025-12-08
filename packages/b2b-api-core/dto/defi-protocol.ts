@@ -27,5 +27,31 @@ export const ProtocolsResponseDto = z.object({
 	timestamp: z.date(),
 })
 
+export const OptimizedAllocationDto = z.object({
+	protocol: z.enum(['aave', 'compound', 'morpho']),
+	percentage: z.number(),
+	expectedAPY: z.string(),
+	tvl: z.string(),
+	rationale: z.string(),
+})
+
+export const OptimizationRequestDto = z.object({
+	token: z.string(),
+	chainId: z.number(),
+	riskLevel: z.enum(['conservative', 'moderate', 'aggressive']),
+})
+
+export const OptimizationResponseDto = z.object({
+	riskLevel: z.enum(['conservative', 'moderate', 'aggressive']),
+	allocation: z.array(OptimizedAllocationDto),
+	expectedBlendedAPY: z.string(),
+	confidence: z.number(),
+	strategy: z.string(),
+	timestamp: z.number(),
+})
+
 export type ProtocolData = z.infer<typeof ProtocolDataDto>
 export type ProtocolsResponse = z.infer<typeof ProtocolsResponseDto>
+export type OptimizedAllocation = z.infer<typeof OptimizedAllocationDto>
+export type OptimizationRequest = z.infer<typeof OptimizationRequestDto>
+export type OptimizationResponse = z.infer<typeof OptimizationResponseDto>
