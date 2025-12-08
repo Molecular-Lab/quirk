@@ -1,20 +1,34 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { Copy, Eye, EyeOff, Key, RefreshCw } from "lucide-react"
 
 import { regenerateApiKey } from "@/api/b2bClientHelpers"
-import { useDemoStore } from "@/store/demoStore"
+import { useClientContextStore } from "@/store/clientContextStore"
 import { useUserStore } from "@/store/userStore"
 
 export function APIKeySetup() {
-	const { activeProductId, apiKey, setApiKey, getActiveOrganization } = useUserStore()
-	const { setClientContext } = useDemoStore()
+	const { activeProductId, setApiKey, getActiveOrganization } = useUserStore()
+	const { setClientContext } = useClientContextStore()
 	const [isGenerating, setIsGenerating] = useState(false)
 	const [showKey, setShowKey] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 	const [copied, setCopied] = useState(false)
+	const [currentApiKey, setCurrentApiKey] = useState<string | null>(null)
 
 	const org = getActiveOrganization()
+
+	// Load API key from localStorage for active product
+	useEffect(() => {
+		if (activeProductId) {
+			const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
+			const apiKey = allKeys[activeProductId]
+			setCurrentApiKey(apiKey || null)
+
+			console.log("[APIKeySetup] Loaded API key for", activeProductId, ":", !!apiKey)
+		} else {
+			setCurrentApiKey(null)
+		}
+	}, [activeProductId])
 
 	const handleGenerateApiKey = async () => {
 		if (!activeProductId) {
@@ -35,22 +49,35 @@ export function APIKeySetup() {
 			if (response && typeof response === "object" && "api_key" in response) {
 				const newApiKey = response.api_key
 
-				// Save to userStore
+				// ✅ Save to multi-org localStorage storage
+				const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
+				allKeys[activeProductId] = newApiKey
+				localStorage.setItem("b2b:api_keys", JSON.stringify(allKeys))
+
+				// Update local state
+				setCurrentApiKey(newApiKey)
+
+				// Save to userStore (for backward compatibility)
 				setApiKey(newApiKey)
 
-				// Save to localStorage for b2bApiClient
+				// Save as current active key
 				localStorage.setItem("b2b:api_key", newApiKey)
 
-				// Update demoStore context
+				// Update clientContextStore
 				if (org) {
 					setClientContext({
 						productId: activeProductId,
 						clientId: org.id,
 						apiKey: newApiKey,
+						companyName: org.companyName,
+						businessType: org.businessType,
 					})
 				}
 
-				console.log("[APIKeySetup] API key saved successfully")
+				console.log("[APIKeySetup] ✅ API key saved to multi-org storage:", {
+					productId: activeProductId,
+					apiKeyPrefix: newApiKey.substring(0, 12) + "...",
+				})
 			} else {
 				throw new Error("Invalid response from API")
 			}
@@ -63,8 +90,8 @@ export function APIKeySetup() {
 	}
 
 	const handleCopyKey = () => {
-		if (apiKey) {
-			navigator.clipboard.writeText(apiKey)
+		if (currentApiKey) {
+			navigator.clipboard.writeText(currentApiKey)
 			setCopied(true)
 			setTimeout(() => {
 				setCopied(false)
@@ -89,14 +116,14 @@ export function APIKeySetup() {
 				</div>
 			</div>
 
-			{apiKey ? (
+			{currentApiKey ? (
 				<>
 					{/* Existing API Key */}
 					<div className="mb-4">
 						<label className="block text-sm font-medium text-gray-700 mb-2">Current API Key</label>
 						<div className="flex items-center gap-2">
 							<div className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 font-mono text-sm">
-								{showKey ? apiKey : maskApiKey(apiKey)}
+								{showKey ? currentApiKey : maskApiKey(currentApiKey)}
 							</div>
 							<button
 								onClick={() => {

@@ -443,8 +443,13 @@ export async function listPendingDeposits() {
 /**
  * Create user
  */
+/**
+ * Create or get end-user
+ * NOTE: clientId is automatically extracted from API key (via apiKeyAuth middleware)
+ * Do NOT pass clientId in the body!
+ */
 export async function createUser(
-	clientId: string,
+	_productIdOrClientId: string, // Kept for backward compatibility but not used
 	data: {
 		clientUserId: string
 		email?: string
@@ -453,7 +458,7 @@ export async function createUser(
 ) {
 	const { status, body } = await b2bApiClient.user.getOrCreate({
 		body: {
-			clientId,
+			// ✅ Do NOT send clientId - API key middleware extracts it from authenticated request
 			...data,
 		},
 	})

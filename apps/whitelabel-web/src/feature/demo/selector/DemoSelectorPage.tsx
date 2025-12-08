@@ -5,6 +5,7 @@ import { Check, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { type VisualizationType, useDemoProductStore } from "@/store/demoProductStore"
 import { useUserStore } from "@/store/userStore"
 
@@ -76,7 +77,24 @@ export function DemoSelectorPage() {
 	}
 
 	const handleProductSelect = (productId: string) => {
-		selectProduct(productId)
+		console.log("[DemoSelectorPage] Selecting product:", productId)
+
+		// Load API key for this product from localStorage
+		const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
+		const apiKey = allKeys[productId]
+
+		if (!apiKey) {
+			const product = availableProducts.find((p) => p.productId === productId)
+			alert(
+				`⚠️ API key not found for ${product?.companyName || productId}\n\nPlease go to Dashboard → API Testing to view or regenerate your API key first.`,
+			)
+			return
+		}
+
+		// Select product with API key
+		selectProduct(productId, apiKey)
+
+		console.log("[DemoSelectorPage] ✅ Product selected with API key")
 	}
 
 	const handleStartDemo = () => {
