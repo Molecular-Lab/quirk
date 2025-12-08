@@ -1,0 +1,468 @@
+import { useState } from "react"
+
+import { usePrivy } from "@privy-io/react-auth"
+import { useNavigate } from "@tanstack/react-router"
+import clsx from "clsx"
+import { AnimatePresence, motion } from "framer-motion"
+import { ArrowLeft, Check } from "lucide-react"
+import { toast } from "sonner"
+
+import { registerClient } from "@/api/b2bClientHelpers"
+import { Input } from "@/components/ui/input"
+import { Currency } from "@/types"
+
+const customerTiers = [
+	{ value: "0-1K", label: "$0 - $1K", description: "Starting out" },
+	{ value: "1K-10K", label: "$1K - $10K", description: "Growing" },
+	{ value: "10K-100K", label: "$10K - $100K", description: "Scaling" },
+	{ value: "100K-1M", label: "$100K - $1M", description: "Enterprise" },
+	{ value: "1M+", label: "$1M+", description: "Whale" },
+]
+
+const strategies = [
+	{ id: "defi", label: "DeFi Lending" },
+	{ id: "cefi", label: "CeFi Yield" },
+	{ id: "lp", label: "Liquidity Pools" },
+	{ id: "hedge", label: "Hedge Funds" },
+	{ id: "arbitrage", label: "Arbitrage" },
+]
+
+const currencies = [
+	{ value: Currency.USD, label: "USD", flag: "🇺🇸" },
+	{ value: Currency.EUR, label: "EUR", flag: "🇪🇺" },
+	{ value: Currency.SGD, label: "SGD", flag: "🇸🇬" },
+	{ value: Currency.THB, label: "THB", flag: "🇹🇭" },
+	{ value: Currency.TWD, label: "TWD", flag: "🇹🇼" },
+	{ value: Currency.KRW, label: "KRW", flag: "🇰🇷" },
+]
+
+export function CreateProduct() {
+	const navigate = useNavigate()
+	const { user } = usePrivy()
+	const [currentStep, setCurrentStep] = useState(0)
+	const [isSubmitting, setIsSubmitting] = useState(false)
+
+	// Form state
+	const [formData, setFormData] = useState({
+		companyName: "",
+		businessType: "",
+		customerTier: "",
+		strategyRanking: [] as string[],
+		currencies: [Currency.USD] as Currency[],
+		bankAccounts: {} as Record<
+			Currency,
+			{
+				accountNumber: string
+				accountName: string
+				bankName: string
+				swiftCode: string
+			}
+		>,
+	})
+
+	const handleNext = () => {
+		setCurrentStep(currentStep + 1)
+	}
+
+	const handleBack = () => {
+		if (currentStep > 0) {
+			setCurrentStep(currentStep - 1)
+		}
+	}
+
+	const handleStrategyToggle = (strategyId: string) => {
+		setFormData((prev) => {
+			const ranking = [...prev.strategyRanking]
+			const index = ranking.indexOf(strategyId)
+
+			if (index > -1) {
+				ranking.splice(index, 1)
+			} else {
+				ranking.push(strategyId)
+			}
+
+			return { ...prev, strategyRanking: ranking }
+		})
+	}
+
+	const handleCurrencyToggle = (currency: Currency) => {
+		setFormData((prev) => {
+			const currencies = [...prev.currencies]
+			const index = currencies.indexOf(currency)
+
+			if (index > -1 && currencies.length > 1) {
+				currencies.splice(index, 1)
+			} else if (index === -1) {
+				currencies.push(currency)
+			}
+
+			return { ...prev, currencies }
+		})
+	}
+
+	const handleSubmit = async () => {
+		if (!user?.wallet?.address) {
+			toast.error("Please connect your wallet")
+			return
+		}
+
+		setIsSubmitting(true)
+
+		try {
+			// Build bank accounts array (one per currency, optional)
+			const bankAccountsArray = formData.currencies
+				.map((currency) => {
+					const bankData = formData.bankAccounts[currency]
+					if (!bankData?.accountNumber) return null // Skip if no account number
+
+					return {
+						currency: currency.toString(),
+						bank_name: bankData.bankName,
+						account_number: bankData.accountNumber,
+						account_name: bankData.accountName,
+						bank_details: bankData.swiftCode ? { swift_code: bankData.swiftCode } : undefined,
+					}
+				})
+				.filter(Boolean) // Remove null entries
+
+			const payload = {
+				companyName: formData.companyName,
+				businessType: formData.businessType,
+				walletType: "MANAGED" as const,
+				privyOrganizationId: user.id || "",
+				privyWalletAddress: user.wallet.address,
+				vaultsToCreate: "both" as const,
+				privyEmail: user.email?.address,
+				customerTier: formData.customerTier as "0-1K" | "1K-10K" | "10K-100K" | "100K-1M" | "1M+",
+				strategyRanking: formData.strategyRanking,
+				supportedCurrencies: formData.currencies.map((c) => c.toString()) as (
+					| "SGD"
+					| "USD"
+					| "EUR"
+					| "THB"
+					| "TWD"
+					| "KRW"
+				)[],
+				bankAccounts: bankAccountsArray.length > 0 ? bankAccountsArray : undefined,
+			}
+
+			const client = await registerClient(payload)
+
+			toast.success(
+				<div>
+					<p className="font-semibold">Product created successfully!</p>
+					<p className="text-sm opacity-90">Product ID: {client.productId}</p>
+				</div>,
+				{ duration: 5000 },
+			)
+
+			navigate({ to: "/dashboard" })
+		} catch (error: any) {
+			toast.error(error.message || "Failed to create product")
+		} finally {
+			setIsSubmitting(false)
+		}
+	}
+
+	return (
+		<div className="fixed inset-0 overflow-hidden">
+			{/* Clean Luma-style gradient: purple top (0-15%), blue middle (15-20%), gray-50 (20%), white bottom */}
+			<div className="absolute inset-0 bg-gradient-to-b from-purple-200/80 from-0% via-blue-100/70 via-15% via-gray-50 via-20% to-white" />
+
+			{/* Luma-style soft decorative gradients */}
+			{/* <div className="absolute inset-0">
+				<div className="absolute top-0 right-0 w-[900px] h-[900px] bg-gradient-to-br from-purple-300/50 to-transparent rounded-full blur-3xl" />
+				<div className="absolute bottom-0 left-0 w-[900px] h-[900px] bg-gradient-to-tr from-blue-300/50 to-transparent rounded-full blur-3xl" />
+			</div> */}
+
+			{/* Header with Back and Cancel */}
+			<header className="fixed top-0 w-full z-50 backdrop-blur-xl">
+				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-end">
+					<div className="flex items-center gap-4">
+						{currentStep > 0 && (
+							<button
+								onClick={handleBack}
+								className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm"
+							>
+								<ArrowLeft className="w-4 h-4" />
+								Back
+							</button>
+						)}
+						<button
+							onClick={() => navigate({ to: "/dashboard" })}
+							className="text-gray-600 hover:text-gray-900 transition-colors text-sm"
+						>
+							Cancel
+						</button>
+					</div>
+				</div>
+			</header>
+
+			<div className="relative z-10 min-h-screen flex items-center justify-center p-8 pt-24">
+				<motion.div
+					initial={{ opacity: 0, y: 20 }}
+					animate={{ opacity: 1, y: 0 }}
+					transition={{ duration: 0.5, ease: "easeOut" }}
+					className="w-full max-w-xl"
+				>
+					{/* One field per page layout */}
+					<div className="max-w-md mx-auto space-y-10">
+						<AnimatePresence mode="wait">
+							{/* Step 0: Company Name */}
+							{currentStep === 0 && (
+								<motion.div
+									key="step-0"
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -20 }}
+									className="space-y-6"
+								>
+									<div className="space-y-2">
+										<div className="flex items-center gap-3 mb-6">
+											<span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-900 text-white text-sm font-bold">
+												1
+											</span>
+											<span className="text-gray-900 font-semibold" style={{ fontSize: "32px" }}>
+												Company Name
+											</span>
+										</div>
+										<Input
+											type="text"
+											value={formData.companyName}
+											onChange={(e) => {
+												setFormData({ ...formData, companyName: e.target.value })
+											}}
+											placeholder="e.g., Acme Corporation"
+											className="bg-transparent border-0 border-b-2 border-gray-300 rounded-none px-0 font-normal focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-gray-900 placeholder:text-gray-400 h-auto py-2"
+											style={{ fontSize: "16px", lineHeight: "1.5" }}
+											autoFocus
+										/>
+									</div>
+									<button
+										onClick={handleNext}
+										disabled={!formData.companyName.trim()}
+										className={clsx(
+											"w-full py-3 rounded-xl font-medium transition-all",
+											formData.companyName.trim()
+												? "bg-gray-900 text-white hover:bg-gray-800"
+												: "bg-gray-100 text-gray-400 cursor-not-allowed",
+										)}
+									>
+										Continue
+									</button>
+								</motion.div>
+							)}
+
+							{/* Step 1: Business Type */}
+							{currentStep === 1 && (
+								<motion.div
+									key="step-1"
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -20 }}
+									className="space-y-6"
+								>
+									<div className="space-y-2">
+										<div className="flex items-center gap-3 mb-6">
+											<span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-900 text-white text-sm font-bold">
+												2
+											</span>
+											<span className="text-gray-900 font-semibold" style={{ fontSize: "32px" }}>
+												Business Type
+											</span>
+										</div>
+										<Input
+											type="text"
+											value={formData.businessType}
+											onChange={(e) => {
+												setFormData({ ...formData, businessType: e.target.value })
+											}}
+											placeholder="e.g., E-commerce, Gaming, Streaming"
+											className="bg-transparent border-0 border-b-2 border-gray-300 rounded-none px-0 font-normal focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-gray-900 placeholder:text-gray-400 h-auto py-2"
+											style={{ fontSize: "16px", lineHeight: "1.5" }}
+											autoFocus
+										/>
+									</div>
+									<button
+										onClick={handleNext}
+										disabled={!formData.businessType.trim()}
+										className={clsx(
+											"w-full py-3 rounded-xl font-medium transition-all",
+											formData.businessType.trim()
+												? "bg-gray-900 text-white hover:bg-gray-800"
+												: "bg-gray-100 text-gray-400 cursor-not-allowed",
+										)}
+									>
+										Continue
+									</button>
+								</motion.div>
+							)}
+
+							{/* Step 2: Customer Tier */}
+							{currentStep === 2 && (
+								<motion.div
+									key="step-2"
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -20 }}
+									className="space-y-6"
+								>
+									<div className="space-y-4">
+										<div className="flex items-center gap-3 mb-6">
+											<span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-900 text-white text-sm font-bold">
+												3
+											</span>
+											<span className="text-gray-900 font-semibold" style={{ fontSize: "32px" }}>
+												Customer Tier (Monthly Volume)
+											</span>
+										</div>
+										<div className="grid grid-cols-1 gap-3">
+											{customerTiers.map((tier) => (
+												<button
+													key={tier.value}
+													onClick={() => {
+														setFormData({ ...formData, customerTier: tier.value })
+													}}
+													className={clsx(
+														"p-4 rounded-xl border transition-all text-left",
+														formData.customerTier === tier.value
+															? "bg-gray-50 border-gray-300 text-gray-800 shadow-lg"
+															: "bg-white border-gray-200 text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-200 hover:shadow-lg",
+													)}
+												>
+													<div className="font-semibold">{tier.label}</div>
+													<div className="text-xs opacity-75 mt-1">{tier.description}</div>
+												</button>
+											))}
+										</div>
+									</div>
+									<button
+										onClick={handleNext}
+										disabled={!formData.customerTier}
+										className={clsx(
+											"w-full py-3 rounded-xl font-medium transition-all",
+											formData.customerTier
+												? "bg-gray-900 text-white hover:bg-gray-800"
+												: "bg-gray-100 text-gray-400 cursor-not-allowed",
+										)}
+									>
+										Continue
+									</button>
+								</motion.div>
+							)}
+
+							{/* Step 3: Strategies */}
+							{currentStep === 3 && (
+								<motion.div
+									key="step-3"
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -20 }}
+									className="space-y-6"
+								>
+									<div className="space-y-4">
+										<div className="flex items-center gap-3 mb-6">
+											<span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-900 text-white text-sm font-bold">
+												4
+											</span>
+											<span className="text-gray-900 font-semibold" style={{ fontSize: "32px" }}>
+												Select Your Preferred Strategies
+											</span>
+										</div>
+										<p className="text-sm text-gray-500 -mt-4">Choose strategies that align with your risk tolerance</p>
+										<div className="grid grid-cols-1 gap-3">
+											{strategies.map((strategy) => (
+												<button
+													key={strategy.id}
+													onClick={() => {
+														handleStrategyToggle(strategy.id)
+													}}
+													className={clsx(
+														"p-4 rounded-xl border transition-all text-left flex items-center justify-between",
+														formData.strategyRanking.includes(strategy.id)
+															? "bg-gray-50 border-gray-300 text-gray-800 shadow-lg"
+															: "bg-white border-gray-200 text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-200 hover:shadow-lg",
+													)}
+												>
+													<span className="font-medium">{strategy.label}</span>
+													{formData.strategyRanking.includes(strategy.id) && <Check className="w-5 h-5" />}
+												</button>
+											))}
+										</div>
+									</div>
+									<button
+										onClick={handleNext}
+										disabled={formData.strategyRanking.length === 0}
+										className={clsx(
+											"w-full py-3 rounded-xl font-medium transition-all",
+											formData.strategyRanking.length > 0
+												? "bg-gray-900 text-white hover:bg-gray-800"
+												: "bg-gray-100 text-gray-400 cursor-not-allowed",
+										)}
+									>
+										Continue
+									</button>
+								</motion.div>
+							)}
+
+							{/* Step 4: Currencies */}
+							{currentStep === 4 && (
+								<motion.div
+									key="step-4"
+									initial={{ opacity: 0, y: 20 }}
+									animate={{ opacity: 1, y: 0 }}
+									exit={{ opacity: 0, y: -20 }}
+									className="space-y-6"
+								>
+									<div className="space-y-4">
+										<div className="flex items-center gap-3 mb-6">
+											<span className="flex items-center justify-center w-7 h-7 rounded-full bg-gray-900 text-white text-sm font-bold">
+												5
+											</span>
+											<span className="text-gray-900 font-semibold" style={{ fontSize: "32px" }}>
+												Supported Currencies
+											</span>
+										</div>
+										<p className="text-sm text-gray-500 -mt-4">Select which currencies you'll support</p>
+										<div className="grid grid-cols-2 gap-3">
+											{currencies.map((currency) => (
+												<button
+													key={currency.value}
+													onClick={() => {
+														handleCurrencyToggle(currency.value)
+													}}
+													className={clsx(
+														"p-4 rounded-xl border transition-all flex items-center gap-3",
+														formData.currencies.includes(currency.value)
+															? "bg-gray-50 border-gray-300 text-gray-800 shadow-lg"
+															: "bg-white border-gray-200 text-gray-600 hover:text-gray-800 hover:bg-gray-50 hover:border-gray-200 hover:shadow-lg",
+													)}
+												>
+													<span className="text-2xl">{currency.flag}</span>
+													<span className="font-medium">{currency.label}</span>
+													{formData.currencies.includes(currency.value) && <Check className="w-4 h-4 ml-auto" />}
+												</button>
+											))}
+										</div>
+									</div>
+									<button
+										onClick={handleSubmit}
+										disabled={isSubmitting || formData.currencies.length === 0}
+										className={clsx(
+											"w-full py-3 rounded-xl font-medium transition-all",
+											!isSubmitting && formData.currencies.length > 0
+												? "bg-gray-900 text-white hover:bg-gray-800"
+												: "bg-gray-100 text-gray-400 cursor-not-allowed",
+										)}
+									>
+										{isSubmitting ? "Creating Product..." : "Create Product"}
+									</button>
+								</motion.div>
+							)}
+						</AnimatePresence>
+					</div>
+				</motion.div>
+			</div>
+		</div>
+	)
+}

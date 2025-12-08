@@ -1,10 +1,12 @@
 import { useState } from "react"
 
 import { useMutation } from "@tanstack/react-query"
-import { ArrowDown, Check, ChevronDown, ExternalLink, X } from "lucide-react"
+import { ArrowDown, Check, ExternalLink } from "lucide-react"
 
-import { b2bApiClient } from "@/api/b2bClient"
+import { batchCompleteDeposits } from "@/api/b2bClientHelpers"
 import usdcLogo from "@/assets/usd-coin-usdc-logo.png"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 interface OnRampModalProps {
 	isOpen: boolean
@@ -45,7 +47,7 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 	const batchCompleteMutation = useMutation({
 		mutationFn: async (data: { orderIds: string[]; paidCurrency: string }) => {
 			console.log("[OnRampModal] Starting batch purchase for orders:", selectedOrders)
-			const response = await b2bApiClient.batchCompleteDeposits(data)
+			const response = await batchCompleteDeposits(data)
 
 			console.log("[OnRampModal] Batch complete response:", response)
 			console.log(`✅ ${data.orderIds.length} orders completed`)
@@ -82,8 +84,6 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 		onClose()
 	}
 
-	if (!isOpen) return null
-
 	// Calculate USDC amount (FIXED - based on orders in USD)
 	const selectedOrders = orders.filter((o) => selectedOrderIds.includes(o.orderId))
 	const usdcAmount = selectedOrders.reduce((sum, order) => sum + parseFloat(order.amount), 0) // Assuming orders are in USD
@@ -117,23 +117,17 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 	}
 
 	return (
-		<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-			<div className="bg-white rounded-3xl max-w-md w-full shadow-2xl">
-				{/* Header */}
-				<div className="p-6 border-b border-gray-200">
-					<div className="flex items-center justify-between">
-						{step !== "select" && (
-							<h2 className="text-2xl font-bold text-gray-900">
-								{step === "summary" && "Order Summary"}
-								{step === "processing" && "Processing Payment..."}
-								{step === "success" && "Payment Successful!"}
-							</h2>
-						)}
-						<button onClick={handleClose} className="p-2 hover:bg-gray-100 rounded-lg transition-colors ml-auto">
-							<X className="w-5 h-5 text-gray-500" />
-						</button>
-					</div>
-				</div>
+		<Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
+			<DialogContent className="max-w-md">
+				{step !== "select" && (
+					<DialogHeader>
+						<DialogTitle className="text-2xl font-bold text-gray-900">
+							{step === "summary" && "Order Summary"}
+							{step === "processing" && "Processing Payment..."}
+							{step === "success" && "Payment Successful!"}
+						</DialogTitle>
+					</DialogHeader>
+				)}
 
 				{/* Content */}
 				<div className="p-6">
@@ -149,22 +143,18 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 										readOnly
 										className="text-2xl font-bold bg-transparent border-none outline-none flex-1 text-gray-900"
 									/>
-									<div className="relative">
-										<select
-											value={fiatCurrency}
-											onChange={(e) => {
-												setFiatCurrency(e.target.value)
-											}}
-											className="appearance-none bg-white border-2 border-gray-300 rounded-xl pl-4 pr-10 py-3 text-base font-bold text-gray-900 cursor-pointer hover:border-gray-400 transition-colors shadow-sm"
-										>
+									<Select value={fiatCurrency} onValueChange={setFiatCurrency}>
+										<SelectTrigger className="w-[120px] bg-white border-2 border-gray-300 rounded-xl h-auto py-3 text-base font-bold text-gray-900 hover:border-gray-400 transition-colors shadow-sm">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
 											{FIAT_CURRENCIES.map((currency) => (
-												<option key={currency.code} value={currency.code}>
+												<SelectItem key={currency.code} value={currency.code} className="text-base font-bold">
 													{currency.code}
-												</option>
+												</SelectItem>
 											))}
-										</select>
-										<ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-									</div>
+										</SelectContent>
+									</Select>
 								</div>
 								<p className="text-sm text-gray-500 mt-3">≈ ${usdcAmount.toFixed(2)} USD</p>
 							</div>
@@ -186,32 +176,34 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 										readOnly
 										className="text-2xl font-bold bg-transparent border-none outline-none flex-1 text-gray-900"
 									/>
-									<div className="relative flex items-center gap-2 bg-white border-2 border-blue-500 rounded-xl pl-3 pr-10 py-3 shadow-sm">
-										{/* USDC Logo */}
-										<img src={usdcLogo} alt="USDC" className="w-6 h-6 rounded-full" />
-										<select
-											value={cryptoToken}
-											onChange={(e) => {
-												const token = CRYPTO_TOKENS.find((t) => t.symbol === e.target.value)
-												if (token?.enabled) {
-													setCryptoToken(e.target.value)
-												}
-											}}
-											className="appearance-none bg-transparent border-none text-sm font-bold text-gray-900 cursor-pointer outline-none pr-2"
-										>
+									<Select
+										value={cryptoToken}
+										onValueChange={(value) => {
+											const token = CRYPTO_TOKENS.find((t) => t.symbol === value)
+											if (token?.enabled) {
+												setCryptoToken(value)
+											}
+										}}
+									>
+										<SelectTrigger className="w-auto bg-white border-2 border-blue-500 rounded-xl h-auto py-3 shadow-sm">
+											<div className="flex items-center gap-2">
+												<img src={usdcLogo} alt="USDC" className="w-6 h-6 rounded-full" />
+												<SelectValue className="text-sm font-bold text-gray-900" />
+											</div>
+										</SelectTrigger>
+										<SelectContent>
 											{CRYPTO_TOKENS.map((token) => (
-												<option
+												<SelectItem
 													key={token.symbol}
 													value={token.symbol}
 													disabled={!token.enabled}
-													className={!token.enabled ? "text-gray-400" : ""}
+													className="text-sm font-bold"
 												>
 													{token.symbol} {!token.enabled && "(Soon)"}
-												</option>
+												</SelectItem>
 											))}
-										</select>
-										<ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-500 pointer-events-none" />
-									</div>
+										</SelectContent>
+									</Select>
 								</div>
 								<p className="text-sm text-gray-500 mt-3">On Ethereum network</p>
 							</div>
@@ -329,7 +321,7 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 						</div>
 					)}
 				</div>
-			</div>
-		</div>
+			</DialogContent>
+		</Dialog>
 	)
 }

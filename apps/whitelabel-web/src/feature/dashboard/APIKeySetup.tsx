@@ -2,7 +2,7 @@ import { useState } from "react"
 
 import { Copy, Eye, EyeOff, Key, RefreshCw } from "lucide-react"
 
-import { b2bApiClient } from "@/api/b2bClient"
+import { regenerateApiKey } from "@/api/b2bClientHelpers"
 import { useDemoStore } from "@/store/demoStore"
 import { useUserStore } from "@/store/userStore"
 
@@ -28,12 +28,12 @@ export function APIKeySetup() {
 		try {
 			console.log("[APIKeySetup] Generating API key for:", activeProductId)
 
-			const response = await b2bApiClient.regenerateApiKey(activeProductId)
+			const response = await regenerateApiKey(activeProductId)
 
 			console.log("[APIKeySetup] API key generated:", response)
 
 			if (response && typeof response === "object" && "api_key" in response) {
-				const newApiKey = response.api_key as string
+				const newApiKey = response.api_key
 
 				// Save to userStore
 				setApiKey(newApiKey)

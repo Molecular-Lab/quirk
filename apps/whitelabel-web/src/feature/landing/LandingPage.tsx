@@ -1,55 +1,134 @@
-import { Link } from "@tanstack/react-router"
-import { Building2 } from "lucide-react"
+import { useEffect, useState } from "react"
 
-import { CustodySection } from "./CustodySection"
+import { usePrivy } from "@privy-io/react-auth"
+import { Link, useNavigate } from "@tanstack/react-router"
+import { Sparkles } from "lucide-react"
+
+import { listOrganizationsByPrivyId } from "@/api/b2bClientHelpers"
+
+import { BusinessTypesSection } from "./BusinessTypesSection"
 import { CustomizeEarnSection } from "./CustomizeEarnSection"
 import { IntegrationSection } from "./IntegrationSection"
 import { NewHeroSection } from "./NewHeroSection"
-import { PortfoliosSection } from "./PortfoliosSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
 import { TradingStrategiesSection } from "./TradingStrategiesSection"
 
 export function LandingPage() {
+	const { authenticated, ready, user } = usePrivy()
+	const navigate = useNavigate()
+	const [isScrolled, setIsScrolled] = useState(false)
+
+	// Scroll event listener for navbar backdrop blur (Luma-style)
+	useEffect(() => {
+		const handleScroll = () => {
+			setIsScrolled(window.scrollY > 10)
+		}
+
+		window.addEventListener("scroll", handleScroll)
+		return () => {
+			window.removeEventListener("scroll", handleScroll)
+		}
+	}, [])
+
+	const handleGetStarted = async () => {
+		// Wait for Privy to be ready
+		if (!ready) {
+			await navigate({ to: "/login" })
+			return
+		}
+
+		// Check if user is authenticated
+		if (!authenticated || !user) {
+			await navigate({ to: "/login" })
+			return
+		}
+
+		// User is authenticated - check if they have products
+		try {
+			const clients = await listOrganizationsByPrivyId(user.id)
+
+			if (clients.length > 0) {
+				// User has products → Dashboard
+				await navigate({ to: "/dashboard" })
+			} else {
+				// User has no products → Onboarding
+				await navigate({ to: "/onboarding/create-product" })
+			}
+		} catch (error) {
+			// On error, redirect to onboarding
+			await navigate({ to: "/onboarding/create-product" })
+		}
+	}
+
+	const handleSignIn = async () => {
+		// Wait for Privy to be ready
+		if (!ready) {
+			await navigate({ to: "/login" })
+			return
+		}
+
+		// Check if user is already authenticated
+		if (!authenticated || !user) {
+			await navigate({ to: "/login" })
+			return
+		}
+
+		// User is already authenticated - check if they have products
+		try {
+			const clients = await listOrganizationsByPrivyId(user.id)
+
+			if (clients.length > 0) {
+				// User has products → Dashboard
+				await navigate({ to: "/dashboard" })
+			} else {
+				// User has no products → Onboarding
+				await navigate({ to: "/onboarding/create-product" })
+			}
+		} catch (error) {
+			// On error, redirect to onboarding
+			await navigate({ to: "/onboarding/create-product" })
+		}
+	}
+
 	return (
-		<div className="min-h-screen bg-gradient-to-br from-purple-50 via-gray-50 via-30% to-gray-50">
-			{/* Header */}
-			<header className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md">
+		<div className="min-h-screen bg-gradient-to-b from-blue-50/30 via-purple-50/10 to-white">
+			{/* Header - Pure glass blur (no background color) */}
+			<header
+				className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl ${
+					isScrolled ? "border-b border-gray-200/30 shadow-sm" : "border-b border-transparent"
+				}`}
+			>
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<div className="text-2xl font-bold text-black">Quirk</div>
-					</div>
+					<Link to="/" className="flex items-center gap-2 group">
+						<div className="relative p-2 -m-2 rounded-lg hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 transition-all">
+							<Sparkles className="size-6 text-gray-700 group-hover:text-gray-500 transition-colors cursor-pointer" />
+						</div>
+					</Link>
 					<nav className="hidden md:flex items-center gap-6">
-						<Link to="/demo" className="text-gray-600 hover:text-black transition-colors font-medium">
+						<Link to="/demo" className="text-gray-700 hover:text-gray-950 transition-colors font-medium">
 							Demo
 						</Link>
-						<Link
-							to="/dashboard/operations"
-							className="text-gray-600 hover:text-black transition-colors flex items-center gap-2 font-medium"
-						>
-							<Building2 className="w-4 h-4" />
-							<span>Operations</span>
-						</Link>
-						<Link to="/login" className="text-gray-700 hover:text-black transition-colors font-medium">
+						<button onClick={handleSignIn} className="text-gray-700 hover:text-gray-950 transition-colors font-medium">
 							Sign In
-						</Link>
-						<Link
-							to="/get-started"
-							className="bg-black text-white px-6 py-2.5 rounded-full hover:bg-gray-800 transition-all font-medium"
+						</button>
+						<button
+							onClick={handleGetStarted}
+							className="bg-gray-900 text-white px-6 py-2.5 rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm hover:shadow-md"
 						>
 							Get Started
-						</Link>
+						</button>
 					</nav>
 				</div>
 			</header>
 
 			{/* Hero */}
-			<NewHeroSection />
-
-			{/* One Platform, Many Portfolios */}
-			<PortfoliosSection />
+			<NewHeroSection onGetStarted={handleGetStarted} />
 
 			{/* Trading Strategies */}
 			<TradingStrategiesSection />
+
+			{/* Business Types - Stripe-style showcase */}
+			<BusinessTypesSection />
 
 			{/* Supported Assets */}
 			<SupportedAssetsSection />
@@ -57,75 +136,72 @@ export function LandingPage() {
 			{/* Customize Earn Solution */}
 			<CustomizeEarnSection />
 
-			{/* Custody with Privy */}
-			<CustodySection />
-
 			{/* Integration */}
 			<IntegrationSection />
 
 			{/* Footer */}
-			<footer className="bg-gray-50 border-t border-gray-100 py-12">
+			<footer className="bg-gradient-to-b from-gray-50 to-white border-t border-gray-150 py-12">
 				<div className="max-w-7xl mx-auto px-6">
 					<div className="grid md:grid-cols-4 gap-8 mb-12">
 						<div>
-							<h4 className="font-bold text-gray-900 mb-4">Quirk</h4>
-							<p className="text-sm text-gray-600">White-label DeFi yield infrastructure for apps</p>
+							<h4 className="font-bold text-gray-950 mb-4 text-lg">Quirk</h4>
+							<p className="text-sm text-gray-700">White-label DeFi yield infrastructure for apps</p>
 						</div>
 						<div>
-							<h4 className="font-semibold text-gray-900 mb-4">Product</h4>
-							<ul className="space-y-2 text-sm text-gray-600">
+							<h4 className="font-semibold text-gray-950 mb-4">Product</h4>
+							<ul className="space-y-2 text-sm text-gray-700">
 								<li>
-									<a href="#" className="hover:text-gray-900">
+									<a href="#" className="hover:text-gray-950">
 										Solutions
 									</a>
 								</li>
 								<li>
-									<a href="#" className="hover:text-gray-900">
+									<a href="#" className="hover:text-gray-950">
 										Strategies
 									</a>
 								</li>
 								<li>
-									<a href="#" className="hover:text-gray-900">
+									<a href="#" className="hover:text-gray-950">
 										Pricing
 									</a>
 								</li>
 							</ul>
 						</div>
 						<div>
-							<h4 className="font-semibold text-gray-900 mb-4">Company</h4>
-							<ul className="space-y-2 text-sm text-gray-600">
+							<h4 className="font-semibold text-gray-950 mb-4">Company</h4>
+							<ul className="space-y-2 text-sm text-gray-700">
 								<li>
-									<a href="#" className="hover:text-gray-900">
+									<a href="#" className="hover:text-gray-950">
 										About
 									</a>
 								</li>
 								<li>
-									<a href="#" className="hover:text-gray-900">
+									<a href="#" className="hover:text-gray-950">
 										Careers
 									</a>
 								</li>
 								<li>
-									<a href="#" className="hover:text-gray-900">
+									<a href="#" className="hover:text-gray-950">
 										Contact
 									</a>
 								</li>
 							</ul>
 						</div>
 						<div>
-							<h4 className="font-semibold text-gray-900 mb-4">Legal</h4>
-							<ul className="space-y-2 text-sm text-gray-600">
+							<h4 className="font-semibold text-gray-950 mb-4">Legal</h4>
+							<ul className="space-y-2 text-sm text-gray-700">
 								<li>
-									<a href="#" className="hover:text-gray-900">
+									<a href="#" className="hover:text-gray-950">
 										Privacy
 									</a>
 								</li>
 								<li>
-									<a href="#" className="hover:text-gray-900">
+									<a href="#" className="hover:text-gray-950">
 										Terms
 									</a>
 								</li>
 								<li>
-									<a href="#" className="hover:text-gray-900">
+									<a href="#" className="hover:text-gray-950">
 										Security
 									</a>
 								</li>

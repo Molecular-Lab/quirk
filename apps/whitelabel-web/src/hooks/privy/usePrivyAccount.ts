@@ -5,7 +5,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 
-import { b2bApiClient } from "@/api/b2bClient"
+import { createPrivyAccount, getPrivyAccount } from "@/api/b2bClientHelpers"
 import { B2BQueryKeys } from "@/config/queryKeys"
 
 /**
@@ -17,7 +17,7 @@ export const usePrivyAccount = (privyOrganizationId: string | undefined) => {
 		queryFn: async () => {
 			if (!privyOrganizationId) throw new Error("Privy organization ID is required")
 
-			const data = await b2bApiClient.getPrivyAccount(privyOrganizationId)
+			const data = await getPrivyAccount(privyOrganizationId)
 			return data
 		},
 		enabled: !!privyOrganizationId,
@@ -40,7 +40,7 @@ export const useCreatePrivyAccount = () => {
 			privyEmail?: string
 			walletType: "MANAGED" | "USER_OWNED"
 		}) => {
-			return await b2bApiClient.createPrivyAccount(data)
+			return await createPrivyAccount(data)
 		},
 		onSuccess: async (_data, variables) => {
 			// Invalidate and refetch Privy account query

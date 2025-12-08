@@ -45,6 +45,7 @@ import { UserVaultService } from "./service/user-vault.service";
 import { PrivyAccountService } from "./service/privy-account.service";
 import { createMainRouter } from "./router";
 import { apiKeyAuth } from "./middleware/apiKeyAuth";
+import { privyAuth } from "./middleware/privyAuth";
 
 const app = express();
 
@@ -142,7 +143,7 @@ async function main() {
 
 	// 4. Initialize Services
 	const clientService = new ClientService(clientUseCase);
-	const defiProtocolService = new DeFiProtocolService(ENV.CHAIN_ID); // Pass chain ID, not RPC URL
+	const defiProtocolService = new DeFiProtocolService(); // Adapters created per-request with correct chainId
 	const vaultService = new VaultService(vaultUseCase);
 	const userService = new UserService(userUseCase);
 	const depositService = new DepositService(depositUseCase);
@@ -176,16 +177,16 @@ async function main() {
 	app.use((req, res, next) => {
 		res.header("Access-Control-Allow-Origin", "*"); // In production, set specific origin
 		res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS"); // ✅ Added PATCH
-		res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key"); // ✅ Added x-api-key
+		res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key, x-privy-org-id"); // ✅ Added x-privy-org-id for dashboard auth
 		res.header("Access-Control-Max-Age", "86400"); // 24 hours
-		
+
 		// Handle preflight requests
 		if (req.method === "OPTIONS") {
 			logger.info("Handling OPTIONS preflight request", { path: req.path });
 			res.sendStatus(200);
 			return;
 		}
-		
+
 		next();
 	});
 
@@ -203,14 +204,44 @@ async function main() {
 		next();
 	});
 
-	// API Key Authentication for protected routes (FLOW 3-9)
-	// Apply to all /api/v1/* routes EXCEPT client registration
-	app.use("/api/v1/users*", apiKeyAuth(clientUseCase));
-	app.use("/api/v1/deposits*", apiKeyAuth(clientUseCase));
-	app.use("/api/v1/withdrawals*", apiKeyAuth(clientUseCase));
-	app.use("/api/v1/vaults*", apiKeyAuth(clientUseCase));
-	
-	logger.info("✅ API Key authentication middleware applied to protected routes");
+	// Authentication Strategy:
+	// - SDK Endpoints: Use x-api-key header (external integrations)
+	//   * POST /api/v1/users - Create user
+	//   * GET /api/v1/users/client/:clientId/user/:clientUserId - Get user
+	//   * POST /api/v1/deposits/fiat - Deposit
+	//   * POST /api/v1/withdrawals - Withdrawal
+	//
+	// - Dashboard Endpoints: Use x-privy-org-id header (internal dashboard)
+	//   * Client configuration, operations dashboard, metrics, etc.
+	//
+	// Dual auth middleware: Check for API key first, then Privy
+	app.use(
+		"/api/v1/*",
+		(req, res, next) => {
+			// Skip auth for public endpoints
+			// Note: Express uses req.originalUrl for the complete path before middleware processing
+			if (
+				(req.originalUrl === "/api/v1/clients" && req.method === "POST") || // Client registration
+				(req.originalUrl === "/api/v1/privy-accounts" && req.method === "POST") || // Privy account creation (first-time onboarding)
+				req.originalUrl.startsWith("/api/v1/defi/") || // Public DeFi metrics
+				req.originalUrl === "/api/v1/health" // Health check
+			) {
+				return next();
+			}
+
+			// Check if request has API key (SDK integration)
+			const hasApiKey = req.headers["x-api-key"];
+			if (hasApiKey) {
+				// SDK endpoint - validate API key
+				return apiKeyAuth(clientUseCase)(req, res, next);
+			}
+
+			// Dashboard endpoint - validate Privy session (with DB validation)
+			return privyAuth(clientUseCase, privyAccountRepository)(req, res, next);
+		}
+	);
+
+	logger.info("✅ Dual authentication middleware applied (API key for SDK, Privy for dashboard)");
 
 	// 8. Mount ts-rest endpoints
 	createExpressEndpoints(b2bContract, router, app, {

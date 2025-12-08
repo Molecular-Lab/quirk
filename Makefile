@@ -355,22 +355,40 @@ seed-protocols: ## Seed DeFi protocols (requires database running)
 
 seed-test-client: ## Create a test client organization
 	@echo "$(COLOR_GREEN)🌱 Creating test client...$(COLOR_RESET)"
+	@echo "$(COLOR_CYAN)Step 1: Creating Privy account...$(COLOR_RESET)"
+	@docker exec -i proxify-postgres psql -U $(DB_USER) -d $(DB_NAME) -c "\
+		INSERT INTO privy_accounts ( \
+			privy_organization_id, \
+			privy_wallet_address, \
+			wallet_type \
+		) VALUES ( \
+			'privy_test_org_001', \
+			'0x0000000000000000000000000000000000000001', \
+			'custodial' \
+		) \
+		ON CONFLICT (privy_organization_id) DO UPDATE SET \
+			privy_wallet_address = EXCLUDED.privy_wallet_address, \
+			updated_at = now() \
+		RETURNING id;" > /dev/null
+	@echo "$(COLOR_CYAN)Step 2: Creating client organization...$(COLOR_RESET)"
 	@docker exec -i proxify-postgres psql -U $(DB_USER) -d $(DB_NAME) -c "\
 		INSERT INTO client_organizations ( \
-			product_id, company_name, business_type, \
-			wallet_type, wallet_managed_by, \
-			privy_organization_id, privy_wallet_address, \
-			api_key_hash, api_key_prefix, \
-			end_user_yield_portion, platform_fee, performance_fee, \
-			is_sandbox, is_active \
+			privy_account_id, \
+			product_id, \
+			company_name, \
+			business_type, \
+			api_key_hash, \
+			api_key_prefix, \
+			end_user_yield_portion, \
+			platform_fee, \
+			performance_fee, \
+			is_sandbox, \
+			is_active \
 		) VALUES ( \
+			(SELECT id FROM privy_accounts WHERE privy_organization_id = 'privy_test_org_001'), \
 			'test_product_001', \
 			'Test E-commerce Platform', \
 			'ecommerce', \
-			'custodial', \
-			'proxify', \
-			'privy_test_org_001', \
-			'0x0000000000000000000000000000000000000001', \
 			'hashed_api_key_test', \
 			'pk_test_', \
 			90.00, \
@@ -378,7 +396,11 @@ seed-test-client: ## Create a test client organization
 			10.00, \
 			true, \
 			true \
-		) RETURNING id, product_id, company_name;"
+		) \
+		ON CONFLICT (product_id) DO UPDATE SET \
+			company_name = EXCLUDED.company_name, \
+			updated_at = now() \
+		RETURNING id, product_id, company_name;"
 	@echo "$(COLOR_GREEN)✅ Test client created!$(COLOR_RESET)"
 
 seed-all: seed-protocols seed-test-client ## Seed all test data

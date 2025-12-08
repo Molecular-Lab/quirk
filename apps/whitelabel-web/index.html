@@ -5,23 +5,6 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Proxify - White Label DeFi Dashboard</title>
-
-    <!-- Suppress wallet extension conflicts (multiple wallets trying to set window.ethereum) -->
-    <script>
-      // Silence wallet extension errors in console (they're harmless)
-      const originalError = console.error;
-      console.error = (...args) => {
-        const msg = args[0]?.toString() || '';
-        if (
-          msg.includes('ethereum') ||
-          msg.includes('MetaMask') ||
-          msg.includes('Cannot redefine property')
-        ) {
-          return; // Suppress wallet conflicts
-        }
-        originalError.apply(console, args);
-      };
-    </script>
   </head>
   <body>
     <div id="root"></div>

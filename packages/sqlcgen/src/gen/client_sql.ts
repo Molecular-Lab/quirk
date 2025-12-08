@@ -3,7 +3,7 @@ import { Sql } from "postgres";
 export const getClientQuery = `-- name: GetClient :one
 
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -37,6 +37,9 @@ export interface GetClientRow {
     isSandbox: boolean;
     platformFee: string | null;
     performanceFee: string | null;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
     createdAt: Date;
     updatedAt: Date;
     privyOrganizationId: string;
@@ -71,18 +74,21 @@ export async function getClient(sql: Sql, args: GetClientArgs): Promise<GetClien
         isSandbox: row[16],
         platformFee: row[17],
         performanceFee: row[18],
-        createdAt: row[19],
-        updatedAt: row[20],
-        privyOrganizationId: row[21],
-        privyWalletAddress: row[22],
-        privyEmail: row[23],
-        privyWalletType: row[24]
+        customerTier: row[19],
+        strategiesPreferences: row[20],
+        strategiesCustomization: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        privyOrganizationId: row[24],
+        privyWalletAddress: row[25],
+        privyEmail: row[26],
+        privyWalletType: row[27]
     };
 }
 
 export const getClientByProductIDQuery = `-- name: GetClientByProductID :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -116,6 +122,9 @@ export interface GetClientByProductIDRow {
     isSandbox: boolean;
     platformFee: string | null;
     performanceFee: string | null;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
     createdAt: Date;
     updatedAt: Date;
     privyOrganizationId: string;
@@ -150,18 +159,21 @@ export async function getClientByProductID(sql: Sql, args: GetClientByProductIDA
         isSandbox: row[16],
         platformFee: row[17],
         performanceFee: row[18],
-        createdAt: row[19],
-        updatedAt: row[20],
-        privyOrganizationId: row[21],
-        privyWalletAddress: row[22],
-        privyEmail: row[23],
-        privyWalletType: row[24]
+        customerTier: row[19],
+        strategiesPreferences: row[20],
+        strategiesCustomization: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        privyOrganizationId: row[24],
+        privyWalletAddress: row[25],
+        privyEmail: row[26],
+        privyWalletType: row[27]
     };
 }
 
 export const getClientsByPrivyOrgIDQuery = `-- name: GetClientsByPrivyOrgID :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -194,6 +206,9 @@ export interface GetClientsByPrivyOrgIDRow {
     isSandbox: boolean;
     platformFee: string | null;
     performanceFee: string | null;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
     createdAt: Date;
     updatedAt: Date;
     privyOrganizationId: string;
@@ -223,18 +238,21 @@ export async function getClientsByPrivyOrgID(sql: Sql, args: GetClientsByPrivyOr
         isSandbox: row[16],
         platformFee: row[17],
         performanceFee: row[18],
-        createdAt: row[19],
-        updatedAt: row[20],
-        privyOrganizationId: row[21],
-        privyWalletAddress: row[22],
-        privyEmail: row[23],
-        privyWalletType: row[24]
+        customerTier: row[19],
+        strategiesPreferences: row[20],
+        strategiesCustomization: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        privyOrganizationId: row[24],
+        privyWalletAddress: row[25],
+        privyEmail: row[26],
+        privyWalletType: row[27]
     }));
 }
 
 export const getClientByAPIKeyPrefixQuery = `-- name: GetClientByAPIKeyPrefix :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -268,6 +286,9 @@ export interface GetClientByAPIKeyPrefixRow {
     isSandbox: boolean;
     platformFee: string | null;
     performanceFee: string | null;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
     createdAt: Date;
     updatedAt: Date;
     privyOrganizationId: string;
@@ -302,18 +323,21 @@ export async function getClientByAPIKeyPrefix(sql: Sql, args: GetClientByAPIKeyP
         isSandbox: row[16],
         platformFee: row[17],
         performanceFee: row[18],
-        createdAt: row[19],
-        updatedAt: row[20],
-        privyOrganizationId: row[21],
-        privyWalletAddress: row[22],
-        privyEmail: row[23],
-        privyWalletType: row[24]
+        customerTier: row[19],
+        strategiesPreferences: row[20],
+        strategiesCustomization: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        privyOrganizationId: row[24],
+        privyWalletAddress: row[25],
+        privyEmail: row[26],
+        privyWalletType: row[27]
     };
 }
 
 export const getClientByAPIKeyHashQuery = `-- name: GetClientByAPIKeyHash :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -347,6 +371,9 @@ export interface GetClientByAPIKeyHashRow {
     isSandbox: boolean;
     platformFee: string | null;
     performanceFee: string | null;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
     createdAt: Date;
     updatedAt: Date;
     privyOrganizationId: string;
@@ -381,18 +408,21 @@ export async function getClientByAPIKeyHash(sql: Sql, args: GetClientByAPIKeyHas
         isSandbox: row[16],
         platformFee: row[17],
         performanceFee: row[18],
-        createdAt: row[19],
-        updatedAt: row[20],
-        privyOrganizationId: row[21],
-        privyWalletAddress: row[22],
-        privyEmail: row[23],
-        privyWalletType: row[24]
+        customerTier: row[19],
+        strategiesPreferences: row[20],
+        strategiesCustomization: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        privyOrganizationId: row[24],
+        privyWalletAddress: row[25],
+        privyEmail: row[26],
+        privyWalletType: row[27]
     };
 }
 
 export const listClientsQuery = `-- name: ListClients :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -427,6 +457,9 @@ export interface ListClientsRow {
     isSandbox: boolean;
     platformFee: string | null;
     performanceFee: string | null;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
     createdAt: Date;
     updatedAt: Date;
     privyOrganizationId: string;
@@ -456,18 +489,21 @@ export async function listClients(sql: Sql, args: ListClientsArgs): Promise<List
         isSandbox: row[16],
         platformFee: row[17],
         performanceFee: row[18],
-        createdAt: row[19],
-        updatedAt: row[20],
-        privyOrganizationId: row[21],
-        privyWalletAddress: row[22],
-        privyEmail: row[23],
-        privyWalletType: row[24]
+        customerTier: row[19],
+        strategiesPreferences: row[20],
+        strategiesCustomization: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        privyOrganizationId: row[24],
+        privyWalletAddress: row[25],
+        privyEmail: row[26],
+        privyWalletType: row[27]
     }));
 }
 
 export const listActiveClientsQuery = `-- name: ListActiveClients :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.created_at, co.updated_at,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.end_user_yield_portion, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.platform_fee, co.performance_fee, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at,
   pa.privy_organization_id,
   pa.privy_wallet_address,
   pa.privy_email,
@@ -497,6 +533,9 @@ export interface ListActiveClientsRow {
     isSandbox: boolean;
     platformFee: string | null;
     performanceFee: string | null;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
     createdAt: Date;
     updatedAt: Date;
     privyOrganizationId: string;
@@ -526,12 +565,15 @@ export async function listActiveClients(sql: Sql): Promise<ListActiveClientsRow[
         isSandbox: row[16],
         platformFee: row[17],
         performanceFee: row[18],
-        createdAt: row[19],
-        updatedAt: row[20],
-        privyOrganizationId: row[21],
-        privyWalletAddress: row[22],
-        privyEmail: row[23],
-        privyWalletType: row[24]
+        customerTier: row[19],
+        strategiesPreferences: row[20],
+        strategiesCustomization: row[21],
+        createdAt: row[22],
+        updatedAt: row[23],
+        privyOrganizationId: row[24],
+        privyWalletAddress: row[25],
+        privyEmail: row[26],
+        privyWalletType: row[27]
     }));
 }
 
@@ -543,6 +585,7 @@ INSERT INTO client_organizations (
   business_type,
   description,
   website_url,
+  customer_tier,
   api_key_hash,
   api_key_prefix,
   webhook_urls,
@@ -557,9 +600,9 @@ INSERT INTO client_organizations (
   bank_accounts
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16, $17, $18
+  $11, $12, $13, $14, $15, $16, $17, $18, $19
 )
-RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, supported_currencies, bank_accounts, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at`;
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, supported_currencies, bank_accounts, is_active, is_sandbox, platform_fee, performance_fee, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at`;
 
 export interface CreateClientArgs {
     privyAccountId: string;
@@ -568,6 +611,7 @@ export interface CreateClientArgs {
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
+    customerTier: string | null;
     apiKeyHash: string | null;
     apiKeyPrefix: string | null;
     webhookUrls: string[] | null;
@@ -602,12 +646,15 @@ export interface CreateClientRow {
     isSandbox: boolean;
     platformFee: string | null;
     performanceFee: string | null;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
     createdAt: Date;
     updatedAt: Date;
 }
 
 export async function createClient(sql: Sql, args: CreateClientArgs): Promise<CreateClientRow | null> {
-    const rows = await sql.unsafe(createClientQuery, [args.privyAccountId, args.productId, args.companyName, args.businessType, args.description, args.websiteUrl, args.apiKeyHash, args.apiKeyPrefix, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee, args.isActive, args.isSandbox, args.supportedCurrencies, args.bankAccounts]).values();
+    const rows = await sql.unsafe(createClientQuery, [args.privyAccountId, args.productId, args.companyName, args.businessType, args.description, args.websiteUrl, args.customerTier, args.apiKeyHash, args.apiKeyPrefix, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee, args.isActive, args.isSandbox, args.supportedCurrencies, args.bankAccounts]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -632,8 +679,11 @@ export async function createClient(sql: Sql, args: CreateClientArgs): Promise<Cr
         isSandbox: row[16],
         platformFee: row[17],
         performanceFee: row[18],
-        createdAt: row[19],
-        updatedAt: row[20]
+        customerTier: row[19],
+        strategiesPreferences: row[20],
+        strategiesCustomization: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
     };
 }
 
@@ -643,15 +693,16 @@ SET company_name = COALESCE($2, company_name),
     business_type = COALESCE($3, business_type),
     description = COALESCE($4, description),
     website_url = COALESCE($5, website_url),
-    webhook_urls = COALESCE($6, webhook_urls),
-    webhook_secret = COALESCE($7, webhook_secret),
-    custom_strategy = COALESCE($8, custom_strategy),
-    end_user_yield_portion = COALESCE($9, end_user_yield_portion),
-    platform_fee = COALESCE($10, platform_fee),
-    performance_fee = COALESCE($11, performance_fee),
+    customer_tier = COALESCE($6, customer_tier),
+    webhook_urls = COALESCE($7, webhook_urls),
+    webhook_secret = COALESCE($8, webhook_secret),
+    custom_strategy = COALESCE($9, custom_strategy),
+    end_user_yield_portion = COALESCE($10, end_user_yield_portion),
+    platform_fee = COALESCE($11, platform_fee),
+    performance_fee = COALESCE($12, performance_fee),
     updated_at = now()
 WHERE id = $1
-RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, supported_currencies, bank_accounts, is_active, is_sandbox, platform_fee, performance_fee, created_at, updated_at`;
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, end_user_yield_portion, supported_currencies, bank_accounts, is_active, is_sandbox, platform_fee, performance_fee, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at`;
 
 export interface UpdateClientArgs {
     id: string;
@@ -659,6 +710,7 @@ export interface UpdateClientArgs {
     businessType: string | null;
     description: string | null;
     websiteUrl: string | null;
+    customerTier: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -687,12 +739,15 @@ export interface UpdateClientRow {
     isSandbox: boolean;
     platformFee: string | null;
     performanceFee: string | null;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
     createdAt: Date;
     updatedAt: Date;
 }
 
 export async function updateClient(sql: Sql, args: UpdateClientArgs): Promise<UpdateClientRow | null> {
-    const rows = await sql.unsafe(updateClientQuery, [args.id, args.companyName, args.businessType, args.description, args.websiteUrl, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee]).values();
+    const rows = await sql.unsafe(updateClientQuery, [args.id, args.companyName, args.businessType, args.description, args.websiteUrl, args.customerTier, args.webhookUrls, args.webhookSecret, args.customStrategy, args.endUserYieldPortion, args.platformFee, args.performanceFee]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -717,8 +772,11 @@ export async function updateClient(sql: Sql, args: UpdateClientArgs): Promise<Up
         isSandbox: row[16],
         platformFee: row[17],
         performanceFee: row[18],
-        createdAt: row[19],
-        updatedAt: row[20]
+        customerTier: row[19],
+        strategiesPreferences: row[20],
+        strategiesCustomization: row[21],
+        createdAt: row[22],
+        updatedAt: row[23]
     };
 }
 
@@ -1052,5 +1110,183 @@ export async function getClientStats(sql: Sql, args: GetClientStatsArgs): Promis
         totalDeposits: row[11],
         totalWithdrawals: row[12]
     };
+}
+
+export const getProductStrategiesQuery = `-- name: GetProductStrategies :one
+
+SELECT
+  strategies_preferences,
+  strategies_customization
+FROM client_organizations
+WHERE id = $1`;
+
+export interface GetProductStrategiesArgs {
+    id: string;
+}
+
+export interface GetProductStrategiesRow {
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
+}
+
+export async function getProductStrategies(sql: Sql, args: GetProductStrategiesArgs): Promise<GetProductStrategiesRow | null> {
+    const rows = await sql.unsafe(getProductStrategiesQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        strategiesPreferences: row[0],
+        strategiesCustomization: row[1]
+    };
+}
+
+export const getProductStrategiesByProductIDQuery = `-- name: GetProductStrategiesByProductID :one
+SELECT
+  strategies_preferences,
+  strategies_customization
+FROM client_organizations
+WHERE product_id = $1`;
+
+export interface GetProductStrategiesByProductIDArgs {
+    productId: string;
+}
+
+export interface GetProductStrategiesByProductIDRow {
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
+}
+
+export async function getProductStrategiesByProductID(sql: Sql, args: GetProductStrategiesByProductIDArgs): Promise<GetProductStrategiesByProductIDRow | null> {
+    const rows = await sql.unsafe(getProductStrategiesByProductIDQuery, [args.productId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        strategiesPreferences: row[0],
+        strategiesCustomization: row[1]
+    };
+}
+
+export const updateProductPreferencesQuery = `-- name: UpdateProductPreferences :exec
+UPDATE client_organizations
+SET
+  strategies_preferences = $1::jsonb,
+  updated_at = now()
+WHERE id = $2`;
+
+export interface UpdateProductPreferencesArgs {
+    strategiesPreferences: any;
+    id: string;
+}
+
+export async function updateProductPreferences(sql: Sql, args: UpdateProductPreferencesArgs): Promise<void> {
+    await sql.unsafe(updateProductPreferencesQuery, [args.strategiesPreferences, args.id]);
+}
+
+export const updateProductCustomizationQuery = `-- name: UpdateProductCustomization :exec
+UPDATE client_organizations
+SET
+  strategies_customization = $1::jsonb,
+  updated_at = now()
+WHERE id = $2`;
+
+export interface UpdateProductCustomizationArgs {
+    strategiesCustomization: any;
+    id: string;
+}
+
+export async function updateProductCustomization(sql: Sql, args: UpdateProductCustomizationArgs): Promise<void> {
+    await sql.unsafe(updateProductCustomizationQuery, [args.strategiesCustomization, args.id]);
+}
+
+export const updateProductCustomizationByProductIDQuery = `-- name: UpdateProductCustomizationByProductID :exec
+UPDATE client_organizations
+SET
+  strategies_customization = $1::jsonb,
+  updated_at = now()
+WHERE product_id = $2`;
+
+export interface UpdateProductCustomizationByProductIDArgs {
+    strategiesCustomization: any;
+    productId: string;
+}
+
+export async function updateProductCustomizationByProductID(sql: Sql, args: UpdateProductCustomizationByProductIDArgs): Promise<void> {
+    await sql.unsafe(updateProductCustomizationByProductIDQuery, [args.strategiesCustomization, args.productId]);
+}
+
+export const getEffectiveProductStrategiesQuery = `-- name: GetEffectiveProductStrategies :one
+SELECT
+  COALESCE(
+    NULLIF(strategies_customization, '{}'::jsonb),
+    NULLIF(strategies_preferences, '{}'::jsonb),
+    '{}'::jsonb
+  ) as effective_strategies
+FROM client_organizations
+WHERE id = $1`;
+
+export interface GetEffectiveProductStrategiesArgs {
+    id: string;
+}
+
+export interface GetEffectiveProductStrategiesRow {
+    effectiveStrategies: string | null;
+}
+
+export async function getEffectiveProductStrategies(sql: Sql, args: GetEffectiveProductStrategiesArgs): Promise<GetEffectiveProductStrategiesRow | null> {
+    const rows = await sql.unsafe(getEffectiveProductStrategiesQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        effectiveStrategies: row[0]
+    };
+}
+
+export const getEffectiveProductStrategiesByProductIDQuery = `-- name: GetEffectiveProductStrategiesByProductID :one
+SELECT
+  COALESCE(
+    NULLIF(strategies_customization, '{}'::jsonb),
+    NULLIF(strategies_preferences, '{}'::jsonb),
+    '{}'::jsonb
+  ) as effective_strategies
+FROM client_organizations
+WHERE product_id = $1`;
+
+export interface GetEffectiveProductStrategiesByProductIDArgs {
+    productId: string;
+}
+
+export interface GetEffectiveProductStrategiesByProductIDRow {
+    effectiveStrategies: string | null;
+}
+
+export async function getEffectiveProductStrategiesByProductID(sql: Sql, args: GetEffectiveProductStrategiesByProductIDArgs): Promise<GetEffectiveProductStrategiesByProductIDRow | null> {
+    const rows = await sql.unsafe(getEffectiveProductStrategiesByProductIDQuery, [args.productId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        effectiveStrategies: row[0]
+    };
+}
+
+export const clearProductCustomizationQuery = `-- name: ClearProductCustomization :exec
+UPDATE client_organizations
+SET
+  strategies_customization = '{}'::jsonb,
+  updated_at = now()
+WHERE id = $1`;
+
+export interface ClearProductCustomizationArgs {
+    id: string;
+}
+
+export async function clearProductCustomization(sql: Sql, args: ClearProductCustomizationArgs): Promise<void> {
+    await sql.unsafe(clearProductCustomizationQuery, [args.id]);
 }
 

@@ -82,7 +82,7 @@ function SortableStrategyCard({ strategy, rank }: { strategy: (typeof STRATEGY_D
 			className={`
 				relative flex items-start gap-4 p-5 bg-white rounded-lg border-2
 				transition-all cursor-move
-				${isDragging ? "border-gray-900 shadow-lg z-50 opacity-75" : "border-gray-200 hover:border-gray-300"}
+				${isDragging ? "border-blue-500 shadow-lg z-50 opacity-75" : "border-gray-200 hover:border-gray-300"}
 			`}
 		>
 			{/* Drag Handle */}
@@ -91,7 +91,7 @@ function SortableStrategyCard({ strategy, rank }: { strategy: (typeof STRATEGY_D
 			</div>
 
 			{/* Rank Badge */}
-			<div className="flex-shrink-0 w-8 h-8 rounded-full bg-gray-900 text-white flex items-center justify-center font-bold text-sm">
+			<div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold text-sm">
 				{rank}
 			</div>
 
@@ -222,7 +222,7 @@ export function StrategySelector() {
 								px-4 py-3 rounded-lg border-2 font-medium transition-all capitalize
 								${
 									strategies.riskTolerance === risk
-										? "border-gray-900 bg-gray-50 text-gray-900"
+										? "border-blue-500 bg-blue-50 text-blue-900"
 										: "border-gray-200 text-gray-600 hover:border-gray-300"
 								}
 							`}
@@ -245,7 +245,7 @@ export function StrategySelector() {
 				<button
 					type="button"
 					onClick={handleNext}
-					className="px-6 py-2.5 bg-gray-900 text-white rounded-lg hover:bg-gray-800 transition-colors font-medium"
+					className="px-6 py-2.5 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium"
 				>
 					Next: Banking Setup →
 				</button>

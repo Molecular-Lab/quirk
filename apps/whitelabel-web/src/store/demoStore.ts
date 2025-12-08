@@ -1,23 +1,23 @@
 /**
  * Demo Store
- * Manages demo client app state with proper API key synchronization
+ * Manages end-user simulation state for demo apps
  *
- * Ensures:
- * - Correct client context (productId, clientId, API key)
- * - End-user account state
+ * NOTE: Client context (productId, clientId, apiKey) is now managed by:
+ * - demoProductStore: Product selection within demo
+ * - clientContextStore: Shared API context (synced from demoProductStore)
+ *
+ * This store only handles:
+ * - End-user account state (simulating app user)
  * - Deposit flow state
- * - API key sync with b2bApiClient
+ * - UI state for demo interactions
  */
 
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
-export interface DemoState {
-	// Client context (from dashboard selection)
-	activeProductId: string | null
-	activeClientId: string | null // Internal UUID
-	activeApiKey: string | null
+import { useClientContextStore } from "./clientContextStore"
 
+export interface DemoState {
 	// End-user state (created via "Start Earning")
 	endUserId: string | null
 	endUserClientUserId: string | null // The demo_user_xxx ID
@@ -39,16 +39,16 @@ export interface DemoState {
 }
 
 export interface DemoStore extends DemoState {
-	// Setters
-	setClientContext: (data: { productId: string; clientId: string; apiKey: string }) => void
-
+	// End-user setters
 	setEndUser: (data: { endUserId: string; endUserClientUserId: string }) => void
-
 	setHasEarnAccount: (hasAccount: boolean) => void
+
+	// UI state setters
 	setIsCreatingAccount: (isCreating: boolean) => void
 	setIsDepositing: (isDepositing: boolean) => void
 	setError: (error: string | null) => void
 
+	// Deposit management
 	addDeposit: (deposit: {
 		orderId: string
 		amount: string
@@ -57,11 +57,7 @@ export interface DemoStore extends DemoState {
 		createdAt: string
 	}) => void
 
-	// Sync API key to localStorage for b2bApiClient
-	syncApiKey: () => void
-
-	// Getters
-	hasClientContext: () => boolean
+	// Getters (now reference clientContextStore for client context)
 	canStartEarning: () => boolean
 	canDeposit: () => boolean
 
@@ -71,9 +67,6 @@ export interface DemoStore extends DemoState {
 }
 
 const initialState: DemoState = {
-	activeProductId: null,
-	activeClientId: null,
-	activeApiKey: null,
 	endUserId: null,
 	endUserClientUserId: null,
 	hasEarnAccount: false,
@@ -88,28 +81,9 @@ export const useDemoStore = create<DemoStore>()(
 		(set, get) => ({
 			...initialState,
 
-			// Set client context from dashboard
-			setClientContext: (data) => {
-				console.log("[DemoStore] Setting client context:", {
-					productId: data.productId,
-					clientId: data.clientId,
-					apiKey: data.apiKey.substring(0, 12) + "...",
-				})
-
-				set({
-					activeProductId: data.productId,
-					activeClientId: data.clientId,
-					activeApiKey: data.apiKey,
-				})
-
-				// Sync API key to localStorage for b2bApiClient
-				localStorage.setItem("b2b:api_key", data.apiKey)
-				console.log("[DemoStore] API key synced to localStorage")
-			},
-
 			// Set end-user after "Start Earning"
 			setEndUser: (data) => {
-				console.log("[DemoStore] Setting end-user:", {
+				console.log("[demoStore] Setting end-user:", {
 					endUserId: data.endUserId,
 					clientUserId: data.endUserClientUserId,
 				})
@@ -146,31 +120,20 @@ export const useDemoStore = create<DemoStore>()(
 				})
 			},
 
-			// Sync API key to localStorage (for b2bApiClient)
-			syncApiKey: () => {
-				const apiKey = get().activeApiKey
-				if (apiKey) {
-					localStorage.setItem("b2b:api_key", apiKey)
-					console.log("[DemoStore] API key synced to localStorage:", apiKey.substring(0, 12) + "...")
-				}
-			},
-
-			// Check if client context is set
-			hasClientContext: () => {
-				const { activeProductId, activeClientId, activeApiKey } = get()
-				return !!(activeProductId && activeClientId && activeApiKey)
-			},
-
-			// Check if can start earning
+			// Check if can start earning (references clientContextStore for client context)
 			canStartEarning: () => {
 				const { hasEarnAccount, isCreatingAccount } = get()
-				return get().hasClientContext() && !hasEarnAccount && !isCreatingAccount
+				const { productId, apiKey } = useClientContextStore.getState()
+				const hasClientContext = !!(productId && apiKey)
+				return hasClientContext && !hasEarnAccount && !isCreatingAccount
 			},
 
-			// Check if can deposit
+			// Check if can deposit (references clientContextStore for client context)
 			canDeposit: () => {
 				const { hasEarnAccount, isDepositing } = get()
-				return get().hasClientContext() && hasEarnAccount && !isDepositing
+				const { productId, apiKey } = useClientContextStore.getState()
+				const hasClientContext = !!(productId && apiKey)
+				return hasClientContext && hasEarnAccount && !isDepositing
 			},
 
 			// Reset end-user state (for testing)
@@ -187,16 +150,12 @@ export const useDemoStore = create<DemoStore>()(
 			// Reset entire demo state
 			resetDemo: () => {
 				set(initialState)
-				localStorage.removeItem("b2b:api_key")
 			},
 		}),
 		{
 			name: "proxify-demo-state",
 			partialize: (state) =>
 				({
-					activeProductId: state.activeProductId,
-					activeClientId: state.activeClientId,
-					activeApiKey: state.activeApiKey,
 					endUserId: state.endUserId,
 					endUserClientUserId: state.endUserClientUserId,
 					hasEarnAccount: state.hasEarnAccount,
@@ -207,25 +166,14 @@ export const useDemoStore = create<DemoStore>()(
 )
 
 /**
- * Usage Example:
+ * Usage Example (Updated for demoProductStore + clientContextStore architecture):
  *
- * // 1. When navigating to demo, set client context from userStore
- * const { activeProductId, getActiveOrganization, apiKey } = useUserStore()
- * const { setClientContext } = useDemoStore()
+ * // 1. Client context is now managed by demoProductStore + clientContextStore
+ * // Demo components should NOT interact with demoStore for client context
  *
- * useEffect(() => {
- *   const org = getActiveOrganization()
- *   if (org && activeProductId && apiKey) {
- *     setClientContext({
- *       productId: activeProductId,
- *       clientId: org.id,
- *       apiKey: apiKey,
- *     })
- *   }
- * }, [activeProductId])
- *
- * // 2. Start Earning - Create end-user
+ * // 2. Start Earning - Create end-user account
  * const { setIsCreatingAccount, setEndUser, setError } = useDemoStore()
+ * const { productId } = useClientContext()  // Get from clientContextStore
  *
  * const handleStartEarning = async () => {
  *   setIsCreatingAccount(true)
@@ -233,8 +181,7 @@ export const useDemoStore = create<DemoStore>()(
  *
  *   const demoUserId = `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
  *
- *   const response = await b2bApiClient.createUser({
- *     clientId: activeProductId,
+ *   const response = await createUser(productId, {
  *     clientUserId: demoUserId,
  *     email: 'demo@example.com',
  *   })
@@ -251,13 +198,11 @@ export const useDemoStore = create<DemoStore>()(
  * const handleDeposit = async (amount: number) => {
  *   setIsDepositing(true)
  *
- *   const response = await b2bApiClient.createDeposit({
- *     user_id: endUserId,
+ *   const response = await createFiatDeposit({
+ *     userId: endUserId,
  *     amount: amount.toString(),
  *     currency: 'USD',
- *     chain: 'base',
- *     token: 'USDC',
- *     payment_method: 'proxify_gateway',
+ *     tokenSymbol: 'USDC',
  *   })
  *
  *   addDeposit({

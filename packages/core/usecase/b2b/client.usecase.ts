@@ -120,9 +120,9 @@ export class B2BClientUseCase {
 
   /**
    * Create new client
-   * Does NOT generate API key - user must explicitly call generateApiKey() (FLOW 0)
+   * Auto-generates API key during registration
    */
-  async createClient(request: CreateClientRequest): Promise<GetClientRow & { vaults: Array<{ id: string; chain: string; tokenSymbol: string; tokenAddress: string }> }> {
+  async createClient(request: CreateClientRequest): Promise<GetClientRow & { api_key?: string; vaults: Array<{ id: string; chain: string; tokenSymbol: string; tokenAddress: string }> }> {
     // Check if product ID already exists
     console.log("Creating client with product ID:", request);
     const existing = await this.clientRepository.getByProductId(request.productId);
@@ -130,9 +130,12 @@ export class B2BClientUseCase {
       throw new Error(`Product ID '${request.productId}' already exists`);
     }
 
-    // ✅ NO API KEY GENERATION during registration!
-    // User must explicitly generate API key via FLOW 0 (regenerateApiKey)
-    console.log(`[Client Creation] Creating client WITHOUT API key (must be generated manually via FLOW 0)`);
+    // ✅ Auto-generate API key during registration
+    const isSandbox = request.isSandbox ?? false;
+    const apiKey = generateApiKey(isSandbox);
+    const apiKeyHash = await hashApiKey(apiKey);
+    const apiKeyPrefix = extractPrefix(apiKey);
+    console.log(`[Client Creation] Creating client WITH API key, prefix: ${apiKeyPrefix}`);
 
     // Step 1: Get or create Privy account (idempotent)
     const privyAccount = await this.privyAccountRepository.getOrCreate({
@@ -150,11 +153,14 @@ export class B2BClientUseCase {
       businessType: request.businessType,
       description: request.description || null,
       websiteUrl: request.websiteUrl || null,
-      apiKeyHash: null, // ✅ NULL - no API key yet!
-      apiKeyPrefix: null, // ✅ NULL - no API key yet!
+      customerTier: request.customerTier || null,
+      apiKeyHash: apiKeyHash, // ✅ Auto-generated API key hash
+      apiKeyPrefix: apiKeyPrefix, // ✅ Auto-generated API key prefix
       webhookUrls: request.webhookUrls || null,
       webhookSecret: request.webhookSecret || null,
-      customStrategy: request.customStrategy || null,
+      customStrategy: request.strategyRanking ? JSON.stringify({ ranking: request.strategyRanking }) : request.customStrategy || null,
+      strategiesPreferences: request.strategyPreferences ? JSON.stringify(request.strategyPreferences) : null,
+      strategiesCustomization: null, // Will be set via Market Analysis dashboard
       endUserYieldPortion: request.endUserYieldPortion || null,
       platformFee: request.platformFee || null,
       performanceFee: request.performanceFee || null,
@@ -189,7 +195,8 @@ export class B2BClientUseCase {
       description: `Client created: ${request.companyName}`,
       metadata: {
         productId: request.productId,
-        // No API key yet - user must generate via FLOW 0
+        apiKeyPrefix: apiKeyPrefix, // Log API key prefix for audit trail
+        customerTier: request.customerTier,
       },
       ipAddress: null,
       userAgent: null,
@@ -266,17 +273,17 @@ export class B2BClientUseCase {
       }
     }
 
-    // Step 4: Return combined data (client + Privy info from JOIN + created vaults)
+    // Step 4: Return combined data (client + Privy info from JOIN + created vaults + API key)
     const result = await this.clientRepository.getByProductId(request.productId);
     if (!result) {
       throw new Error('Failed to retrieve created client');
     }
 
-    // Return WITHOUT API key (user must generate via FLOW 0)
+    // Return WITH API key (shown only once!)
     return {
       ...result,
       vaults: createdVaults,
-      // ✅ NO api_key field! User must call regenerateApiKey() (FLOW 0)
+      api_key: apiKey, // ✅ Include API key in response (shown only once during registration)
     };
   }
 
@@ -542,6 +549,7 @@ export class B2BClientUseCase {
       businessType: data.businessType ?? null,
       description: data.description ?? null,
       websiteUrl: data.websiteUrl ?? null,
+      customerTier: null, // ← FIXED: Add missing field
       // Pass null for fields we're not updating (will use COALESCE in SQL)
       webhookUrls: null,
       webhookSecret: null,
@@ -647,6 +655,76 @@ export class B2BClientUseCase {
     return {
       bankAccounts,
       supportedCurrencies,
+    };
+  }
+
+  /**
+   * Get product strategies (both preferences and customization)
+   */
+  async getProductStrategies(productId: string) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    return {
+      preferences: client.strategiesPreferences ? JSON.parse(client.strategiesPreferences) : {},
+      customization: client.strategiesCustomization ? JSON.parse(client.strategiesCustomization) : {},
+    };
+  }
+
+  /**
+   * Update product strategy customization (from Market Analysis dashboard)
+   * This overrides the initial preferences
+   */
+  async updateProductStrategiesCustomization(
+    productId: string,
+    strategies: Record<string, Record<string, number>>
+  ) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    // Update strategies_customization
+    await this.clientRepository.update(client.id, {
+      strategiesCustomization: JSON.stringify(strategies),
+    });
+
+    // Audit log
+    await this.auditRepository.create({
+      clientId: client.id,
+      userId: null,
+      actorType: 'client',
+      action: 'product_strategies_configured',
+      resourceType: 'client',
+      resourceId: client.id,
+      description: `Updated product strategies configuration`,
+      metadata: { strategies },
+      ipAddress: null,
+      userAgent: null,
+    });
+
+    return {
+      productId,
+      strategies,
+      message: 'Product strategies updated successfully',
+    };
+  }
+
+  /**
+   * Get effective product strategies
+   * Returns customization if set, otherwise preferences
+   */
+  async getEffectiveProductStrategies(productId: string) {
+    const { preferences, customization } = await this.getProductStrategies(productId);
+
+    // Return customization if it's not empty, otherwise return preferences
+    const hasCustomization = customization && Object.keys(customization).length > 0;
+
+    return {
+      strategies: hasCustomization ? customization : preferences,
+      source: hasCustomization ? 'customization' : 'preferences',
     };
   }
 }
