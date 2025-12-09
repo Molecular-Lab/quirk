@@ -71,7 +71,7 @@ export function TradingStrategiesSection() {
 				cornerRadius: 8,
 				titleFont: {
 					size: 14,
-					weight: "600",
+					weight: "bold",
 				},
 				bodyFont: {
 					size: 13,

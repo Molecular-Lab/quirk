@@ -26,13 +26,13 @@ export function SupportedAssetsSection() {
 				</div>
 
 				{/* Draggable Protocol Carousel */}
-				<div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide cursor-grab active:cursor-grabbing">
+				<div className="flex gap-6 justify-center pb-4">
 					{protocols.map((protocol, idx) => (
 						<div
 							key={idx}
-							className="flex-shrink-0 w-[200px] bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-blue-300 transition-all snap-start"
+							className="flex-shrink-0 w-[200px] bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-blue-300 transition-all flex items-center justify-center"
 						>
-							<div className="flex flex-col items-center gap-3">
+							<div className="flex flex-col items-center justify-center gap-3 w-full">
 								<div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center border-2 border-blue-200 shadow-sm">
 									{protocol.logo ? (
 										<img src={protocol.logo} alt={protocol.name} className="w-12 h-12" />

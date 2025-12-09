@@ -11,6 +11,7 @@ import { CustomizeEarnSection } from "./CustomizeEarnSection"
 import { IntegrationSection } from "./IntegrationSection"
 import { NewHeroSection } from "./NewHeroSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
+import { SurveySection } from "./SurveySection"
 import { TradingStrategiesSection } from "./TradingStrategiesSection"
 
 export function LandingPage() {
@@ -141,6 +142,9 @@ export function LandingPage() {
 
 			{/* Integration */}
 			<IntegrationSection />
+
+			{/* Survey */}
+			<SurveySection />
 
 			{/* Footer */}
 			<footer className="bg-gradient-to-b from-gray-50 to-white border-t border-gray-150 py-12">
