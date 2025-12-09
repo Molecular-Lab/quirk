@@ -55,7 +55,7 @@ export function BusinessTypesSection() {
 			<div className="max-w-7xl mx-auto px-6">
 				{/* Section Header */}
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-bold text-gray-950 mb-4">Support for any business type</h2>
+					<h2 className="text-5xl font-bold text-gray-950 mb-4">Support Any Platform</h2>
 					<p className="text-xl text-gray-700 max-w-3xl mx-auto">
 						From fintech apps to creator platforms, successful businesses across industries grow and scale with Quirk's
 						Earn-as-a-Service infrastructure.
