@@ -4,12 +4,10 @@ export function IntegrationSection() {
 			<div className="max-w-7xl mx-auto px-6 w-full">
 				<div className="text-center mb-16">
 					<h2 className="text-5xl font-bold text-gray-950 mb-6">
-						Simplify Integration,
-						<br />
-						Unlock New Revenue
+						Simple Integration
 					</h2>
 					<p className="text-xl text-gray-700 max-w-3xl mx-auto">
-						Help onboarding your end-users to digital assets and create a new revenue stream for your business
+						Onboard your end-users to digital assets and unlock a new revenue stream for your business
 					</p>
 				</div>
 

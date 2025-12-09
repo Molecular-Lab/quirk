@@ -1,36 +1,20 @@
 import usdcLogo from "@/assets/usd-coin-usdc-logo.png"
+import usdtLogo from "@/assets/tether-usdt-logo.png"
 
 export function SupportedAssetsSection() {
 	const protocols = [
 		{
-			name: "AAVE",
-			icon: "🏦",
-			description: "Leading DeFi lending protocol",
-		},
-		{
-			name: "Compound",
-			icon: "🔷",
-			description: "Autonomous money market protocol",
-		},
-		{
-			name: "Morpho",
-			icon: "🦋",
-			description: "Optimized lending protocol",
-		},
-		{
 			name: "USDC",
 			logo: usdcLogo,
-			description: "USD Coin - Stablecoin",
 		},
 		{
 			name: "USDT",
-			icon: "💲",
-			description: "Tether - Stablecoin",
+			logo: usdtLogo,
 		},
 		{
 			name: "More",
 			icon: "+",
-			description: "More protocols coming soon",
+			description: "More stablecoins coming soon",
 		},
 	]
 
@@ -38,8 +22,7 @@ export function SupportedAssetsSection() {
 		<section className="py-20 bg-white">
 			<div className="max-w-7xl mx-auto px-6">
 				<div className="text-center mb-12">
-					<h3 className="text-4xl font-bold text-gray-950 mb-2">Supported Protocols & Assets</h3>
-					<p className="text-gray-700 text-lg">Stablecoin infrastructure with leading DeFi protocols</p>
+					<h3 className="text-4xl font-bold text-gray-950 mb-2">Supported Assets</h3>
 				</div>
 
 				{/* Draggable Protocol Carousel */}
@@ -61,7 +44,9 @@ export function SupportedAssetsSection() {
 								</div>
 								<div className="text-center">
 									<span className="block text-lg font-bold text-gray-950">{protocol.name}</span>
-									<span className="text-xs text-gray-600 mt-1 block">{protocol.description}</span>
+									{protocol.description && (
+										<span className="text-xs text-gray-600 mt-1 block">{protocol.description}</span>
+									)}
 								</div>
 							</div>
 						</div>
