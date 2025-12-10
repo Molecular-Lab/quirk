@@ -1,5 +1,5 @@
-import { z } from "zod"
 import VError from "verror"
+import { z } from "zod"
 
 /**
  * Safe Parse Result (Success)

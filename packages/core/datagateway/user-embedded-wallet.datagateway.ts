@@ -51,11 +51,7 @@ export interface IUserEmbeddedWalletDataGateway {
 	 * Update linked wallet address for a user
 	 * Used when web3 native user wants to link their existing wallet
 	 */
-	updateLinkedWalletAddress(
-		productId: string,
-		userId: string,
-		linkedWalletAddress: string,
-	): Promise<UserEmbeddedWallet>
+	updateLinkedWalletAddress(productId: string, userId: string, linkedWalletAddress: string): Promise<UserEmbeddedWallet>
 
 	/**
 	 * List all wallet mappings for a product (with pagination)

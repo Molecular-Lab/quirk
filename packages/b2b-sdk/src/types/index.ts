@@ -190,7 +190,7 @@ export interface User {
 	walletAddress?: string
 	createdAt: string
 	updatedAt: string
-	vaults?: any[]
+	vaults?: UserVault[]
 }
 
 export interface CreateUserRequest {
@@ -420,7 +420,7 @@ export interface ProtocolData {
 	risk: "Low" | "Medium" | "High"
 	status: "healthy" | "warning" | "critical"
 	lastUpdate: string
-	rawMetrics?: Record<string, any>
+	rawMetrics?: Record<string, unknown>
 }
 
 export interface ProtocolsResponse {
@@ -518,7 +518,7 @@ export interface ApiResponse<T> {
 export interface ErrorResponse {
 	error: string
 	statusCode: number
-	details?: any
+	details?: unknown
 }
 
 // ==================== SDK CONFIGURATION ====================
