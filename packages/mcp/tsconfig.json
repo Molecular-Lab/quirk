@@ -5,8 +5,8 @@
 		"module": "ESNext",
 		"outDir": "./dist",
 		"rootDir": "./src",
-		"declaration": true,
-		"declarationMap": true,
+		"declaration": false,
+		"declarationMap": false,
 		"sourceMap": true
 	},
 	"include": ["src/**/*.ts"],

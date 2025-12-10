@@ -48,9 +48,9 @@ export function TradingStrategiesSection() {
 			{
 				data: [allocations.defi, allocations.liquidityPool, allocations.cefi],
 				backgroundColor: [
-					"#3B82F6", // Accent blue for DeFi (primary segment)
-					"#7C7C7C", // gray-700 for Place LP
-					"#C8C8C8", // gray-200 for CeFi
+					"#8B5CF6", // Vibrant purple for DeFi (matches background gradient)
+					"#06B6D4", // Cyan/turquoise for Place LP
+					"#F59E0B", // Amber for CeFi
 				],
 				borderColor: "#ffffff",
 				borderWidth: 4,
@@ -71,7 +71,7 @@ export function TradingStrategiesSection() {
 				cornerRadius: 8,
 				titleFont: {
 					size: 14,
-					weight: "600",
+					weight: "bold",
 				},
 				bodyFont: {
 					size: 13,
@@ -140,7 +140,7 @@ export function TradingStrategiesSection() {
 										min="0"
 										max="100"
 										style={{
-											background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${allocations.defi}%, #E3E3E3 ${allocations.defi}%, #E3E3E3 100%)`,
+											background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${allocations.defi}%, #E3E3E3 ${allocations.defi}%, #E3E3E3 100%)`,
 										}}
 									/>
 								</div>
@@ -166,7 +166,7 @@ export function TradingStrategiesSection() {
 										min="0"
 										max="100"
 										style={{
-											background: `linear-gradient(to right, #7C7C7C 0%, #7C7C7C ${allocations.liquidityPool}%, #E3E3E3 ${allocations.liquidityPool}%, #E3E3E3 100%)`,
+											background: `linear-gradient(to right, #06B6D4 0%, #06B6D4 ${allocations.liquidityPool}%, #E3E3E3 ${allocations.liquidityPool}%, #E3E3E3 100%)`,
 										}}
 									/>
 								</div>
@@ -192,7 +192,7 @@ export function TradingStrategiesSection() {
 										min="0"
 										max="100"
 										style={{
-											background: `linear-gradient(to right, #C8C8C8 0%, #C8C8C8 ${allocations.cefi}%, #E3E3E3 ${allocations.cefi}%, #E3E3E3 100%)`,
+											background: `linear-gradient(to right, #F59E0B 0%, #F59E0B ${allocations.cefi}%, #E3E3E3 ${allocations.cefi}%, #E3E3E3 100%)`,
 										}}
 									/>
 								</div>
