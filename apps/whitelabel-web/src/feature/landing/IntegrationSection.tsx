@@ -64,18 +64,12 @@ export function IntegrationSection() {
 					<p className="text-gray-400 text-lg mb-8 max-w-2xl mx-auto">
 						Join leading platforms earning passive income on idle user balances
 					</p>
-					<div className="flex items-center justify-center gap-4">
+					<div className="flex items-center justify-center">
 						<a
 							href="/register"
 							className="bg-gray-900 text-white px-8 py-4 rounded-lg hover:bg-gray-800 shadow-sm hover:shadow-md transition-all font-medium text-lg"
 						>
 							Start Building
-						</a>
-						<a
-							href="/demo"
-							className="bg-white text-gray-950 px-8 py-4 rounded-lg hover:bg-gray-50 transition-all font-medium text-lg border border-gray-200"
-						>
-							View Demo
 						</a>
 					</div>
 				</div>

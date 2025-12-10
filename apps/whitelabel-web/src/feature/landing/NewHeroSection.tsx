@@ -1,6 +1,4 @@
-import { Link } from "@tanstack/react-router"
-
-export function NewHeroSection({ onGetStarted }: { onGetStarted: () => void }) {
+export function NewHeroSection() {
 	return (
 		<section className="relative min-h-[100vh] flex items-center overflow-hidden">
 			{/* Animated gradient background - Soft purple/green */}
@@ -24,19 +22,15 @@ export function NewHeroSection({ onGetStarted }: { onGetStarted: () => void }) {
 						Turn idle balances into active revenue streams with
 						institutional-grade custody and compliance.
 					</p>
-					<div className="flex items-center justify-center gap-4">
-						<button
-							onClick={onGetStarted}
+					<div className="flex items-center justify-center">
+						<a
+							href="https://tally.so/r/VLGvyj"
+							target="_blank"
+							rel="noopener noreferrer"
 							className="bg-gray-900 text-white px-8 py-4 rounded-lg hover:bg-gray-800 transition-all font-medium text-lg shadow-sm hover:shadow-md"
 						>
-							Get Started
-						</button>
-						<Link
-							to="/demo"
-							className="bg-white text-gray-950 px-8 py-4 rounded-lg hover:bg-gray-50 transition-all font-medium text-lg border border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md"
-						>
-							View Demo
-						</Link>
+							Talk to Expert
+						</a>
 					</div>
 				</div>
 			</div>
