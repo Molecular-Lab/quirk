@@ -1,14 +1,3 @@
-import type {
-	DeFiPosition,
-	CreateDeFiPosition,
-	UpdateDeFiPosition,
-	PositionQuery,
-} from "../entity/old/defi-position.entity"
-import type {
-	YieldOpportunity,
-	PortfolioOptimization,
-} from "../entity/old/yield-strategy.entity"
-
 /**
  * AAVE Protocol DataGateway
  * Interface for AAVE V3 lending protocol operations
@@ -46,39 +35,30 @@ export interface IAAVEDataGateway {
 	/**
 	 * Get user's position in AAVE
 	 */
-	getPosition(params: {
-		walletAddress: string
-		chainId: number
-	}): Promise<{
+	getPosition(params: { walletAddress: string; chainId: number }): Promise<{
 		totalSupplied: string // Total supplied in USD
 		totalBorrowed: string // Total borrowed in USD
 		healthFactor: string
 		netAPY: string
-		positions: Array<{
+		positions: {
 			tokenAddress: string
 			tokenSymbol: string
 			supplied: string
 			supplyAPY: string
 			borrowed: string
 			borrowAPY: string
-		}>
+		}[]
 	}>
 
 	/**
 	 * Get current supply APY for a token
 	 */
-	getSupplyAPY(params: {
-		tokenAddress: string
-		chainId: number
-	}): Promise<string>
+	getSupplyAPY(params: { tokenAddress: string; chainId: number }): Promise<string>
 
 	/**
 	 * Claim AAVE rewards
 	 */
-	claimRewards(params: {
-		walletAddress: string
-		chainId: number
-	}): Promise<{
+	claimRewards(params: { walletAddress: string; chainId: number }): Promise<{
 		to: string
 		data: string
 		value: string
@@ -124,10 +104,7 @@ export interface ICurveDataGateway {
 	/**
 	 * Get pool APY (base + CRV rewards)
 	 */
-	getPoolAPY(params: {
-		poolAddress: string
-		chainId: number
-	}): Promise<{
+	getPoolAPY(params: { poolAddress: string; chainId: number }): Promise<{
 		baseAPY: string
 		crvAPY: string
 		totalAPY: string
@@ -136,34 +113,27 @@ export interface ICurveDataGateway {
 	/**
 	 * Get user's position in Curve pool
 	 */
-	getPosition(params: {
-		walletAddress: string
-		poolAddress: string
-		chainId: number
-	}): Promise<{
+	getPosition(params: { walletAddress: string; poolAddress: string; chainId: number }): Promise<{
 		lpTokenBalance: string
-		underlyingBalances: Array<{
+		underlyingBalances: {
 			tokenAddress: string
 			tokenSymbol: string
 			amount: string
-		}>
+		}[]
 		valueUSD: string
 	}>
 
 	/**
 	 * Get list of available Curve pools for a token
 	 */
-	getPoolsForToken(params: {
-		tokenAddress: string
-		chainId: number
-	}): Promise<
-		Array<{
+	getPoolsForToken(params: { tokenAddress: string; chainId: number }): Promise<
+		{
 			poolAddress: string
 			name: string
 			tvl: string
 			apy: string
 			tokens: string[]
-		}>
+		}[]
 	>
 }
 
@@ -175,12 +145,7 @@ export interface ICompoundDataGateway {
 	/**
 	 * Supply assets to Compound
 	 */
-	supply(params: {
-		walletAddress: string
-		tokenAddress: string
-		amount: string
-		chainId: number
-	}): Promise<{
+	supply(params: { walletAddress: string; tokenAddress: string; amount: string; chainId: number }): Promise<{
 		to: string
 		data: string
 		value: string
@@ -203,36 +168,27 @@ export interface ICompoundDataGateway {
 	/**
 	 * Get supply APY for a token
 	 */
-	getSupplyAPY(params: {
-		tokenAddress: string
-		chainId: number
-	}): Promise<string>
+	getSupplyAPY(params: { tokenAddress: string; chainId: number }): Promise<string>
 
 	/**
 	 * Get user's position in Compound
 	 */
-	getPosition(params: {
-		walletAddress: string
-		chainId: number
-	}): Promise<{
+	getPosition(params: { walletAddress: string; chainId: number }): Promise<{
 		totalSupplied: string
 		supplyAPY: string
 		compRewards: string
-		positions: Array<{
+		positions: {
 			tokenAddress: string
 			tokenSymbol: string
 			supplied: string
 			apy: string
-		}>
+		}[]
 	}>
 
 	/**
 	 * Claim COMP rewards
 	 */
-	claimRewards(params: {
-		walletAddress: string
-		chainId: number
-	}): Promise<{
+	claimRewards(params: { walletAddress: string; chainId: number }): Promise<{
 		to: string
 		data: string
 		value: string
@@ -280,11 +236,7 @@ export interface IUniswapDataGateway {
 	/**
 	 * Collect fees from Uniswap V3 position
 	 */
-	collectFees(params: {
-		walletAddress: string
-		positionId: string
-		chainId: number
-	}): Promise<{
+	collectFees(params: { walletAddress: string; positionId: string; chainId: number }): Promise<{
 		to: string
 		data: string
 		value: string
@@ -293,11 +245,7 @@ export interface IUniswapDataGateway {
 	/**
 	 * Get user's Uniswap V3 positions
 	 */
-	getPosition(params: {
-		walletAddress: string
-		positionId: string
-		chainId: number
-	}): Promise<{
+	getPosition(params: { walletAddress: string; positionId: string; chainId: number }): Promise<{
 		positionId: string
 		token0: string
 		token1: string
@@ -315,12 +263,7 @@ export interface IUniswapDataGateway {
 	/**
 	 * Get pool APY (fees + potential IL)
 	 */
-	getPoolAPY(params: {
-		token0Address: string
-		token1Address: string
-		feeTier: number
-		chainId: number
-	}): Promise<{
+	getPoolAPY(params: { token0Address: string; token1Address: string; feeTier: number; chainId: number }): Promise<{
 		feeAPY: string
 		volumeUSD24h: string
 		tvl: string
@@ -329,16 +272,13 @@ export interface IUniswapDataGateway {
 	/**
 	 * Get all positions for a wallet
 	 */
-	getAllPositions(params: {
-		walletAddress: string
-		chainId: number
-	}): Promise<
-		Array<{
+	getAllPositions(params: { walletAddress: string; chainId: number }): Promise<
+		{
 			positionId: string
 			token0Symbol: string
 			token1Symbol: string
 			valueUSD: string
 			apy: string
-		}>
+		}[]
 	>
 }

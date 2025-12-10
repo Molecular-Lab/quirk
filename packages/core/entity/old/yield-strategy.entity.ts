@@ -1,6 +1,4 @@
 import { z } from "zod"
-import type { DeFiProtocol } from "./defi-position.entity"
-import type { RiskLevel } from "./risk-profile.entity"
 
 /**
  * Yield Strategy Entity
@@ -15,10 +13,7 @@ export const yieldStrategySchema = z.object({
 	name: z.string().min(1).max(255).describe("Strategy name (e.g., 'AAVE USDC Lending')"),
 	description: z.string().optional().describe("Detailed strategy description"),
 	// Protocol configuration
-	protocols: z
-		.array(z.string())
-		.min(1)
-		.describe("List of protocols involved (e.g., ['aave', 'curve'])"),
+	protocols: z.array(z.string()).min(1).describe("List of protocols involved (e.g., ['aave', 'curve'])"),
 	primaryProtocol: z.string().describe("Main protocol for this strategy"),
 	// Financial parameters
 	minDeposit: z.string().describe("Minimum deposit amount in USD"),
@@ -33,10 +28,7 @@ export const yieldStrategySchema = z.object({
 	supportedChains: z.array(z.number().int().positive()).describe("Supported chain IDs"),
 	supportedTokens: z.array(z.string()).describe("Supported token symbols (e.g., ['USDC', 'USDT'])"),
 	// Strategy metadata
-	complexity: z
-		.enum(["simple", "intermediate", "advanced"])
-		.default("simple")
-		.describe("Strategy complexity level"),
+	complexity: z.enum(["simple", "intermediate", "advanced"]).default("simple").describe("Strategy complexity level"),
 	isActive: z.boolean().default(true).describe("Whether strategy is currently active"),
 	status: strategyStatusSchema.default("active"),
 	// Performance tracking
@@ -102,17 +94,9 @@ export const strategyRecommendationSchema = z.object({
 	opportunity: yieldOpportunitySchema,
 	score: z.number().min(0).max(100).describe("Recommendation score (higher is better)"),
 	reasoning: z.string().describe("Why this strategy is recommended"),
-	expectedReturn: z
-		.string()
-		.describe("Expected return in USD over specified period"),
-	timeHorizon: z
-		.enum(["1day", "1week", "1month", "3months", "1year"])
-		.describe("Expected time to reach target return"),
-	confidence: z
-		.number()
-		.min(0)
-		.max(1)
-		.describe("Confidence level (0-1)"),
+	expectedReturn: z.string().describe("Expected return in USD over specified period"),
+	timeHorizon: z.enum(["1day", "1week", "1month", "3months", "1year"]).describe("Expected time to reach target return"),
+	confidence: z.number().min(0).max(1).describe("Confidence level (0-1)"),
 })
 
 export type StrategyRecommendation = z.infer<typeof strategyRecommendationSchema>

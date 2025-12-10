@@ -85,7 +85,10 @@ export class HttpClient {
 
 		Object.entries(params).forEach(([key, value]) => {
 			if (value !== undefined && value !== null) {
-				query.append(key, String(value))
+				// Handle primitive types
+				if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+					query.append(key, String(value))
+				}
 			}
 		})
 

@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename)
 export default [
 	...baseConfig,
 	{
-		ignores: ['dist/**', 'node_modules/**', '.turbo/**'],
+		ignores: ['dist/**', 'node_modules/**', '.turbo/**', '**/*.config.{js,mjs,cjs,ts}'],
 	},
 	{
 		files: ['**/*.{ts,tsx,js,jsx}'],

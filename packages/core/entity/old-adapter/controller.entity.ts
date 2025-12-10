@@ -1,5 +1,5 @@
+import type { BatchWithdrawParams, ClaimClientRevenueParams, ClaimRevenueParams, ControllerWithdrawParams } from ".."
 import type { Address } from "viem"
-import type { BatchWithdrawParams, ClaimClientRevenueParams, ClaimRevenueParams, ControllerWithdrawParams, WithdrawalExecution } from ".."
 
 export interface ProxifyControllerReadAdapter {
 	DEFAULT_ADMIN_ROLE(): Promise<string>

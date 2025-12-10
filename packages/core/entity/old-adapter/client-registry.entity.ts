@@ -1,5 +1,5 @@
-import type { Address } from "viem"
 import type { RiskTier } from "../old/client-registry.entity"
+import type { Address } from "viem"
 
 export interface ProxifyClientRegistryReadAdapter {
 	DEFAULT_ADMIN_ROLE(): Promise<string>
@@ -47,7 +47,12 @@ export interface ProxifyClientRegistryWriteAdapter {
 	// Risk tier management (Oracle)
 	setClientRiskTiers(clientId: string, riskTiers: RiskTier[], senderAddress: Address): Promise<void>
 	addClientRiskTier(clientId: string, tier: RiskTier, senderAddress: Address): Promise<void>
-	updateTierAllocation(clientId: string, tierId: string, newAllocationBps: number, senderAddress: Address): Promise<void>
+	updateTierAllocation(
+		clientId: string,
+		tierId: string,
+		newAllocationBps: number,
+		senderAddress: Address,
+	): Promise<void>
 	setTierActive(clientId: string, tierId: string, isActive: boolean, senderAddress: Address): Promise<void>
 }
 

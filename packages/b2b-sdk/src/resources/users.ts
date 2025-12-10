@@ -4,7 +4,7 @@
 
 import { HttpClient } from "../utils/http-client"
 
-import type { CreateUserRequest, PaginationParams, User, UserBalance, UserPortfolio } from "../types"
+import type { CreateUserRequest, PaginationParams, User, UserBalance, UserPortfolio, UserVault } from "../types"
 
 export class UserResource {
 	constructor(private http: HttpClient) {}
@@ -63,7 +63,7 @@ export class UserResource {
 	 * 3.7 List User Vaults
 	 * List all vaults for user across chains/tokens
 	 */
-	async listVaults(userId: string): Promise<{ vaults: any[] }> {
+	async listVaults(userId: string): Promise<{ vaults: UserVault[] }> {
 		return this.http.get(`/api/v1/users/${userId}/vaults`)
 	}
 }

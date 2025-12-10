@@ -1,18 +1,20 @@
-import VError from "verror"
+import { randomUUID } from "crypto"
+
 import dayjs from "dayjs"
+import VError from "verror"
+
 import { IPrivyUserDataGateway } from "../../datagateway/privy-user.datagateway"
 import { IUserEmbeddedWalletDataGateway } from "../../datagateway/user-embedded-wallet.datagateway"
-import { PrivyEmbeddedWallet, privyEmbeddedWalletSchema } from "../../entity/old/privy-wallet.entity"
 import { PrivyUser } from "../../entity/old/privy-user.entity"
+import { PrivyEmbeddedWallet, privyEmbeddedWalletSchema } from "../../entity/old/privy-wallet.entity"
 import {
 	CreateEmbeddedWalletParams,
-	GetWalletByUserIdParams,
 	GetWalletByAddressParams,
+	GetWalletByUserIdParams,
 	UserEmbeddedWallet,
 } from "../../entity/old/user-embedded-wallet.entity"
 import { safeParse } from "../../utils/safe-parse"
-import { v5 as uuidv5 } from "uuid"
-import { randomUUID } from "crypto"
+
 /**
  * Embedded Wallet Usecase
  * Business logic for managing embedded wallets for ProductOwner users
@@ -71,7 +73,7 @@ export class EmbeddedWalletUsecase {
 		}
 
 		// 3. Build linked accounts array (custom_auth will include UUID)
-		const privyLinkedAccounts: Array<any> = []
+		const privyLinkedAccounts: any[] = []
 
 		if (linkedAccounts && linkedAccounts.length > 0) {
 			// Use provided linked accounts
@@ -398,7 +400,10 @@ export class EmbeddedWalletUsecase {
 	 *
 	 * @returns Complete wallet and user info
 	 */
-	public async getDetailedWalletInfo(productId: string, userId: string): Promise<{
+	public async getDetailedWalletInfo(
+		productId: string,
+		userId: string,
+	): Promise<{
 		userWallet: UserEmbeddedWallet
 		privyUser: PrivyUser
 		embeddedWallet: PrivyEmbeddedWallet
@@ -453,14 +458,12 @@ export class EmbeddedWalletUsecase {
 	private filterEmbeddedWallet(user: PrivyUser): PrivyEmbeddedWallet {
 		const wallet = user.linkedAccounts.find((account) => {
 			return (
-				account.type === "wallet" &&
-				account.walletClientType === "privy" &&
-				account.connectorType === "embedded"
+				account.type === "wallet" && account.walletClientType === "privy" && account.connectorType === "embedded"
 				// Note: delegated can be false initially, will be true after first use
 			)
 		})
 
-		if (!wallet || wallet.type !== "wallet") {
+		if (wallet?.type !== "wallet") {
 			throw new VError(
 				{
 					info: {

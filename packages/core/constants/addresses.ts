@@ -8,8 +8,9 @@
  * For token addresses, use getTokenAddress() from networks.ts instead
  */
 
-import type { SupportedChainId } from './chain'
-import { NETWORK_CONFIG, getTokenAddress, type NetworkKey } from './networks'
+import { NETWORK_CONFIG, getTokenAddress } from "./networks"
+
+import type { SupportedChainId } from "./chain"
 
 /**
  * Mock USDC Token Addresses (for testing)
@@ -31,8 +32,8 @@ export const MOCK_USDC_ADDRESSES: Partial<Record<SupportedChainId, `0x${string}`
  */
 export function getMockUSDCAddress(chainId: SupportedChainId): `0x${string}` {
 	// Map chainId to network key
-	const networkKey = chainId === 11155111 ? 'eth_sepolia' : 'eth_mainnet'
-	const address = getTokenAddress(networkKey as NetworkKey, 'mock_usdc')
+	const networkKey = chainId === 11155111 ? "eth_sepolia" : "eth_mainnet"
+	const address = getTokenAddress(networkKey, "mock_usdc")
 
 	if (!address) {
 		throw new Error(`MOCK_USDC address not configured for chain ${chainId}`)

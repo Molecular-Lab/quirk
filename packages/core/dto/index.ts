@@ -3,4 +3,4 @@
  * Request/Response types for API ↔ UseCase layer
  */
 
-export * from './b2b';
+export * from "./b2b"

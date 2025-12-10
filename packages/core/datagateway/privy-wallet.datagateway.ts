@@ -1,4 +1,4 @@
-import { PrivyEmbeddedWallet, PrivyUser, PrivyWallet } from "../entity"
+import { PrivyUser, PrivyWallet } from "../entity"
 
 /**
  * Privy Wallet Data Gateway Interface

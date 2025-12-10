@@ -1,5 +1,6 @@
 import { type Chain } from "viem"
 import { arbitrum, base, mainnet, optimism, polygon, sepolia } from "viem/chains"
+
 import { NETWORK_CONFIG, getSupportedChainIds } from "./networks"
 
 // Currently supported chain IDs from NETWORK_CONFIG
@@ -51,8 +52,8 @@ export const createChainConstants = (params: ChainConfigParams) => {
 		const numericId = Number(key) as SupportedChainId
 
 		// Get RPC URL from param or fallback to NETWORK_CONFIG
-		const networkConfig = Object.values(NETWORK_CONFIG).find(n => n.chainId === numericId)
-		const rpcUrl = value?.rpcUrl || networkConfig?.rpcUrl || ''
+		const networkConfig = Object.values(NETWORK_CONFIG).find((n) => n.chainId === numericId)
+		const rpcUrl = value?.rpcUrl || networkConfig?.rpcUrl || ""
 
 		if (!rpcUrl) {
 			console.warn(`Skipping chain ${numericId}: No RPC URL configured`)
