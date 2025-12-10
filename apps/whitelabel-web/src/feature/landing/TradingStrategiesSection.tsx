@@ -90,7 +90,7 @@ export function TradingStrategiesSection() {
 		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-purple-50/40 to-white flex items-center">
 			<div className="max-w-7xl mx-auto px-6 w-full">
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-bold text-gray-950">Customized Earn Strategies</h2>
+					<h2 className="text-6xl font-bold text-gray-950">Customized Earn Strategies</h2>
 				</div>
 
 				<div className="relative bg-white/90 backdrop-blur-md rounded-xl p-12 shadow-sm border border-gray-150 overflow-hidden">
@@ -104,8 +104,8 @@ export function TradingStrategiesSection() {
 									<Doughnut data={chartData} options={chartOptions} />
 									<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
 										<div className="text-center">
-											<div className="text-5xl font-bold text-gray-950">{totalAllocation}%</div>
-											<div className="text-sm text-gray-500 mt-2 font-medium">Allocated</div>
+											<div className="text-6xl font-bold text-gray-950">{totalAllocation}%</div>
+											<div className="text-base text-gray-500 mt-2 font-medium">Allocated</div>
 										</div>
 									</div>
 								</div>
@@ -115,19 +115,19 @@ export function TradingStrategiesSection() {
 						{/* Controls Section */}
 						<div className="space-y-8">
 							<div>
-								<h3 className="text-2xl font-bold text-gray-950 mb-2">Portfolio Distribution</h3>
-								<p className="text-gray-700">Adjust sliders to simulate different allocation strategies</p>
+								<h3 className="text-3xl font-bold text-gray-950 mb-3">Portfolio Distribution</h3>
+								<p className="text-lg text-gray-700">Adjust sliders to simulate different allocation strategies</p>
 							</div>
 							<div className="space-y-8">
 								{/* DeFi */}
 								<div className="space-y-3">
 									<div className="flex items-center justify-between">
 										<div>
-											<label className="text-gray-950 font-semibold text-lg">DeFi</label>
+											<label className="text-gray-950 font-semibold text-xl">DeFi</label>
 										</div>
 										<div className="flex items-center gap-1">
-											<span className="text-2xl font-bold text-gray-950">{allocations.defi}</span>
-											<span className="text-gray-500 text-lg">%</span>
+											<span className="text-3xl font-bold text-gray-950">{allocations.defi}</span>
+											<span className="text-gray-500 text-xl">%</span>
 										</div>
 									</div>
 									<input
@@ -149,11 +149,11 @@ export function TradingStrategiesSection() {
 								<div className="space-y-3">
 									<div className="flex items-center justify-between">
 										<div>
-											<label className="text-gray-950 font-semibold text-lg">Liquidity Provider</label>
+											<label className="text-gray-950 font-semibold text-xl">Liquidity Provider</label>
 										</div>
 										<div className="flex items-center gap-1">
-											<span className="text-2xl font-bold text-gray-950">{allocations.liquidityPool}</span>
-											<span className="text-gray-500 text-lg">%</span>
+											<span className="text-3xl font-bold text-gray-950">{allocations.liquidityPool}</span>
+											<span className="text-gray-500 text-xl">%</span>
 										</div>
 									</div>
 									<input
@@ -175,11 +175,11 @@ export function TradingStrategiesSection() {
 								<div className="space-y-3">
 									<div className="flex items-center justify-between">
 										<div>
-											<label className="text-gray-950 font-semibold text-lg">CeFi</label>
+											<label className="text-gray-950 font-semibold text-xl">CeFi</label>
 										</div>
 										<div className="flex items-center gap-1">
-											<span className="text-2xl font-bold text-gray-950">{allocations.cefi}</span>
-											<span className="text-gray-500 text-lg">%</span>
+											<span className="text-3xl font-bold text-gray-950">{allocations.cefi}</span>
+											<span className="text-gray-500 text-xl">%</span>
 										</div>
 									</div>
 									<input
