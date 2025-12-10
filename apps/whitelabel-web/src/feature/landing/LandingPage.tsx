@@ -126,7 +126,7 @@ export function LandingPage() {
 			</header>
 
 			{/* Hero */}
-			<NewHeroSection onGetStarted={handleGetStarted} />
+			<NewHeroSection />
 
 			{/* Trading Strategies */}
 			<TradingStrategiesSection />
