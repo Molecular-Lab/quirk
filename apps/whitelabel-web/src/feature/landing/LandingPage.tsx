@@ -2,9 +2,9 @@ import { useEffect, useState } from "react"
 
 import { usePrivy } from "@privy-io/react-auth"
 import { Link, useNavigate } from "@tanstack/react-router"
-import { Sparkles } from "lucide-react"
 
 import { listOrganizationsByPrivyId } from "@/api/b2bClientHelpers"
+import quirkLogo from "@/assets/quirk-logo.svg"
 
 import { BusinessTypesSection } from "./BusinessTypesSection"
 import { CustomizeEarnSection } from "./CustomizeEarnSection"
@@ -102,22 +102,22 @@ export function LandingPage() {
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 					<Link to="/" className="flex items-center gap-3 group">
 						<div className="relative p-2 -m-2 rounded-lg hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 transition-all">
-							<Sparkles className="size-6 text-gray-700 group-hover:text-gray-500 transition-colors cursor-pointer" />
+							<img src={quirkLogo} alt="Quirk Logo" className="size-16 cursor-pointer" />
 						</div>
-						<span className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+						<span className="text-3xl font-bold tracking-tight" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
 							QUIRK
 						</span>
 					</Link>
 					<nav className="hidden md:flex items-center gap-6">
-						<Link to="/demo" className="text-gray-700 hover:text-gray-950 transition-colors font-medium">
+						<Link to="/demo" className="text-lg text-gray-700 hover:text-gray-950 transition-colors font-medium">
 							Demo
 						</Link>
-						<button onClick={handleSignIn} className="text-gray-700 hover:text-gray-950 transition-colors font-medium">
+						<button onClick={handleSignIn} className="text-lg text-gray-700 hover:text-gray-950 transition-colors font-medium">
 							Sign In
 						</button>
 						<button
 							onClick={handleGetStarted}
-							className="bg-gray-900 text-white px-6 py-2.5 rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm hover:shadow-md"
+							className="bg-gray-900 text-white px-8 py-3.5 text-lg rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm hover:shadow-md"
 						>
 							Get Started
 						</button>
@@ -128,6 +128,12 @@ export function LandingPage() {
 			{/* Hero */}
 			<NewHeroSection />
 
+			{/* Customize Earn Solution */}
+			<CustomizeEarnSection />
+
+			{/* Integration */}
+			<IntegrationSection />
+
 			{/* Trading Strategies */}
 			<TradingStrategiesSection />
 
@@ -137,12 +143,6 @@ export function LandingPage() {
 			{/* Supported Assets */}
 			<SupportedAssetsSection />
 
-			{/* Customize Earn Solution */}
-			<CustomizeEarnSection />
-
-			{/* Integration */}
-			<IntegrationSection />
-
 			{/* Survey */}
 			<SurveySection />
 
@@ -151,12 +151,12 @@ export function LandingPage() {
 				<div className="max-w-7xl mx-auto px-6">
 					<div className="grid md:grid-cols-4 gap-8 mb-12">
 						<div>
-							<h4 className="font-bold text-gray-950 mb-4 text-lg">Quirk</h4>
-							<p className="text-sm text-gray-700">White-label DeFi yield infrastructure for apps</p>
+							<h4 className="font-bold text-gray-950 mb-4 text-2xl">Quirk</h4>
+							<p className="text-lg text-gray-700">White-label DeFi yield infrastructure for apps</p>
 						</div>
 						<div>
-							<h4 className="font-semibold text-gray-950 mb-4">Product</h4>
-							<ul className="space-y-2 text-sm text-gray-700">
+							<h4 className="font-semibold text-gray-950 mb-4 text-xl">Product</h4>
+							<ul className="space-y-2 text-base text-gray-700">
 								<li>
 									<a href="#" className="hover:text-gray-950">
 										Solutions
@@ -175,8 +175,8 @@ export function LandingPage() {
 							</ul>
 						</div>
 						<div>
-							<h4 className="font-semibold text-gray-950 mb-4">Company</h4>
-							<ul className="space-y-2 text-sm text-gray-700">
+							<h4 className="font-semibold text-gray-950 mb-4 text-xl">Company</h4>
+							<ul className="space-y-2 text-base text-gray-700">
 								<li>
 									<a href="#" className="hover:text-gray-950">
 										About
@@ -195,8 +195,8 @@ export function LandingPage() {
 							</ul>
 						</div>
 						<div>
-							<h4 className="font-semibold text-gray-950 mb-4">Legal</h4>
-							<ul className="space-y-2 text-sm text-gray-700">
+							<h4 className="font-semibold text-gray-950 mb-4 text-xl">Legal</h4>
+							<ul className="space-y-2 text-base text-gray-700">
 								<li>
 									<a href="#" className="hover:text-gray-950">
 										Privacy
@@ -215,7 +215,7 @@ export function LandingPage() {
 							</ul>
 						</div>
 					</div>
-					<div className="pt-8 border-t border-gray-200 text-center text-gray-500 text-sm">
+					<div className="pt-8 border-t border-gray-200 text-center text-gray-500 text-base">
 						© 2025 Quirk. All rights reserved.
 					</div>
 				</div>

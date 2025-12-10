@@ -81,8 +81,8 @@ export function BusinessTypesSection() {
 			<div className="max-w-7xl mx-auto px-6">
 				{/* Section Header */}
 				<div className="text-center mb-16">
-					<h2 className="text-5xl font-bold text-gray-950 mb-4">Support Any Platform</h2>
-					<p className="text-xl text-gray-700 max-w-3xl mx-auto">
+					<h2 className="text-6xl font-bold text-gray-950 mb-6">Support Any Platform</h2>
+					<p className="text-2xl text-gray-700 max-w-3xl mx-auto">
 						From fintech apps to creator platforms, successful businesses across industries grow and scale with Quirk's
 						Earn-as-a-Service infrastructure.
 					</p>
@@ -98,31 +98,31 @@ export function BusinessTypesSection() {
 							>
 								{/* Icon & Title */}
 								<div className="flex items-center gap-3 mb-4">
-									<div className="text-4xl w-14 h-14 bg-blue-50 rounded-lg flex items-center justify-center">
+									<div className="text-5xl w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center">
 										{type.icon}
 									</div>
-									<h3 className="text-2xl font-bold text-gray-950">{type.title}</h3>
+									<h3 className="text-3xl font-bold text-gray-950">{type.title}</h3>
 								</div>
 
 								{/* Description */}
-								<p className="text-gray-700 leading-relaxed mb-6">{type.description}</p>
+								<p className="text-lg text-gray-700 leading-relaxed mb-6">{type.description}</p>
 
 								{/* Metrics */}
 								<div className="bg-blue-50 rounded-lg px-4 py-2 mb-6 inline-block">
-									<span className="text-sm font-medium text-gray-700">💡 {type.metrics}</span>
+									<span className="text-base font-medium text-gray-700">💡 {type.metrics}</span>
 								</div>
 
 								{/* Company Logos */}
 								<div className="flex items-center gap-4 pt-4 border-t border-gray-100">
-									<span className="text-sm text-gray-500 font-medium">Platforms:</span>
+									<span className="text-base text-gray-500 font-medium">Platforms:</span>
 									<div className="flex items-center gap-3">
 										{type.companies.map((company, companyIdx) => (
 											<div
 												key={companyIdx}
 												className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
 											>
-												<span className="text-lg">{company.logo}</span>
-												<span className="text-xs font-medium text-gray-600">{company.name}</span>
+												<span className="text-xl">{company.logo}</span>
+												<span className="text-sm font-medium text-gray-600">{company.name}</span>
 											</div>
 										))}
 									</div>
@@ -131,7 +131,7 @@ export function BusinessTypesSection() {
 								{/* Learn More Link */}
 								<a
 									href="#"
-									className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 font-medium text-sm mt-4 group"
+									className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 font-medium text-base mt-4 group"
 								>
 									Learn more
 									<svg
@@ -153,31 +153,31 @@ export function BusinessTypesSection() {
 						>
 							{/* Icon & Title */}
 							<div className="flex items-center gap-3 mb-4">
-								<div className="text-4xl w-14 h-14 bg-blue-50 rounded-lg flex items-center justify-center">
+								<div className="text-5xl w-16 h-16 bg-blue-50 rounded-lg flex items-center justify-center">
 									{type.icon}
 								</div>
-								<h3 className="text-2xl font-bold text-gray-950">{type.title}</h3>
+								<h3 className="text-3xl font-bold text-gray-950">{type.title}</h3>
 							</div>
 
 							{/* Description */}
-							<p className="text-gray-700 leading-relaxed mb-6">{type.description}</p>
+							<p className="text-lg text-gray-700 leading-relaxed mb-6">{type.description}</p>
 
 							{/* Metrics */}
 							<div className="bg-blue-50 rounded-lg px-4 py-2 mb-6 inline-block">
-								<span className="text-sm font-medium text-gray-700">💡 {type.metrics}</span>
+								<span className="text-base font-medium text-gray-700">💡 {type.metrics}</span>
 							</div>
 
 							{/* Company Logos */}
 							<div className="flex items-center gap-4 pt-4 border-t border-gray-100">
-								<span className="text-sm text-gray-500 font-medium">Platforms:</span>
+								<span className="text-base text-gray-500 font-medium">Platforms:</span>
 								<div className="flex items-center gap-3">
 									{type.companies.map((company, companyIdx) => (
 										<div
 											key={companyIdx}
 											className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
 										>
-											<span className="text-lg">{company.logo}</span>
-											<span className="text-xs font-medium text-gray-600">{company.name}</span>
+											<span className="text-xl">{company.logo}</span>
+											<span className="text-sm font-medium text-gray-600">{company.name}</span>
 										</div>
 									))}
 								</div>
@@ -186,7 +186,7 @@ export function BusinessTypesSection() {
 							{/* Learn More Link */}
 							<a
 								href="#"
-								className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 font-medium text-sm mt-4 group"
+								className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 font-medium text-base mt-4 group"
 							>
 								Learn more
 								<svg

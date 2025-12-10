@@ -15,10 +15,10 @@ export function NewHeroSection() {
 
 			<div className="relative z-10 max-w-7xl mx-auto px-6">
 				<div className="text-center max-w-4xl mx-auto">
-					<h1 className="text-6xl font-bold text-gray-950 mb-6 leading-tight">
+					<h1 className="text-7xl font-bold text-gray-950 mb-8 leading-tight">
 						Earn on Anywhere, Everywhere
 					</h1>
-					<p className="text-xl text-gray-700 mb-10 leading-relaxed max-w-3xl mx-auto">
+					<p className="text-2xl text-gray-700 mb-12 leading-relaxed max-w-3xl mx-auto">
 						Turn idle balances into active revenue streams with
 						institutional-grade custody and compliance.
 					</p>
@@ -27,7 +27,7 @@ export function NewHeroSection() {
 							href="https://tally.so/r/VLGvyj"
 							target="_blank"
 							rel="noopener noreferrer"
-							className="bg-gray-900 text-white px-8 py-4 rounded-lg hover:bg-gray-800 transition-all font-medium text-lg shadow-sm hover:shadow-md"
+							className="bg-gray-900 text-white px-10 py-5 rounded-lg hover:bg-gray-800 transition-all font-medium text-xl shadow-sm hover:shadow-md"
 						>
 							Talk to Expert
 						</a>
