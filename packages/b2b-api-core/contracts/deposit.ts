@@ -256,7 +256,6 @@ export const depositContract = c.router({
 				mockNote: z.string(),
 			}),
 			400: ErrorResponseSchema,
-			404: z.object({ error: z.string() }),
 		},
 		body: z.object({
 			bankTransactionId: z.string().describe("Mock bank transaction ID"),
@@ -409,8 +408,12 @@ export const depositContract = c.router({
 		method: "GET",
 		path: "/deposits/:orderId",
 		responses: {
-			200: DepositResponseSchema,
-			404: ErrorResponseSchema,
+			200: z.object({
+				found: z.boolean(),
+				data: DepositResponseSchema.nullable(),
+				message: z.string().optional(),
+			}),
+			500: ErrorResponseSchema,
 		},
 		summary: "Get deposit by order ID",
 	},

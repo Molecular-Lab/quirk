@@ -103,6 +103,20 @@ export class ClientService {
 	}
 
 	/**
+	 * Get effective product strategies (merges product-level + client-level settings)
+	 */
+	async getEffectiveProductStrategies(productId: string) {
+		return await this.clientUseCase.getEffectiveProductStrategies(productId);
+	}
+
+	/**
+	 * Update product strategy customization
+	 */
+	async updateProductStrategiesCustomization(productId: string, strategies: Record<string, Record<string, number>>) {
+		return await this.clientUseCase.updateProductStrategiesCustomization(productId, strategies);
+	}
+
+	/**
 	 * Update organization info only (company name, description, website)
 	 */
 	async updateOrganizationInfo(
@@ -139,5 +153,70 @@ export class ClientService {
 		supportedCurrencies: string[]
 	) {
 		return await this.clientUseCase.configureBankAccounts(clientId, bankAccounts, supportedCurrencies);
+	}
+
+	// ============================================
+	// FEE CONFIGURATION (Revenue Share)
+	// ============================================
+
+	/**
+	 * Update fee configuration (client revenue share percentage)
+	 */
+	async updateFeeConfig(productId: string, clientRevenueSharePercent: string) {
+		return await this.clientUseCase.updateFeeConfig(productId, clientRevenueSharePercent);
+	}
+
+	// ============================================
+	// DASHBOARD METRICS
+	// ============================================
+
+	/**
+	 * Get revenue metrics for dashboard
+	 * Returns MRR, ARR, cumulative revenue, and fee configuration
+	 */
+	async getRevenueMetrics(productId: string) {
+		return await this.clientUseCase.getRevenueMetrics(productId);
+	}
+
+	/**
+	 * Get end-user growth metrics
+	 * Returns total users, new users, active users, deposits/withdrawals
+	 */
+	async getEndUserGrowthMetrics(productId: string) {
+		return await this.clientUseCase.getEndUserGrowthMetrics(productId);
+	}
+
+	/**
+	 * Get recent end-user transactions with pagination
+	 */
+	async getEndUserTransactions(productId: string, page: number, limit: number) {
+		return await this.clientUseCase.getEndUserTransactions(productId, page, limit);
+	}
+
+	/**
+	 * Get wallet balances (idle & earning)
+	 */
+	async getWalletBalances(productId: string) {
+		return await this.clientUseCase.getWalletBalances(productId);
+	}
+
+	/**
+	 * Add to idle balance (after on-ramp)
+	 * Called when fiat → crypto conversion completes and funds arrive in custodial wallet
+	 */
+	async addToIdleBalance(clientId: string, amount: string): Promise<void> {
+		await this.clientUseCase.addToIdleBalance(clientId, amount);
+	}
+
+	/**
+	 * Get complete dashboard summary
+	 * Combines balances, revenue, end-users, and recent transactions
+	 */
+	async getDashboardSummary(productId: string) {
+		return await this.clientUseCase.getDashboardSummary(productId);
+	}
+
+	async getAggregateDashboardSummary(privyOrganizationId: string) {
+		return await this.clientUseCase.getAggregateDashboardSummary(privyOrganizationId);
 	}
 }

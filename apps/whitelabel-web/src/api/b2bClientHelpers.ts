@@ -52,6 +52,8 @@ export async function registerClient(data: {
 	websiteUrl?: string
 	customerTier?: "0-1K" | "1K-10K" | "10K-100K" | "100K-1M" | "1M+"
 	strategyRanking?: string[]
+	clientRevenueSharePercent?: string
+	platformFeePercent?: string
 	supportedCurrencies?: Currency[]
 	bankAccounts?: {
 		currency: Currency
@@ -320,7 +322,7 @@ export async function getPrivyAccount(privyOrganizationId: string) {
 	})
 
 	if (status === 200) {
-		return body
+		return body.data // Return data (null if not found)
 	}
 
 	return null
@@ -574,4 +576,39 @@ export async function createWithdrawal(data: {
 	}
 
 	throw new Error("Failed to create withdrawal")
+}
+
+// ============================================
+// FEE CONFIGURATION ENDPOINTS
+// ============================================
+
+/**
+ * Get fee configuration for a product
+ */
+export async function getFeeConfig(productId: string) {
+	const { status, body } = await b2bApiClient.client.getFeeConfig({
+		params: { productId },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get fee configuration")
+}
+
+/**
+ * Update fee configuration (client revenue share percentage)
+ */
+export async function updateFeeConfig(productId: string, clientRevenueSharePercent: string) {
+	const { status, body } = await b2bApiClient.client.updateFeeConfig({
+		params: { productId },
+		body: { clientRevenueSharePercent },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to update fee configuration")
 }

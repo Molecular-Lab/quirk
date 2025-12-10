@@ -37,8 +37,10 @@ export interface CreateClientRequest {
 
   // Strategy & fees
   customStrategy?: any;
-  endUserYieldPortion?: string;
-  platformFee?: string;
+
+  // Fee Configuration (3-way revenue split: Platform + Client + End-User = 100%)
+  clientRevenueSharePercent?: string; // 10-20%, defaults to 15.00
+  platformFeePercent?: string; // 5-10%, defaults to 7.50
   performanceFee?: string;
 
   // Multi-currency support (for off-ramp withdrawals)

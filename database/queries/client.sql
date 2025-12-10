@@ -1,202 +1,234 @@
 -- ============================================
--- CLIENT ORGANIZATION QUERIES
+-- CLIENT ORGANIZATION MANAGEMENT
 -- ============================================
 
--- name: GetClient :one
-SELECT
-  co.*,
-  pa.privy_organization_id,
-  pa.privy_wallet_address,
-  pa.privy_email,
-  pa.wallet_type AS privy_wallet_type
-FROM client_organizations co
-JOIN privy_accounts pa ON co.privy_account_id = pa.id
-WHERE co.id = $1
-LIMIT 1;
-
--- name: GetClientByProductID :one
-SELECT
-  co.*,
-  pa.privy_organization_id,
-  pa.privy_wallet_address,
-  pa.privy_email,
-  pa.wallet_type AS privy_wallet_type
-FROM client_organizations co
-JOIN privy_accounts pa ON co.privy_account_id = pa.id
-WHERE co.product_id = $1
-LIMIT 1;
-
--- name: GetClientsByPrivyOrgID :many
-SELECT
-  co.*,
-  pa.privy_organization_id,
-  pa.privy_wallet_address,
-  pa.privy_email,
-  pa.wallet_type AS privy_wallet_type
-FROM client_organizations co
-JOIN privy_accounts pa ON co.privy_account_id = pa.id
-WHERE pa.privy_organization_id = $1;
-
--- name: GetClientByAPIKeyPrefix :one
--- For API key validation (then verify hash)
-SELECT
-  co.*,
-  pa.privy_organization_id,
-  pa.privy_wallet_address,
-  pa.privy_email,
-  pa.wallet_type AS privy_wallet_type
-FROM client_organizations co
-JOIN privy_accounts pa ON co.privy_account_id = pa.id
-WHERE co.api_key_prefix = $1
-LIMIT 1;
-
--- name: GetClientByAPIKeyHash :one
--- Direct lookup by API key hash
-SELECT
-  co.*,
-  pa.privy_organization_id,
-  pa.privy_wallet_address,
-  pa.privy_email,
-  pa.wallet_type AS privy_wallet_type
-FROM client_organizations co
-JOIN privy_accounts pa ON co.privy_account_id = pa.id
-WHERE co.api_key_hash = $1
-LIMIT 1;
-
--- name: ListClients :many
-SELECT
-  co.*,
-  pa.privy_organization_id,
-  pa.privy_wallet_address,
-  pa.privy_email,
-  pa.wallet_type AS privy_wallet_type
-FROM client_organizations co
-JOIN privy_accounts pa ON co.privy_account_id = pa.id
-ORDER BY co.created_at DESC
-LIMIT $1 OFFSET $2;
-
--- name: ListActiveClients :many
-SELECT
-  co.*,
-  pa.privy_organization_id,
-  pa.privy_wallet_address,
-  pa.privy_email,
-  pa.wallet_type AS privy_wallet_type
-FROM client_organizations co
-JOIN privy_accounts pa ON co.privy_account_id = pa.id
-WHERE co.is_active = true
-ORDER BY co.created_at DESC;
-
 -- name: CreateClient :one
+-- Creates a new client organization (called after Privy registration)
 INSERT INTO client_organizations (
   privy_account_id,
   product_id,
   company_name,
   business_type,
   description,
-  website_url,
-  customer_tier,
-  api_key_hash,
-  api_key_prefix,
-  webhook_urls,
-  webhook_secret,
-  custom_strategy,
-  end_user_yield_portion,
-  platform_fee,
-  performance_fee,
-  is_active,
-  is_sandbox,
-  supported_currencies,
-  bank_accounts,
-  strategies_preferences,
-  strategies_customization
-) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
-  $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21
+  website_url
 )
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
+-- name: GetClient :one
+-- Retrieve client by internal UUID
+SELECT
+  co.*,
+  pa.privy_wallet_address,
+  pa.privy_organization_id,
+  pa.wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.id = $1;
+
+-- name: GetClientByProductId :one
+-- Retrieve client by product_id (used in API calls)
+SELECT
+  co.*,
+  pa.privy_wallet_address,
+  pa.privy_organization_id,
+  pa.wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.product_id = $1;
+
+-- name: GetClientByPrivyOrgId :one
+-- Retrieve client by Privy organization ID
+SELECT co.* FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE pa.privy_organization_id = $1
+LIMIT 1;
+
+-- name: GetAllClientsByPrivyOrgId :many
+-- Retrieve ALL organizations for a Privy user (for aggregation)
+SELECT
+  co.*,
+  pa.privy_organization_id,
+  pa.wallet_type
+FROM client_organizations co
+JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE pa.privy_organization_id = $1
+  AND co.is_active = true
+ORDER BY co.created_at DESC;
+
+-- name: ListClients :many
+-- List all clients with pagination
+SELECT * FROM client_organizations
+WHERE is_active = true
+ORDER BY created_at DESC
+LIMIT $1 OFFSET $2;
+
 -- name: UpdateClient :one
+-- Update client details
 UPDATE client_organizations
-SET company_name = COALESCE(sqlc.narg('company_name'), company_name),
-    business_type = COALESCE(sqlc.narg('business_type'), business_type),
-    description = COALESCE(sqlc.narg('description'), description),
-    website_url = COALESCE(sqlc.narg('website_url'), website_url),
-    customer_tier = COALESCE(sqlc.narg('customer_tier'), customer_tier),
-    webhook_urls = COALESCE(sqlc.narg('webhook_urls'), webhook_urls),
-    webhook_secret = COALESCE(sqlc.narg('webhook_secret'), webhook_secret),
-    custom_strategy = COALESCE(sqlc.narg('custom_strategy'), custom_strategy),
-    end_user_yield_portion = COALESCE(sqlc.narg('end_user_yield_portion'), end_user_yield_portion),
-    platform_fee = COALESCE(sqlc.narg('platform_fee'), platform_fee),
-    performance_fee = COALESCE(sqlc.narg('performance_fee'), performance_fee),
-    updated_at = now()
+SET
+  company_name = COALESCE(sqlc.narg('company_name'), company_name),
+  description = COALESCE(sqlc.narg('description'), description),
+  website_url = COALESCE(sqlc.narg('website_url'), website_url),
+  updated_at = now()
 WHERE id = $1
 RETURNING *;
 
--- name: UpdateClientAPIKey :exec
+-- name: UpdateClientByProductId :one
+-- Update client details by product_id
 UPDATE client_organizations
-SET api_key_hash = $2,
-    api_key_prefix = $3,
-    updated_at = now()
+SET
+  company_name = COALESCE(sqlc.narg('company_name'), company_name),
+  description = COALESCE(sqlc.narg('description'), description),
+  website_url = COALESCE(sqlc.narg('website_url'), website_url),
+  updated_at = now()
+WHERE product_id = $1
+RETURNING *;
+
+-- name: DeactivateClient :exec
+-- Soft delete a client
+UPDATE client_organizations
+SET is_active = false, updated_at = now()
 WHERE id = $1;
 
 -- name: ActivateClient :exec
+-- Reactivate a client
 UPDATE client_organizations
-SET is_active = true,
-    updated_at = now()
-WHERE id = $1;
-
--- name: DeactivateClient :exec
-UPDATE client_organizations
-SET is_active = false,
-    updated_at = now()
+SET is_active = true, updated_at = now()
 WHERE id = $1;
 
 -- name: DeleteClient :exec
+-- Hard delete a client (use with caution - prefer DeactivateClient)
 DELETE FROM client_organizations
 WHERE id = $1;
 
 -- ============================================
--- CLIENT BALANCE QUERIES
+-- API KEY MANAGEMENT
+-- ============================================
+
+-- name: StoreAPIKey :one
+-- Store hashed API key after generation
+UPDATE client_organizations
+SET
+  api_key_hash = $2,
+  api_key_prefix = $3,
+  updated_at = now()
+WHERE id = $1
+RETURNING api_key_prefix;
+
+-- name: GetClientByAPIKeyPrefix :one
+-- Get client by API key prefix (first step of validation)
+SELECT * FROM client_organizations
+WHERE api_key_prefix = $1 AND is_active = true;
+
+-- name: GetClientByAPIKeyHash :one
+-- Verify API key (used in authentication)
+SELECT * FROM client_organizations
+WHERE api_key_hash = $1 AND is_active = true;
+
+-- name: RevokeAPIKey :exec
+-- Revoke (clear) API key
+UPDATE client_organizations
+SET
+  api_key_hash = NULL,
+  api_key_prefix = NULL,
+  updated_at = now()
+WHERE id = $1;
+
+-- ============================================
+-- WEBHOOK CONFIGURATION
+-- ============================================
+
+-- name: UpdateWebhookConfig :one
+-- Update webhook URLs and secret
+UPDATE client_organizations
+SET
+  webhook_urls = $2,
+  webhook_secret = $3,
+  updated_at = now()
+WHERE id = $1
+RETURNING webhook_urls, webhook_secret;
+
+-- ============================================
+-- STRATEGY CONFIGURATION
+-- ============================================
+
+-- name: UpdateCustomStrategy :one
+-- Update client's custom yield strategy
+UPDATE client_organizations
+SET
+  custom_strategy = $2,
+  updated_at = now()
+WHERE id = $1
+RETURNING custom_strategy;
+
+-- name: GetProductStrategiesPreferences :one
+-- Get product-level strategy preferences (AI Agent: Conservative, Moderate, Morpho, Custom)
+SELECT
+  strategies_preferences,
+  strategies_customization
+FROM client_organizations
+WHERE product_id = $1;
+
+-- name: UpdateProductStrategiesPreferencesByProductID :one
+-- Update product-level strategy preferences
+UPDATE client_organizations
+SET
+  strategies_preferences = $2,
+  updated_at = now()
+WHERE product_id = $1
+RETURNING strategies_preferences;
+
+-- name: GetProductStrategiesCustomization :one
+-- Get product-level custom strategy allocations
+SELECT strategies_customization
+FROM client_organizations
+WHERE product_id = $1;
+
+-- name: UpdateProductCustomizationByProductID :one
+-- Update product-level custom strategy allocations
+UPDATE client_organizations
+SET
+  strategies_customization = $2,
+  updated_at = now()
+WHERE product_id = $1
+RETURNING strategies_customization;
+
+-- ============================================
+-- CLIENT BALANCES (Platform-side ledger)
 -- ============================================
 
 -- name: GetClientBalance :one
+-- Retrieve client balance
 SELECT * FROM client_balances
-WHERE client_id = $1 LIMIT 1;
-
--- name: GetClientBalanceForUpdate :one
--- Use in transactions to lock the balance row
-SELECT * FROM client_balances
-WHERE client_id = $1
-FOR UPDATE
-LIMIT 1;
+WHERE client_id = $1;
 
 -- name: CreateClientBalance :one
+-- Initialize balance record for a new client
 INSERT INTO client_balances (
   client_id,
   available,
   reserved,
   currency
-) VALUES (
-  $1, $2, $3, $4
 )
+VALUES ($1, $2, $3, $4)
 RETURNING *;
 
 -- name: AddToAvailableBalance :exec
+-- Add to available balance (e.g., after off-ramp)
 UPDATE client_balances
 SET available = available + $2,
-    last_topup_at = now(),
     updated_at = now()
 WHERE client_id = $1;
 
 -- name: ReserveBalance :exec
--- Move from available to reserved
+-- Move from available to reserved (e.g., withdrawal request)
 UPDATE client_balances
 SET available = available - $2,
     reserved = reserved + $2,
     updated_at = now()
 WHERE client_id = $1
-  AND available >= $2;  -- Ensure sufficient balance
+  AND available >= $2;
 
 -- name: ReleaseReservedBalance :exec
 -- Move from reserved back to available (e.g., transaction cancelled)
@@ -222,6 +254,38 @@ SET reserved = reserved - $2,
     updated_at = now()
 WHERE client_id = $1
   AND reserved >= $2;
+
+-- ============================================
+-- WALLET STAGE BALANCES (idle_balance, earning_balance)
+-- ============================================
+
+-- name: AddToClientIdleBalance :exec
+-- Add amount to product's idle balance after on-ramp
+UPDATE client_organizations
+SET
+  idle_balance = idle_balance + $2,
+  updated_at = now()
+WHERE id = $1;
+
+-- name: MoveClientIdleToEarning :exec
+-- Move funds from idle to earning balance (when staking)
+UPDATE client_organizations
+SET
+  idle_balance = idle_balance - $2,
+  earning_balance = earning_balance + $2,
+  updated_at = now()
+WHERE id = $1
+  AND idle_balance >= $2;
+
+-- name: MoveClientEarningToIdle :exec
+-- Move funds from earning to idle balance (when unstaking)
+UPDATE client_organizations
+SET
+  earning_balance = earning_balance - $2,
+  idle_balance = idle_balance + $2,
+  updated_at = now()
+WHERE id = $1
+  AND earning_balance >= $2;
 
 -- ============================================
 -- CLIENT ANALYTICS
@@ -253,76 +317,125 @@ WHERE c.id = $1
 GROUP BY c.id, cb.available, cb.reserved;
 
 -- ============================================
--- PRODUCT STRATEGY CONFIGURATION QUERIES
+-- REVENUE & FEE CONFIGURATION
 -- ============================================
 
--- name: GetProductStrategies :one
--- Get both strategy preferences and customization for a product
+-- name: UpdateFeeConfiguration :one
+-- Update client fee percentages
+UPDATE client_organizations
+SET
+  client_revenue_share_percent = $2,
+  platform_fee_percent = $3,
+  performance_fee = $4,
+  updated_at = now()
+WHERE id = $1
+RETURNING client_revenue_share_percent, platform_fee_percent, performance_fee;
+
+-- name: GetRevenueConfig :one
+-- Get client revenue configuration
 SELECT
-  strategies_preferences,
-  strategies_customization
+  client_revenue_share_percent,
+  platform_fee_percent,
+  performance_fee
 FROM client_organizations
 WHERE id = $1;
 
--- name: GetProductStrategiesByProductID :one
--- Get both strategy preferences and customization by product_id
+-- name: GetRevenueConfigByProductID :one
+-- Get client revenue configuration by product_id
 SELECT
-  strategies_preferences,
-  strategies_customization
+  client_revenue_share_percent,
+  platform_fee_percent
 FROM client_organizations
 WHERE product_id = $1;
 
--- name: UpdateProductPreferences :exec
--- Update initial strategy preferences (from product creation form)
+-- name: UpdateMRR :exec
+-- Update Monthly Recurring Revenue tracking
 UPDATE client_organizations
 SET
-  strategies_preferences = sqlc.arg(strategies_preferences)::jsonb,
+  monthly_recurring_revenue = $2,
+  annual_run_rate = $3,
+  last_mrr_calculation_at = now(),
   updated_at = now()
-WHERE id = sqlc.arg(id);
+WHERE id = $1;
 
--- name: UpdateProductCustomization :exec
--- Update runtime strategy customization (from Market Analysis dashboard)
-UPDATE client_organizations
-SET
-  strategies_customization = sqlc.arg(strategies_customization)::jsonb,
-  updated_at = now()
-WHERE id = sqlc.arg(id);
-
--- name: UpdateProductCustomizationByProductID :exec
--- Update runtime strategy customization by product_id
-UPDATE client_organizations
-SET
-  strategies_customization = sqlc.arg(strategies_customization)::jsonb,
-  updated_at = now()
-WHERE product_id = sqlc.arg(product_id);
-
--- name: GetEffectiveProductStrategies :one
--- Returns customization if set, otherwise preferences
--- This is the "effective" strategy that should be used
+-- name: GetMRRStats :one
+-- Get MRR/ARR statistics
 SELECT
-  COALESCE(
-    NULLIF(strategies_customization, '{}'::jsonb),
-    NULLIF(strategies_preferences, '{}'::jsonb),
-    '{}'::jsonb
-  ) as effective_strategies
+  monthly_recurring_revenue,
+  annual_run_rate,
+  last_mrr_calculation_at
 FROM client_organizations
 WHERE id = $1;
 
--- name: GetEffectiveProductStrategiesByProductID :one
--- Returns effective strategies by product_id
-SELECT
-  COALESCE(
-    NULLIF(strategies_customization, '{}'::jsonb),
-    NULLIF(strategies_preferences, '{}'::jsonb),
-    '{}'::jsonb
-  ) as effective_strategies
-FROM client_organizations
-WHERE product_id = $1;
-
--- name: ClearProductCustomization :exec
--- Reset customization to empty (falls back to preferences)
+-- name: UpdateRevenueConfigByProductID :one
+-- Update client revenue share by product_id
 UPDATE client_organizations
 SET
-  strategies_customization = '{}'::jsonb,
+  client_revenue_share_percent = $2,
   updated_at = now()
-WHERE id = $1;
+WHERE product_id = $1
+RETURNING
+  client_revenue_share_percent,
+  platform_fee_percent;
+
+-- ============================================
+-- AGGREGATED DASHBOARD (Across All Products)
+-- ============================================
+
+-- name: GetAggregatedDashboardSummary :one
+-- Aggregate dashboard metrics across ALL client organizations for a Privy user
+SELECT
+  -- Company Info (use first org as representative)
+  (SELECT company_name FROM client_organizations WHERE privy_account_id = pa.id LIMIT 1) AS company_name,
+
+  -- Aggregated Balances (sum across all orgs)
+  COALESCE(SUM(co.idle_balance), 0) AS total_idle_balance,
+  COALESCE(SUM(co.earning_balance), 0) AS total_earning_balance,
+  COALESCE(SUM(co.client_revenue_earned), 0) AS total_client_revenue,
+  COALESCE(SUM(co.platform_revenue_earned), 0) AS total_platform_revenue,
+  COALESCE(SUM(co.enduser_revenue_earned), 0) AS total_enduser_revenue,
+
+  -- Aggregated Revenue Metrics
+  COALESCE(SUM(co.monthly_recurring_revenue), 0) AS monthly_recurring_revenue,
+  COALESCE(SUM(co.annual_run_rate), 0) AS annual_run_rate,
+
+  -- Weighted Average Revenue Percentages
+  -- Calculate weighted avg based on earning_balance as weight
+  CASE
+    WHEN SUM(co.earning_balance) > 0 THEN
+      SUM(co.client_revenue_share_percent * co.earning_balance) / SUM(co.earning_balance)
+    ELSE
+      AVG(co.client_revenue_share_percent)
+  END AS client_revenue_percent,
+
+  CASE
+    WHEN SUM(co.earning_balance) > 0 THEN
+      SUM(co.platform_fee_percent * co.earning_balance) / SUM(co.earning_balance)
+    ELSE
+      AVG(co.platform_fee_percent)
+  END AS platform_fee_percent,
+
+  -- End-user fee percent = 100 - client - platform
+  CASE
+    WHEN SUM(co.earning_balance) > 0 THEN
+      100 -
+      SUM(co.client_revenue_share_percent * co.earning_balance) / SUM(co.earning_balance) -
+      SUM(co.platform_fee_percent * co.earning_balance) / SUM(co.earning_balance)
+    ELSE
+      100 - AVG(co.client_revenue_share_percent) - AVG(co.platform_fee_percent)
+  END AS enduser_fee_percent,
+
+  -- Last calculation timestamp (most recent across all orgs)
+  MAX(co.last_mrr_calculation_at) AS last_calculated_at,
+
+  -- Aggregated End-User Metrics
+  COALESCE(SUM(co.total_end_users), 0) AS total_end_users,
+  COALESCE(SUM(co.new_users_30d), 0) AS new_users_30d,
+  COALESCE(SUM(co.active_users_30d), 0) AS active_users_30d,
+  COALESCE(SUM(co.total_deposited), 0) AS total_deposited,
+  COALESCE(SUM(co.total_withdrawn), 0) AS total_withdrawn
+
+FROM privy_accounts pa
+LEFT JOIN client_organizations co ON pa.id = co.privy_account_id AND co.is_active = true
+WHERE pa.privy_organization_id = $1
+GROUP BY pa.id;

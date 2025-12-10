@@ -1,5 +1,7 @@
 import axios from "axios"
 
+import { useClientContextStore } from "@/store/clientContextStore"
+
 /**
  * Axios client for B2B API
  * Following prod-ref-web pattern
@@ -16,11 +18,27 @@ export const b2bAxiosClient = axios.create({
  */
 b2bAxiosClient.interceptors.request.use(
 	(config) => {
-		// Add API key from localStorage if available
-		const apiKey = localStorage.getItem("b2b:api_key")
-		if (apiKey) {
-			config.headers.Authorization = `Bearer ${apiKey}`
+		const url = config.url || ""
+
+		// Dashboard endpoints (need Privy auth, NOT API key)
+		const isDashboardEndpoint =
+			url.includes("/dashboard/") ||
+			url.includes("/regenerate-api-key") ||
+			url.includes("/strategies") ||
+			url.includes("/bank-accounts") ||
+			url.includes("/clients/") ||
+			url.includes("/products/")
+
+		// Only add API key for SDK/demo endpoints (NOT dashboard)
+		if (!isDashboardEndpoint) {
+			// ✅ Get API key from clientContextStore (SINGLE SOURCE OF TRUTH)
+			// Zustand allows getState() outside React components
+			const { apiKey } = useClientContextStore.getState()
+			if (apiKey) {
+				config.headers["x-api-key"] = apiKey
+			}
 		}
+
 		return config
 	},
 	(error: Error) => {

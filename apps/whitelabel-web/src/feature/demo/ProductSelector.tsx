@@ -16,6 +16,7 @@ import { Building2, ChevronRight, Loader2, Package } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
+import { InfoDialog } from "@/components/ui/info-dialog"
 import { useDemoProductStore } from "@/store/demoProductStore"
 
 export function ProductSelector() {
@@ -24,6 +25,14 @@ export function ProductSelector() {
 
 	const [isOpen, setIsOpen] = useState(false)
 	const [loadingProductId, setLoadingProductId] = useState<string | null>(null)
+	const [apiKeyErrorDialog, setApiKeyErrorDialog] = useState<{
+		open: boolean
+		productName: string
+	}>({ open: false, productName: "" })
+	const [errorDialog, setErrorDialog] = useState<{
+		open: boolean
+		message: string
+	}>({ open: false, message: "" })
 
 	const {
 		availableProducts,
@@ -62,9 +71,10 @@ export function ProductSelector() {
 
 			if (!apiKey) {
 				const product = availableProducts.find((p) => p.productId === productId)
-				alert(
-					`API key not found for ${product?.companyName || productId}.\n\nPlease go to Dashboard → API Testing to regenerate your API key first.`,
-				)
+				setApiKeyErrorDialog({
+					open: true,
+					productName: product?.companyName || productId,
+				})
 				setLoadingProductId(null)
 				return
 			}
@@ -78,7 +88,10 @@ export function ProductSelector() {
 			setIsOpen(false)
 		} catch (error) {
 			console.error("[ProductSelector] Failed to select product:", error)
-			alert("Failed to select product. Please try again.")
+			setErrorDialog({
+				open: true,
+				message: "Failed to select product. Please try again.",
+			})
 		} finally {
 			setLoadingProductId(null)
 		}
@@ -235,6 +248,22 @@ export function ProductSelector() {
 					)}
 				</div>
 			</SheetContent>
+
+			{/* API Key Error Dialog */}
+			<InfoDialog
+				open={apiKeyErrorDialog.open}
+				onOpenChange={(open) => setApiKeyErrorDialog({ open, productName: "" })}
+				title="⚠️ API Key Not Found"
+				description={`API key not found for ${apiKeyErrorDialog.productName}.\n\nPlease go to Dashboard → API Testing to regenerate your API key first.`}
+			/>
+
+			{/* Generic Error Dialog */}
+			<InfoDialog
+				open={errorDialog.open}
+				onOpenChange={(open) => setErrorDialog({ open, message: "" })}
+				title="Error"
+				description={errorDialog.message}
+			/>
 		</Sheet>
 	)
 }

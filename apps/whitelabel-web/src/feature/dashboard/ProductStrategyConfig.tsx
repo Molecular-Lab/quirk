@@ -1,16 +1,12 @@
 import { useEffect, useState } from "react"
 
-import { toast } from "sonner"
-
-import { getEffectiveProductStrategies, updateProductStrategiesCustomization } from "@/api/b2bClientHelpers"
-import { Checkbox } from "@/components/ui/checkbox"
-import { useUserStore } from "@/store/userStore"
+import { getEffectiveProductStrategies } from "@/api/b2bClientHelpers"
 
 type StrategyTemplate = "conservative" | "moderate" | "morpho" | "custom"
 
 // New format: Record<category, Record<protocol, percentage>>
 // Categories: defi, cefi, lp (liquidity providers)
-type StrategyConfig = Record<string, Record<string, number>>
+export type StrategyConfig = Record<string, Record<string, number>>
 
 const STRATEGY_TEMPLATES: Record<Exclude<StrategyTemplate, "custom">, StrategyConfig> = {
 	conservative: {
@@ -58,16 +54,14 @@ const STRATEGY_TEMPLATES: Record<Exclude<StrategyTemplate, "custom">, StrategyCo
 
 interface ProductStrategyConfigProps {
 	productId: string
+	// Expose state to parent for unified save
+	onStrategyChange?: (strategies: StrategyConfig, applyToAll: boolean) => void
 }
 
-export function ProductStrategyConfig({ productId }: ProductStrategyConfigProps) {
-	const { organizations } = useUserStore()
+export function ProductStrategyConfig({ productId, onStrategyChange }: ProductStrategyConfigProps) {
 	const [selectedTemplate, setSelectedTemplate] = useState<StrategyTemplate>("conservative")
 	const [applyToAll, setApplyToAll] = useState(false)
-	const [isLoading, setIsLoading] = useState(false)
 	const [customStrategies, setCustomStrategies] = useState<StrategyConfig>(STRATEGY_TEMPLATES.conservative)
-
-	const hasMultipleProducts = organizations.length > 1
 
 	// Load existing strategies on mount
 	useEffect(() => {
@@ -99,6 +93,14 @@ export function ProductStrategyConfig({ productId }: ProductStrategyConfigProps)
 		return selectedTemplate === "custom" ? customStrategies : STRATEGY_TEMPLATES[selectedTemplate]
 	}
 
+	// Notify parent when strategy changes
+	useEffect(() => {
+		if (onStrategyChange) {
+			const strategies = getCurrentStrategies()
+			onStrategyChange(strategies, applyToAll)
+		}
+	}, [selectedTemplate, customStrategies, applyToAll])
+
 	// Calculate total allocation percentage
 	const getTotalAllocation = (strategies: StrategyConfig): number => {
 		let total = 0
@@ -108,43 +110,6 @@ export function ProductStrategyConfig({ productId }: ProductStrategyConfigProps)
 			})
 		})
 		return total
-	}
-
-	const handleSave = async () => {
-		try {
-			setIsLoading(true)
-			const strategies = getCurrentStrategies()
-
-			// Validate sum to 100%
-			const total = getTotalAllocation(strategies)
-			if (total !== 100) {
-				toast.error(`Strategy allocation must sum to 100%, got ${total}%`)
-				return
-			}
-
-			if (applyToAll && hasMultipleProducts) {
-				// Apply to all products
-				let successCount = 0
-				for (const org of organizations) {
-					try {
-						await updateProductStrategiesCustomization(org.productId, strategies)
-						successCount++
-					} catch (error) {
-						console.error(`Failed to update product ${org.productId}:`, error)
-					}
-				}
-				toast.success(`Strategy applied to ${successCount} of ${organizations.length} products`)
-			} else {
-				// Apply to single product only
-				await updateProductStrategiesCustomization(productId, strategies)
-				toast.success("Strategy configured successfully")
-			}
-		} catch (error) {
-			console.error("Failed to configure strategy:", error)
-			toast.error("Failed to configure strategy")
-		} finally {
-			setIsLoading(false)
-		}
 	}
 
 	return (
@@ -157,12 +122,11 @@ export function ProductStrategyConfig({ productId }: ProductStrategyConfigProps)
 						onClick={() => {
 							setSelectedTemplate(template)
 						}}
-						disabled={isLoading}
 						className={`p-4 rounded-xl border-2 transition-all ${
 							selectedTemplate === template
 								? "border-accent bg-white shadow-md"
 								: "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
-						} ${isLoading ? "opacity-50 cursor-not-allowed" : ""}`}
+						}`}
 					>
 						<div className="font-semibold capitalize text-gray-950">{template}</div>
 						{template !== "custom" && (
@@ -210,30 +174,6 @@ export function ProductStrategyConfig({ productId }: ProductStrategyConfigProps)
 					</div>
 				</div>
 			</div>
-
-			{/* Apply to All Option */}
-			{hasMultipleProducts && (
-				<label className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
-					<Checkbox checked={applyToAll} onCheckedChange={setApplyToAll} disabled={isLoading} className="mt-0.5" />
-					<div className="flex-1">
-						<div className="text-sm font-medium text-gray-950">
-							Apply this strategy to all {organizations.length} products
-						</div>
-						<div className="text-xs text-gray-600 mt-0.5">
-							This will update investment strategies across all your products
-						</div>
-					</div>
-				</label>
-			)}
-
-			{/* Save Button */}
-			<button
-				onClick={handleSave}
-				disabled={isLoading || getTotalAllocation(getCurrentStrategies()) !== 100}
-				className="w-full bg-blue-500 text-white py-4 rounded-xl font-semibold hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-			>
-				{isLoading ? "Saving..." : applyToAll ? `Apply to All ${organizations.length} Products` : "Save Configuration"}
-			</button>
 
 			{/* AI Recommendation Note (Future) */}
 			<div className="text-center text-sm text-gray-500 mt-4">

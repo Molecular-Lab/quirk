@@ -8,6 +8,7 @@
  *
  * This store only handles:
  * - End-user account state (simulating app user)
+ * - Demo persona selection (Bob/Alice)
  * - Deposit flow state
  * - UI state for demo interactions
  */
@@ -16,8 +17,18 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
 import { useClientContextStore } from "./clientContextStore"
+import {
+	type PersonaType,
+	type PersonaProfile,
+	generatePersonaUserId,
+	getPersonaProfile,
+} from "@/feature/demo/personas"
 
 export interface DemoState {
+	// Persona selection (Bob/Alice)
+	selectedPersona: PersonaType | null
+	personaData: (PersonaProfile & { clientUserId: string }) | null
+
 	// End-user state (created via "Start Earning")
 	endUserId: string | null
 	endUserClientUserId: string | null // The demo_user_xxx ID
@@ -39,6 +50,12 @@ export interface DemoState {
 }
 
 export interface DemoStore extends DemoState {
+	// Persona management
+	setPersona: (persona: PersonaType, productName: string, visualizationType: string) => void
+	resetPersona: () => void
+	getPersonaUserId: () => string | null
+	hasPersona: () => boolean
+
 	// End-user setters
 	setEndUser: (data: { endUserId: string; endUserClientUserId: string }) => void
 	setHasEarnAccount: (hasAccount: boolean) => void
@@ -67,6 +84,8 @@ export interface DemoStore extends DemoState {
 }
 
 const initialState: DemoState = {
+	selectedPersona: null,
+	personaData: null,
 	endUserId: null,
 	endUserClientUserId: null,
 	hasEarnAccount: false,
@@ -80,6 +99,64 @@ export const useDemoStore = create<DemoStore>()(
 	persist(
 		(set, get) => ({
 			...initialState,
+
+			// ==========================================
+			// PERSONA MANAGEMENT
+			// ==========================================
+
+			// Set persona and generate product-scoped user ID
+			setPersona: (persona, productName, visualizationType) => {
+				const profile = getPersonaProfile(persona)
+				const clientUserId = generatePersonaUserId(persona, productName, visualizationType)
+
+				console.log("[demoStore] Setting persona:", {
+					persona,
+					productName,
+					visualizationType,
+					clientUserId,
+				})
+
+				set({
+					selectedPersona: persona,
+					personaData: {
+						...profile,
+						clientUserId,
+					},
+					// Reset end-user state when changing persona
+					endUserId: null,
+					endUserClientUserId: null,
+					hasEarnAccount: false,
+					deposits: [],
+				})
+			},
+
+			// Reset persona selection
+			resetPersona: () => {
+				console.log("[demoStore] Resetting persona")
+				set({
+					selectedPersona: null,
+					personaData: null,
+					// Also reset end-user state
+					endUserId: null,
+					endUserClientUserId: null,
+					hasEarnAccount: false,
+					deposits: [],
+				})
+			},
+
+			// Get persona's client user ID
+			getPersonaUserId: () => {
+				return get().personaData?.clientUserId || null
+			},
+
+			// Check if persona is selected
+			hasPersona: () => {
+				return !!get().selectedPersona
+			},
+
+			// ==========================================
+			// END-USER MANAGEMENT
+			// ==========================================
 
 			// Set end-user after "Start Earning"
 			setEndUser: (data) => {
@@ -156,6 +233,8 @@ export const useDemoStore = create<DemoStore>()(
 			name: "proxify-demo-state",
 			partialize: (state) =>
 				({
+					selectedPersona: state.selectedPersona,
+					personaData: state.personaData,
 					endUserId: state.endUserId,
 					endUserClientUserId: state.endUserClientUserId,
 					hasEarnAccount: state.hasEarnAccount,

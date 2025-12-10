@@ -31,8 +31,12 @@ export const userVaultContract = c.router({
 		method: "GET",
 		path: "/balances/:userId/vault/:vaultId",
 		responses: {
-			200: UserBalanceResponseSchema,
-			404: z.object({ error: z.string() }),
+			200: z.object({
+				found: z.boolean(),
+				data: UserBalanceResponseSchema.nullable(),
+				message: z.string().optional(),
+			}),
+			500: z.object({ success: z.boolean(), error: z.string() }),
 		},
 		summary: "Get user balance in specific vault",
 	},
