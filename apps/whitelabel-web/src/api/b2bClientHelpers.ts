@@ -93,6 +93,11 @@ export async function listOrganizationsByPrivyId(privyOrganizationId: string) {
  * Get organization by product ID
  */
 export async function getOrganizationByProductId(productId: string) {
+	// Check if productId is provided
+	if (!productId || productId === "undefined") {
+		throw new Error("Product ID is required")
+	}
+
 	const { status, body } = await b2bApiClient.client.getByProductId({
 		params: { productId },
 	})
@@ -101,13 +106,27 @@ export async function getOrganizationByProductId(productId: string) {
 		return body
 	}
 
-	throw new Error("Organization not found")
+	// Provide more specific error messages based on status
+	if (status === 403) {
+		throw new Error(`Access denied: Product ${productId} not in your organization`)
+	}
+
+	if (status === 404) {
+		throw new Error(`Product not found: ${productId}`)
+	}
+
+	throw new Error(`Failed to get organization for product ${productId}`)
 }
 
 /**
  * Get client profile by ID
  */
 export async function getClientProfile(id: string) {
+	// Check if id is provided
+	if (!id || id === "undefined") {
+		throw new Error("Client ID is required")
+	}
+
 	const { status, body } = await b2bApiClient.client.getById({
 		params: { id },
 	})
@@ -116,7 +135,16 @@ export async function getClientProfile(id: string) {
 		return body
 	}
 
-	throw new Error("Client not found")
+	// Provide more specific error messages based on status
+	if (status === 403) {
+		throw new Error(`Access denied: Client ${id} not in your organization`)
+	}
+
+	if (status === 404) {
+		throw new Error(`Client not found: ${id}`)
+	}
+
+	throw new Error(`Failed to get client ${id}`)
 }
 
 /**
