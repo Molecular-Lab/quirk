@@ -4,7 +4,6 @@
 	"description": "MCP server for yield optimization agent",
 	"type": "module",
 	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
 	"bin": {
 		"proxify-mcp": "./dist/index.js"
 	},

@@ -11,6 +11,7 @@ import { CustomizeEarnSection } from "./CustomizeEarnSection"
 import { IntegrationSection } from "./IntegrationSection"
 import { NewHeroSection } from "./NewHeroSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
+import { SurveySection } from "./SurveySection"
 import { TradingStrategiesSection } from "./TradingStrategiesSection"
 
 export function LandingPage() {
@@ -99,10 +100,13 @@ export function LandingPage() {
 				}`}
 			>
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-					<Link to="/" className="flex items-center gap-2 group">
+					<Link to="/" className="flex items-center gap-3 group">
 						<div className="relative p-2 -m-2 rounded-lg hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 transition-all">
 							<Sparkles className="size-6 text-gray-700 group-hover:text-gray-500 transition-colors cursor-pointer" />
 						</div>
+						<span className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
+							QUIRK
+						</span>
 					</Link>
 					<nav className="hidden md:flex items-center gap-6">
 						<Link to="/demo" className="text-gray-700 hover:text-gray-950 transition-colors font-medium">
@@ -138,6 +142,9 @@ export function LandingPage() {
 
 			{/* Integration */}
 			<IntegrationSection />
+
+			{/* Survey */}
+			<SurveySection />
 
 			{/* Footer */}
 			<footer className="bg-gradient-to-b from-gray-50 to-white border-t border-gray-150 py-12">
