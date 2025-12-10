@@ -45,6 +45,15 @@ export default function EndUsersTab({ productId }: EndUsersTabProps) {
 
 	useEffect(() => {
 		async function fetchData() {
+			// Don't fetch if productId is not defined (aggregate mode)
+			if (!productId) {
+				setLoading(false)
+				setError(null)
+				setGrowthMetrics(null)
+				setTransactions([])
+				return
+			}
+
 			try {
 				setLoading(true)
 				setError(null)
@@ -76,6 +85,21 @@ export default function EndUsersTab({ productId }: EndUsersTabProps) {
 
 		fetchData()
 	}, [productId, currentPage])
+
+	// Show aggregate mode message when no productId
+	if (!productId) {
+		return (
+			<div className="flex items-center justify-center py-12">
+				<div className="text-center max-w-md">
+					<Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+					<h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Product</h3>
+					<p className="text-gray-500">
+						End-user metrics are available for individual products. Please select a specific product from the dropdown to view detailed user activity.
+					</p>
+				</div>
+			</div>
+		)
+	}
 
 	if (loading && !growthMetrics) {
 		return (

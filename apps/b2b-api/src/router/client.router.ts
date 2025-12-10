@@ -94,7 +94,7 @@ export const createClientRouter = (
 							businessType: client.businessType,
 							description: client.description || null,
 							websiteUrl: client.websiteUrl || null,
-							walletType: client.privyWalletType, // ✅ From JOIN
+							walletType: client.walletType, // ✅ From JOIN
 							privyOrganizationId: client.privyOrganizationId,
 							apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
 							supportedCurrencies: client.supportedCurrencies || [],
@@ -146,7 +146,7 @@ export const createClientRouter = (
 							businessType: client.businessType,
 							description: client.description || null,
 							websiteUrl: client.websiteUrl || null,
-							walletType: client.privyWalletType, // ✅ From JOIN
+							walletType: client.walletType, // ✅ From JOIN
 							privyOrganizationId: client.privyOrganizationId,
 							apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
 							supportedCurrencies: client.supportedCurrencies || [],
