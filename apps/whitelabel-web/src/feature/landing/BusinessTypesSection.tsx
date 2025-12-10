@@ -27,6 +27,18 @@ export function BusinessTypesSection() {
 			metrics: "Settlement period optimization",
 		},
 		{
+			title: "Freelance Platforms",
+			description:
+				"Project escrow and milestone payments earn yield until release. Freelancer earnings accumulate returns while waiting for withdrawal, maximizing value for both clients and workers.",
+			icon: "💼",
+			companies: [
+				{ name: "Upwork", logo: "💼" },
+				{ name: "Fiverr", logo: "🎯" },
+				{ name: "Toptal", logo: "🌟" },
+			],
+			metrics: "Escrow period yields",
+		},
+		{
 			title: "Creator Platforms",
 			description:
 				"Creator revenue earns yield until withdrawal. Boost creator retention and satisfaction by offering competitive returns on their earnings while they focus on content.",
@@ -46,7 +58,7 @@ export function BusinessTypesSection() {
 			companies: [
 				{ name: "Uber", logo: "🚕" },
 				{ name: "DoorDash", logo: "🍔" },
-				{ name: "Upwork", logo: "💼" },
+				{ name: "Lyft", logo: "🚙" },
 			],
 			metrics: "Daily earnings accumulate",
 		},
@@ -79,9 +91,9 @@ export function BusinessTypesSection() {
 				{/* Business Type Cards - Horizontal Scroll with Animation */}
 				<div className="relative overflow-hidden pb-4">
 					<div className="flex gap-6 animate-scroll-horizontal hover:pause-animation">
-						{businessTypes.map((type, idx) => (
-							<div
-								key={idx}
+					{businessTypes.map((type, idx) => (
+						<div
+							key={idx}
 								className="flex-shrink-0 w-[450px] bg-white rounded-xl border-t-4 border-blue-500 border-x border-b border-gray-200 p-8 hover:shadow-lg transition-all"
 							>
 								{/* Icon & Title */}
