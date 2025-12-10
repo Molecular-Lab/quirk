@@ -45,7 +45,7 @@ export function SupportedAssetsSection() {
 								<div className="text-center">
 									<span className="block text-lg font-bold text-gray-950">{protocol.name}</span>
 									{protocol.description && (
-										<span className="text-xs text-gray-600 mt-1 block">{protocol.description}</span>
+									<span className="text-xs text-gray-600 mt-1 block">{protocol.description}</span>
 									)}
 								</div>
 							</div>
