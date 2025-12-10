@@ -20,6 +20,7 @@ import type {
 } from '../../dto/b2b';
 import { AuditRepository, ClientRepository, PrivyAccountRepository, VaultRepository } from '../../repository';
 import { generateApiKey, hashApiKey, extractPrefix } from '../../utils/apiKey';
+import { RevenueService } from '../../service';
 
 /**
  * B2B Client UseCase
@@ -30,7 +31,8 @@ export class B2BClientUseCase {
     private readonly clientRepository: ClientRepository,
     private readonly privyAccountRepository: PrivyAccountRepository,
     private readonly auditRepository: AuditRepository,
-    private readonly vaultRepository: VaultRepository
+    private readonly vaultRepository: VaultRepository,
+    private readonly revenueService: RevenueService
   ) {}
 
   /**
@@ -161,8 +163,10 @@ export class B2BClientUseCase {
       customStrategy: request.strategyRanking ? JSON.stringify({ ranking: request.strategyRanking }) : request.customStrategy || null,
       strategiesPreferences: request.strategyPreferences ? JSON.stringify(request.strategyPreferences) : null,
       strategiesCustomization: null, // Will be set via Market Analysis dashboard
-      endUserYieldPortion: request.endUserYieldPortion || null,
-      platformFee: request.platformFee || null,
+
+      // Fee Configuration (3-way revenue split)
+      clientRevenueSharePercent: request.clientRevenueSharePercent || '15.00',
+      platformFeePercent: request.platformFeePercent || '7.50',
       performanceFee: request.performanceFee || null,
       isActive: request.isActive ?? true,
       isSandbox: request.isSandbox ?? false,
@@ -458,6 +462,28 @@ export class B2BClientUseCase {
   }
 
   /**
+   * Add to idle balance (after on-ramp)
+   * Called when fiat → crypto conversion completes and funds arrive in custodial wallet
+   */
+  async addToIdleBalance(clientId: string, amount: string): Promise<void> {
+    await this.clientRepository.addToIdleBalance(clientId, amount);
+
+    // Audit log
+    await this.auditRepository.create({
+      clientId,
+      userId: null,
+      actorType: 'system',
+      action: 'idle_balance_added',
+      resourceType: 'client_organization',
+      resourceId: clientId,
+      description: `Added ${amount} to idle balance after on-ramp`,
+      metadata: { amount },
+      ipAddress: null,
+      userAgent: null,
+    });
+  }
+
+  /**
    * Get client statistics
    */
   async getStats(clientId: string): Promise<GetClientStatsRow | null> {
@@ -554,8 +580,8 @@ export class B2BClientUseCase {
       webhookUrls: null,
       webhookSecret: null,
       customStrategy: null,
-      endUserYieldPortion: null,
-      platformFee: null,
+      clientRevenueSharePercent: null,
+      platformFeePercent: null,
       performanceFee: null,
     });
 
@@ -686,10 +712,11 @@ export class B2BClientUseCase {
       throw new Error(`Client not found for product ID: ${productId}`);
     }
 
-    // Update strategies_customization
-    await this.clientRepository.update(client.id, {
-      strategiesCustomization: JSON.stringify(strategies),
-    });
+    // Update strategies_customization using dedicated query
+    await this.clientRepository.updateProductCustomizationByProductId(
+      productId,
+      JSON.stringify(strategies)
+    );
 
     // Audit log
     await this.auditRepository.create({
@@ -725,6 +752,242 @@ export class B2BClientUseCase {
     return {
       strategies: hasCustomization ? customization : preferences,
       source: hasCustomization ? 'customization' : 'preferences',
+    };
+  }
+
+  // ============================================
+  // FEE CONFIGURATION (Revenue Share)
+  // ============================================
+
+  /**
+   * Update fee configuration (client revenue share percentage)
+   */
+  async updateFeeConfig(productId: string, clientRevenueSharePercent: string) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    // Update fee configuration
+    // Convert undefined to null for SQLC compatibility
+    await this.clientRepository.update(client.id, {
+      companyName: null,
+      businessType: null,
+      description: null,
+      websiteUrl: null,
+      customerTier: null,
+      webhookUrls: null,
+      webhookSecret: null,
+      customStrategy: null,
+      clientRevenueSharePercent, // Only this field will be updated
+      platformFeePercent: null,
+      performanceFee: null,
+    });
+
+    // Audit log
+    await this.auditRepository.create({
+      clientId: client.id,
+      userId: null,
+      actorType: 'client',
+      action: 'fee_config_updated',
+      resourceType: 'client',
+      resourceId: client.id,
+      description: `Updated fee configuration: client revenue share = ${clientRevenueSharePercent}%`,
+      metadata: { clientRevenueSharePercent },
+      ipAddress: null,
+      userAgent: null,
+    });
+
+    // Return updated client
+    return await this.getClientByProductId(productId);
+  }
+
+  // ============================================
+  // DASHBOARD METRICS
+  // ============================================
+
+  /**
+   * Get revenue metrics for dashboard
+   * Returns MRR, ARR, cumulative revenue, and fee configuration
+   */
+  async getRevenueMetrics(productId: string) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    return await this.revenueService.getDashboardRevenueSummary(client.id);
+  }
+
+  /**
+   * Get end-user growth metrics
+   * Returns total users, new users, active users, deposits/withdrawals
+   */
+  async getEndUserGrowthMetrics(productId: string) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    const metrics = await this.clientRepository.getEndUserGrowthMetrics(client.id);
+    if (!metrics) {
+      // Return empty metrics if client has no data yet
+      return {
+        totalEndUsers: 0,
+        newUsers30d: 0,
+        activeUsers30d: 0,
+        totalDeposited: '0',
+        totalWithdrawn: '0',
+        totalDeposits: 0,
+        totalWithdrawals: 0,
+      };
+    }
+
+    return metrics;
+  }
+
+  /**
+   * Get recent end-user transactions with pagination
+   */
+  async getEndUserTransactions(productId: string, page: number, limit: number) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    const offset = (page - 1) * limit;
+    const transactions = await this.clientRepository.getRecentEndUserTransactions(client.id, limit, offset);
+
+    // Count total transactions for pagination
+    // TODO: Add count query to repository
+    const total = transactions.length;
+
+    return {
+      transactions,
+      total,
+    };
+  }
+
+  /**
+   * Get wallet balances (idle & earning)
+   */
+  async getWalletBalances(productId: string) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    const balances = await this.clientRepository.getTotalBalances(client.id);
+    if (!balances) {
+      // Return empty balances if client has no vaults yet
+      return {
+        totalIdleBalance: '0',
+        totalEarningBalance: '0',
+        totalClientRevenue: '0',
+        totalPlatformRevenue: '0',
+        totalEnduserRevenue: '0',
+        totalCumulativeYield: '0',
+      };
+    }
+
+    return {
+      totalIdleBalance: balances.totalIdleBalance || '0',
+      totalEarningBalance: balances.totalEarningBalance || '0',
+      totalClientRevenue: balances.totalClientRevenue || '0',
+      totalPlatformRevenue: balances.totalPlatformRevenue || '0',
+      totalEnduserRevenue: balances.totalEnduserRevenue || '0',
+      totalCumulativeYield: (
+        parseFloat(balances.totalClientRevenue || '0') +
+        parseFloat(balances.totalPlatformRevenue || '0') +
+        parseFloat(balances.totalEnduserRevenue || '0')
+      ).toFixed(18),
+    };
+  }
+
+  /**
+   * Get complete dashboard summary
+   * Combines balances, revenue, end-users, and recent transactions
+   */
+  async getDashboardSummary(productId: string) {
+    const client = await this.getClientByProductId(productId);
+    if (!client) {
+      throw new Error(`Client not found for product ID: ${productId}`);
+    }
+
+    // Fetch all metrics in parallel
+    const [balances, revenue, endUsers, recentTransactions] = await Promise.all([
+      this.getWalletBalances(productId),
+      this.getRevenueMetrics(productId),
+      this.getEndUserGrowthMetrics(productId),
+      this.getEndUserTransactions(productId, 1, 10),
+    ]);
+
+    return {
+      companyName: client.companyName,
+      balances: {
+        totalIdleBalance: balances.totalIdleBalance,
+        totalEarningBalance: balances.totalEarningBalance,
+        totalClientRevenue: balances.totalClientRevenue,
+        totalPlatformRevenue: balances.totalPlatformRevenue,
+        totalEnduserRevenue: balances.totalEnduserRevenue,
+      },
+      revenue: {
+        monthlyRecurringRevenue: revenue.monthlyRecurringRevenue,
+        annualRunRate: revenue.annualRunRate,
+        clientRevenuePercent: revenue.clientRevenuePercent,
+        platformFeePercent: revenue.platformFeePercent,
+        enduserFeePercent: revenue.enduserFeePercent,
+        lastCalculatedAt: revenue.lastCalculatedAt,
+      },
+      endUsers: {
+        totalEndUsers: endUsers.totalEndUsers,
+        newUsers30d: endUsers.newUsers30d,
+        activeUsers30d: endUsers.activeUsers30d,
+        totalDeposited: endUsers.totalDeposited,
+        totalWithdrawn: endUsers.totalWithdrawn,
+      },
+      recentTransactions: recentTransactions.transactions,
+    };
+  }
+
+  /**
+   * Get aggregated dashboard summary across ALL products for a Privy user
+   * Aggregates data from all client organizations (products) belonging to the user
+   */
+  async getAggregateDashboardSummary(privyOrganizationId: string) {
+    // Fetch aggregated data from single SQL query
+    const aggregatedData = await this.clientRepository.getAggregatedDashboardSummary(privyOrganizationId);
+
+    if (!aggregatedData) {
+      throw new Error(`No organizations found for Privy ID: ${privyOrganizationId}`);
+    }
+
+    // Map database columns to response format
+    return {
+      productId: 'aggregate', // Special identifier for aggregate mode
+      companyName: aggregatedData.companyName || 'All Products',
+      balances: {
+        totalIdleBalance: aggregatedData.totalIdleBalance?.toString() || '0',
+        totalEarningBalance: aggregatedData.totalEarningBalance?.toString() || '0',
+        totalClientRevenue: aggregatedData.totalClientRevenue?.toString() || '0',
+        totalPlatformRevenue: aggregatedData.totalPlatformRevenue?.toString() || '0',
+        totalEnduserRevenue: aggregatedData.totalEnduserRevenue?.toString() || '0',
+      },
+      revenue: {
+        monthlyRecurringRevenue: aggregatedData.monthlyRecurringRevenue?.toString() || '0',
+        annualRunRate: aggregatedData.annualRunRate?.toString() || '0',
+        clientRevenuePercent: aggregatedData.clientRevenuePercent?.toString() || '0',
+        platformFeePercent: aggregatedData.platformFeePercent?.toString() || '0',
+        enduserFeePercent: aggregatedData.enduserFeePercent?.toString() || '0',
+        lastCalculatedAt: aggregatedData.lastCalculatedAt?.toString() || null,
+      },
+      endUsers: {
+        totalEndUsers: Number(aggregatedData.totalEndUsers) || 0,
+        newUsers30d: Number(aggregatedData.newUsers_30d) || 0,
+        activeUsers30d: Number(aggregatedData.activeUsers_30d) || 0,
+        totalDeposited: aggregatedData.totalDeposited?.toString() || '0',
+        totalWithdrawn: aggregatedData.totalWithdrawn?.toString() || '0',
+      },
     };
   }
 }

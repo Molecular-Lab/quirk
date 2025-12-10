@@ -11,18 +11,18 @@ import { verifyApiKey } from '../../utils/apiKey';
 import {
   // Query functions
   getClient,
-  getClientByProductID,
-  getClientsByPrivyOrgID,
+  getClientByProductId,  // Fixed: was getClientByProductID
+  getClientByPrivyOrgId,  // Fixed: was getClientsByPrivyOrgID
   getClientByAPIKeyPrefix,
   getClientByAPIKeyHash,
   listClients,
-  listActiveClients,
+  // listActiveClients,  // TODO: Add this query
   createClient,
   updateClient,
   activateClient,
   deactivateClient,
   deleteClient,
-  updateClientAPIKey,
+  storeAPIKey as updateClientAPIKey,  // Using storeAPIKey as updateClientAPIKey
   getClientBalance,
   createClientBalance,
   addToAvailableBalance,
@@ -30,21 +30,41 @@ import {
   reserveBalance,
   releaseReservedBalance,
   deductReservedBalance,
+  addToClientIdleBalance,
+  moveClientIdleToEarning,
+  moveClientEarningToIdle,
   getClientStats,
-  getClientBankAccounts,
-  updateClientBankAccounts,
-  updateClientSupportedCurrencies,
-  addSupportedCurrency,
-  removeSupportedCurrency,
+  // getClientBankAccounts,  // TODO: Add bank account queries
+  // updateClientBankAccounts,
+  // updateClientSupportedCurrencies,
+  // addSupportedCurrency,
+  // removeSupportedCurrency,
+  getRevenueConfig,
+  getRevenueConfigByProductID,
+  updateFeeConfiguration as updateRevenueConfig,  // SQL name: UpdateFeeConfiguration
+  updateRevenueConfigByProductID,
+  updateProductCustomizationByProductID,
+  // Wallet stages (NEW) - TODO: Add these queries
+  // getClientTotalBalances,
+  // Revenue tracking (NEW) - TODO: Add these queries
+  // getClientRevenueSummary,
+  // updateClientMRR,
+  // listClientsForMRRCalculation,
+  // End-user activity (NEW) - TODO: Add these queries
+  // listRecentEndUserTransactions,
+  // getEndUserGrowthMetrics,
+  // Aggregated dashboard (NEW)
+  getAllClientsByPrivyOrgId,
+  getAggregatedDashboardSummary,
 
   // Types
   type GetClientRow,
-  type GetClientByProductIDRow,
-  type GetClientsByPrivyOrgIDRow,
+  type GetClientByProductIdRow,  // Fixed: was GetClientByProductIDRow
+  type GetClientByPrivyOrgIdRow,  // Fixed: was GetClientsByPrivyOrgIDRow
   type GetClientByAPIKeyPrefixRow,
   type GetClientByAPIKeyHashRow,
   type ListClientsRow,
-  type ListActiveClientsRow,
+  // type ListActiveClientsRow,  // TODO: Add this query
   type CreateClientArgs,
   type CreateClientRow,
   type UpdateClientArgs,
@@ -53,7 +73,25 @@ import {
   type CreateClientBalanceArgs,
   type CreateClientBalanceRow,
   type GetClientStatsRow,
-  type GetClientBankAccountsRow,
+  // type GetClientBankAccountsRow,  // TODO: Add bank account queries
+  type GetRevenueConfigRow,
+  type GetRevenueConfigByProductIDRow,
+  type UpdateFeeConfigurationRow as UpdateRevenueConfigRow,  // SQL name: UpdateFeeConfiguration
+  type UpdateRevenueConfigByProductIDRow,
+  type UpdateProductCustomizationByProductIDArgs,
+  // Wallet stages types (NEW) - TODO: Add these queries
+  // type GetClientTotalBalancesRow,
+  // Revenue tracking types (NEW) - TODO: Add these queries
+  // type GetClientRevenueSummaryRow,
+  // type ListClientsForMRRCalculationRow,
+  // End-user activity types (NEW) - TODO: Add these queries
+  // type ListRecentEndUserTransactionsRow,
+  // type GetEndUserGrowthMetricsRow,
+  // Aggregated dashboard types (NEW)
+  type GetAllClientsByPrivyOrgIdArgs,
+  type GetAllClientsByPrivyOrgIdRow,
+  type GetAggregatedDashboardSummaryArgs,
+  type GetAggregatedDashboardSummaryRow,
 } from '@proxify/sqlcgen';
 
 interface BankAccount {
@@ -86,16 +124,16 @@ export class ClientRepository {
    * Get client by product ID
    * Used for client lookup in APIs
    */
-  async getByProductId(productId: string): Promise<GetClientByProductIDRow | null> {
-    return await getClientByProductID(this.sql, { productId });
+  async getByProductId(productId: string): Promise<GetClientByProductIdRow | null> {
+    return await getClientByProductId(this.sql, { productId });
   }
 
   /**
-   * Get client by Privy organization ID
-   * Used for Privy webhook integration
+   * Get clients by Privy organization ID (returns array of all clients for this Privy org)
+   * Used for Privy webhook integration and multi-product dashboard
    */
-  async getByPrivyOrgId(privyOrgId: string): Promise<GetClientsByPrivyOrgIDRow[]> {
-    return await getClientsByPrivyOrgID(this.sql, { privyOrganizationId: privyOrgId });
+  async getByPrivyOrgId(privyOrgId: string): Promise<GetAllClientsByPrivyOrgIdRow[]> {
+    return await getAllClientsByPrivyOrgId(this.sql, { privyOrganizationId: privyOrgId });
   }
 
   /**
@@ -236,6 +274,34 @@ export class ClientRepository {
   }
 
   // ==========================================
+  // WALLET STAGE BALANCES (idle → earning)
+  // ==========================================
+
+  /**
+   * Add to client's idle balance
+   * ✅ Called when: On-ramp completes (funds arrive in custodial wallet)
+   */
+  async addToIdleBalance(clientId: string, amount: string): Promise<void> {
+    await addToClientIdleBalance(this.sql, { id: clientId, idleBalance: amount });
+  }
+
+  /**
+   * Move from idle to earning balance
+   * ✅ Called when: Staking funds to DeFi protocols
+   */
+  async moveIdleToEarning(clientId: string, amount: string): Promise<void> {
+    await moveClientIdleToEarning(this.sql, { id: clientId, idleBalance: amount });
+  }
+
+  /**
+   * Move from earning back to idle balance
+   * ✅ Called when: Unstaking from DeFi protocols
+   */
+  async moveEarningToIdle(clientId: string, amount: string): Promise<void> {
+    await moveClientEarningToIdle(this.sql, { id: clientId, earningBalance: amount });
+  }
+
+  // ==========================================
   // CLIENT STATISTICS
   // ==========================================
 
@@ -256,22 +322,36 @@ export class ClientRepository {
    * ✅ Two-step validation: prefix lookup → hash compare
    */
   async validateApiKey(apiKey: string): Promise<GetClientByAPIKeyHashRow | null> {
-    // Step 1: Extract prefix (first 8 chars)
-    const prefix = apiKey.substring(0, 8);
-    
+    // Step 1: Extract prefix (first 12 chars for uniqueness)
+    const prefix = apiKey.substring(0, 12);
+    console.log(`[validateApiKey] Step 1: Extracted prefix: "${prefix}"`);
+
     // Step 2: Get client by prefix (fast lookup)
     const client = await this.getByApiKeyPrefix(prefix);
+    console.log(`[validateApiKey] Step 2: Client lookup by prefix:`, {
+      found: !!client,
+      hasHash: client ? !!client.apiKeyHash : false,
+      productId: client?.productId,
+      companyName: client?.companyName
+    });
+
     if (!client || !client.apiKeyHash) {
+      console.log(`[validateApiKey] ❌ FAILED at Step 2: ${!client ? 'No client found with prefix' : 'Client found but no hash stored'}`);
       return null;
     }
 
     // Step 3: Verify API key against stored hash (constant-time via bcrypt)
+    console.log(`[validateApiKey] Step 3: Verifying bcrypt hash...`);
     const isValid = await verifyApiKey(apiKey, client.apiKeyHash);
+    console.log(`[validateApiKey] Step 3 result: Hash ${isValid ? '✅ matches' : '❌ does NOT match'}`);
+
     if (!isValid) {
+      console.log(`[validateApiKey] ❌ FAILED at Step 3: Hash mismatch`);
       return null;
     }
 
     // Step 4: Return client if valid
+    console.log(`[validateApiKey] ✅ SUCCESS: API key validated for ${client.companyName} (${client.productId})`);
     return client;
   }
 
@@ -436,5 +516,278 @@ export class ClientRepository {
       id: clientId,
       arrayRemove: currency,
     });
+  }
+
+  // ==========================================
+  // REVENUE CONFIGURATION (NEW)
+  // ==========================================
+
+  /**
+   * Get revenue configuration for client
+   * Returns client revenue share (10-20%) and platform fee (fixed 5%)
+   */
+  async getRevenueConfig(clientId: string): Promise<GetRevenueConfigRow | null> {
+    return await getRevenueConfig(this.sql, { id: clientId });
+  }
+
+  /**
+   * Get revenue configuration by product ID
+   */
+  async getRevenueConfigByProductId(productId: string): Promise<GetRevenueConfigByProductIDRow | null> {
+    return await getRevenueConfigByProductID(this.sql, { productId });
+  }
+
+  /**
+   * Update client revenue share percentage (10-20%)
+   * Platform fee remains fixed and cannot be changed by client
+   *
+   * @param clientId - Client organization ID
+   * @param revenueSharePercent - Client's share of raw APY (10-20%)
+   * @returns Updated revenue config
+   */
+  async updateRevenueConfig(
+    clientId: string,
+    revenueSharePercent: string
+  ): Promise<UpdateRevenueConfigRow | null> {
+    // Validate range (10-20%)
+    const percent = parseFloat(revenueSharePercent);
+    if (percent < 10 || percent > 20) {
+      throw new Error('Client revenue share must be between 10% and 20%');
+    }
+
+    return await updateRevenueConfig(this.sql, {
+      id: clientId,
+      clientRevenueSharePercent: revenueSharePercent,
+    });
+  }
+
+  /**
+   * Update client revenue share by product ID
+   */
+  async updateRevenueConfigByProductId(
+    productId: string,
+    revenueSharePercent: string
+  ): Promise<UpdateRevenueConfigByProductIDRow | null> {
+    // Validate range (10-20%)
+    const percent = parseFloat(revenueSharePercent);
+    if (percent < 10 || percent > 20) {
+      throw new Error('Client revenue share must be between 10% and 20%');
+    }
+
+    return await updateRevenueConfigByProductID(this.sql, {
+      productId,
+      clientRevenueSharePercent: revenueSharePercent,
+    });
+  }
+
+  /**
+   * Update product strategy customization by product ID
+   */
+  async updateProductCustomizationByProductId(
+    productId: string,
+    strategiesCustomization: string
+  ): Promise<void> {
+    return await updateProductCustomizationByProductID(this.sql, {
+      productId,
+      strategiesCustomization,
+    });
+  }
+
+  /**
+   * Calculate revenue split from raw yield
+   * Returns 3-way split: platform fee, client revenue, end-user revenue
+   *
+   * @param clientId - Client organization ID
+   * @param rawYield - Total yield earned from DeFi (before fees)
+   * @returns Revenue split breakdown
+   */
+  async calculateRevenueSplit(clientId: string, rawYield: number): Promise<{
+    rawYield: number;
+    platformFee: number;
+    clientRevenue: number;
+    endUserRevenue: number;
+    platformFeePercent: number;
+    clientRevenuePercent: number;
+    endUserNetPercent: number;
+  }> {
+    const config = await this.getRevenueConfig(clientId);
+
+    if (!config) {
+      throw new Error('Client revenue config not found');
+    }
+
+    const platformFeePercent = parseFloat(config.platformFeePercent || '5.0');
+    const clientRevenuePercent = parseFloat(config.clientRevenueSharePercent || '15.0');
+
+    const platformFee = rawYield * (platformFeePercent / 100);
+    const clientRevenue = rawYield * (clientRevenuePercent / 100);
+    const endUserRevenue = rawYield - platformFee - clientRevenue;
+    const endUserNetPercent = 100 - platformFeePercent - clientRevenuePercent;
+
+    return {
+      rawYield,
+      platformFee,
+      clientRevenue,
+      endUserRevenue,
+      platformFeePercent,
+      clientRevenuePercent,
+      endUserNetPercent,
+    };
+  }
+
+  // ==========================================
+  // WALLET STAGES OPERATIONS (NEW)
+  // ==========================================
+
+  /**
+   * Get aggregated balances across all vaults for a client
+   * Returns: total idle balance, earning balance, and revenue earned
+   */
+  async getTotalBalances(clientId: string): Promise<GetClientTotalBalancesRow | null> {
+    return await getClientTotalBalances(this.sql, { clientId });
+  }
+
+  // ==========================================
+  // REVENUE METRICS (NEW)
+  // ==========================================
+
+  /**
+   * Get comprehensive revenue summary for a client
+   * Includes: MRR, ARR, total revenue earned, fee splits
+   */
+  async getRevenueSummary(clientId: string): Promise<GetClientRevenueSummaryRow | null> {
+    return await getClientRevenueSummary(this.sql, { id: clientId });
+  }
+
+  /**
+   * Calculate and update Monthly Recurring Revenue (MRR)
+   * Formula: MRR = Earning Balance × Average APY × Client Revenue Share %
+   * ARR is automatically calculated as MRR × 12
+   *
+   * @param clientId - Client organization ID
+   * @param mrr - Monthly recurring revenue amount
+   */
+  async updateMRR(clientId: string, mrr: string): Promise<void> {
+    await updateClientMRR(this.sql, {
+      id: clientId,
+      monthlyRecurringRevenue: mrr,
+    });
+  }
+
+  /**
+   * List all clients with active earning balances (for batch MRR calculation)
+   */
+  async listClientsForMRRCalculation(): Promise<ListClientsForMRRCalculationRow[]> {
+    return await listClientsForMRRCalculation(this.sql);
+  }
+
+  /**
+   * Calculate MRR for a client based on current earning balance and APY
+   * Formula: MRR = (Earning Balance × APY × Client Revenue Share %) / 12
+   *
+   * @param earningBalance - Total funds actively earning yield
+   * @param avgApy30d - Average 30-day APY (as percentage, e.g., 5.5 for 5.5%)
+   * @param clientRevenuePercent - Client's revenue share (10-20%)
+   * @returns Monthly recurring revenue
+   */
+  calculateMRR(earningBalance: number, avgApy30d: number, clientRevenuePercent: number): number {
+    // Convert APY to decimal (5.5% → 0.055)
+    const apyDecimal = avgApy30d / 100;
+
+    // Calculate annual client revenue
+    const annualClientRevenue = earningBalance * apyDecimal * (clientRevenuePercent / 100);
+
+    // Convert to monthly (ARR / 12)
+    const mrr = annualClientRevenue / 12;
+
+    return mrr;
+  }
+
+  // ==========================================
+  // END-USER ACTIVITY (NEW)
+  // ==========================================
+
+  /**
+   * Get recent end-user transactions (deposits + withdrawals)
+   * Returns unified transaction feed for dashboard
+   */
+  async getRecentEndUserTransactions(
+    clientId: string,
+    limit: number = 20,
+    offset: number = 0
+  ): Promise<ListRecentEndUserTransactionsRow[]> {
+    return await listRecentEndUserTransactions(this.sql, {
+      clientId,
+      limit: limit.toString(),
+      offset: offset.toString(),
+    });
+  }
+
+  /**
+   * Get end-user growth metrics
+   * Returns: total users, new users (30d), active users (30d), deposits, withdrawals
+   */
+  async getEndUserGrowthMetrics(clientId: string): Promise<GetEndUserGrowthMetricsRow | null> {
+    return await getEndUserGrowthMetrics(this.sql, { id: clientId });
+  }
+
+  // ==========================================
+  // DASHBOARD METRICS (NEW - Convenience Method)
+  // ==========================================
+
+  /**
+   * Get all dashboard metrics in one call
+   * Convenience method that combines multiple queries
+   */
+  async getDashboardMetrics(clientId: string): Promise<{
+    balances: GetClientTotalBalancesRow | null;
+    revenue: GetClientRevenueSummaryRow | null;
+    growth: GetEndUserGrowthMetricsRow | null;
+    recentTransactions: ListRecentEndUserTransactionsRow[];
+  }> {
+    const [balances, revenue, growth, recentTransactions] = await Promise.all([
+      this.getTotalBalances(clientId),
+      this.getRevenueSummary(clientId),
+      this.getEndUserGrowthMetrics(clientId),
+      this.getRecentEndUserTransactions(clientId, 10, 0),
+    ]);
+
+    return {
+      balances,
+      revenue,
+      growth,
+      recentTransactions,
+    };
+  }
+
+  // ============================================
+  // AGGREGATED DASHBOARD (Across All Products)
+  // ============================================
+
+  /**
+   * Get all client organizations for a Privy user
+   * Used to aggregate data across multiple products
+   */
+  async getAllClientsByPrivyOrgId(privyOrganizationId: string): Promise<GetAllClientsByPrivyOrgIdRow[]> {
+    try {
+      return await getAllClientsByPrivyOrgId(this.sql, { privyOrganizationId });
+    } catch (error) {
+      console.error('[ClientRepository] Error getting all clients by privy org ID:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * Get aggregated dashboard summary across ALL products for a Privy user
+   * Sums: idle_balance, earning_balance, revenue metrics, end-user metrics
+   * Calculates weighted averages for revenue percentages
+   */
+  async getAggregatedDashboardSummary(privyOrganizationId: string): Promise<GetAggregatedDashboardSummaryRow | null> {
+    try {
+      return await getAggregatedDashboardSummary(this.sql, { privyOrganizationId });
+    } catch (error) {
+      console.error('[ClientRepository] Error getting aggregated dashboard summary:', error);
+      throw error;
+    }
   }
 }

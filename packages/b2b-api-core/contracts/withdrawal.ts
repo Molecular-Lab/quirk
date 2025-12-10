@@ -95,8 +95,12 @@ export const withdrawalContract = c.router({
 		method: "GET",
 		path: "/withdrawals/:id",
 		responses: {
-			200: WithdrawalResponseSchema,
-			404: z.object({ error: z.string() }),
+			200: z.object({
+				found: z.boolean(),
+				data: WithdrawalResponseSchema.nullable(),
+				message: z.string().optional(),
+			}),
+			500: z.object({ success: z.boolean(), error: z.string() }),
 		},
 		summary: "Get withdrawal by ID",
 	},

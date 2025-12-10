@@ -48,6 +48,8 @@ export function CreateProduct() {
 		businessType: "",
 		customerTier: "",
 		strategyRanking: [] as string[],
+		clientRevenueSharePercent: "15.00",
+		platformFeePercent: "7.50",
 		currencies: [Currency.USD] as Currency[],
 		bankAccounts: {} as Record<
 			Currency,
@@ -135,6 +137,8 @@ export function CreateProduct() {
 				privyEmail: user.email?.address,
 				customerTier: formData.customerTier as "0-1K" | "1K-10K" | "10K-100K" | "100K-1M" | "1M+",
 				strategyRanking: formData.strategyRanking,
+				clientRevenueSharePercent: formData.clientRevenueSharePercent,
+				platformFeePercent: formData.platformFeePercent,
 				supportedCurrencies: formData.currencies.map((c) => c.toString()) as (
 					| "SGD"
 					| "USD"

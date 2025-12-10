@@ -185,8 +185,8 @@ export function createDepositRouter(
 				const deposit = await depositService.getDepositByOrderId(params.orderId);
 				if (!deposit) {
 					return {
-						status: 404 as const,
-						body: { error: "Deposit not found" },
+						status: 400 as const,
+						body: { error: "Deposit not found - invalid order ID" },
 					};
 				}
 
@@ -430,11 +430,70 @@ export function createDepositRouter(
 					logger.info(`✅ Completed deposit: ${orderId} → ${cryptoAmount} USDC`);
 				}
 
-					// 6. Get client custodial wallet address
-				const client = await clientService.getById(clientId);
-				const custodialWallet = client?.privyWalletAddress || "0x0000000000000000000000000000000000000000";
+				// Check if any orders were actually completed
+				if (completedOrders.length === 0) {
+					logger.warn("No deposits were completed (all were already processed or invalid)");
+					return {
+						status: 200 as const,
+						body: {
+							success: false,
+							completedOrders: [],
+							totalUSDC: "0.00",
+							custodialWallet: "N/A",
+							mockNote: "No deposits were completed - all orders were already processed or invalid",
+						},
+					};
+				}
 
-				// 7. Execute USDC transfer to custodial wallet (RampToCustodial)
+				// 6. Get client custodial wallet address
+				const client = await clientService.getById(clientId);
+
+				if (!client || !client.privyWalletAddress) {
+					logger.error("Client or custodial wallet not found", { clientId });
+					return {
+						status: 400 as const,
+						body: {
+							error: "Client custodial wallet not configured",
+						},
+					};
+				}
+
+				const custodialWallet = client.privyWalletAddress;
+
+				// 7. Update Product Idle Balances (BEFORE blockchain mint)
+				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+				logger.info("💰 UPDATING PRODUCT IDLE BALANCES");
+				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+				// Aggregate deposits by product (clientId)
+				const depositsByProduct = new Map<string, number>();
+
+				for (const order of completedOrders) {
+					const deposit = await depositService.getDepositByOrderId(order.orderId);
+					if (deposit) {
+						const current = depositsByProduct.get(deposit.clientId) || 0;
+						depositsByProduct.set(
+							deposit.clientId,
+							current + parseFloat(order.cryptoAmount)
+						);
+					}
+				}
+
+				// Update each product's idle balance
+				for (const [productClientId, totalAmount] of depositsByProduct) {
+					await clientService.addToIdleBalance(
+						productClientId,
+						totalAmount.toFixed(2)
+					);
+					logger.info(`✅ Updated idle balance`, {
+						clientId: productClientId,
+						amount: totalAmount.toFixed(2)
+					});
+				}
+
+				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+				// 8. Execute USDC transfer to custodial wallet (RampToCustodial)
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 				logger.info("🏦 RAMP TO CUSTODIAL - Minting MockUSDC (USDQ)");
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -842,8 +901,12 @@ export function createDepositRouter(
 
 				if (!deposit) {
 					return {
-						status: 404 as const,
-						body: { success: false, error: "Deposit not found" },
+						status: 200 as const,
+					body: {
+					found: false,
+					data: null,
+					message: "Deposit not found",
+				},
 					};
 				}
 
@@ -894,13 +957,17 @@ export function createDepositRouter(
 
 				return {
 					status: 200 as const,
-					body: mapDepositToDto(deposit, clientBankAccounts),
+					body: {
+					found: true,
+					data: mapDepositToDto(deposit, clientBankAccounts),
+					message: "Deposit found",
+				},
 				};
 			} catch (error) {
 				logger.error("Failed to get deposit", { error, orderId: params.orderId });
 				return {
-					status: 404 as const,
-					body: { success: false, error: "Deposit not found" },
+					status: 500 as const,
+				body: { success: false, error: "Failed to get deposit" },
 				};
 			}
 		},

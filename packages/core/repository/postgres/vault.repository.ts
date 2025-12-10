@@ -21,6 +21,8 @@ import {
   addPendingDepositToVault,
   movePendingToStaked,
   reduceStakedBalance,
+  // Revenue Tracking (NEW)
+  recordYieldDistribution,
   // End User Vault Queries (✅ SIMPLIFIED - no multi-chain)
   getEndUserVault,
   getEndUserVaultByClient,
@@ -44,6 +46,7 @@ import {
   type ListClientVaultsPendingStakeRow,
   type CreateClientVaultArgs,
   type CreateClientVaultRow,
+  type RecordYieldDistributionArgs,
   type GetEndUserVaultRow,
   type GetEndUserVaultByClientRow,
   type GetEndUserVaultByClientForUpdateRow,
@@ -60,6 +63,13 @@ export class VaultRepository {
   // Client Vaults
   async getClientVaultById(id: string): Promise<GetClientVaultRow | null> {
     return await getClientVault(this.sql, { id });
+  }
+
+  /**
+   * Alias for getClientVaultById (for consistency with other repositories)
+   */
+  async getById(id: string): Promise<GetClientVaultRow | null> {
+    return await this.getClientVaultById(id);
   }
 
   async getClientVault(
@@ -118,6 +128,32 @@ export class VaultRepository {
 
   async reduceStaked(id: string, totalStakedBalance: string, totalShares: string): Promise<void> {
     await reduceStakedBalance(this.sql, { id, totalStakedBalance, totalShares });
+  }
+
+  // ==========================================
+  // REVENUE TRACKING (NEW)
+  // ==========================================
+
+  /**
+   * Record yield distribution to vault revenue columns
+   * Updates: client_revenue_earned, platform_revenue_earned, enduser_revenue_earned
+   */
+  async recordYieldDistribution(
+    vaultId: string,
+    distribution: {
+      clientRevenue: string
+      platformRevenue: string
+      enduserRevenue: string
+      rawYield: string
+    }
+  ): Promise<void> {
+    await recordYieldDistribution(this.sql, {
+      vaultId,
+      clientRevenue: distribution.clientRevenue,
+      platformRevenue: distribution.platformRevenue,
+      enduserRevenue: distribution.enduserRevenue,
+      rawYield: distribution.rawYield,
+    })
   }
 
   // End User Vaults (✅ SIMPLIFIED - no multi-chain)

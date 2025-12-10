@@ -67,6 +67,7 @@ export function privyAuth(
 			// ✅ Skip DB validation for privy-account endpoints
 			// The router handles its own validation for account existence
 			const isPrivyAccountEndpoint = req.path.startsWith("/privy-accounts");
+		const isListClientsEndpoint = req.path.startsWith("/clients/privy/");
 
 			// ✅ Phase 3: Explicit database validation
 			// Verify privy_account exists in database before loading products
@@ -112,9 +113,10 @@ export function privyAuth(
 			// Load all products under this Privy organization
 			const products = await clientUseCase.getClientsByPrivyOrgId(privyOrgId);
 
-			// ✅ Skip product validation for privy-account endpoints
+			// ✅ Skip product validation for privy-account endpoints and list-clients endpoints
 			// New users won't have products yet when checking/creating privy account
-			if (!isPrivyAccountEndpoint && (!products || products.length === 0)) {
+			// List clients endpoint should return empty array [] if no products
+			if (!isPrivyAccountEndpoint && !isListClientsEndpoint && (!products || products.length === 0)) {
 				logger.warn("[Privy Auth] No products found for organization", {
 					privyOrgId,
 					path: req.path
@@ -126,7 +128,7 @@ export function privyAuth(
 				});
 			}
 
-			if (!isPrivyAccountEndpoint) {
+			if (!isPrivyAccountEndpoint && !isListClientsEndpoint) {
 				logger.info("[Privy Auth] Authentication successful", {
 					privyOrgId,
 					productsCount: products.length,
@@ -134,7 +136,7 @@ export function privyAuth(
 					path: req.path,
 				});
 			} else {
-				logger.info("[Privy Auth] Skipping product validation for privy-account endpoint", {
+				logger.info("[Privy Auth] Skipping product validation for privy-account/list-clients endpoint", {
 					path: req.path,
 					privyOrgId,
 					productsCount: products?.length || 0

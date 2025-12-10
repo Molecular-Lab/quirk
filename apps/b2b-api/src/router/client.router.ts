@@ -83,40 +83,34 @@ export const createClientRouter = (
 
 				const client = await clientService.getClientByProductId(params.id);
 
-				if (!client) {
-					return {
-						status: 404 as const,
-						body: {
-							success: false,
-							error: "Client not found",
-						},
-					};
-				}
-
 				return {
 					status: 200 as const,
 					body: {
-						id: client.id,
-						productId: client.productId,
-						companyName: client.companyName,
-						businessType: client.businessType,
-						description: client.description || null,
-						websiteUrl: client.websiteUrl || null,
-						walletType: client.privyWalletType, // ✅ From JOIN
-						privyOrganizationId: client.privyOrganizationId,
-						apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
-						supportedCurrencies: client.supportedCurrencies || [],
-						bankAccounts: normalizeBankAccounts(client.bankAccounts),
-						isActive: client.isActive,
-						isSandbox: client.isSandbox || false,
-						createdAt: client.createdAt.toISOString(),
-						updatedAt: client.updatedAt.toISOString(),
+						found: !!client,
+						data: client ? {
+							id: client.id,
+							productId: client.productId,
+							companyName: client.companyName,
+							businessType: client.businessType,
+							description: client.description || null,
+							websiteUrl: client.websiteUrl || null,
+							walletType: client.privyWalletType, // ✅ From JOIN
+							privyOrganizationId: client.privyOrganizationId,
+							apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
+							supportedCurrencies: client.supportedCurrencies || [],
+							bankAccounts: normalizeBankAccounts(client.bankAccounts),
+							isActive: client.isActive,
+							isSandbox: client.isSandbox || false,
+							createdAt: client.createdAt.toISOString(),
+							updatedAt: client.updatedAt.toISOString(),
+						} : null,
+						message: client ? "Client found" : "Client not found",
 					},
 				};
 			} catch (error: any) {
 				logger.error("Error getting client by ID", { error: error.message, params });
 				return {
-					status: 400 as const,
+					status: 500 as const,
 					body: {
 						success: false,
 						error: error.message || "Failed to get client",
@@ -141,40 +135,34 @@ export const createClientRouter = (
 
 				const client = await clientService.getClientByProductId(params.productId);
 
-				if (!client) {
-					return {
-						status: 404 as const,
-						body: {
-							success: false,
-							error: "Client not found",
-						},
-					};
-				}
-
 				return {
 					status: 200 as const,
 					body: {
-						id: client.id,
-						productId: client.productId,
-						companyName: client.companyName,
-						businessType: client.businessType,
-						description: client.description || null,
-						websiteUrl: client.websiteUrl || null,
-						walletType: client.privyWalletType, // ✅ From JOIN
-						privyOrganizationId: client.privyOrganizationId,
-						apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
-						supportedCurrencies: client.supportedCurrencies || [],
-						bankAccounts: normalizeBankAccounts(client.bankAccounts),
-						isActive: client.isActive,
-						isSandbox: client.isSandbox || false,
-						createdAt: client.createdAt.toISOString(),
-						updatedAt: client.updatedAt.toISOString(),
+						found: !!client,
+						data: client ? {
+							id: client.id,
+							productId: client.productId,
+							companyName: client.companyName,
+							businessType: client.businessType,
+							description: client.description || null,
+							websiteUrl: client.websiteUrl || null,
+							walletType: client.privyWalletType, // ✅ From JOIN
+							privyOrganizationId: client.privyOrganizationId,
+							apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
+							supportedCurrencies: client.supportedCurrencies || [],
+							bankAccounts: normalizeBankAccounts(client.bankAccounts),
+							isActive: client.isActive,
+							isSandbox: client.isSandbox || false,
+							createdAt: client.createdAt.toISOString(),
+							updatedAt: client.updatedAt.toISOString(),
+						} : null,
+						message: client ? "Client found" : "Client not found",
 					},
 				};
 			} catch (error: any) {
 				logger.error("Error getting client by product ID", { error: error.message, params });
 				return {
-					status: 400 as const,
+					status: 500 as const,
 					body: {
 						success: false,
 						error: error.message || "Failed to get client",
@@ -200,8 +188,8 @@ export const createClientRouter = (
 					businessType: client.businessType,
 					description: client.description || null,
 					websiteUrl: client.websiteUrl || null,
-					walletType: client.privyWalletType, // ✅ From JOIN
-					privyOrganizationId: client.privyOrganizationId,
+					walletType: client.walletType, // ✅ From JOIN (SQLC generates as walletType)
+					privyOrganizationId: client.privyOrganizationId, // ✅ From JOIN
 					apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix for "Generated" status
 					supportedCurrencies: client.supportedCurrencies || [],
 					// Normalize bankAccounts (may be JSON string from DB)
@@ -217,13 +205,13 @@ export const createClientRouter = (
 					body: mappedClients,
 				};
 			} catch (error: any) {
-				logger.error("Error listing clients by Privy Organization ID", { 
-					error: error.message, 
+				logger.error("Error listing clients by Privy Organization ID", {
+					error: error.message,
 					params,
-					stack: error.stack 
+					stack: error.stack
 				});
 				return {
-					status: 404 as const,
+					status: 500 as const,
 					body: {
 						success: false,
 						error: error.message || "Failed to list clients",
@@ -286,28 +274,22 @@ export const createClientRouter = (
 			try {
 				const balance = await clientService.getClientBalance(params.id);
 
-				if (!balance) {
-					return {
-						status: 404 as const,
-						body: {
-							success: false,
-							error: "Balance not found",
-						},
-					};
-				}
-
 				return {
 					status: 200 as const,
 					body: {
-						available: balance.available,
-						reserved: balance.reserved,
-						currency: "USD",
+						found: !!balance,
+						data: balance ? {
+							available: balance.available,
+							reserved: balance.reserved,
+							currency: "USD",
+						} : null,
+						message: balance ? "Balance found" : "Balance not found",
 					},
 				};
 			} catch (error: any) {
 				logger.error("Error getting client balance", { error: error.message, params });
 				return {
-					status: 400 as const,
+					status: 500 as const,
 					body: {
 						success: false,
 						error: error.message || "Failed to get balance",
@@ -344,7 +326,7 @@ export const createClientRouter = (
 					privyOrganizationId: body.privyOrganizationId,
 					privyWalletAddress: body.privyWalletAddress, // ✅ Required field
 					privyEmail: body.privyEmail || null,
-					walletType: (body.walletType === "MANAGED" ? "custodial" : "non-custodial") as "custodial" | "non-custodial",
+					walletType: body.walletType,
 
 					// Vault creation options (token-centric: each token supports ALL chains)
 					vaultsToCreate: body.vaultsToCreate || 'both', // Creates vaults on ALL chains for selected tokens
@@ -364,8 +346,10 @@ export const createClientRouter = (
 
 					// Strategy & fees
 					customStrategy: body.customStrategy || null,
-					endUserYieldPortion: body.endUserYieldPortion || null,
-					platformFee: body.platformFee || null,
+
+					// Fee Configuration (3-way revenue split)
+					clientRevenueSharePercent: body.clientRevenueSharePercent || '15.00',
+					platformFeePercent: body.platformFeePercent || '7.50',
 					performanceFee: body.performanceFee || null,
 
 					// Multi-currency support (for off-ramp withdrawals)
@@ -713,7 +697,7 @@ export const createClientRouter = (
 
 				if (!result) {
 					return {
-						status: 404 as const,
+						status: 400 as const,
 						body: { success: false, error: `Client not found: ${params.productId}` },
 					};
 				}
@@ -732,12 +716,6 @@ export const createClientRouter = (
 				};
 			} catch (error: any) {
 				logger.error("Error updating organization info", { error: error.message, params, body });
-				if (error.message.includes("not found")) {
-					return {
-						status: 404 as const,
-						body: { success: false, error: error.message },
-					};
-				}
 				return {
 					status: 400 as const,
 					body: { success: false, error: error.message || "Failed to update organization info" },
@@ -771,12 +749,6 @@ export const createClientRouter = (
 				};
 			} catch (error: any) {
 				logger.error("Error updating supported currencies", { error: error.message, params, body });
-				if (error.message.includes("not found")) {
-					return {
-						status: 404 as const,
-						body: { success: false, error: error.message },
-					};
-				}
 				return {
 					status: 400 as const,
 					body: { success: false, error: error.message || "Failed to update supported currencies" },
@@ -866,31 +838,26 @@ export const createClientRouter = (
 				}
 
 				const client = await clientService.getClientByProductId(params.productId);
-				if (!client) {
-					return {
-						status: 404 as const,
-						body: {
-							success: false,
-							error: "Client not found",
-						},
-					};
-				}
 
 				// Normalize bankAccounts (DB may store JSON string)
-				const bankAccounts = normalizeBankAccounts(client.bankAccounts);
+				const bankAccounts = client ? normalizeBankAccounts(client.bankAccounts) : [];
 
 				return {
 					status: 200 as const,
 					body: {
-						productId: params.productId,
-						bankAccounts,
-						supportedCurrencies: client.supportedCurrencies || [],
+						found: !!client,
+						data: client ? {
+							productId: params.productId,
+							bankAccounts,
+							supportedCurrencies: client.supportedCurrencies || [],
+						} : null,
+						message: client ? "Bank accounts found" : "Client not found",
 					},
 				};
 			} catch (error: any) {
 				logger.error("Error getting bank accounts", { error: error.message, params });
 				return {
-					status: 404 as const,
+					status: 500 as const,
 					body: {
 						success: false,
 						error: error.message || "Failed to get bank accounts",
@@ -918,15 +885,19 @@ export const createClientRouter = (
 				return {
 					status: 200 as const,
 					body: {
-						productId: params.productId,
-						preferences: strategies.preferences,
-						customization: strategies.customization,
+						found: !!strategies,
+						data: strategies ? {
+							productId: params.productId,
+							preferences: strategies.preferences,
+							customization: strategies.customization,
+						} : null,
+						message: strategies ? "Product strategies found" : "Product strategies not found",
 					},
 				};
 			} catch (error: any) {
 				logger.error("Error getting product strategies", { error: error.message, params });
 				return {
-					status: 404 as const,
+					status: 500 as const,
 					body: { success: false, error: error.message || "Failed to get product strategies" },
 				};
 			}
@@ -950,12 +921,20 @@ export const createClientRouter = (
 					};
 				}
 
-				const result = await clientService.updateProductStrategiesCustomization(
+				await clientService.updateProductStrategiesCustomization(
 					params.productId,
 					body.strategies
 				);
 
-				return { status: 200 as const, body: result };
+				return {
+					status: 200 as const,
+					body: {
+						success: true,
+						productId: params.productId,
+						strategies: body.strategies,
+						message: "Product strategies updated successfully",
+					},
+				};
 			} catch (error: any) {
 				logger.error("Error updating product strategies", { error: error.message, params, body });
 				return {
@@ -980,16 +959,407 @@ export const createClientRouter = (
 				return {
 					status: 200 as const,
 					body: {
-						productId: params.productId,
-						strategies: result.strategies,
-						source: result.source,
+						found: !!result,
+						data: result ? {
+							productId: params.productId,
+							strategies: result.strategies,
+							source: result.source,
+						} : null,
+						message: result ? "Effective strategies found" : "Effective strategies not found",
 					},
 				};
 			} catch (error: any) {
 				logger.error("Error getting effective product strategies", { error: error.message, params });
 				return {
-					status: 404 as const,
+					status: 500 as const,
 					body: { success: false, error: error.message || "Failed to get effective product strategies" },
+				};
+			}
+		},
+
+		// ============================================
+		// FEE CONFIGURATION (Revenue Share)
+		// ============================================
+
+		updateFeeConfig: async ({ params, body, req }: { params: { productId: string }; body: any; req: any }) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
+				logger.info("Updating fee configuration", { productId: params.productId, body });
+
+				const result = await clientService.updateFeeConfig(params.productId, body.clientRevenueSharePercent);
+
+				if (!result) {
+					return {
+						status: 400 as const,
+						body: { success: false, error: `Client not found: ${params.productId}` },
+					};
+				}
+
+				const clientPercent = parseFloat(result.clientRevenueSharePercent);
+				const platformPercent = parseFloat(result.platformFeePercent);
+				const enduserPercent = 100 - clientPercent - platformPercent;
+
+				return {
+					status: 200 as const,
+					body: {
+						success: true,
+						productId: params.productId,
+						clientRevenueSharePercent: result.clientRevenueSharePercent,
+						platformFeePercent: result.platformFeePercent,
+						enduserFeePercent: enduserPercent.toFixed(2),
+						message: "Fee configuration updated successfully",
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error updating fee configuration", { error: error.message, params, body });
+				return {
+					status: 400 as const,
+					body: { success: false, error: error.message || "Failed to update fee configuration" },
+				};
+			}
+		},
+
+		getFeeConfig: async ({ params, req }: { params: { productId: string }; req: any }) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
+				const client = await clientService.getClientByProductId(params.productId);
+
+				const clientPercent = client ? parseFloat(client.clientRevenueSharePercent) : 0;
+				const platformPercent = client ? parseFloat(client.platformFeePercent) : 0;
+				const enduserPercent = 100 - clientPercent - platformPercent;
+
+				return {
+					status: 200 as const,
+					body: {
+						found: !!client,
+						data: client ? {
+							productId: params.productId,
+							clientRevenueSharePercent: client.clientRevenueSharePercent,
+							platformFeePercent: client.platformFeePercent,
+							enduserFeePercent: enduserPercent.toFixed(2),
+						} : null,
+						message: client ? "Fee configuration found" : "Client not found",
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting fee configuration", { error: error.message, params });
+				return {
+					status: 500 as const,
+					body: { success: false, error: error.message || "Failed to get fee configuration" },
+				};
+			}
+		},
+
+		// ============================================
+		// REVENUE METRICS (Dashboard)
+		// ============================================
+
+		getRevenueMetrics: async ({ params, req }: { params: { productId: string }; req: any }) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
+				const metrics = await clientService.getRevenueMetrics(params.productId);
+
+				return {
+					status: 200 as const,
+					body: {
+						found: !!metrics,
+						data: metrics ? {
+							productId: params.productId,
+							monthlyRecurringRevenue: metrics.monthlyRecurringRevenue,
+							annualRunRate: metrics.annualRunRate,
+							totalClientRevenue: metrics.totalClientRevenue,
+							totalPlatformRevenue: metrics.totalPlatformRevenue,
+							totalEnduserRevenue: metrics.totalEnduserRevenue,
+							totalEarningBalance: metrics.totalEarningBalance,
+							clientRevenuePercent: metrics.clientRevenuePercent,
+							platformFeePercent: metrics.platformFeePercent,
+							enduserFeePercent: metrics.enduserFeePercent,
+							lastCalculatedAt: metrics.lastCalculatedAt,
+						} : null,
+						message: metrics ? "Revenue metrics found" : "Client not found",
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting revenue metrics", { error: error.message, params });
+				return {
+					status: 500 as const,
+					body: { success: false, error: error.message || "Failed to get revenue metrics" },
+				};
+			}
+		},
+
+		// ============================================
+		// END-USER METRICS (Dashboard)
+		// ============================================
+
+		getEndUserGrowthMetrics: async ({ params, req }: { params: { productId: string }; req: any }) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
+				const metrics = await clientService.getEndUserGrowthMetrics(params.productId);
+
+				return {
+					status: 200 as const,
+					body: {
+						found: !!metrics,
+						data: metrics ? {
+							productId: params.productId,
+							totalEndUsers: metrics.totalEndUsers,
+							newUsers30d: metrics.newUsers30d,
+							activeUsers30d: metrics.activeUsers30d,
+							totalDeposited: metrics.totalDeposited,
+							totalWithdrawn: metrics.totalWithdrawn,
+							totalDeposits: metrics.totalDeposits,
+							totalWithdrawals: metrics.totalWithdrawals,
+						} : null,
+						message: metrics ? "End-user metrics found" : "Client not found",
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting end-user growth metrics", { error: error.message, params });
+				return {
+					status: 500 as const,
+					body: { success: false, error: error.message || "Failed to get end-user growth metrics" },
+				};
+			}
+		},
+
+		getEndUserTransactions: async ({ params, query, req }: { params: { productId: string }; query: { page: number; limit: number }; req: any }) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
+				const { page = 1, limit = 20 } = query;
+				const result = await clientService.getEndUserTransactions(params.productId, page, limit);
+
+				return {
+					status: 200 as const,
+					body: {
+						found: !!result,
+						data: result ? {
+							productId: params.productId,
+							transactions: result.transactions.map((tx: any) => ({
+								transactionType: tx.transactionType,
+								id: tx.id,
+								userId: tx.userId,
+								amount: tx.amount,
+								currency: tx.currency,
+								status: tx.status,
+								timestamp: tx.timestamp.toISOString(),
+							})),
+							pagination: {
+								page,
+								limit,
+								total: result.total,
+							},
+						} : null,
+						message: result ? "Transactions found" : "Client not found",
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting end-user transactions", { error: error.message, params, query });
+				return {
+					status: 500 as const,
+					body: { success: false, error: error.message || "Failed to get end-user transactions" },
+				};
+			}
+		},
+
+		// ============================================
+		// WALLET STAGES (Dashboard)
+		// ============================================
+
+		getWalletBalances: async ({ params, req }: { params: { productId: string }; req: any }) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
+				const balances = await clientService.getWalletBalances(params.productId);
+
+				return {
+					status: 200 as const,
+					body: {
+						found: !!balances,
+						data: balances ? {
+							productId: params.productId,
+							totalIdleBalance: balances.totalIdleBalance,
+							totalEarningBalance: balances.totalEarningBalance,
+							totalClientRevenue: balances.totalClientRevenue,
+							totalPlatformRevenue: balances.totalPlatformRevenue,
+							totalEnduserRevenue: balances.totalEnduserRevenue,
+							totalCumulativeYield: balances.totalCumulativeYield,
+						} : null,
+						message: balances ? "Wallet balances found" : "Client not found",
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting wallet balances", { error: error.message, params });
+				return {
+					status: 500 as const,
+					body: { success: false, error: error.message || "Failed to get wallet balances" },
+				};
+			}
+		},
+
+		// ============================================
+		// DASHBOARD SUMMARY (All Metrics Combined)
+		// ============================================
+
+		getDashboardSummary: async ({ params, req }: { params: { productId: string }; req: any }) => {
+			try {
+				// Dashboard only: Validate Privy access
+				if (!validatePrivyAccess(req, params.productId)) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Access denied - product not in your organization" },
+					};
+				}
+
+				const summary = await clientService.getDashboardSummary(params.productId);
+
+				return {
+					status: 200 as const,
+					body: {
+						found: !!summary,
+						data: summary ? {
+							productId: params.productId,
+							companyName: summary.companyName,
+							balances: {
+								totalIdleBalance: summary.balances.totalIdleBalance,
+								totalEarningBalance: summary.balances.totalEarningBalance,
+								totalClientRevenue: summary.balances.totalClientRevenue,
+								totalPlatformRevenue: summary.balances.totalPlatformRevenue,
+								totalEnduserRevenue: summary.balances.totalEnduserRevenue,
+							},
+							revenue: {
+								monthlyRecurringRevenue: summary.revenue.monthlyRecurringRevenue,
+								annualRunRate: summary.revenue.annualRunRate,
+								clientRevenuePercent: summary.revenue.clientRevenuePercent,
+								platformFeePercent: summary.revenue.platformFeePercent,
+								enduserFeePercent: summary.revenue.enduserFeePercent,
+								lastCalculatedAt: summary.revenue.lastCalculatedAt,
+							},
+							endUsers: {
+								totalEndUsers: summary.endUsers.totalEndUsers,
+								newUsers30d: summary.endUsers.newUsers30d,
+								activeUsers30d: summary.endUsers.activeUsers30d,
+								totalDeposited: summary.endUsers.totalDeposited,
+								totalWithdrawn: summary.endUsers.totalWithdrawn,
+							},
+							recentTransactions: summary.recentTransactions.map((tx: any) => ({
+								transactionType: tx.transactionType,
+								id: tx.id,
+								userId: tx.userId,
+								amount: tx.amount,
+								currency: tx.currency,
+								status: tx.status,
+								timestamp: tx.timestamp.toISOString(),
+							})),
+						} : null,
+						message: summary ? "Dashboard summary found" : "Client not found",
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting dashboard summary", { error: error.message, params });
+				return {
+					status: 500 as const,
+					body: { success: false, error: error.message || "Failed to get dashboard summary" },
+				};
+			}
+		},
+
+		// Get aggregated dashboard summary across all products
+		getAggregateDashboardSummary: async ({ req }: { req: any }) => {
+			try {
+				// Extract Privy organization ID from authenticated session
+				const privySession = (req as any).privy;
+				if (!privySession || !privySession.organizationId) {
+					return {
+						status: 403 as const,
+						body: { success: false, error: "Privy authentication required" },
+					};
+				}
+
+				const privyOrganizationId = privySession.organizationId;
+				logger.info("[Client Router] Getting aggregated dashboard for Privy org", { privyOrganizationId });
+
+				const summary = await clientService.getAggregateDashboardSummary(privyOrganizationId);
+
+				return {
+					status: 200 as const,
+					body: {
+						found: !!summary,
+						data: summary ? {
+							productId: summary.productId,
+							companyName: summary.companyName,
+							balances: {
+								totalIdleBalance: summary.balances.totalIdleBalance,
+								totalEarningBalance: summary.balances.totalEarningBalance,
+								totalClientRevenue: summary.balances.totalClientRevenue,
+								totalPlatformRevenue: summary.balances.totalPlatformRevenue,
+								totalEnduserRevenue: summary.balances.totalEnduserRevenue,
+							},
+							revenue: {
+								monthlyRecurringRevenue: summary.revenue.monthlyRecurringRevenue,
+								annualRunRate: summary.revenue.annualRunRate,
+								clientRevenuePercent: summary.revenue.clientRevenuePercent,
+								platformFeePercent: summary.revenue.platformFeePercent,
+								enduserFeePercent: summary.revenue.enduserFeePercent,
+								lastCalculatedAt: summary.revenue.lastCalculatedAt,
+							},
+							endUsers: {
+								totalEndUsers: summary.endUsers.totalEndUsers,
+								newUsers30d: summary.endUsers.newUsers30d,
+								activeUsers30d: summary.endUsers.activeUsers30d,
+								totalDeposited: summary.endUsers.totalDeposited,
+								totalWithdrawn: summary.endUsers.totalWithdrawn,
+							},
+						} : null,
+						message: summary ? "Aggregated dashboard summary found" : "No organizations found",
+					},
+				};
+			} catch (error: any) {
+				logger.error("Error getting aggregated dashboard summary", { error: error.message });
+				return {
+					status: 500 as const,
+					body: { success: false, error: error.message || "Failed to get aggregated dashboard summary" },
 				};
 			}
 		},

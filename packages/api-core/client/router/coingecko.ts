@@ -47,7 +47,7 @@ export class CoingeckoRouter extends Router<typeof coingeckoContract> {
 		}
 
 		for (const address of Object.keys(fetchedPrice.body)) {
-			const price = fetchedPrice.body[address]?.usd
+			const price = fetchedPrice.body[address].usd
 			if (price) {
 				const cacheKey = getTokenPriceCacheKey(chainId, address)
 				tokenPriceCache[cacheKey] = price

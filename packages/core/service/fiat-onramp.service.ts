@@ -16,6 +16,8 @@
  * - On-ramp: Circle (USDC minting), Coinbase Commerce, Bridge.xyz
  */
 
+import { NETWORK_CONFIG, getNetworkByChainId, type NetworkKey, type TokenKey } from '../constants/networks';
+
 export interface CreatePaymentSessionParams {
   clientId: string;
   orderId: string;
@@ -23,9 +25,10 @@ export interface CreatePaymentSessionParams {
   currency: string;
   paymentMethod: 'stripe' | 'wire' | 'ach' | 'sepa';
 
-  // Conversion details
-  targetChain: string;
-  targetToken: string;
+  // Conversion details (network-aware)
+  targetChainId?: number; // Optional: chainId (1 for mainnet, 11155111 for sepolia)
+  targetNetwork?: NetworkKey; // Optional: 'eth_mainnet' | 'eth_sepolia'
+  targetToken: TokenKey; // 'usdc' | 'usdt' | 'weth' | 'mock_usdc'
   custodialWalletAddress: string;
 
   // Metadata
@@ -57,8 +60,9 @@ export interface PaymentSessionResult {
 export interface OnRampConversionParams {
   fiatAmount: string;
   fiatCurrency: string;
-  targetChain: string;
-  targetToken: string;
+  targetChainId?: number; // Optional: chainId
+  targetNetwork?: NetworkKey; // Optional: 'eth_mainnet' | 'eth_sepolia'
+  targetToken: TokenKey; // 'usdc' | 'usdt' | 'weth' | 'mock_usdc'
   destinationAddress: string; // Custodial wallet
   orderId: string;
 }
@@ -81,6 +85,46 @@ export class FiatOnRampService {
 
   constructor() {
     this.isMockMode = process.env.NODE_ENV !== 'production' || process.env.MOCK_ONRAMP === 'true';
+  }
+
+  /**
+   * Resolve network configuration from params
+   * Priority: targetNetwork > targetChainId > active network (from NODE_ENV)
+   */
+  private resolveNetwork(params: { targetChainId?: number; targetNetwork?: NetworkKey }): {
+    networkKey: NetworkKey;
+    chainId: number;
+  } {
+    // Option 1: Use targetNetwork if provided
+    if (params.targetNetwork) {
+      return {
+        networkKey: params.targetNetwork,
+        chainId: NETWORK_CONFIG[params.targetNetwork].chainId,
+      };
+    }
+
+    // Option 2: Use targetChainId to lookup network
+    if (params.targetChainId) {
+      const network = getNetworkByChainId(params.targetChainId);
+      if (!network) {
+        throw new Error(`Unsupported chain ID: ${params.targetChainId}`);
+      }
+
+      // Map chainId to networkKey
+      const networkKey = params.targetChainId === 1 ? 'eth_mainnet' : 'eth_sepolia';
+      return {
+        networkKey,
+        chainId: params.targetChainId,
+      };
+    }
+
+    // Option 3: Default to active network based on NODE_ENV
+    const isProduction = process.env.NODE_ENV === 'production';
+    const networkKey: NetworkKey = isProduction ? 'eth_mainnet' : 'eth_sepolia';
+    return {
+      networkKey,
+      chainId: NETWORK_CONFIG[networkKey].chainId,
+    };
   }
 
   /**
@@ -128,12 +172,20 @@ export class FiatOnRampService {
   // ============================================
 
   private async mockCreatePaymentSession(params: CreatePaymentSessionParams): Promise<PaymentSessionResult> {
+    const { networkKey, chainId } = this.resolveNetwork(params);
+    const networkConfig = NETWORK_CONFIG[networkKey];
+    const tokenConfig = networkConfig.token[params.targetToken];
+
     console.log('[MOCK] Creating payment session:', {
       clientId: params.clientId,
       orderId: params.orderId,
       amount: params.amount,
       currency: params.currency,
       method: params.paymentMethod,
+      network: networkConfig.name,
+      chainId,
+      targetToken: params.targetToken,
+      tokenAddress: tokenConfig?.address,
     });
 
     // Simulate 500ms delay
@@ -175,11 +227,22 @@ export class FiatOnRampService {
   }
 
   private async mockConvertFiatToCrypto(params: OnRampConversionParams): Promise<OnRampConversionResult> {
+    const { networkKey, chainId } = this.resolveNetwork(params);
+    const networkConfig = NETWORK_CONFIG[networkKey];
+    const tokenConfig = networkConfig.token[params.targetToken];
+
+    if (!tokenConfig) {
+      throw new Error(`Token ${params.targetToken} not available on network ${networkKey}`);
+    }
+
     console.log('[MOCK] Converting fiat to crypto:', {
       fiatAmount: params.fiatAmount,
       fiatCurrency: params.fiatCurrency,
-      targetChain: params.targetChain,
+      network: networkConfig.name,
+      chainId,
       targetToken: params.targetToken,
+      tokenAddress: tokenConfig.address,
+      tokenSymbol: tokenConfig.symbol,
       destination: params.destinationAddress,
     });
 

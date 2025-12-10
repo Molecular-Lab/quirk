@@ -46,24 +46,18 @@ export const createVaultRouter = (
 			try {
 				const vault = await vaultService.getVaultById(params.id);
 
-				if (!vault) {
-					return {
-						status: 404 as const,
-						body: {
-							success: false,
-							error: "Vault not found",
-						},
-					};
-				}
-
 				return {
 					status: 200 as const,
-					body: mapVaultToDto(vault),
+					body: {
+						found: !!vault,
+						data: vault ? mapVaultToDto(vault) : null,
+						message: vault ? "Vault found" : "Vault not found",
+					},
 				};
 			} catch (error: any) {
 				logger.error("Error getting vault by ID", { error: error.message, params });
 				return {
-					status: 400 as const,
+					status: 500 as const,
 					body: {
 						success: false,
 						error: error.message || "Failed to get vault",
@@ -99,24 +93,20 @@ export const createVaultRouter = (
 					params.tokenSymbol
 				);
 
-				if (!vault) {
-					return {
-						status: 404 as const,
-						body: {
-							success: false,
-							error: "Vault not found",
-						},
-					};
-				}
-
 				return {
 					status: 200 as const,
-					body: mapVaultToDto(vault),
+					body: {
+						found: !!vault,
+						data: vault ? mapVaultToDto(vault) : null,
+						message: vault
+							? "Vault found"
+							: `Vault not found for ${params.tokenSymbol} on chain ${params.chainId}`,
+					},
 				};
 			} catch (error: any) {
 				logger.error("Error getting vault by token", { error: error.message, params });
 				return {
-					status: 404 as const,
+					status: 500 as const,
 					body: {
 						success: false,
 						error: error.message || "Failed to get vault",
@@ -136,10 +126,10 @@ export const createVaultRouter = (
 				const vault = await vaultService.getVaultById(params.id);
 				if (!vault) {
 					return {
-						status: 404 as const,
+						status: 400 as const,
 						body: {
 							success: false,
-							error: "Vault not found",
+							error: "Vault not found - invalid vault ID provided",
 						},
 					};
 				}

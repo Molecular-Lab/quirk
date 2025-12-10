@@ -33,6 +33,7 @@ export function GigWorkersDemoApp() {
 		setError,
 		setIsDepositing,
 		addDeposit,
+		getPersonaUserId,
 	} = useDemoStore()
 
 	// Mock gig worker pending payouts balance (from config)
@@ -78,12 +79,14 @@ export function GigWorkersDemoApp() {
 				throw new Error("No API key configured. Please set up via Demo Settings.")
 			}
 
-			// Generate a unique client user ID for demo
-			const demoUserId = `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+			// Get persona's client user ID (product-scoped) or generate random
+			const personaUserId = getPersonaUserId()
+			const demoUserId = personaUserId || `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
 			console.log("[DemoClientApp] Creating end-user account:", {
 				productId,
 				clientUserId: demoUserId,
+				isPersona: !!personaUserId,
 			})
 
 			// Call the API to create end-user account

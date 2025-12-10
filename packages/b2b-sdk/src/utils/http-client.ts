@@ -21,7 +21,7 @@ export class HttpClient {
 
 		this.client = axios.create({
 			baseURL: config.baseURL,
-			timeout: config.timeout || 30000,
+			timeout: config.timeout ?? 30000,
 			headers: {
 				"Content-Type": "application/json",
 				"X-API-Key": config.apiKey,
@@ -48,7 +48,7 @@ export class HttpClient {
 	/**
 	 * Make a POST request
 	 */
-	async post<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+	async post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
 		const response: AxiosResponse<T> = await this.client.post(url, data, config)
 		return response.data
 	}
@@ -56,7 +56,7 @@ export class HttpClient {
 	/**
 	 * Make a PUT request
 	 */
-	async put<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+	async put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
 		const response: AxiosResponse<T> = await this.client.put(url, data, config)
 		return response.data
 	}
@@ -64,7 +64,7 @@ export class HttpClient {
 	/**
 	 * Make a PATCH request
 	 */
-	async patch<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+	async patch<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
 		const response: AxiosResponse<T> = await this.client.patch(url, data, config)
 		return response.data
 	}
@@ -80,7 +80,7 @@ export class HttpClient {
 	/**
 	 * Build query string from params object
 	 */
-	buildQueryString(params: Record<string, any>): string {
+	buildQueryString(params: Record<string, unknown>): string {
 		const query = new URLSearchParams()
 
 		Object.entries(params).forEach(([key, value]) => {

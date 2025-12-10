@@ -34,6 +34,15 @@ export const clientSchema = z.object({
   supportedCurrencies: z.array(z.string()).default([]),
   bankAccounts: z.array(bankAccountSchema).default([]),
 
+  // Revenue Configuration (NEW)
+  clientRevenueSharePercent: z.string().regex(/^\d+(\.\d+)?$/).default('15.00'), // 10-20%
+  platformFeePercent: z.string().regex(/^\d+(\.\d+)?$/).default('7.50'), // 5-10%
+
+  // MRR/ARR Tracking (NEW)
+  monthlyRecurringRevenue: z.string().regex(/^\d+(\.\d+)?$/).nullable().optional(), // MRR
+  annualRunRate: z.string().regex(/^\d+(\.\d+)?$/).nullable().optional(), // ARR = MRR × 12
+  lastMrrCalculationAt: z.date().nullable().optional(),
+
   createdAt: z.date(),
   updatedAt: z.date(),
 });
@@ -80,6 +89,32 @@ export const createClientSchema = z.object({
   apiKeyHash: z.string().nullable().optional(),
   supportedCurrencies: z.array(z.string()).optional(),
   bankAccounts: z.array(bankAccountSchema).optional(),
+
+  // Fee Configuration (optional - defaults will be used if not provided)
+  clientRevenueSharePercent: z
+    .string()
+    .regex(/^\d+(\.\d+)?$/)
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return num >= 10.0 && num <= 20.0;
+      },
+      { message: 'Client revenue share must be between 10% and 20%' }
+    )
+    .default('15.00')
+    .optional(),
+  platformFeePercent: z
+    .string()
+    .regex(/^\d+(\.\d+)?$/)
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return num >= 5.0 && num <= 10.0;
+      },
+      { message: 'Platform fee must be between 5% and 10%' }
+    )
+    .default('7.50')
+    .optional(),
 });
 
 export type CreateClient = z.infer<typeof createClientSchema>;
@@ -92,6 +127,99 @@ export const updateClientSchema = z.object({
   apiKeyPrefix: z.string().nullable().optional(),
   apiKeyHash: z.string().nullable().optional(),
   isActive: z.boolean().optional(),
+
+  // Fee Configuration (optional)
+  clientRevenueSharePercent: z
+    .string()
+    .regex(/^\d+(\.\d+)?$/)
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return num >= 10.0 && num <= 20.0;
+      },
+      { message: 'Client revenue share must be between 10% and 20%' }
+    )
+    .optional(),
+  platformFeePercent: z
+    .string()
+    .regex(/^\d+(\.\d+)?$/)
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return num >= 5.0 && num <= 10.0;
+      },
+      { message: 'Platform fee must be between 5% and 10%' }
+    )
+    .optional(),
 });
 
 export type UpdateClient = z.infer<typeof updateClientSchema>;
+
+/**
+ * Revenue Configuration Schemas (NEW)
+ */
+
+// Revenue config (fee percentages)
+export const revenueConfigSchema = z.object({
+  clientRevenueSharePercent: z
+    .string()
+    .regex(/^\d+(\.\d+)?$/)
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return num >= 10.0 && num <= 20.0;
+      },
+      { message: 'Client revenue share must be between 10% and 20%' }
+    ),
+  platformFeePercent: z
+    .string()
+    .regex(/^\d+(\.\d+)?$/)
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return num >= 5.0 && num <= 10.0;
+      },
+      { message: 'Platform fee must be between 5% and 10%' }
+    ),
+});
+
+export type RevenueConfig = z.infer<typeof revenueConfigSchema>;
+
+// Update revenue config input
+export const updateRevenueConfigSchema = z.object({
+  clientRevenueSharePercent: z
+    .string()
+    .regex(/^\d+(\.\d+)?$/, 'Invalid percentage format')
+    .refine(
+      (val) => {
+        const num = parseFloat(val);
+        return num >= 10.0 && num <= 20.0;
+      },
+      { message: 'Client revenue share must be between 10% and 20%' }
+    ),
+});
+
+export type UpdateRevenueConfig = z.infer<typeof updateRevenueConfigSchema>;
+
+// Revenue metrics (MRR, ARR, total revenue)
+export const revenueMetricsSchema = z.object({
+  // Current MRR/ARR
+  monthlyRecurringRevenue: z.string().regex(/^\d+(\.\d+)?$/),
+  annualRunRate: z.string().regex(/^\d+(\.\d+)?$/), // MRR × 12
+  lastMrrCalculationAt: z.date().nullable(),
+
+  // Cumulative revenue
+  totalClientRevenue: z.string().regex(/^\d+(\.\d+)?$/), // All-time client earnings
+  totalPlatformRevenue: z.string().regex(/^\d+(\.\d+)?$/), // All-time platform earnings
+  totalEnduserRevenue: z.string().regex(/^\d+(\.\d+)?$/), // All-time end-user earnings
+
+  // Current earning balance (actively staked funds)
+  totalEarningBalance: z.string().regex(/^\d+(\.\d+)?$/),
+
+  // Fee configuration
+  clientRevenueSharePercent: z.string().regex(/^\d+(\.\d+)?$/),
+  platformFeePercent: z.string().regex(/^\d+(\.\d+)?$/),
+  enduserFeePercent: z.string().regex(/^\d+(\.\d+)?$/), // Calculated: 100 - client - platform
+});
+
+export type RevenueMetrics = z.infer<typeof revenueMetricsSchema>;
