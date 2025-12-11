@@ -10,8 +10,9 @@ export function NewHeroSection() {
 			<div className="absolute inset-0 bg-gradient-to-b from-purple-50/60 via-green-50/40 to-white/95" />
 
 			{/* Luma-style soft decorative gradients */}
-			<div className="absolute top-20 -right-20 w-[700px] h-[700px] bg-gradient-to-br from-blue-100/25 via-purple-100/20 to-cyan-100/15 rounded-full blur-3xl" />
-			<div className="absolute bottom-0 -left-20 w-[700px] h-[700px] bg-gradient-to-tr from-purple-100/20 via-blue-100/15 to-transparent rounded-full blur-3xl" />
+	<div className="absolute top-20 -right-20 w-[700px] h-[700px] bg-gradient-to-br from-blue-100/25 via-purple-100/20 to-cyan-100/15 rounded-full blur-[120px]" />
+	<div className="absolute bottom-0 -left-20 w-[700px] h-[700px] bg-gradient-to-tr from-purple-100/20 via-blue-100/15 to-transparent rounded-full blur-[120px]" />
+	<div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-white/0 via-white/20 to-white/90" />
 
 			<div className="relative z-10 max-w-7xl mx-auto px-6">
 				<div className="text-center max-w-4xl mx-auto">
