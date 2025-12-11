@@ -90,7 +90,7 @@ export function TradingStrategiesSection() {
 		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-purple-50/40 to-white flex items-center">
 			<div className="max-w-7xl mx-auto px-6 w-full">
 				<div className="text-center mb-16">
-					<h2 className="text-6xl font-bold text-gray-950">Customized Earn Strategies</h2>
+					<h2 className="text-6xl font-bold text-gray-950">Institutional Earn Strategies</h2>
 				</div>
 
 				<div className="relative bg-white/90 backdrop-blur-md rounded-xl p-12 shadow-sm border border-gray-150 overflow-hidden">

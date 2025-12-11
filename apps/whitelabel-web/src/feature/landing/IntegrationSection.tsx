@@ -38,22 +38,6 @@ export function IntegrationSection() {
 					</div>
 				</div>
 
-				<div className="relative bg-gray-950 rounded-xl p-12 text-center text-white overflow-hidden">
-					{/* Subtle gradient decoration */}
-					<div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
-					<h3 className="text-4xl font-bold mb-6">Ready to get started?</h3>
-					<p className="text-gray-400 text-xl mb-10 max-w-2xl mx-auto">
-						Join leading platforms earning passive income on idle user balances
-					</p>
-					<div className="flex items-center justify-center">
-						<a
-							href="/register"
-							className="bg-gray-900 text-white px-10 py-5 rounded-lg hover:bg-gray-800 shadow-sm hover:shadow-md transition-all font-medium text-xl"
-						>
-							Start Building
-						</a>
-					</div>
-				</div>
 			</div>
 		</section>
 	)
