@@ -11,7 +11,7 @@ import { CustomizeEarnSection } from "./CustomizeEarnSection"
 import { IntegrationSection } from "./IntegrationSection"
 import { NewHeroSection } from "./NewHeroSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
-import { SurveySection } from "./SurveySection"
+import { GetStartedSection } from "./GetStartedSection"
 import { TradingStrategiesSection } from "./TradingStrategiesSection"
 
 export function LandingPage() {
@@ -95,9 +95,8 @@ export function LandingPage() {
 		<div className="min-h-screen bg-gradient-to-b from-blue-50/30 via-purple-50/10 to-white">
 			{/* Header - Pure glass blur (no background color) */}
 			<header
-				className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl ${
-					isScrolled ? "border-b border-gray-200/30 shadow-sm" : "border-b border-transparent"
-				}`}
+				className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl ${isScrolled ? "border-b border-gray-200/30 shadow-sm" : "border-b border-transparent"
+					}`}
 			>
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 					<Link to="/" className="flex items-center gap-3 group">
@@ -143,8 +142,8 @@ export function LandingPage() {
 			{/* Supported Assets */}
 			<SupportedAssetsSection />
 
-			{/* Survey */}
-			<SurveySection />
+			{/* Get Started & Survey */}
+			<GetStartedSection />
 
 			{/* Footer */}
 			<footer className="bg-gradient-to-b from-gray-50 to-white border-t border-gray-150 py-12">
