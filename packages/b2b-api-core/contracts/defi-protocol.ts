@@ -10,6 +10,8 @@ import {
 	ProtocolsResponseDto,
 	OptimizationRequestDto,
 	OptimizationResponseDto,
+	MultiChainOptimizationRequestDto,
+	MultiChainOptimizationResponseDto,
 } from '../dto/defi-protocol'
 
 const c = initContract()
@@ -63,7 +65,7 @@ export const defiProtocolContract = c.router({
 		summary: 'Get Morpho protocol metrics',
 	},
 
-	// Optimize allocation based on risk profile
+	// Optimize allocation based on risk profile (single chain)
 	optimize: {
 		method: 'POST',
 		path: '/defi/optimize',
@@ -75,4 +77,18 @@ export const defiProtocolContract = c.router({
 		},
 		summary: 'Get optimized portfolio allocation based on risk profile',
 	},
+
+	// Multi-chain optimization (compares across Ethereum, Base, Arbitrum, Polygon)
+	optimizeMultiChain: {
+		method: 'POST',
+		path: '/defi/optimize-multi',
+		body: MultiChainOptimizationRequestDto,
+		responses: {
+			200: MultiChainOptimizationResponseDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Get optimized allocation across multiple chains with gas-aware net APY',
+	},
 })
+

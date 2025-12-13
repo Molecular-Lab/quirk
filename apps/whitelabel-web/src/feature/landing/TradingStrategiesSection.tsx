@@ -5,10 +5,12 @@ import { ArcElement, Chart as ChartJS, Legend, Tooltip } from "chart.js"
 
 import type { ChartOptions } from "chart.js"
 import "./TradingStrategies.css"
+import { useScrollAnimation } from "@/hooks/useScrollAnimation"
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 
 export function TradingStrategiesSection() {
+	const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 })
 	const [allocations, setAllocations] = useState({
 		defi: 45,
 		liquidityPool: 45,
@@ -88,7 +90,11 @@ export function TradingStrategiesSection() {
 
 	return (
 		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-purple-50/40 to-white flex items-center">
-			<div className="max-w-7xl mx-auto px-6 w-full">
+			<div
+				ref={ref as React.RefObject<HTMLDivElement>}
+				className={`max-w-7xl mx-auto px-6 w-full transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+					}`}
+			>
 				<div className="text-center mb-16">
 					<h2 className="text-6xl font-bold text-gray-950">Institutional Earn Strategies</h2>
 				</div>

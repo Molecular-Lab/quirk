@@ -21,6 +21,7 @@ import { Route as DemoGigWorkersRouteImport } from './routes/demo/gig-workers'
 import { Route as DemoEcommerceRouteImport } from './routes/demo/ecommerce'
 import { Route as DemoCreatorsRouteImport } from './routes/demo/creators'
 import { Route as DashboardYieldRouteImport } from './routes/dashboard/yield'
+import { Route as DashboardStrategiesRouteImport } from './routes/dashboard/strategies'
 import { Route as DashboardProductConfigRouteImport } from './routes/dashboard/product-config'
 import { Route as DashboardOperationsRouteImport } from './routes/dashboard.operations'
 import { Route as DashboardMarketRouteImport } from './routes/dashboard/market'
@@ -92,6 +93,11 @@ const DemoCreatorsRoute = DemoCreatorsRouteImport.update({
 const DashboardYieldRoute = DashboardYieldRouteImport.update({
   id: '/yield',
   path: '/yield',
+  getParentRoute: () => DashboardRoute,
+} as any)
+const DashboardStrategiesRoute = DashboardStrategiesRouteImport.update({
+  id: '/strategies',
+  path: '/strategies',
   getParentRoute: () => DashboardRoute,
 } as any)
 const DashboardProductConfigRoute = DashboardProductConfigRouteImport.update({
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/operations': typeof DashboardOperationsRoute
   '/dashboard/product-config': typeof DashboardProductConfigRoute
+  '/dashboard/strategies': typeof DashboardStrategiesRoute
   '/dashboard/yield': typeof DashboardYieldRoute
   '/demo/creators': typeof DemoCreatorsRoute
   '/demo/ecommerce': typeof DemoEcommerceRoute
@@ -201,6 +208,7 @@ export interface FileRoutesByTo {
   '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/operations': typeof DashboardOperationsRoute
   '/dashboard/product-config': typeof DashboardProductConfigRoute
+  '/dashboard/strategies': typeof DashboardStrategiesRoute
   '/dashboard/yield': typeof DashboardYieldRoute
   '/demo/creators': typeof DemoCreatorsRoute
   '/demo/ecommerce': typeof DemoEcommerceRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/dashboard/market': typeof DashboardMarketRoute
   '/dashboard/operations': typeof DashboardOperationsRoute
   '/dashboard/product-config': typeof DashboardProductConfigRoute
+  '/dashboard/strategies': typeof DashboardStrategiesRoute
   '/dashboard/yield': typeof DashboardYieldRoute
   '/demo/creators': typeof DemoCreatorsRoute
   '/demo/ecommerce': typeof DemoEcommerceRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/dashboard/market'
     | '/dashboard/operations'
     | '/dashboard/product-config'
+    | '/dashboard/strategies'
     | '/dashboard/yield'
     | '/demo/creators'
     | '/demo/ecommerce'
@@ -282,6 +292,7 @@ export interface FileRouteTypes {
     | '/dashboard/market'
     | '/dashboard/operations'
     | '/dashboard/product-config'
+    | '/dashboard/strategies'
     | '/dashboard/yield'
     | '/demo/creators'
     | '/demo/ecommerce'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/dashboard/market'
     | '/dashboard/operations'
     | '/dashboard/product-config'
+    | '/dashboard/strategies'
     | '/dashboard/yield'
     | '/demo/creators'
     | '/demo/ecommerce'
@@ -420,6 +432,13 @@ declare module '@tanstack/react-router' {
       path: '/yield'
       fullPath: '/dashboard/yield'
       preLoaderRoute: typeof DashboardYieldRouteImport
+      parentRoute: typeof DashboardRoute
+    }
+    '/dashboard/strategies': {
+      id: '/dashboard/strategies'
+      path: '/strategies'
+      fullPath: '/dashboard/strategies'
+      preLoaderRoute: typeof DashboardStrategiesRouteImport
       parentRoute: typeof DashboardRoute
     }
     '/dashboard/product-config': {
@@ -538,6 +557,7 @@ interface DashboardRouteChildren {
   DashboardMarketRoute: typeof DashboardMarketRoute
   DashboardOperationsRoute: typeof DashboardOperationsRoute
   DashboardProductConfigRoute: typeof DashboardProductConfigRoute
+  DashboardStrategiesRoute: typeof DashboardStrategiesRoute
   DashboardYieldRoute: typeof DashboardYieldRoute
   DashboardIndexRoute: typeof DashboardIndexRoute
   DashboardPortfoliosIdRoute: typeof DashboardPortfoliosIdRoute
@@ -555,6 +575,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardMarketRoute: DashboardMarketRoute,
   DashboardOperationsRoute: DashboardOperationsRoute,
   DashboardProductConfigRoute: DashboardProductConfigRoute,
+  DashboardStrategiesRoute: DashboardStrategiesRoute,
   DashboardYieldRoute: DashboardYieldRoute,
   DashboardIndexRoute: DashboardIndexRoute,
   DashboardPortfoliosIdRoute: DashboardPortfoliosIdRoute,

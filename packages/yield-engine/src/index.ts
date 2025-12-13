@@ -165,3 +165,22 @@ export {
 	RiskAdjustedStrategy,
 	GasAwareStrategy,
 } from './optimizer/strategies'
+
+// Multi-Chain Optimizer
+export { MultiChainOptimizer } from './optimizer/multi-chain-optimizer'
+export type {
+	SupportedChainId,
+	RiskLevel,
+	ChainOpportunity,
+	ChainResult,
+	ProtocolAllocation,
+	MultiChainOptimizationResult,
+	MultiChainOptimizerConfig,
+} from './optimizer/multi-chain-optimizer.types'
+export {
+	SUPPORTED_CHAINS as MULTI_CHAIN_SUPPORTED_CHAINS,
+	CHAIN_INFO,
+	RISK_TARGET_APY,
+	PROTOCOL_GAS_UNITS,
+	MultiChainOptimizerConfigSchema,
+} from './optimizer/multi-chain-optimizer.types'

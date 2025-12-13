@@ -1,7 +1,15 @@
+import { useScrollAnimation } from "@/hooks/useScrollAnimation"
+
 export function GetStartedSection() {
+    const { ref, isVisible } = useScrollAnimation({ threshold: 0.15 })
+
     return (
         <section className="py-20 bg-white">
-            <div className="max-w-7xl mx-auto px-6 w-full">
+            <div
+                ref={ref as React.RefObject<HTMLDivElement>}
+                className={`max-w-7xl mx-auto px-6 w-full transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+                    }`}
+            >
                 <div className="relative bg-gray-950 rounded-xl p-12 text-center text-white overflow-hidden mb-24">
                     {/* Subtle gradient decoration */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-blue-500/30 to-transparent" />
