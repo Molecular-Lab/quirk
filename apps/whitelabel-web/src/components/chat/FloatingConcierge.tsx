@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react"
 import axios from "axios"
+import { Bot, MessageCircle, X, User, Send } from "lucide-react"
 import { useFloatingConcierge } from "../../contexts/FloatingConciergeContext"
 
 const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8002"
@@ -109,14 +110,7 @@ export function FloatingConcierge() {
 					onClick={() => setContextIsOpen(true)}
 					className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all duration-200 flex flex-col items-center justify-center gap-0.5"
 				>
-					<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-						<path
-							strokeLinecap="round"
-							strokeLinejoin="round"
-							strokeWidth={2}
-							d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-						/>
-					</svg>
+					<Bot className="w-6 h-6" />
 					<span className="text-[10px] font-semibold">AI</span>
 				</button>
 			) : (
@@ -126,7 +120,7 @@ export function FloatingConcierge() {
 					<div className="bg-gradient-to-r from-green-500 to-emerald-600 px-6 py-4 flex items-center justify-between">
 						<div className="flex items-center gap-3">
 							<div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-								<span className="text-white text-sm font-bold">AI</span>
+								<Bot className="w-5 h-5 text-white" />
 							</div>
 							<div>
 								<h3 className="text-white font-bold text-lg">Yield Advisor</h3>
@@ -137,9 +131,7 @@ export function FloatingConcierge() {
 							onClick={() => setContextIsOpen(false)}
 							className="text-white/80 hover:text-white transition-colors"
 						>
-							<svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-							</svg>
+							<X className="w-6 h-6" />
 						</button>
 					</div>
 
@@ -149,13 +141,12 @@ export function FloatingConcierge() {
 							<div key={idx} className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
 								{msg.role === "assistant" && (
 									<div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0">
-										<span className="text-white text-xs font-bold">AI</span>
+										<Bot className="w-4 h-4 text-white" />
 									</div>
 								)}
 								<div
-									className={`max-w-[75%] rounded-2xl px-4 py-3 ${
-										msg.role === "user" ? "bg-green-500 text-white" : "bg-white text-gray-800 border border-gray-200"
-									}`}
+									className={`max-w-[75%] rounded-2xl px-4 py-3 ${msg.role === "user" ? "bg-green-500 text-white" : "bg-white text-gray-800 border border-gray-200"
+										}`}
 								>
 									<p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
 									<p
@@ -166,7 +157,7 @@ export function FloatingConcierge() {
 								</div>
 								{msg.role === "user" && (
 									<div className="w-8 h-8 bg-gray-700 rounded-xl flex items-center justify-center flex-shrink-0">
-										<span className="text-white text-xs font-bold">U</span>
+										<User className="w-4 h-4 text-white" />
 									</div>
 								)}
 							</div>
@@ -176,7 +167,7 @@ export function FloatingConcierge() {
 						{isSending && (
 							<div className="flex gap-3 justify-start">
 								<div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center flex-shrink-0">
-									<span className="text-white text-xs font-bold">AI</span>
+									<Bot className="w-4 h-4 text-white" />
 								</div>
 								<div className="bg-white rounded-2xl px-4 py-3 border border-gray-200">
 									<div className="flex items-center gap-1">
@@ -232,9 +223,9 @@ export function FloatingConcierge() {
 							<button
 								onClick={sendMessage}
 								disabled={isSending || !chatInput.trim()}
-								className="px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+								className="px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-2"
 							>
-								{isSending ? "..." : "Send"}
+								{isSending ? "..." : <><Send className="w-4 h-4" /> Send</>}
 							</button>
 						</div>
 					</div>

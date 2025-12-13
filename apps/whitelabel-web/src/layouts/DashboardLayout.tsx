@@ -16,6 +16,8 @@ import {
 	X,
 } from "lucide-react"
 
+import QuirkLogo from "@/assets/quirk-logo.svg"
+
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -64,11 +66,9 @@ export function DashboardLayout() {
 				{/* Desktop sidebar - Icon only style like Glider */}
 				<div className="hidden lg:flex lg:flex-shrink-0">
 					<div className="flex flex-col w-[72px] bg-gray-50 border-r border-gray-200">
-						{/* Simple Logo */}
+						{/* Logo */}
 						<div className="flex items-center justify-center h-16 border-b border-gray-200">
-							<div className="w-8 h-8 bg-gradient-to-br from-blue-200 via-purple-200 to-cyan-200 rounded-lg flex items-center justify-center shadow-sm">
-								<span className="text-blue-700 font-semibold text-sm">Q</span>
-							</div>
+							<img src={QuirkLogo} alt="Quirk" className="w-8 h-8" />
 						</div>
 
 						{/* Clean Navigation Icons */}
@@ -224,9 +224,7 @@ export function DashboardLayout() {
 					<div className="fixed inset-y-0 left-0 flex flex-col w-64 bg-white shadow-xl">
 						<div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
 							<div className="flex items-center gap-2">
-								<div className="w-8 h-8 bg-gradient-to-br from-blue-200 via-purple-200 to-cyan-200 rounded-lg flex items-center justify-center shadow-sm">
-									<span className="text-blue-700 font-semibold text-sm">Q</span>
-								</div>
+								<img src={QuirkLogo} alt="Quirk" className="w-8 h-8" />
 								<h1 className="text-xl font-bold text-gray-900">QUIRK</h1>
 							</div>
 							<button
