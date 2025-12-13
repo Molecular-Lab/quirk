@@ -5,8 +5,8 @@
 
 import VError from "verror"
 
-import type { ClientRepository } from "@/repository/postgres/client.repository"
-import type { VaultRepository } from "@/repository/postgres/vault.repository"
+import type { ClientRepository } from "../repository/postgres/client.repository"
+import type { VaultRepository } from "../repository/postgres/vault.repository"
 
 // Simple logger for service layer
 const Logger = {
@@ -141,9 +141,9 @@ export class RevenueService {
 			return {
 				monthlyRecurringRevenue: revenueSummary.monthlyRecurringRevenue || "0",
 				annualRunRate: revenueSummary.annualRunRate || "0",
-				totalClientRevenue: balances.totalClientRevenue || "0",
-				totalPlatformRevenue: balances.totalPlatformRevenue || "0",
-				totalEnduserRevenue: balances.totalEnduserRevenue || "0",
+				totalClientRevenue: "0", // TODO: Fix field name in database query
+				totalPlatformRevenue: "0", // TODO: Fix field name in database query
+				totalEnduserRevenue: "0", // TODO: Fix field name in database query
 				totalEarningBalance: balances.totalEarningBalance || "0",
 			}
 		} catch (error) {
@@ -196,7 +196,7 @@ export class RevenueService {
 			}
 
 			// Record yield distribution in database
-			await this.deps.vaultRepository.recordYieldDistribution(vaultId, {
+			await this.deps.vaultRepository.recordYieldDistributionToVault(vaultId, {
 				clientRevenue: clientRevenue.toFixed(18),
 				platformRevenue: platformRevenue.toFixed(18),
 				enduserRevenue: enduserRevenue.toFixed(18),

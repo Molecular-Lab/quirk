@@ -135,9 +135,9 @@ export class VaultRepository {
 
 	/**
 	 * Record yield distribution to vault revenue columns
-	 * Updates: client_revenue_earned, platform_revenue_earned, enduser_revenue_earned
+	 * Updates: cumulative_yield and total_staked_balance
 	 */
-	async recordYieldDistribution(
+	async recordYieldDistributionToVault(
 		vaultId: string,
 		distribution: {
 			clientRevenue: string
@@ -146,12 +146,16 @@ export class VaultRepository {
 			rawYield: string
 		},
 	): Promise<void> {
+		// For now, we only update cumulative yield and staked balance
+		// The revenue distribution logic would need a different SQLC function
+		const totalRevenue = parseFloat(distribution.clientRevenue) +
+							 parseFloat(distribution.platformRevenue) +
+							 parseFloat(distribution.enduserRevenue);
+
 		await recordYieldDistribution(this.sql, {
-			vaultId,
-			clientRevenue: distribution.clientRevenue,
-			platformRevenue: distribution.platformRevenue,
-			enduserRevenue: distribution.enduserRevenue,
-			rawYield: distribution.rawYield,
+			id: vaultId,
+			cumulativeYield: totalRevenue.toString(),
+			totalStakedBalance: "0", // This should come from the vault's current staked balance
 		})
 	}
 

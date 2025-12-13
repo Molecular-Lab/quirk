@@ -122,10 +122,10 @@ export function ProductStrategyConfig({ productId, onStrategyChange }: ProductSt
 						onClick={() => {
 							setSelectedTemplate(template)
 						}}
-						className={`p-4 rounded-xl border-2 transition-all ${
+						className={`p-4 rounded-xl border-1 transition-all cursor-pointer ${
 							selectedTemplate === template
-								? "border-accent bg-white shadow-md"
-								: "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+								? "border-gray-200 shadow-md ring-1 ring-gray-100"
+								: ""
 						}`}
 					>
 						<div className="font-semibold capitalize text-gray-950">{template}</div>

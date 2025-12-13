@@ -135,6 +135,22 @@ export const createClientRouter = (
 
 				const client = await clientService.getClientByProductId(params.productId);
 
+				// DEBUG: Log data before mapping to response
+				logger.info('[Client Router] getByProductId BEFORE MAPPING:', {
+					productId: params.productId,
+					found: !!client,
+					id: client?.id,
+					companyName: client?.companyName,
+					businessType: client?.businessType,
+					description: client?.description,
+					clientRevenueSharePercent: client?.clientRevenueSharePercent,
+					platformFeePercent: client?.platformFeePercent,
+					supportedCurrencies: client?.supportedCurrencies,
+					bankAccounts: client?.bankAccounts,
+					strategiesPreferences: client?.strategiesPreferences,
+					strategiesCustomization: client?.strategiesCustomization,
+				})
+
 				return {
 					status: 200 as const,
 					body: {
@@ -384,7 +400,7 @@ export const createClientRouter = (
 						businessType: client.businessType,
 						description: client.description || null,
 						websiteUrl: client.websiteUrl || null,
-						walletType: client.privyWalletType, // ✅ From JOIN with privy_accounts
+						walletType: client.walletType, // ✅ From JOIN with privy_accounts
 						privyOrganizationId: client.privyOrganizationId, // ✅ From JOIN
 						supportedCurrencies: client.supportedCurrencies || [],
 						bankAccounts: bankAccounts,
@@ -880,18 +896,16 @@ export const createClientRouter = (
 					};
 				}
 
-				const strategies = await clientService.getProductStrategies(params.productId);
+				// TODO: Implement getProductStrategies method in ClientService
+				// const strategies = await clientService.getProductStrategies(params.productId);
+				const strategies = null;
 
 				return {
 					status: 200 as const,
 					body: {
-						found: !!strategies,
-						data: strategies ? {
-							productId: params.productId,
-							preferences: strategies.preferences,
-							customization: strategies.customization,
-						} : null,
-						message: strategies ? "Product strategies found" : "Product strategies not found",
+						found: false,
+						data: null,
+						message: "Product strategies not implemented yet",
 					},
 				};
 			} catch (error: any) {
@@ -956,17 +970,30 @@ export const createClientRouter = (
 
 				const result = await clientService.getEffectiveProductStrategies(params.productId);
 
+				// DEBUG: Log strategies before mapping to response
+				logger.info('[Client Router] getEffectiveProductStrategies BEFORE MAPPING:', {
+					productId: params.productId,
+					found: !!result,
+					result,
+					strategies: result?.strategies,
+					source: result?.source,
+				})
+
+				const responseBody = {
+					found: !!result,
+					data: result ? {
+						productId: params.productId,
+						strategies: result.strategies,
+						source: result.source as "preferences" | "customization",
+					} : null,
+					message: result ? "Effective strategies found" : "Effective strategies not found",
+				}
+
+				logger.info('[Client Router] getEffectiveProductStrategies RESPONSE BODY:', responseBody)
+
 				return {
 					status: 200 as const,
-					body: {
-						found: !!result,
-						data: result ? {
-							productId: params.productId,
-							strategies: result.strategies,
-							source: result.source,
-						} : null,
-						message: result ? "Effective strategies found" : "Effective strategies not found",
-					},
+					body: responseBody,
 				};
 			} catch (error: any) {
 				logger.error("Error getting effective product strategies", { error: error.message, params });

@@ -4,9 +4,13 @@
  */
 
 import { useEffect, useState } from "react"
+
 import { ArrowDown, ArrowUp, TrendingUp, UserPlus, Users } from "lucide-react"
+
 import { b2bApiClient } from "@/api/b2bClient"
+import { ProductSwitcher } from "@/components/ProductSwitcher"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useUserStore } from "@/store/userStore"
 
 interface EndUsersTabProps {
 	productId?: string
@@ -33,7 +37,12 @@ interface Transaction {
 	timestamp: string
 }
 
-export default function EndUsersTab({ productId }: EndUsersTabProps) {
+export default function EndUsersTab({ productId: initialProductId }: EndUsersTabProps) {
+	const { organizations, activeProductId } = useUserStore()
+
+	// Use activeProductId from store, fallback to initialProductId or first org
+	const productId = activeProductId || initialProductId || organizations[0]?.productId
+
 	const [loading, setLoading] = useState(true)
 	const [growthMetrics, setGrowthMetrics] = useState<GrowthMetrics | null>(null)
 	const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -94,7 +103,8 @@ export default function EndUsersTab({ productId }: EndUsersTabProps) {
 					<Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
 					<h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Product</h3>
 					<p className="text-gray-500">
-						End-user metrics are available for individual products. Please select a specific product from the dropdown to view detailed user activity.
+						End-user metrics are available for individual products. Please select a specific product from the dropdown
+						to view detailed user activity.
 					</p>
 				</div>
 			</div>
@@ -131,8 +141,29 @@ export default function EndUsersTab({ productId }: EndUsersTabProps) {
 
 	const totalPages = Math.ceil(totalTransactions / pageSize)
 
+	// Get current product name
+	const currentProduct = organizations.find((org) => org.productId === productId)
+
 	return (
 		<div className="space-y-6">
+			{/* Product Selector */}
+			{organizations.length > 1 && (
+				<div className="flex items-center justify-between">
+					<div>
+						<h3 className="text-sm font-medium text-gray-700 mb-1">Viewing product:</h3>
+						<ProductSwitcher />
+					</div>
+				</div>
+			)}
+
+			{organizations.length === 1 && currentProduct && (
+				<div className="mb-4">
+					<h3 className="text-sm font-medium text-gray-700">
+						Product: <span className="text-gray-900 font-semibold">{currentProduct.companyName}</span>
+					</h3>
+				</div>
+			)}
+
 			{/* Growth Metrics Cards */}
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
 				{/* Total Users */}
@@ -185,12 +216,10 @@ export default function EndUsersTab({ productId }: EndUsersTabProps) {
 						{formatCurrency(
 							growthMetrics
 								? (parseFloat(growthMetrics.totalDeposited) - parseFloat(growthMetrics.totalWithdrawn)).toString()
-								: "0"
+								: "0",
 						)}
 					</div>
-					<div className="text-sm text-gray-600">
-						Deposits - Withdrawals
-					</div>
+					<div className="text-sm text-gray-600">Deposits - Withdrawals</div>
 				</div>
 			</div>
 
@@ -210,9 +239,7 @@ export default function EndUsersTab({ productId }: EndUsersTabProps) {
 					<div className="text-3xl font-bold text-gray-950 mb-2">
 						{formatCurrency(growthMetrics?.totalDeposited || "0")}
 					</div>
-					<div className="text-sm text-gray-600">
-						{growthMetrics?.totalDeposits.toLocaleString() || 0} transactions
-					</div>
+					<div className="text-sm text-gray-600">{growthMetrics?.totalDeposits.toLocaleString() || 0} transactions</div>
 				</div>
 
 				{/* Total Withdrawn */}
@@ -282,9 +309,7 @@ export default function EndUsersTab({ productId }: EndUsersTabProps) {
 														<ArrowDown className="w-4 h-4 text-red-600" />
 													</div>
 												)}
-												<span className="font-semibold text-gray-900 text-sm capitalize">
-													{tx.transactionType}
-												</span>
+												<span className="font-semibold text-gray-900 text-sm capitalize">{tx.transactionType}</span>
 											</div>
 										</TableCell>
 										<TableCell className="py-4 px-5">
@@ -330,12 +355,14 @@ export default function EndUsersTab({ productId }: EndUsersTabProps) {
 						{totalPages > 1 && (
 							<div className="flex items-center justify-between px-6 py-4 border-t border-gray-100">
 								<div className="text-sm text-gray-500">
-									Showing {(currentPage - 1) * pageSize + 1} to{" "}
-									{Math.min(currentPage * pageSize, totalTransactions)} of {totalTransactions} transactions
+									Showing {(currentPage - 1) * pageSize + 1} to {Math.min(currentPage * pageSize, totalTransactions)} of{" "}
+									{totalTransactions} transactions
 								</div>
 								<div className="flex items-center gap-2">
 									<button
-										onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+										onClick={() => {
+											setCurrentPage((p) => Math.max(1, p - 1))
+										}}
 										disabled={currentPage === 1}
 										className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
 									>
@@ -345,7 +372,9 @@ export default function EndUsersTab({ productId }: EndUsersTabProps) {
 										Page {currentPage} of {totalPages}
 									</span>
 									<button
-										onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+										onClick={() => {
+											setCurrentPage((p) => Math.min(totalPages, p + 1))
+										}}
 										disabled={currentPage === totalPages}
 										className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
 									>

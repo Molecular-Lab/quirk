@@ -75,8 +75,17 @@ export function DemoSelectorPage() {
 		if (organizations.length === 0) {
 			loadOrganizations()
 		} else {
-			// Load into demoProductStore
-			loadProducts(organizations)
+			// Load API keys from localStorage
+			const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
+
+			console.log("[DemoSelectorPage] Loading products with API keys:", {
+				organizationsCount: organizations.length,
+				apiKeysCount: Object.keys(allKeys).length,
+				availableKeys: Object.keys(allKeys),
+			})
+
+			// Load into demoProductStore with API keys
+			loadProducts(organizations, allKeys)
 		}
 	}, [organizations, loadOrganizations, loadProducts])
 
@@ -102,9 +111,9 @@ export function DemoSelectorPage() {
 	const handleProductSelect = (productId: string) => {
 		console.log("[DemoSelectorPage] Selecting product:", productId)
 
-		// Load API key for this product from localStorage
-		const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-		const apiKey = allKeys[productId]
+		// Check if API key exists in demoProductStore
+		const { getApiKey } = useDemoProductStore.getState()
+		const apiKey = getApiKey(productId)
 
 		if (!apiKey) {
 			const product = availableProducts.find((p) => p.productId === productId)
@@ -115,8 +124,8 @@ export function DemoSelectorPage() {
 			return
 		}
 
-		// Select product with API key
-		selectProduct(productId, apiKey)
+		// Select product (API key is already in store)
+		selectProduct(productId)
 
 		console.log("[DemoSelectorPage] ✅ Product selected with API key")
 		setStep(3)
@@ -135,9 +144,11 @@ export function DemoSelectorPage() {
 			return
 		}
 
-		// Double-check API key exists before navigation
-		const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-		if (!allKeys[selectedProductId]) {
+		// Double-check API key exists in demoProductStore before navigation
+		const { getApiKey } = useDemoProductStore.getState()
+		const apiKey = getApiKey(selectedProductId)
+
+		if (!apiKey) {
 			const product = availableProducts.find((p) => p.productId === selectedProductId)
 			setApiKeyErrorDialog({
 				open: true,
@@ -159,8 +170,8 @@ export function DemoSelectorPage() {
 			selectedProductId &&
 			hasPersona() &&
 			(() => {
-				const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-				return allKeys[selectedProductId]
+				const { getApiKey } = useDemoProductStore.getState()
+				return !!getApiKey(selectedProductId)
 			})(),
 	)
 
@@ -409,10 +420,10 @@ export function DemoSelectorPage() {
 								{personas.map((persona) => (
 									<Card
 										key={persona.id}
-										className={`cursor-pointer transition-all hover:shadow-xl ${
+										className={`cursor-pointer transition-all ${
 											selectedPersona === persona.id
-												? "border-accent border-2 shadow-lg bg-accent/5"
-												: "border-gray-200 hover:border-gray-300"
+												? "border-gray-200 shadow-lg ring-1 ring-gray-100"
+												: ""
 										}`}
 										onClick={() => {
 											handlePersonaSelect(persona.id)

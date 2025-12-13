@@ -6,6 +6,7 @@ import { toast } from "sonner"
 import {
 	configureBankAccounts,
 	getBankAccounts,
+	getEffectiveProductStrategies,
 	getFeeConfig,
 	getOrganizationByProductId,
 	regenerateApiKey,
@@ -32,8 +33,10 @@ const currencies = [
 ]
 
 export function ProductConfigPage() {
-	const { activeProductId, getActiveOrganization, apiKey, organizations, isOrganizationsLoaded } = useUserStore()
-	const organization = getActiveOrganization()
+	const { activeProductId, organizations, isOrganizationsLoaded } = useUserStore()
+
+	// Get active organization from store directly (don't cache it)
+	const organization = organizations.find((org) => org.productId === activeProductId)
 
 	// Loading State
 	const [isLoading, setIsLoading] = useState(true)
@@ -41,8 +44,8 @@ export function ProductConfigPage() {
 
 	// Product Info State
 	const [productInfo, setProductInfo] = useState({
-		companyName: organization?.companyName ?? "",
-		businessType: organization?.businessType ?? "",
+		companyName: "",
+		businessType: "",
 		description: "",
 		webhookUrl: "",
 	})
@@ -65,7 +68,7 @@ export function ProductConfigPage() {
 
 	// API Key State
 	const [showApiKey, setShowApiKey] = useState(false)
-	const [generatedApiKey, setGeneratedApiKey] = useState(apiKey ?? "")
+	const [generatedApiKey, setGeneratedApiKey] = useState("")
 
 	// Fee Configuration State
 	const [feeConfig, setFeeConfig] = useState({
@@ -96,42 +99,117 @@ export function ProductConfigPage() {
 
 			// Validate: Don't fetch if activeProductId doesn't exist in organizations
 			// This prevents 404 errors when loading with stale cached productId
-			const productExists = organizations.some((org) => org.productId === activeProductId)
-			if (!productExists) {
+			const currentOrg = organizations.find((org) => org.productId === activeProductId)
+			if (!currentOrg) {
 				console.warn(`[ProductConfigPage] Product ${activeProductId} not found in organizations, skipping fetch`)
 				setIsLoading(false)
 				return
 			}
 
+			console.log(`[ProductConfigPage] Loading config for product: ${activeProductId}`)
 			setIsLoading(true)
+
 			try {
-				// Fetch product details, bank accounts, and fee configuration
-				const [productData, bankAccountsData, feeConfigData] = await Promise.all([
+				// Fetch product details, bank accounts, fee configuration, and strategies
+				const [productData, bankAccountsData, feeConfigData, strategiesData] = await Promise.all([
 					getOrganizationByProductId(activeProductId),
-					getBankAccounts(activeProductId).catch(() => null),
-					getFeeConfig(activeProductId).catch(() => null),
+					getBankAccounts(activeProductId).catch((err) => {
+						console.error("[ProductConfigPage] ❌ getBankAccounts failed:", err)
+						return null
+					}),
+					getFeeConfig(activeProductId).catch((err) => {
+						console.error("[ProductConfigPage] ❌ getFeeConfig failed:", err)
+						return null
+					}),
+					getEffectiveProductStrategies(activeProductId).catch((err) => {
+						console.error("[ProductConfigPage] ❌ getEffectiveProductStrategies failed:", err)
+						return null
+					}),
 				])
 
-				// Update product info
-				if (productData) {
-					const product = productData as any
-					setProductInfo({
-						companyName: (product.companyName || organization?.companyName) ?? "",
-						businessType: (product.businessType || organization?.businessType) ?? "",
-						description: product.description ?? "",
-						webhookUrl: product.webhookUrl ?? "",
-					})
+				// ============================================
+				// DEBUG: Log ALL API responses to see actual structure
+				// ============================================
+				console.group("[ProductConfigPage] 📦 API Responses")
 
-					// Update supported currencies if available
-					if (product.supportedCurrencies && Array.isArray(product.supportedCurrencies)) {
-						setSelectedCurrencies(product.supportedCurrencies as Currency[])
+				console.log("1️⃣ Product Data (getOrganizationByProductId):")
+				console.log("   Raw response:", productData)
+				console.log("   Response type:", typeof productData)
+				console.log("   .found:", (productData as any)?.found)
+				console.log("   .data:", (productData as any)?.data)
+				console.log("   .message:", (productData as any)?.message)
+
+				console.log("\n2️⃣ Bank Accounts Data (getBankAccounts):")
+				console.log("   Raw response:", bankAccountsData)
+				console.log("   Response type:", typeof bankAccountsData)
+				console.log("   .found:", (bankAccountsData as any)?.found)
+				console.log("   .data:", (bankAccountsData as any)?.data)
+
+				console.log("\n3️⃣ Fee Config Data (getFeeConfig):")
+				console.log("   Raw response:", feeConfigData)
+				console.log("   Response type:", typeof feeConfigData)
+				console.log("   .found:", (feeConfigData as any)?.found)
+				console.log("   .data:", (feeConfigData as any)?.data)
+
+				console.log("\n4️⃣ Strategies Data (getEffectiveProductStrategies):")
+				console.log("   Raw response:", strategiesData)
+				console.log("   Response type:", typeof strategiesData)
+				console.log("   .found:", (strategiesData as any)?.found)
+				console.log("   .data:", (strategiesData as any)?.data)
+
+				console.groupEnd()
+
+				// Update product info - FIX: Extract .data from wrapped response
+				if (productData) {
+					const product = (productData as any)?.data // ✅ Extract .data property
+					console.log("[ProductConfigPage] 🔍 Extracted product from .data:", product)
+
+					if (product) {
+						const extractedInfo = {
+							companyName: product.companyName ?? currentOrg.companyName ?? "",
+							businessType: product.businessType ?? currentOrg.businessType ?? "",
+							description: product.description ?? "",
+							webhookUrl: product.webhookUrl ?? "",
+						}
+						console.log("[ProductConfigPage] ✅ Setting productInfo:", extractedInfo)
+						setProductInfo(extractedInfo)
+
+						// Update supported currencies if available
+						if (product.supportedCurrencies && Array.isArray(product.supportedCurrencies)) {
+							console.log("[ProductConfigPage] ✅ Setting supportedCurrencies:", product.supportedCurrencies)
+							setSelectedCurrencies(product.supportedCurrencies as Currency[])
+						} else {
+							console.log("[ProductConfigPage] ⚠️ No supportedCurrencies in product data")
+						}
+					} else {
+						console.log("[ProductConfigPage] ⚠️ product.data is missing, using fallback")
+						// Fallback to organization data if .data is missing
+						setProductInfo({
+							companyName: currentOrg.companyName ?? "",
+							businessType: currentOrg.businessType ?? "",
+							description: "",
+							webhookUrl: "",
+						})
 					}
+				} else {
+					console.log("[ProductConfigPage] ⚠️ productData is null, using fallback")
+					// Fallback to organization data if API fails
+					setProductInfo({
+						companyName: currentOrg.companyName ?? "",
+						businessType: currentOrg.businessType ?? "",
+						description: "",
+						webhookUrl: "",
+					})
 				}
 
-				// Update bank accounts
-				if (bankAccountsData && Array.isArray(bankAccountsData)) {
+				// Update bank accounts - FIX: Extract .data from wrapped response
+				const bankData = (bankAccountsData as any)?.data
+				console.log("[ProductConfigPage] 🔍 Extracted bankData from .data:", bankData)
+
+				if (bankData?.bankAccounts && Array.isArray(bankData.bankAccounts)) {
+					console.log("[ProductConfigPage] ✅ Found bankAccounts array:", bankData.bankAccounts)
 					const bankAccountsMap: Record<Currency, any> = {} as any
-					for (const account of bankAccountsData) {
+					for (const account of bankData.bankAccounts) {
 						if (account.currency) {
 							bankAccountsMap[account.currency as Currency] = {
 								accountNumber: (account.account_number || account.accountNumber) ?? "",
@@ -141,25 +219,49 @@ export function ProductConfigPage() {
 							}
 						}
 					}
+					console.log("[ProductConfigPage] ✅ Setting bankAccounts:", bankAccountsMap)
 					setBankAccounts(bankAccountsMap)
+				} else {
+					console.log("[ProductConfigPage] ⚠️ No bankAccounts found in response")
 				}
 
-				// Update fee configuration
-				if (feeConfigData) {
-					const feeData = feeConfigData as any
+				// Update fee configuration - FIX: Extract .data from wrapped response
+				const feeData = (feeConfigData as any)?.data
+				console.log("[ProductConfigPage] 🔍 Extracted feeData from .data:", feeData)
+
+				if (feeData) {
 					const clientPercent = parseFloat(feeData.clientRevenueSharePercent || "15.00")
 					const platformPercent = parseFloat(feeData.platformFeePercent || "7.50")
 					const enduserPercent = 100 - clientPercent - platformPercent
 
-					setFeeConfig({
+					const calculatedFeeConfig = {
 						clientRevenueSharePercent: clientPercent.toFixed(2),
 						platformFeePercent: platformPercent.toFixed(2),
 						enduserFeePercent: enduserPercent.toFixed(2),
-					})
+					}
+					console.log("[ProductConfigPage] ✅ Setting feeConfig:", calculatedFeeConfig)
+					setFeeConfig(calculatedFeeConfig)
+				} else {
+					console.log("[ProductConfigPage] ⚠️ No feeData found, using defaults")
 				}
 
-				// Update API key from store
-				setGeneratedApiKey(apiKey ?? "")
+				// Update investment strategies - FIX: Load from API
+				const strategies = (strategiesData as any)?.data?.strategies
+				console.log("[ProductConfigPage] 🔍 Extracted strategies from .data.strategies:", strategies)
+
+				if (strategies) {
+					console.log("[ProductConfigPage] ✅ Setting investmentStrategy:", strategies)
+					setInvestmentStrategy(strategies)
+				} else {
+					console.log("[ProductConfigPage] ⚠️ No strategies found in response")
+				}
+
+				// Update API key from API response (apiKeyPrefix from database)
+				// productData structure: { found: boolean, data: {...}, message: string }
+				const apiKeyPrefix = (productData as any)?.data?.apiKeyPrefix || null
+				setGeneratedApiKey(apiKeyPrefix ?? "")
+
+				console.log("[ProductConfigPage] Loaded API key prefix from database:", apiKeyPrefix ? "✓ Generated" : "✗ Not generated")
 			} catch (error) {
 				console.error("[ProductConfigPage] Error loading product config:", error)
 				toast.error("Failed to load product configuration")
@@ -169,7 +271,7 @@ export function ProductConfigPage() {
 		}
 
 		void loadProductConfig()
-	}, [activeProductId, apiKey, organization, organizations, isOrganizationsLoaded])
+	}, [activeProductId, organizations, isOrganizationsLoaded])
 
 	// No strategy toggle - strategies are managed in Market Analysis page
 
@@ -195,21 +297,16 @@ export function ProductConfigPage() {
 			const newKey = (response as any)?.apiKey || (response as any)?.api_key
 
 			if (newKey) {
-				// Save to local state
+				// Update local state with full key (shown temporarily - user must copy)
 				setGeneratedApiKey(newKey)
 
-				// Save to localStorage (per-organization)
-				const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-				allKeys[activeProductId] = newKey
-				localStorage.setItem("b2b:api_keys", JSON.stringify(allKeys))
-				localStorage.setItem("b2b:api_key", newKey) // Set as current active key
+				// ✅ Save to demoProductStore for demos
+				const { setApiKey } = await import("@/store/demoProductStore").then(m => m.useDemoProductStore.getState())
+				setApiKey(activeProductId, newKey)
 
-				// Save to userStore
-				const { setApiKey } = useUserStore.getState()
-				setApiKey(newKey)
-
-				console.log("[ProductConfigPage] ✅ API Key saved:", newKey.substring(0, 12) + "...")
-				toast.success("New API key generated and saved securely!")
+				console.log("[ProductConfigPage] ✅ New API Key generated:", newKey.substring(0, 12) + "...")
+				console.log("[ProductConfigPage] ✅ API Key saved to demoProductStore")
+				toast.success("New API key generated! Please copy it now - you won't be able to see the full key again.")
 			} else {
 				toast.error("Failed to regenerate API key")
 			}
@@ -324,7 +421,7 @@ export function ProductConfigPage() {
 				promises.push(updateFeeConfig(activeProductId, formattedValue))
 
 				// Update local state with formatted value
-				setFeeConfig(prev => ({
+				setFeeConfig((prev) => ({
 					...prev,
 					clientRevenueSharePercent: formattedValue,
 				}))
@@ -683,12 +780,16 @@ export function ProductConfigPage() {
 							{isSaving ? (
 								<>
 									<Loader2 className="w-5 h-5 animate-spin" />
-									{applyStrategyToAll ? `Saving & Applying to All ${organizations.length} Products...` : "Saving Configuration..."}
+									{applyStrategyToAll
+										? `Saving & Applying to All ${organizations.length} Products...`
+										: "Saving Configuration..."}
 								</>
 							) : (
 								<>
 									<Save className="w-5 h-5" />
-									{applyStrategyToAll ? `Save & Apply to All ${organizations.length} Products` : "Save Product Configuration"}
+									{applyStrategyToAll
+										? `Save & Apply to All ${organizations.length} Products`
+										: "Save Product Configuration"}
 								</>
 							)}
 						</button>

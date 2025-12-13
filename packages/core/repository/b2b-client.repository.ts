@@ -32,7 +32,9 @@ import type {
 	DepositTransaction,
 	WithdrawalTransaction,
 	AuditLog,
-} from '../entity/old/b2b-client.entity' type Database = any
+} from '../entity/old/b2b-client.entity'
+
+type Database = any
 
 /**
  * Client Organization Repository

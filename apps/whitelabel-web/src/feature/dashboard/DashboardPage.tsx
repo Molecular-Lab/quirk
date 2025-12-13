@@ -4,15 +4,20 @@
  */
 
 import { useState } from "react"
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUserStore } from "@/store/userStore"
+
 import ClientOverviewTab from "./tabs/ClientOverviewTab"
 import EndUsersTab from "./tabs/EndUsersTab"
 import PortfolioTab from "./tabs/PortfolioTab"
 
 export default function DashboardPage() {
 	const [activeTab, setActiveTab] = useState("overview")
-	const { organizations, user } = useUserStore()
+	const { organizations, activeProductId } = useUserStore()
+
+	// Use first product as default for end-users tab if no active product
+	const selectedProductId = activeProductId || organizations[0]?.productId
 
 	// Aggregate mode: Show data across ALL products
 	if (!organizations || organizations.length === 0) {
@@ -34,7 +39,7 @@ export default function DashboardPage() {
 					<div>
 						<h1 className="text-[32px] font-bold text-gray-950">Dashboard</h1>
 						<p className="text-sm text-gray-500 mt-1">
-							All Products • {organizations.length} {organizations.length === 1 ? 'Product' : 'Products'}
+							All Products • {organizations.length} {organizations.length === 1 ? "Product" : "Products"}
 						</p>
 					</div>
 				</div>
@@ -52,7 +57,7 @@ export default function DashboardPage() {
 					</TabsContent>
 
 					<TabsContent value="end-users" className="mt-0">
-						<EndUsersTab mode="aggregate" />
+						<EndUsersTab mode="single" productId={selectedProductId} />
 					</TabsContent>
 
 					<TabsContent value="portfolio" className="mt-0">

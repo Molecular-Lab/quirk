@@ -218,7 +218,29 @@ export async function getClient(sql: Sql, args: GetClientArgs): Promise<GetClien
 
 export const getClientByProductIdQuery = `-- name: GetClientByProductId :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn,
+  co.id,
+  co.privy_account_id,
+  co.product_id,
+  co.company_name,
+  co.business_type,
+  co.description,
+  co.website_url,
+  co.api_key_hash,
+  co.api_key_prefix,
+  co.webhook_urls,
+  co.webhook_secret,
+  co.custom_strategy,
+  co.client_revenue_share_percent,
+  co.platform_fee_percent,
+  co.performance_fee,
+  co.supported_currencies,
+  co.bank_accounts,
+  co.strategies_preferences,
+  co.strategies_customization,
+  co.is_active,
+  co.is_sandbox,
+  co.created_at,
+  co.updated_at,
   pa.privy_wallet_address,
   pa.privy_organization_id,
   pa.wallet_type
@@ -246,28 +268,14 @@ export interface GetClientByProductIdRow {
     clientRevenueSharePercent: string;
     platformFeePercent: string;
     performanceFee: string | null;
-    monthlyRecurringRevenue: string | null;
-    annualRunRate: string | null;
-    lastMrrCalculationAt: Date | null;
     supportedCurrencies: any | null;
     bankAccounts: any | null;
-    isActive: boolean;
-    isSandbox: boolean;
-    customerTier: string | null;
     strategiesPreferences: any | null;
     strategiesCustomization: any | null;
+    isActive: boolean;
+    isSandbox: boolean;
     createdAt: Date;
     updatedAt: Date;
-    idleBalance: string | null;
-    earningBalance: string | null;
-    clientRevenueEarned: string | null;
-    platformRevenueEarned: string | null;
-    enduserRevenueEarned: string | null;
-    totalEndUsers: number | null;
-    newUsers_30d: number | null;
-    activeUsers_30d: number | null;
-    totalDeposited: string | null;
-    totalWithdrawn: string | null;
     privyWalletAddress: string;
     privyOrganizationId: string;
     walletType: string;
@@ -295,31 +303,17 @@ export async function getClientByProductId(sql: Sql, args: GetClientByProductIdA
         clientRevenueSharePercent: row[12],
         platformFeePercent: row[13],
         performanceFee: row[14],
-        monthlyRecurringRevenue: row[15],
-        annualRunRate: row[16],
-        lastMrrCalculationAt: row[17],
-        supportedCurrencies: row[18],
-        bankAccounts: row[19],
-        isActive: row[20],
-        isSandbox: row[21],
-        customerTier: row[22],
-        strategiesPreferences: row[23],
-        strategiesCustomization: row[24],
-        createdAt: row[25],
-        updatedAt: row[26],
-        idleBalance: row[27],
-        earningBalance: row[28],
-        clientRevenueEarned: row[29],
-        platformRevenueEarned: row[30],
-        enduserRevenueEarned: row[31],
-        totalEndUsers: row[32],
-        newUsers_30d: row[33],
-        activeUsers_30d: row[34],
-        totalDeposited: row[35],
-        totalWithdrawn: row[36],
-        privyWalletAddress: row[37],
-        privyOrganizationId: row[38],
-        walletType: row[39]
+        supportedCurrencies: row[15],
+        bankAccounts: row[16],
+        strategiesPreferences: row[17],
+        strategiesCustomization: row[18],
+        isActive: row[19],
+        isSandbox: row[20],
+        createdAt: row[21],
+        updatedAt: row[22],
+        privyWalletAddress: row[23],
+        privyOrganizationId: row[24],
+        walletType: row[25]
     };
 }
 
@@ -820,6 +814,36 @@ export async function updateClientByProductId(sql: Sql, args: UpdateClientByProd
         totalDeposited: row[35],
         totalWithdrawn: row[36]
     };
+}
+
+export const incrementEndUserCountQuery = `-- name: IncrementEndUserCount :exec
+UPDATE client_organizations
+SET
+  total_end_users = total_end_users + 1,
+  updated_at = now()
+WHERE id = $1`;
+
+export interface IncrementEndUserCountArgs {
+    id: string;
+}
+
+export async function incrementEndUserCount(sql: Sql, args: IncrementEndUserCountArgs): Promise<void> {
+    await sql.unsafe(incrementEndUserCountQuery, [args.id]);
+}
+
+export const decrementEndUserCountQuery = `-- name: DecrementEndUserCount :exec
+UPDATE client_organizations
+SET
+  total_end_users = GREATEST(0, total_end_users - 1),
+  updated_at = now()
+WHERE id = $1`;
+
+export interface DecrementEndUserCountArgs {
+    id: string;
+}
+
+export async function decrementEndUserCount(sql: Sql, args: DecrementEndUserCountArgs): Promise<void> {
+    await sql.unsafe(decrementEndUserCountQuery, [args.id]);
 }
 
 export const deactivateClientQuery = `-- name: DeactivateClient :exec

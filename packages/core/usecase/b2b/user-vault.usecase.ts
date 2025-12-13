@@ -50,7 +50,7 @@ export class B2BUserVaultUseCase {
 		await this.auditRepository.create({
 			clientId,
 			userId,
-			actorType: "user",
+			actorType: "end_user",
 			action: "balance_query",
 			resourceType: "end_user_vault",
 			resourceId: vault.id,

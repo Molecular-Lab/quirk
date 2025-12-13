@@ -41,8 +41,16 @@ export function DemoWrapper({ visualizationType }: DemoWrapperProps) {
 	// Load products into demoProductStore
 	useEffect(() => {
 		if (organizations.length > 0) {
-			console.log("[DemoWrapper] Loading products into demoProductStore:", organizations.length)
-			loadProducts(organizations)
+			// Load API keys from localStorage
+			const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
+
+			console.log("[DemoWrapper] Loading products into demoProductStore:", {
+				organizationsCount: organizations.length,
+				apiKeysCount: Object.keys(allKeys).length,
+			})
+
+			// Load products with API keys
+			loadProducts(organizations, allKeys)
 		}
 	}, [organizations, loadProducts])
 

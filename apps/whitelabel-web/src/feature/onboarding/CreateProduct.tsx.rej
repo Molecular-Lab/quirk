@@ -1,0 +1,12 @@
+***************
+*** 142,149
+- supportedCurrencies: formData.currencies.map((c) => c.toString()) as (
+- 					| "SGD"
+- 					| "USD"
+- 					| "EUR"
+- 					| "THB"
+- 					| "TWD"
+- 					| "KRW"
+- 				)[],
+--- 142 -----
++ supportedCurrencies: formData.currencies as Currency[],

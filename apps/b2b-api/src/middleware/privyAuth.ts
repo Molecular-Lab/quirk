@@ -144,13 +144,13 @@ export function privyAuth(
 			}
 
 			// Attach Privy session info to request for downstream use
-			// Map products to ensure correct types (cast privyWalletType from string to literal type)
+			// Map products to ensure correct types (cast walletType from string to literal type)
 			// @ts-ignore - Extending Request type
 			req.privy = {
 				organizationId: privyOrgId,
 				products: (products || []).map(p => ({
 					...p,
-					privyWalletType: p.privyWalletType as "custodial" | "non-custodial",
+					privyWalletType: p.walletType as "custodial" | "non-custodial",
 				})),
 			};
 

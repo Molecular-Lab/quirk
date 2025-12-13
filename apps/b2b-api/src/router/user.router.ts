@@ -92,7 +92,7 @@ export const createUserRouter = (
 				logger.error("Failed to get user by ID", { error, userId: params.id });
 				return {
 					status: 500 as const,
-					body: { error: "Failed to get user" },
+					body: { error: "Failed to get user", success: false },
 				};
 			}
 		},
@@ -155,7 +155,7 @@ export const createUserRouter = (
 				logger.error("Failed to get user", { error, params });
 				return {
 					status: 500 as const,
-					body: { error: "Failed to get user" },
+					body: { error: "Failed to get user", success: false },
 				};
 			}
 		},
@@ -240,7 +240,7 @@ export const createUserRouter = (
 				logger.error("Failed to get portfolio", { error, userId: params.userId });
 				return {
 					status: 500 as const,
-					body: { error: "Failed to get portfolio" },
+					body: { error: "Failed to get portfolio", success: false },
 				};
 			}
 		},
@@ -337,7 +337,7 @@ export const createUserRouter = (
 				logger.error("Failed to get user balance", { error, userId: params.userId });
 				return {
 					status: 500 as const,
-					body: { error: "Failed to get balance" },
+					body: { error: "Failed to get balance", success: false },
 				};
 			}
 		},
@@ -429,7 +429,7 @@ export const createUserRouter = (
 				logger.error("Failed to list user vaults", { error, userId: params.userId });
 				return {
 					status: 500 as const,
-					body: { error: "Failed to list vaults" },
+					body: { error: "Failed to list vaults", success: false },
 				};
 			}
 		},

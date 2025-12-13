@@ -330,8 +330,16 @@ export async function getEffectiveProductStrategies(productId: string) {
 		params: { productId },
 	})
 
-	if (status === 200) {
-		return body
+	console.log('[b2bClientHelpers] getEffectiveProductStrategies RESPONSE:', { status, body })
+
+	if (status === 200 && body.found && body.data) {
+		// Extract strategies from body.data
+		const result = {
+			strategies: body.data.strategies,
+			source: body.data.source,
+		}
+		console.log('[b2bClientHelpers] Extracted strategies:', result)
+		return result
 	}
 
 	throw new Error("Failed to get effective product strategies")

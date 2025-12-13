@@ -1,4 +1,4 @@
-import { Address, parseAbi } from "viem"
+import { parseAbi, type Address } from "viem"
 
 /**
  * AAVE V3 Pool Contract Address (Sepolia Testnet)

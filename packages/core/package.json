@@ -20,6 +20,7 @@
 		"bcrypt": "^6.0.0",
 		"bignumber.js": "^9.3.1",
 		"dayjs": "catalog:",
+		"decimal.js": "^10.4.3",
 		"postgres": "^3.4.7",
 		"uuid": "^11.0.3",
 		"verror": "^1.10.1",
