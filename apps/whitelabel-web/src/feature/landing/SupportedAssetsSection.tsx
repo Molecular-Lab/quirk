@@ -1,7 +1,9 @@
 import usdcLogo from "@/assets/usd-coin-usdc-logo.png"
 import usdtLogo from "@/assets/tether-usdt-logo.png"
+import { useScrollAnimation } from "@/hooks/useScrollAnimation"
 
 export function SupportedAssetsSection() {
+	const { ref, isVisible } = useScrollAnimation({ threshold: 0.15 })
 	const protocols = [
 		{
 			name: "USDC",
@@ -20,7 +22,11 @@ export function SupportedAssetsSection() {
 
 	return (
 		<section className="py-20 bg-white">
-			<div className="max-w-7xl mx-auto px-6">
+			<div
+				ref={ref as React.RefObject<HTMLDivElement>}
+				className={`max-w-7xl mx-auto px-6 transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+					}`}
+			>
 				<div className="text-center mb-12">
 					<h3 className="text-5xl font-bold text-gray-950 mb-4">Supported Assets</h3>
 				</div>
@@ -45,7 +51,7 @@ export function SupportedAssetsSection() {
 								<div className="text-center">
 									<span className="block text-xl font-bold text-gray-950">{protocol.name}</span>
 									{protocol.description && (
-									<span className="text-sm text-gray-600 mt-1 block">{protocol.description}</span>
+										<span className="text-sm text-gray-600 mt-1 block">{protocol.description}</span>
 									)}
 								</div>
 							</div>

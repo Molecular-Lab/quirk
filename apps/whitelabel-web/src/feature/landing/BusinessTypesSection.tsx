@@ -1,5 +1,6 @@
 import { useRef } from "react"
 import { ShoppingBag, CreditCard, Briefcase, Palette, Car } from "lucide-react"
+import { useScrollAnimation } from "@/hooks/useScrollAnimation"
 
 import linePayLogo from "@/assets/line-pay-seeklogo.svg"
 import wiseLogo from "@/assets/wise-plc-seeklogo.svg"
@@ -19,6 +20,7 @@ import shopeeLogo from "@/assets/shopee-seeklogo.svg"
 import lazadaLogo from "@/assets/lazada-seeklogo.svg"
 
 export function BusinessTypesSection() {
+	const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 })
 	const businessTypes = [
 		{
 			title: "Fintech",
@@ -75,7 +77,11 @@ export function BusinessTypesSection() {
 
 	return (
 		<section className="py-24 bg-white">
-			<div className="max-w-none w-full mx-auto px-6 sm:px-10 lg:px-16">
+			<div
+				ref={ref as React.RefObject<HTMLDivElement>}
+				className={`max-w-none w-full mx-auto px-6 sm:px-10 lg:px-16 transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+					}`}
+			>
 				{/* Section Header */}
 				<div className="mb-12 text-center">
 					<h2 className="text-5xl font-bold text-gray-950 mb-6">Support Any Platform</h2>
@@ -127,14 +133,22 @@ export function BusinessTypesSection() {
 											APPS
 										</p>
 										<div className="flex items-center gap-4 flex-wrap">
-											{type.logos.map((logo, logoIdx) => (
-												<div
-													key={logoIdx}
-													className="h-14 px-5 bg-white rounded-xl flex items-center justify-center shadow border border-gray-200"
-												>
-													<img src={logo} alt="" className="h-8 w-auto object-contain max-w-[96px]" />
-												</div>
-											))}
+											{type.logos.map((logo, logoIdx) => {
+												// Toptal logo has a taller aspect ratio and needs special sizing
+												const isToptal = logo === toptalLogo
+												return (
+													<div
+														key={logoIdx}
+														className={`${isToptal ? "h-16 px-6" : "h-14 px-5"} bg-white rounded-xl flex items-center justify-center shadow border border-gray-200`}
+													>
+														<img
+															src={logo}
+															alt=""
+															className={isToptal ? "h-12 w-auto object-contain max-w-[120px]" : "h-8 w-auto object-contain max-w-[96px]"}
+														/>
+													</div>
+												)
+											})}
 										</div>
 									</div>
 								</div>

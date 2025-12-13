@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react"
 import axios from "axios"
 import { useFloatingConcierge } from "../../contexts/FloatingConciergeContext"
 
-const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8000"
+const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8002"
 
 interface ChatMessage {
 	role: "user" | "assistant"

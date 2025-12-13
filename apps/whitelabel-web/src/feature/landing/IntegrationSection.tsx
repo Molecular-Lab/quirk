@@ -1,4 +1,8 @@
+import { useScrollAnimation } from "@/hooks/useScrollAnimation"
+
 export function IntegrationSection() {
+	const { ref, isVisible } = useScrollAnimation({ threshold: 0.15 })
+
 	return (
 		<section className="relative min-h-[90vh] py-20 bg-white flex items-center overflow-hidden">
 			{/* Wave aurora (hero palette: purple/blue/cyan) */}
@@ -10,7 +14,11 @@ export function IntegrationSection() {
 				</div>
 				<div className="absolute inset-x-0 top-1/2 h-[14px] -translate-y-1/2 bg-gradient-to-r from-transparent via-purple-300/55 to-transparent opacity-65 blur-[12px]" />
 			</div>
-			<div className="relative z-10 max-w-7xl mx-auto px-6 w-full">
+			<div
+				ref={ref as React.RefObject<HTMLDivElement>}
+				className={`relative z-10 max-w-7xl mx-auto px-6 w-full transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+					}`}
+			>
 				<div className="text-center mb-16">
 					<h2 className="text-6xl font-bold text-gray-950 mb-8">
 						Simple Integration

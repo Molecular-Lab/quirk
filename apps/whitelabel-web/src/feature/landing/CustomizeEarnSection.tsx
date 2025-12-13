@@ -1,10 +1,17 @@
 import { Zap, Shield, LayoutDashboard, Bot } from "lucide-react";
+import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 
 export function CustomizeEarnSection() {
+	const { ref, isVisible } = useScrollAnimation({ threshold: 0.15 });
+
 	return (
 		<section className="py-32 bg-white">
 			<div className="max-w-[1400px] mx-auto px-6 lg:px-12 w-full">
-				<div className="grid lg:grid-cols-2 gap-20 items-start">
+				<div
+					ref={ref as React.RefObject<HTMLDivElement>}
+					className={`grid lg:grid-cols-2 gap-20 items-start transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+						}`}
+				>
 					{/* Left Column: Text Content */}
 					<div className="flex flex-col space-y-12 max-w-2xl">
 						<h2 className="text-6xl font-bold tracking-tight text-gray-900 leading-[1.1]">
