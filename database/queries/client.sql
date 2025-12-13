@@ -29,7 +29,29 @@ WHERE co.id = $1;
 -- name: GetClientByProductId :one
 -- Retrieve client by product_id (used in API calls)
 SELECT
-  co.*,
+  co.id,
+  co.privy_account_id,
+  co.product_id,
+  co.company_name,
+  co.business_type,
+  co.description,
+  co.website_url,
+  co.api_key_hash,
+  co.api_key_prefix,
+  co.webhook_urls,
+  co.webhook_secret,
+  co.custom_strategy,
+  co.client_revenue_share_percent,
+  co.platform_fee_percent,
+  co.performance_fee,
+  co.supported_currencies,
+  co.bank_accounts,
+  co.strategies_preferences,
+  co.strategies_customization,
+  co.is_active,
+  co.is_sandbox,
+  co.created_at,
+  co.updated_at,
   pa.privy_wallet_address,
   pa.privy_organization_id,
   pa.wallet_type
@@ -84,6 +106,22 @@ SET
   updated_at = now()
 WHERE product_id = $1
 RETURNING *;
+
+-- name: IncrementEndUserCount :exec
+-- Increment total end-user count when new user is created
+UPDATE client_organizations
+SET
+  total_end_users = total_end_users + 1,
+  updated_at = now()
+WHERE id = $1;
+
+-- name: DecrementEndUserCount :exec
+-- Decrement total end-user count when user is deactivated
+UPDATE client_organizations
+SET
+  total_end_users = GREATEST(0, total_end_users - 1),
+  updated_at = now()
+WHERE id = $1;
 
 -- name: DeactivateClient :exec
 -- Soft delete a client

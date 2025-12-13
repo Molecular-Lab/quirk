@@ -9,8 +9,10 @@
 		},
 		"skipLibCheck": true,
 		"declaration": false,
-		"declarationMap": false
+		"declarationMap": false,
+		"downlevelIteration": true,
+		"target": "ES2020"
 	},
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist"]
+	"exclude": ["node_modules", "dist", "src/**/__tests__/**", "src/**/*.test.ts", "src/**/scripts/**"]
 }

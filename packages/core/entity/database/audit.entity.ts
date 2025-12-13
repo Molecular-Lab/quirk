@@ -7,8 +7,9 @@ import { z } from "zod"
 
 /**
  * Actor Type Enum
+ * Must match database constraint: CHECK (actor_type IN ('client', 'end_user', 'system', 'admin'))
  */
-export const actorTypeSchema = z.enum(["user", "system", "admin", "api"])
+export const actorTypeSchema = z.enum(["client", "end_user", "system", "admin"])
 
 export type ActorType = z.infer<typeof actorTypeSchema>
 

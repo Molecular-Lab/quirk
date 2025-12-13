@@ -139,7 +139,7 @@ export class AuditRepository {
 		return await this.create({
 			clientId,
 			userId,
-			actorType: "user",
+			actorType: "end_user",
 			action: "deposit",
 			resourceType: "deposit_transaction",
 			resourceId,
@@ -161,7 +161,7 @@ export class AuditRepository {
 		return await this.create({
 			clientId,
 			userId,
-			actorType: "user",
+			actorType: "end_user",
 			action: "withdrawal",
 			resourceType: "withdrawal_transaction",
 			resourceId,

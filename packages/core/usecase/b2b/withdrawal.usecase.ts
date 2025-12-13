@@ -136,7 +136,7 @@ export class B2BWithdrawalUseCase {
 		await this.auditRepository.create({
 			clientId,
 			userId: endUser.id,
-			actorType: "user",
+			actorType: "end_user",
 			action: "withdrawal_request",
 			resourceType: "withdrawal_transaction",
 			resourceId: withdrawal.id,

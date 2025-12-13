@@ -19,7 +19,9 @@ import type {
 	GetClientBalanceRow,
 	GetClientRow,
 	GetClientStatsRow,
-	GetClientsByPrivyOrgIDRow,
+	GetAllClientsByPrivyOrgIdRow,
+	GetClientByProductIdRow,
+	GetClientByAPIKeyHashRow
 } from "@proxify/sqlcgen"
 
 /**
@@ -45,8 +47,25 @@ export class B2BClientUseCase {
 	/**
 	 * Get client by product ID
 	 */
-	async getClientByProductId(productId: string): Promise<GetClientRow | null> {
+	async getClientByProductId(productId: string): Promise<GetClientByProductIdRow | null> {
 		const client = await this.clientRepository.getByProductId(productId)
+
+		// DEBUG: Log data after repository call to trace data flow
+		console.log('[ClientUseCase] getClientByProductId AFTER REPOSITORY:', {
+			productId,
+			found: !!client,
+			id: client?.id,
+			companyName: client?.companyName,
+			businessType: client?.businessType,
+			description: client?.description,
+			clientRevenueSharePercent: client?.clientRevenueSharePercent,
+			platformFeePercent: client?.platformFeePercent,
+			supportedCurrencies: client?.supportedCurrencies,
+			bankAccounts: client?.bankAccounts,
+			strategiesPreferences: client?.strategiesPreferences,
+			strategiesCustomization: client?.strategiesCustomization,
+			isActive: client?.isActive,
+		})
 
 		if (!client) {
 			return null
@@ -62,7 +81,7 @@ export class B2BClientUseCase {
 	/**
 	 * Validate API key
 	 */
-	async validateApiKey(apiKey: string): Promise<GetClientRow | null> {
+	async validateApiKey(apiKey: string): Promise<GetClientByAPIKeyHashRow | null> {
 		return await this.clientRepository.validateApiKey(apiKey)
 	}
 
@@ -160,6 +179,10 @@ export class B2BClientUseCase {
 			businessType: request.businessType,
 			description: request.description || null,
 			websiteUrl: request.websiteUrl || null,
+		}
+
+		// These additional properties will need to be set via update after creation
+		const additionalProps = {
 			customerTier: request.customerTier || null,
 			apiKeyHash: apiKeyHash, // ✅ Auto-generated API key hash
 			apiKeyPrefix: apiKeyPrefix, // ✅ Auto-generated API key prefix
@@ -168,9 +191,8 @@ export class B2BClientUseCase {
 			customStrategy: request.strategyRanking
 				? JSON.stringify({ ranking: request.strategyRanking })
 				: request.customStrategy || null,
-			strategiesPreferences: request.strategyPreferences ? JSON.stringify(request.strategyPreferences) : null,
+			strategiesPreferences: null, // Will be set later if needed
 			strategiesCustomization: null, // Will be set via Market Analysis dashboard
-
 			// Fee Configuration (3-way revenue split)
 			clientRevenueSharePercent: request.clientRevenueSharePercent || "15.00",
 			platformFeePercent: request.platformFeePercent || "7.50",
@@ -354,7 +376,7 @@ export class B2BClientUseCase {
 	/**
 	 * Get all client organizations for a Privy user
 	 */
-	async getClientsByPrivyOrgId(privyOrgId: string): Promise<GetClientsByPrivyOrgIDRow[]> {
+	async getClientsByPrivyOrgId(privyOrgId: string): Promise<GetAllClientsByPrivyOrgIdRow[]> {
 		return await this.clientRepository.getByPrivyOrgId(privyOrgId)
 	}
 
@@ -580,17 +602,8 @@ export class B2BClientUseCase {
 		// Convert undefined to null for SQLC compatibility
 		const updated = await this.clientRepository.update(client.id, {
 			companyName: data.companyName ?? null,
-			businessType: data.businessType ?? null,
 			description: data.description ?? null,
 			websiteUrl: data.websiteUrl ?? null,
-			customerTier: null, // ← FIXED: Add missing field
-			// Pass null for fields we're not updating (will use COALESCE in SQL)
-			webhookUrls: null,
-			webhookSecret: null,
-			customStrategy: null,
-			clientRevenueSharePercent: null,
-			platformFeePercent: null,
-			performanceFee: null,
 		})
 
 		// 3. Audit log
@@ -701,9 +714,20 @@ export class B2BClientUseCase {
 			throw new Error(`Client not found for product ID: ${productId}`)
 		}
 
+		// Helper to safely parse JSON or return object
+		const safeParseJSON = (value: any) => {
+			if (!value) return {}
+			if (typeof value === "object") return value
+			try {
+				return JSON.parse(value)
+			} catch {
+				return {}
+			}
+		}
+
 		return {
-			preferences: client.strategiesPreferences ? JSON.parse(client.strategiesPreferences) : {},
-			customization: client.strategiesCustomization ? JSON.parse(client.strategiesCustomization) : {},
+			preferences: safeParseJSON(client.strategiesPreferences),
+			customization: safeParseJSON(client.strategiesCustomization),
 		}
 	}
 
@@ -748,13 +772,31 @@ export class B2BClientUseCase {
 	async getEffectiveProductStrategies(productId: string) {
 		const { preferences, customization } = await this.getProductStrategies(productId)
 
+		// DEBUG: Log strategies data flow
+		console.log('[ClientUseCase] getEffectiveProductStrategies:', {
+			productId,
+			preferences,
+			customization,
+			preferencesKeys: preferences ? Object.keys(preferences) : [],
+			customizationKeys: customization ? Object.keys(customization) : [],
+		})
+
 		// Return customization if it's not empty, otherwise return preferences
 		const hasCustomization = customization && Object.keys(customization).length > 0
 
-		return {
+		const result = {
 			strategies: hasCustomization ? customization : preferences,
 			source: hasCustomization ? "customization" : "preferences",
 		}
+
+		console.log('[ClientUseCase] getEffectiveProductStrategies RESULT:', {
+			productId,
+			hasCustomization,
+			source: result.source,
+			strategies: result.strategies,
+		})
+
+		return result
 	}
 
 	// ============================================
@@ -770,21 +812,8 @@ export class B2BClientUseCase {
 			throw new Error(`Client not found for product ID: ${productId}`)
 		}
 
-		// Update fee configuration
-		// Convert undefined to null for SQLC compatibility
-		await this.clientRepository.update(client.id, {
-			companyName: null,
-			businessType: null,
-			description: null,
-			websiteUrl: null,
-			customerTier: null,
-			webhookUrls: null,
-			webhookSecret: null,
-			customStrategy: null,
-			clientRevenueSharePercent, // Only this field will be updated
-			platformFeePercent: null,
-			performanceFee: null,
-		})
+		// Update fee configuration using the dedicated method
+		await this.clientRepository.updateRevenueConfigByProductId(productId, clientRevenueSharePercent)
 
 		// Audit log
 		await this.auditRepository.create({
@@ -845,7 +874,16 @@ export class B2BClientUseCase {
 			}
 		}
 
-		return metrics
+		// Map database fields to expected format and convert strings to numbers
+		return {
+			totalEndUsers: parseInt(metrics.totalEndUsers, 10) || 0,
+			newUsers30d: parseInt(metrics.newUsers_30d, 10) || 0, // Note: DB field has underscore
+			activeUsers30d: parseInt(metrics.activeUsers_30d, 10) || 0, // Note: DB field has underscore
+			totalDeposited: metrics.totalDeposited || "0",
+			totalWithdrawn: metrics.totalWithdrawn || "0",
+			totalDeposits: parseInt(metrics.totalDeposits, 10) || 0,
+			totalWithdrawals: parseInt(metrics.totalWithdrawals, 10) || 0,
+		}
 	}
 
 	/**
@@ -893,16 +931,12 @@ export class B2BClientUseCase {
 		}
 
 		return {
-			totalIdleBalance: balances.totalIdleBalance || "0",
+			totalIdleBalance: balances.totalPendingBalance || "0", // Pending = Idle
 			totalEarningBalance: balances.totalEarningBalance || "0",
-			totalClientRevenue: balances.totalClientRevenue || "0",
-			totalPlatformRevenue: balances.totalPlatformRevenue || "0",
-			totalEnduserRevenue: balances.totalEnduserRevenue || "0",
-			totalCumulativeYield: (
-				parseFloat(balances.totalClientRevenue || "0") +
-				parseFloat(balances.totalPlatformRevenue || "0") +
-				parseFloat(balances.totalEnduserRevenue || "0")
-			).toFixed(18),
+			totalClientRevenue: "0", // Will need to get from revenue summary
+			totalPlatformRevenue: "0", // Will need to get from revenue summary
+			totalEnduserRevenue: "0", // Will need to get from revenue summary
+			totalCumulativeYield: balances.totalCumulativeYield || "0",
 		}
 	}
 

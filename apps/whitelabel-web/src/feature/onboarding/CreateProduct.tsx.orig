@@ -139,7 +139,14 @@ export function CreateProduct() {
 				strategyRanking: formData.strategyRanking,
 				clientRevenueSharePercent: formData.clientRevenueSharePercent,
 				platformFeePercent: formData.platformFeePercent,
-			supportedCurrencies: formData.currencies as Currency[],
+				supportedCurrencies: formData.currencies.map((c) => c.toString()) as (
+					| "SGD"
+					| "USD"
+					| "EUR"
+					| "THB"
+					| "TWD"
+					| "KRW"
+				)[],
 				bankAccounts: bankAccountsArray.length > 0 ? bankAccountsArray : undefined,
 			}
 

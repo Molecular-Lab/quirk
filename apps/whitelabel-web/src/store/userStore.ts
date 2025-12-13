@@ -167,6 +167,7 @@ export const useUserStore = create<UserStore>()(
 							productId: org.productId,
 							companyName: org.companyName,
 							businessType: org.businessType,
+							apiKeyPrefix: org.apiKeyPrefix, // ✅ Show API key status in console
 						})),
 					})
 
@@ -178,6 +179,7 @@ export const useUserStore = create<UserStore>()(
 						businessType: org.businessType,
 						description: org.description ?? undefined,
 						websiteUrl: org.websiteUrl ?? undefined,
+						apiKeyPrefix: org.apiKeyPrefix ?? null, // ✅ Include API key prefix from database
 						isActive: org.isActive,
 						isSandbox: org.isSandbox,
 						createdAt: org.createdAt,

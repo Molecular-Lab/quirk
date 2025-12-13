@@ -14,6 +14,7 @@ export interface Organization {
 	description?: string
 	websiteUrl?: string
 	apiKeyPrefix?: string | null
+	apiKey?: string | null // ✅ Full API key (stored in Zustand)
 	isActive: boolean
 	isSandbox: boolean
 	createdAt: string
@@ -28,6 +29,9 @@ interface DemoProductState {
 	selectedProductId: string | null
 	selectedProduct: Organization | null
 
+	// API Keys storage (per product)
+	apiKeys: Record<string, string> // { productId: apiKey }
+
 	// Visualization selection
 	visualizationType: VisualizationType | null
 
@@ -36,15 +40,17 @@ interface DemoProductState {
 	loadError: string | null
 
 	// Actions
-	loadProducts: (products: Organization[]) => void
+	loadProducts: (products: Organization[], apiKeysMap?: Record<string, string>) => void
 	loadProductsByPrivyId: (privyOrgId: string) => Promise<void>
-	selectProduct: (productId: string, apiKey?: string) => void
+	selectProduct: (productId: string) => void
 	selectVisualization: (type: VisualizationType) => void
+	setApiKey: (productId: string, apiKey: string) => void
 	clearSelection: () => void
 	reset: () => void
 
 	// Computed getters
 	getSelectedApiKey: () => string | null
+	getApiKey: (productId: string) => string | null
 	hasSelectedProduct: () => boolean
 	hasSelectedVisualization: () => boolean
 	canStartDemo: () => boolean
@@ -54,6 +60,7 @@ const initialState = {
 	availableProducts: [],
 	selectedProductId: null,
 	selectedProduct: null,
+	apiKeys: {},
 	visualizationType: null,
 	isLoadingProducts: false,
 	loadError: null,
@@ -64,16 +71,33 @@ export const useDemoProductStore = create<DemoProductState>()(
 		(set, get) => ({
 			...initialState,
 
-			// Load products from userStore (called on demo entry - legacy method)
-			loadProducts: (products: Organization[]) => {
-				set({ availableProducts: products, isLoadingProducts: false, loadError: null })
+			// Load products from userStore (called on demo entry)
+			loadProducts: (products: Organization[], apiKeysMap?: Record<string, string>) => {
+				const currentApiKeys = get().apiKeys
+
+				console.log("[demoProductStore] Loading products:", {
+					count: products.length,
+					hasApiKeys: !!apiKeysMap,
+					apiKeysCount: apiKeysMap ? Object.keys(apiKeysMap).length : 0,
+					existingApiKeysCount: Object.keys(currentApiKeys).length,
+				})
+
+				// Merge new API keys with existing ones (preserve existing keys)
+				const apiKeys = {
+					...currentApiKeys, // Keep existing API keys
+					...(apiKeysMap || {}), // Add/override with new keys if provided
+				}
+
+				set({
+					availableProducts: products,
+					apiKeys,
+					isLoadingProducts: false,
+					loadError: null
+				})
 
 				// If only one product, auto-select it
 				if (products.length === 1) {
-					// Load API key for auto-selected product
-					const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-					const apiKey = allKeys[products[0].productId]
-					get().selectProduct(products[0].productId, apiKey)
+					get().selectProduct(products[0].productId)
 				}
 
 				// If selectedProductId exists but not in products, clear it
@@ -81,6 +105,15 @@ export const useDemoProductStore = create<DemoProductState>()(
 				if (selectedProductId && !products.find((p) => p.productId === selectedProductId)) {
 					set({ selectedProductId: null, selectedProduct: null })
 				}
+
+				console.log("[demoProductStore] ✅ Products loaded, API keys preserved:", {
+					totalApiKeys: Object.keys(apiKeys).length,
+					products: products.map(p => ({
+						productId: p.productId,
+						hasApiKey: !!apiKeys[p.productId],
+						apiKeyPrefix: apiKeys[p.productId]?.substring(0, 12) || 'NOT_SET'
+					}))
+				})
 			},
 
 			// NEW: Load products by Privy ID (API call)
@@ -109,8 +142,10 @@ export const useDemoProductStore = create<DemoProductState>()(
 					// If only one product, auto-select it
 					if (products.length === 1) {
 						const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-						const apiKey = allKeys[products[0].productId]
-						get().selectProduct(products[0].productId, apiKey)
+							// Set API keys from localStorage before selecting
+					const { apiKeys: currentKeys } = get()
+					set({ apiKeys: { ...currentKeys, ...allKeys } })
+					get().selectProduct(products[0].productId)
 					}
 
 					console.log("[demoProductStore] ✅ Loaded products:", products.length)
@@ -124,18 +159,23 @@ export const useDemoProductStore = create<DemoProductState>()(
 			},
 
 			// Select product by productId
-			selectProduct: (productId: string, apiKey?: string) => {
-				const product = get().availableProducts.find((p) => p.productId === productId)
+			selectProduct: (productId: string) => {
+				const { availableProducts, apiKeys } = get()
+				const product = availableProducts.find((p) => p.productId === productId)
 
 				if (!product) {
 					console.error(`[demoProductStore] ❌ Product not found: ${productId}`)
 					return
 				}
 
+				// Get API key from store
+				const apiKey = apiKeys[productId]
+
 				console.log("[demoProductStore] Selecting product:", {
 					productId: product.productId,
 					companyName: product.companyName,
-					apiKeyProvided: !!apiKey,
+					hasApiKey: !!apiKey,
+					apiKeyPrefix: apiKey ? apiKey.substring(0, 12) + "..." : "NOT_SET",
 				})
 
 				set({
@@ -143,22 +183,15 @@ export const useDemoProductStore = create<DemoProductState>()(
 					selectedProduct: product,
 				})
 
-				// Load API key from localStorage if not provided
-				let resolvedApiKey = apiKey
-				if (!resolvedApiKey) {
-					console.log("[demoProductStore] API key not provided, loading from localStorage...")
-					const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-					resolvedApiKey = allKeys[productId]
-					console.log("[demoProductStore] localStorage keys:", Object.keys(allKeys))
-					console.log("[demoProductStore] Found key for", productId, ":", !!resolvedApiKey)
-				}
-
 				// Validate API key exists
-				if (!resolvedApiKey) {
+				if (!apiKey) {
 					console.error(
 						`[demoProductStore] ❌ API key not found for product: ${productId}. Demo may not work correctly.`,
 					)
-					console.error("[demoProductStore] Please ensure API key is saved in localStorage: b2b:api_keys")
+					console.error("[demoProductStore] Please regenerate API key from Dashboard → Products → Configure Product")
+					console.error("[demoProductStore] Current API keys in store:", Object.keys(apiKeys))
+					console.error("[demoProductStore] Available products:", availableProducts.map(p => p.productId))
+					// Don't return - still set up the product context (will just fail API calls)
 				}
 
 				// Sync to clientContextStore for API calls
@@ -166,7 +199,7 @@ export const useDemoProductStore = create<DemoProductState>()(
 				setClientContext({
 					clientId: product.id,
 					productId: product.productId,
-					apiKey: resolvedApiKey || "",
+					apiKey: apiKey || "", // Empty string if no API key
 					companyName: product.companyName,
 					businessType: product.businessType,
 				})
@@ -174,8 +207,8 @@ export const useDemoProductStore = create<DemoProductState>()(
 				console.log("[demoProductStore] ✅ Product selected and synced to clientContextStore:", {
 					productId: product.productId,
 					companyName: product.companyName,
-					hasApiKey: !!resolvedApiKey,
-					apiKeyPrefix: resolvedApiKey ? resolvedApiKey.substring(0, 12) + "..." : "MISSING",
+					hasApiKey: !!apiKey,
+					apiKeyPrefix: apiKey ? apiKey.substring(0, 12) + "..." : "NOT_SET",
 				})
 			},
 
@@ -183,6 +216,18 @@ export const useDemoProductStore = create<DemoProductState>()(
 			selectVisualization: (type: VisualizationType) => {
 				set({ visualizationType: type })
 				console.log("[demoProductStore] Visualization selected:", type)
+			},
+
+			// Set API key for a specific product
+			setApiKey: (productId: string, apiKey: string) => {
+				const { apiKeys } = get()
+				set({
+					apiKeys: {
+						...apiKeys,
+						[productId]: apiKey,
+					}
+				})
+				console.log("[demoProductStore] API key set for product:", productId)
 			},
 
 			// Clear current selection (reset to selector)
@@ -201,9 +246,15 @@ export const useDemoProductStore = create<DemoProductState>()(
 
 			// Computed: Get API key for selected product
 			getSelectedApiKey: () => {
-				// API key is stored in clientContextStore (synced from userStore)
-				const { apiKey } = useClientContextStore.getState()
-				return apiKey
+				const { selectedProductId, apiKeys } = get()
+				if (!selectedProductId) return null
+				return apiKeys[selectedProductId] || null
+			},
+
+			// Computed: Get API key for specific product
+			getApiKey: (productId: string) => {
+				const { apiKeys } = get()
+				return apiKeys[productId] || null
 			}, // Computed: Check if product is selected
 			hasSelectedProduct: () => {
 				return get().selectedProductId !== null
@@ -222,10 +273,11 @@ export const useDemoProductStore = create<DemoProductState>()(
 		{
 			name: "proxify-demo-product-state", // localStorage key
 			partialize: (state) => ({
-				// Persist only these fields
+				// Persist these fields
 				selectedProductId: state.selectedProductId,
 				selectedProduct: state.selectedProduct,
 				visualizationType: state.visualizationType,
+				apiKeys: state.apiKeys, // ✅ Persist API keys in Zustand
 				// Don't persist availableProducts - always reload from userStore
 			}),
 		},

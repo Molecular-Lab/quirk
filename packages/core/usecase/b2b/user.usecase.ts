@@ -80,6 +80,15 @@ export class B2BUserUseCase {
 			// Don't fail user creation if vault creation fails - they can deposit later
 		}
 
+		// ✅ Increment total_end_users count in client_organizations
+		try {
+			await this.clientRepository.incrementEndUserCount(clientId)
+			console.log(`[User Creation] Incremented end-user count for client ${clientId}`)
+		} catch (countError) {
+			console.error(`[User Creation] Failed to increment end-user count:`, countError)
+			// Don't fail user creation if count increment fails
+		}
+
 		// Audit log
 		await this.auditRepository.create({
 			clientId: clientId,

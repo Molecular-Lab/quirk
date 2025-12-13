@@ -65,9 +65,8 @@ export function ProductSelector() {
 		setLoadingProductId(productId)
 
 		try {
-			// Load API key for this product from localStorage (multi-org storage)
-			const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-			const apiKey = allKeys[productId]
+			// Check if API key exists in store (should be loaded from localStorage already)
+			const apiKey = useDemoProductStore.getState().getApiKey(productId)
 
 			if (!apiKey) {
 				const product = availableProducts.find((p) => p.productId === productId)
@@ -80,7 +79,7 @@ export function ProductSelector() {
 			}
 
 			// Select product (this will sync to clientContextStore)
-			selectProduct(productId, apiKey)
+			selectProduct(productId)
 
 			console.log("[ProductSelector] ✅ Product selected")
 

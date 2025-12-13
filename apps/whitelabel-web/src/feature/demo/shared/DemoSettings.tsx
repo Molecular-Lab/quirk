@@ -48,9 +48,8 @@ export function DemoSettings() {
 	const confirmProductChange = () => {
 		const { productId: newProductId } = productConfirmDialog
 
-		// Load API key for this product from localStorage
-		const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-		const apiKey = allKeys[newProductId]
+		// Check if API key exists in store (should be loaded from localStorage already)
+		const apiKey = useDemoProductStore.getState().getApiKey(newProductId)
 
 		if (!apiKey) {
 			const product = availableProducts.find((p) => p.productId === newProductId)
@@ -62,8 +61,8 @@ export function DemoSettings() {
 			return
 		}
 
-		// Select product with API key
-		selectProduct(newProductId, apiKey)
+		// Select product
+		selectProduct(newProductId)
 
 		// Reload demo to apply changes
 		window.location.reload()

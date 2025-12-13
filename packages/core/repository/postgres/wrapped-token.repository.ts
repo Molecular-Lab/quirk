@@ -3,8 +3,8 @@
  * Manages client_wrapped_tokens table for tracking DeFi protocol balances
  */
 
+import { Sql } from "postgres"
 import type { ProtocolName } from "../../service/defi-protocol.interface"
-import type { Database } from "@proxify/sqlcgen"
 
 export interface WrappedTokenRecord {
 	id: string
@@ -39,7 +39,7 @@ export interface UpsertWrappedTokenParams {
  * NOTE: Requires SQLC queries to be generated from vault.sql
  */
 export class WrappedTokenRepository {
-	constructor(private readonly db: Database) {}
+	constructor(private readonly db: Sql) {}
 
 	/**
 	 * Upsert wrapped token tracking record
@@ -72,7 +72,7 @@ export class WrappedTokenRepository {
       RETURNING *
     `
 
-		const result = await this.db.query(query, [
+		const result = await this.db.unsafe(query, [
 			params.vaultId,
 			params.clientId,
 			params.protocol,
@@ -84,7 +84,7 @@ export class WrappedTokenRepository {
 			params.originalDeposit || "0",
 		])
 
-		return this.mapRow(result.rows[0])
+		return this.mapRow(result[0])
 	}
 
 	/**
@@ -98,8 +98,8 @@ export class WrappedTokenRepository {
       ORDER BY protocol
     `
 
-		const result = await this.db.query(query, [vaultId])
-		return result.rows.map((row) => this.mapRow(row))
+		const result = await this.db.unsafe(query, [vaultId])
+		return result.map((row: any) => this.mapRow(row))
 	}
 
 	/**
@@ -112,13 +112,13 @@ export class WrappedTokenRepository {
       LIMIT 1
     `
 
-		const result = await this.db.query(query, [vaultId, protocol])
+		const result = await this.db.unsafe(query, [vaultId, protocol])
 
-		if (result.rows.length === 0) {
+		if (result.length === 0) {
 			return null
 		}
 
-		return this.mapRow(result.rows[0])
+		return this.mapRow(result[0])
 	}
 
 	/**
@@ -132,8 +132,8 @@ export class WrappedTokenRepository {
       WHERE vault_id = $1
     `
 
-		const result = await this.db.query(query, [vaultId])
-		return result.rows[0].total_real_value.toString()
+		const result = await this.db.unsafe(query, [vaultId])
+		return result[0].total_real_value.toString()
 	}
 
 	/**
@@ -146,8 +146,8 @@ export class WrappedTokenRepository {
       ORDER BY last_sync_at ASC
     `
 
-		const result = await this.db.query(query)
-		return result.rows.map((row) => this.mapRow(row))
+		const result = await this.db.unsafe(query, [])
+		return result.map((row: any) => this.mapRow(row))
 	}
 
 	/**
@@ -161,7 +161,7 @@ export class WrappedTokenRepository {
       WHERE vault_id = $1 AND protocol = $2
     `
 
-		await this.db.query(query, [vaultId, protocol, additionalAmount])
+		await this.db.unsafe(query, [vaultId, protocol, additionalAmount])
 	}
 
 	/**
@@ -173,7 +173,7 @@ export class WrappedTokenRepository {
       WHERE vault_id = $1 AND protocol = $2
     `
 
-		await this.db.query(query, [vaultId, protocol])
+		await this.db.unsafe(query, [vaultId, protocol])
 	}
 
 	/**

@@ -33,14 +33,16 @@ import {
 	getClientStats,
 	// getClientBankAccounts,  // TODO: Add bank account queries
 	// updateClientBankAccounts,
-	// updateClientSupportedCurrencies,
+	// updateClientSupportedCurrencies, // Now imported from client_bank_accounts_sql
 	// addSupportedCurrency,
 	// removeSupportedCurrency,
 	getRevenueConfig,
-	getRevenueConfigByProductID,
-	updateFeeConfiguration as updateRevenueConfig, // SQL name: UpdateFeeConfiguration
+	getRevenueConfigByProductID, // SQL name: UpdateFeeConfiguration
 	updateRevenueConfigByProductID,
+	updateFeeConfiguration,
 	updateProductCustomizationByProductID,
+	incrementEndUserCount,
+	decrementEndUserCount,
 	// Wallet stages (NEW) - TODO: Add these queries
 	// getClientTotalBalances,
 	// Revenue tracking (NEW) - TODO: Add these queries
@@ -76,6 +78,25 @@ import {
 	type UpdateRevenueConfigByProductIDRow,
 	type GetAllClientsByPrivyOrgIdRow,
 	type GetAggregatedDashboardSummaryRow,
+	// Bank account functions
+	addSupportedCurrency,
+	getClientBankAccounts,
+	removeSupportedCurrency,
+	updateClientBankAccounts,
+	updateClientSupportedCurrencies,
+	// Vault/metrics functions
+	getClientRevenueSummary,
+	getClientTotalBalances,
+	getEndUserGrowthMetrics,
+	listClientsForMRRCalculation,
+	listRecentEndUserTransactions,
+	updateClientMRR,
+	// Vault/metrics types
+	type GetClientRevenueSummaryRow,
+	type GetClientTotalBalancesRow,
+	type GetEndUserGrowthMetricsRow,
+	type ListClientsForMRRCalculationRow,
+	type ListRecentEndUserTransactionsRow,
 } from "@proxify/sqlcgen"
 import { Sql } from "postgres"
 
@@ -112,7 +133,27 @@ export class ClientRepository {
 	 * Used for client lookup in APIs
 	 */
 	async getByProductId(productId: string): Promise<GetClientByProductIdRow | null> {
-		return await getClientByProductId(this.sql, { productId })
+		const result = await getClientByProductId(this.sql, { productId })
+
+		// DEBUG: Log raw SQLC query result to trace data flow
+		console.log('[ClientRepository] getByProductId RAW SQLC RESULT:', {
+			productId,
+			found: !!result,
+			id: result?.id,
+			companyName: result?.companyName,
+			businessType: result?.businessType,
+			description: result?.description,
+			clientRevenueSharePercent: result?.clientRevenueSharePercent,
+			platformFeePercent: result?.platformFeePercent,
+			performanceFee: result?.performanceFee,
+			supportedCurrencies: result?.supportedCurrencies,
+			bankAccounts: result?.bankAccounts,
+			strategiesPreferences: result?.strategiesPreferences,
+			strategiesCustomization: result?.strategiesCustomization,
+			customStrategy: result?.customStrategy,
+		})
+
+		return result
 	}
 
 	/**
@@ -148,9 +189,11 @@ export class ClientRepository {
 
 	/**
 	 * List active clients only
+	 * Note: listActiveClients doesn't exist in SQLC, using listClients which already filters by is_active = true
 	 */
-	async listActive(): Promise<ListActiveClientsRow[]> {
-		return await listActiveClients(this.sql)
+	async listActive(): Promise<ListClientsRow[]> {
+		// listActiveClients doesn't exist, using listClients which already filters by is_active
+		return await listClients(this.sql, { limit: "100", offset: "0" })
 	}
 
 	// ==========================================
@@ -542,9 +585,11 @@ export class ClientRepository {
 			throw new Error("Client revenue share must be between 10% and 20%")
 		}
 
-		return await updateRevenueConfig(this.sql, {
+		return await updateFeeConfiguration(this.sql, {
 			id: clientId,
 			clientRevenueSharePercent: revenueSharePercent,
+			platformFeePercent: "5", // Default platform fee
+			performanceFee: null, // Optional performance fee
 		})
 	}
 
@@ -571,10 +616,26 @@ export class ClientRepository {
 	 * Update product strategy customization by product ID
 	 */
 	async updateProductCustomizationByProductId(productId: string, strategiesCustomization: string): Promise<void> {
-		return await updateProductCustomizationByProductID(this.sql, {
+		await updateProductCustomizationByProductID(this.sql, {
 			productId,
 			strategiesCustomization,
 		})
+	}
+
+	/**
+	 * Increment total end-user count
+	 * Called when a new end-user is created
+	 */
+	async incrementEndUserCount(clientId: string): Promise<void> {
+		await incrementEndUserCount(this.sql, { id: clientId })
+	}
+
+	/**
+	 * Decrement total end-user count
+	 * Called when an end-user is deactivated
+	 */
+	async decrementEndUserCount(clientId: string): Promise<void> {
+		await decrementEndUserCount(this.sql, { id: clientId })
 	}
 
 	/**

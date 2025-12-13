@@ -3,6 +3,7 @@
  */
 
 import type { initServer } from "@ts-rest/express";
+import { randomBytes } from "crypto";
 import { b2bContract } from "@proxify/b2b-api-core";
 import { getMockUSDCAddress } from "@proxify/core/constants";
 import type { DepositService } from "../service/deposit.service";
@@ -86,7 +87,9 @@ export function createDepositRouter(
 				const expectedCryptoAmount = usdAmount.toFixed(2); // USDC 1:1 with USD
 
 				// ✅ GENERATE ORDER ID (before creating deposit so we can use it in payment instructions)
-				const orderId = `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+				// Use crypto.randomBytes for cryptographically secure random IDs
+				const randomId = randomBytes(6).toString('base64url'); // URL-safe base64, 8 chars
+				const orderId = `DEP-${Date.now()}-${randomId}`;
 
 				// ✅ GENERATE PAYMENT INSTRUCTIONS (Currency-specific)
 				// Flow: Client transfers to our bank → Bank webhook → We convert → Complete deposit
@@ -334,11 +337,15 @@ export function createDepositRouter(
 					};
 				}
 
+				// DEBUG: Log authentication details
 				logger.info("Batch completing deposits", {
 					orderIds: body.orderIds,
 					count: body.orderIds.length,
 					clientId,
-					authType: apiKeyClient ? "api_key" : "privy",
+					authType: apiKeyClient?.id ? "api_key" : "privy",
+					hasApiKeyClient: !!apiKeyClient,
+					apiKeyClientId: apiKeyClient?.id,
+					hasPrivySession: !!privySession,
 					privyOrgId: privySession?.organizationId,
 				});
 
@@ -360,11 +367,17 @@ export function createDepositRouter(
 						continue;
 					}
 
+					logger.info(`[Batch Complete] Processing deposit ${orderId}`, {
+						depositClientId: deposit.clientId,
+						depositStatus: deposit.status,
+						authType: apiKeyClient?.id ? "api_key" : "privy",
+					});
+
 					// 2. Verify authorization
 					let authorized = false;
 
 					// For API key: deposit must belong to this client
-					if (apiKeyClient) {
+					if (apiKeyClient?.id) {
 						authorized = deposit.clientId === apiKeyClient.id;
 						if (!authorized) {
 							logger.warn(`Deposit ${orderId} does not belong to API key client ${apiKeyClient.id}`);
@@ -372,17 +385,28 @@ export function createDepositRouter(
 					}
 					// For Privy: deposit can belong to any of the organization's products
 					else if (privySession) {
-						const productIds = privySession.products.map((p: any) => p.id);
-						authorized = productIds.includes(deposit.clientId);
+						// FIX: Use correct field names from privySession.products
+						const clientIds = privySession.products.map((p: any) => p.id);
+
+						logger.info(`[Batch Complete] Privy authorization check`, {
+							orderId,
+							depositClientId: deposit.clientId,
+							privyProductClientIds: clientIds,
+							privyProducts: privySession.products,
+						});
+
+						authorized = clientIds.includes(deposit.clientId);
 						if (!authorized) {
 							logger.warn(`Deposit ${orderId} not in Privy org's products`, {
 								privyOrgId: privySession.organizationId,
 								depositClientId: deposit.clientId,
+								availableClientIds: clientIds,
 							});
 						}
 					}
 
 					if (!authorized) {
+						logger.warn(`[Batch Complete] Deposit ${orderId} not authorized, skipping`);
 						continue;
 					}
 
