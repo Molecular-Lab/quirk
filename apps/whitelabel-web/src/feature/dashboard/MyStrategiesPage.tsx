@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import axios from "axios"
-import { Shield, Scale, Rocket, Settings } from "lucide-react"
+import { Shield, Scale, Rocket, Settings, Bot, Check } from "lucide-react"
 import { AllocationDonutChart } from "../../components/charts/AllocationDonutChart"
 import { RiskProfileCard } from "../../components/strategy/RiskProfileCard"
 import { AllocationSlider } from "../../components/strategy/AllocationSlider"
@@ -280,7 +280,7 @@ Help them understand or refine their strategy.`
                         onClick={handleAskAgent}
                         className="w-full py-3 px-6 rounded-2xl border-2 border-gray-200 bg-white text-gray-700 font-medium hover:border-gray-300 hover:bg-gray-50 transition-all flex items-center justify-center gap-2"
                     >
-                        <span>🤖</span>
+                        <Bot className="w-5 h-5" />
                         <span>Not sure? Ask our AI</span>
                     </button>
 
@@ -288,12 +288,13 @@ Help them understand or refine their strategy.`
                     <button
                         onClick={handleConfirm}
                         disabled={!isValidAllocation}
-                        className={`w-full py-4 px-6 rounded-2xl font-semibold text-white transition-all ${isValidAllocation
+                        className={`w-full py-4 px-6 rounded-2xl font-semibold text-white transition-all flex items-center justify-center gap-2 ${isValidAllocation
                             ? "bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200"
                             : "bg-gray-300 cursor-not-allowed"
                             }`}
                     >
-                        ✓ Confirm Strategy
+                        <Check className="w-5 h-5" />
+                        <span>Confirm Strategy</span>
                     </button>
                 </div>
 
