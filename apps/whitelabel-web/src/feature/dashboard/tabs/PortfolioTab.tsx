@@ -8,10 +8,6 @@ import { ExternalLink, TrendingUp } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-interface PortfolioTabProps {
-	productId?: string
-	mode: "single" | "aggregate"
-}
 
 // Mock data - will be replaced with real data from API
 const MOCK_PORTFOLIOS = [
@@ -31,7 +27,7 @@ const MOCK_STRATEGIES = [
 	{ name: "Aggressive Yield", value: 25000, return: "+18.7%", allocation: "25%", color: "bg-gray-500" },
 ]
 
-export default function PortfolioTab({ productId }: PortfolioTabProps) {
+export default function PortfolioTab(): React.JSX.Element {
 	const formatCurrency = (value: number) => {
 		if (value >= 1000000) return `$${(value / 1000000).toFixed(2)}M`
 		if (value >= 1000) return `$${(value / 1000).toFixed(2)}K`
@@ -100,7 +96,7 @@ export default function PortfolioTab({ productId }: PortfolioTabProps) {
 
 						<div className="mt-6 pt-4 border-t border-gray-200">
 							<Link
-								to="/dashboard/strategies"
+								to="/dashboard/market"
 								className="flex items-center justify-center gap-2 w-full px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent/90 transition-colors text-sm font-medium"
 							>
 								<TrendingUp className="w-4 h-4" />
@@ -199,8 +195,8 @@ export default function PortfolioTab({ productId }: PortfolioTabProps) {
 										</TableCell>
 										<TableCell className="py-4 px-5 text-right">
 											<Link
-												to="/dashboard/portfolios/$portfolioId"
-												params={{ portfolioId: portfolio.id }}
+												to="/dashboard/portfolios/$id"
+												params={{ id: portfolio.id }}
 												className="px-4 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
 											>
 												View

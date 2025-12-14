@@ -1,12 +1,11 @@
 import { useState } from "react"
 
-import { Check, Settings, RefreshCw } from "lucide-react"
+import { Settings, RefreshCw } from "lucide-react"
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 import { InfoDialog } from "@/components/ui/info-dialog"
-import { useClientContextStore } from "@/store/clientContextStore"
 import { useDemoStore } from "@/store/demoStore"
 import { useDemoProductStore } from "@/store/demoProductStore"
 import { getAllPersonas, type PersonaType } from "@/feature/demo/personas"
@@ -28,7 +27,6 @@ export function DemoSettings() {
 		productName: string
 	}>({ open: false, productName: "" })
 
-	const { productId: currentProductId } = useClientContextStore()
 	const { selectedPersona, personaData, setPersona } = useDemoStore()
 	const { selectedProduct, selectedProductId, visualizationType, availableProducts, selectProduct } = useDemoProductStore()
 

@@ -756,7 +756,7 @@ export function ProductConfigPage() {
 							<label className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
 								<Checkbox
 									checked={applyStrategyToAll}
-									onCheckedChange={setApplyStrategyToAll}
+									onCheckedChange={(checked) => setApplyStrategyToAll(checked === true)}
 									disabled={isSaving}
 									className="mt-0.5"
 								/>

@@ -49,7 +49,7 @@ export function PaymentSessionPage() {
 			try {
 				setLoading(true)
 				const response = await getDepositByOrderId(orderId)
-				setDeposit(response as DepositDetails)
+				setDeposit(response as unknown as DepositDetails)
 			} catch (err) {
 				console.error("Failed to fetch deposit:", err)
 				setError("Failed to load payment session. Please check the order ID.")

@@ -144,7 +144,7 @@ export class B2BClientUseCase {
 	 * Auto-generates API key during registration
 	 */
 	async createClient(request: CreateClientRequest): Promise<
-		GetClientRow & {
+		GetClientByProductIdRow & {
 			api_key?: string
 			vaults: { id: string; chain: string; tokenSymbol: string; tokenAddress: string }[]
 		}
@@ -322,7 +322,7 @@ export class B2BClientUseCase {
 			...result,
 			vaults: createdVaults,
 			api_key: apiKey, // ✅ Include API key in response (shown only once during registration)
-		}
+		} as typeof result & { api_key: string; vaults: typeof createdVaults }
 	}
 
 	/**

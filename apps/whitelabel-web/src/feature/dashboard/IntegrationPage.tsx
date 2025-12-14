@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { Copy, Check } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export function IntegrationPage() {
 	const [copiedId, setCopiedId] = useState<string | null>(null)

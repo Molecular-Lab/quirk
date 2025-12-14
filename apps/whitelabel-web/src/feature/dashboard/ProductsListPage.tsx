@@ -106,8 +106,7 @@ export function ProductsListPage() {
 							// ✅ Check BOTH database apiKeyPrefix AND localStorage
 							const apiKeyFromLocalStorage = apiKeys[product.productId]
 							const hasApiKey = !!product.apiKeyPrefix || !!apiKeyFromLocalStorage
-							const displayPrefix = product.apiKeyPrefix || (apiKeyFromLocalStorage ? apiKeyFromLocalStorage.substring(0, 12) : null)
-
+							
 							return (
 								<div
 									key={product.productId}

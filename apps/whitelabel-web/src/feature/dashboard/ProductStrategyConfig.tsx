@@ -60,7 +60,7 @@ interface ProductStrategyConfigProps {
 
 export function ProductStrategyConfig({ productId, onStrategyChange }: ProductStrategyConfigProps) {
 	const [selectedTemplate, setSelectedTemplate] = useState<StrategyTemplate>("conservative")
-	const [applyToAll, setApplyToAll] = useState(false)
+	const [applyToAll] = useState(false)
 	const [customStrategies, setCustomStrategies] = useState<StrategyConfig>(STRATEGY_TEMPLATES.conservative)
 
 	// Load existing strategies on mount

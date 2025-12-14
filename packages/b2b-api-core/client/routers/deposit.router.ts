@@ -92,7 +92,7 @@ export class DepositRouter extends Router<typeof b2bContract> {
 	/**
 	 * Fail a deposit
 	 */
-	async failDeposit(orderId: string, data: { reason: string }) {
+	async failDeposit(orderId: string, _data: { reason: string }) {
 		// The contract does not expose a dedicated 'fail' endpoint for fiat deposits.
 		// We use the mockConfirmFiatDeposit for demo/testing where needed, or callers
 		// should use internal webhook/complete endpoints. For now, call mock endpoint.

@@ -163,7 +163,7 @@ export const useUserStore = create<UserStore>()(
 
 					console.log("[UserStore] Loaded organizations:", {
 						count: organizations.length,
-						organizations: organizations.map((org: Organization) => ({
+						organizations: organizations.map((org: any) => ({
 							productId: org.productId,
 							companyName: org.companyName,
 							businessType: org.businessType,
@@ -172,7 +172,7 @@ export const useUserStore = create<UserStore>()(
 					})
 
 					// Map response to Organization interface
-					const mappedOrgs: Organization[] = organizations.map((org: Organization) => ({
+					const mappedOrgs: Organization[] = organizations.map((org: any) => ({
 						id: org.id,
 						productId: org.productId,
 						companyName: org.companyName,
