@@ -7,17 +7,6 @@ import { useMockUSDCBalance } from "../../hooks/useMockUSDCBalance"
 // TODO: Get custodial wallet address from user context/auth
 const CUSTODIAL_WALLET_ADDRESS = import.meta.env.VITE_CUSTODIAL_WALLET_ADDRESS
 
-// Types for mock categories
-interface YieldOpportunity {
-	protocol: string
-	token: string
-	supplyAPY: string
-	tvl: string
-	risk: "Low" | "Medium" | "High"
-	type: "Lending" | "Staking" | "LP" | "Vault"
-	status: "healthy" | "warning" | "critical"
-}
-
 // Mock data for non-DeFi categories (will be replaced with real data later)
 const MOCK_CATEGORIES = [
 	{

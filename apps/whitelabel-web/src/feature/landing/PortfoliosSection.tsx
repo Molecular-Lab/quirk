@@ -51,7 +51,7 @@ export function PortfoliosSection() {
 
 				<div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
 					{portfolios.map((portfolio, idx) => {
-						const borderColors = {
+						const borderColors: { [key: string]: string } = {
 							blue: "border-blue-500",
 							purple: "border-purple-500",
 							green: "border-green-500",

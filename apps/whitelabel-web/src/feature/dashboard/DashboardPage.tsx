@@ -61,7 +61,7 @@ export default function DashboardPage() {
 					</TabsContent>
 
 					<TabsContent value="portfolio" className="mt-0">
-						<PortfolioTab mode="aggregate" />
+						<PortfolioTab />
 					</TabsContent>
 				</Tabs>
 			</div>

@@ -1,6 +1,5 @@
 import { useState } from "react"
 
-import { useNavigate } from "@tanstack/react-router"
 import { Home, TrendingUp, Wallet } from "lucide-react"
 
 import { createFiatDeposit, createUser } from "@/api/b2bClientHelpers"
@@ -13,7 +12,6 @@ import { DepositModal } from "../shared/DepositModal"
 import { creatorsCards, creatorsMockBalances } from "./creators-data"
 
 export function CreatorsDemoApp() {
-	const navigate = useNavigate()
 	const [currentCardIndex, setCurrentCardIndex] = useState(0)
 	const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
 	const [touchStart, setTouchStart] = useState(0)
@@ -34,7 +32,6 @@ export function CreatorsDemoApp() {
 		setIsDepositing,
 		addDeposit,
 		getPersonaUserId,
-		selectedPersona,
 	} = useDemoStore()
 
 	// Mock creator revenue balance (from config)

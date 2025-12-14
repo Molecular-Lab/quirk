@@ -42,12 +42,12 @@ export function useMockUSDCBalance(walletAddress: string | undefined) {
 			})
 
 			// Read balance from contract
-			const balance = await client.readContract({
+			const balance = (await client.readContract({
 				address: MOCK_USDC_ADDRESS as `0x${string}`,
 				abi: ERC20_ABI,
 				functionName: "balanceOf",
 				args: [walletAddress as `0x${string}`],
-			})
+			})) as bigint
 
 			// Format balance (6 decimals for USDC)
 			const formatted = formatUnits(balance, 6)

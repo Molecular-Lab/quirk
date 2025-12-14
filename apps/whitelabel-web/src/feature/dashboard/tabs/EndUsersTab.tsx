@@ -77,12 +77,12 @@ export default function EndUsersTab({ productId: initialProductId }: EndUsersTab
 				])
 
 				if (metricsResponse.status === 200) {
-					setGrowthMetrics(metricsResponse.body)
+					setGrowthMetrics(metricsResponse.body.data)
 				}
 
-				if (transactionsResponse.status === 200) {
-					setTransactions(transactionsResponse.body.transactions)
-					setTotalTransactions(transactionsResponse.body.pagination.total)
+				if (transactionsResponse.status === 200 && transactionsResponse.body.data) {
+					setTransactions(transactionsResponse.body.data.transactions)
+					setTotalTransactions(transactionsResponse.body.data.pagination.total)
 				}
 			} catch (err) {
 				console.error("[EndUsersTab] Error fetching data:", err)

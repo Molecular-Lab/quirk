@@ -1,6 +1,5 @@
 import { useState } from "react"
 
-import { useNavigate } from "@tanstack/react-router"
 import { Home, TrendingUp, Wallet } from "lucide-react"
 
 import { createFiatDeposit, createUser } from "@/api/b2bClientHelpers"
@@ -13,7 +12,6 @@ import { DepositModal } from "../shared/DepositModal"
 import { getPersonaMockData } from "./ecommerce-data"
 
 export function EcommerceDemoApp() {
-	const navigate = useNavigate()
 	const [currentCardIndex, setCurrentCardIndex] = useState(0)
 	const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
 	const [touchStart, setTouchStart] = useState(0)

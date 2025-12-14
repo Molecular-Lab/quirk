@@ -123,7 +123,7 @@ export const useDemoProductStore = create<DemoProductState>()(
 
 				try {
 					const response = await listOrganizationsByPrivyId(privyOrgId)
-					const products: Organization[] = response.organizations.map((org: any) => ({
+					const products: Organization[] = (response as any).organizations.map((org: any) => ({
 						id: org.id,
 						productId: org.productId,
 						companyName: org.companyName,
