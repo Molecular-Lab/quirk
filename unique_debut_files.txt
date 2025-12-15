@@ -1,2 +1,0 @@
-./apps/whitelabel-web/tailwind.config.js
-./packages/core/PRODUCT_OWNER_FLOW.md

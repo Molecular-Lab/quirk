@@ -1,11 +1,5 @@
-import type {
-	RiskProfile,
-	CreateRiskProfile,
-	UpdateRiskProfile,
-	RiskScore,
-	RiskLevel,
-} from "../entity/old/risk-profile.entity"
 import type { DeFiPosition } from "../entity/old/defi-position.entity"
+import type { CreateRiskProfile, RiskProfile, RiskScore, UpdateRiskProfile } from "../entity/old/risk-profile.entity"
 import type { YieldStrategy } from "../entity/old/yield-strategy.entity"
 
 /**
@@ -16,10 +10,7 @@ export interface IRiskManagerDataGateway {
 	/**
 	 * Create or update risk profile for a user
 	 */
-	setRiskProfile(params: {
-		walletAddress: string
-		profile: CreateRiskProfile
-	}): Promise<RiskProfile>
+	setRiskProfile(params: { walletAddress: string; profile: CreateRiskProfile }): Promise<RiskProfile>
 
 	/**
 	 * Get risk profile by wallet address
@@ -29,26 +20,17 @@ export interface IRiskManagerDataGateway {
 	/**
 	 * Update existing risk profile
 	 */
-	updateRiskProfile(params: {
-		walletAddress: string
-		updates: UpdateRiskProfile
-	}): Promise<RiskProfile>
+	updateRiskProfile(params: { walletAddress: string; updates: UpdateRiskProfile }): Promise<RiskProfile>
 
 	/**
 	 * Calculate risk score for current portfolio
 	 */
-	calculateRiskScore(params: {
-		positions: DeFiPosition[]
-		riskProfile: RiskProfile
-	}): Promise<RiskScore>
+	calculateRiskScore(params: { positions: DeFiPosition[]; riskProfile: RiskProfile }): Promise<RiskScore>
 
 	/**
 	 * Validate if a strategy matches user's risk profile
 	 */
-	validateStrategy(params: {
-		strategy: YieldStrategy
-		riskProfile: RiskProfile
-	}): Promise<{
+	validateStrategy(params: { strategy: YieldStrategy; riskProfile: RiskProfile }): Promise<{
 		isValid: boolean
 		reasons: string[]
 		adjustments?: UpdateRiskProfile
@@ -57,17 +39,14 @@ export interface IRiskManagerDataGateway {
 	/**
 	 * Get risk recommendations based on current portfolio
 	 */
-	getRiskRecommendations(params: {
-		positions: DeFiPosition[]
-		riskProfile: RiskProfile
-	}): Promise<{
+	getRiskRecommendations(params: { positions: DeFiPosition[]; riskProfile: RiskProfile }): Promise<{
 		currentRisk: RiskScore
-		recommendations: Array<{
+		recommendations: {
 			priority: "high" | "medium" | "low"
 			action: string
 			reason: string
 			impact: string
-		}>
+		}[]
 	}>
 
 	/**
@@ -87,15 +66,12 @@ export interface IRiskManagerDataGateway {
 	/**
 	 * Check if portfolio exceeds risk limits
 	 */
-	checkRiskLimits(params: {
-		positions: DeFiPosition[]
-		riskProfile: RiskProfile
-	}): Promise<{
+	checkRiskLimits(params: { positions: DeFiPosition[]; riskProfile: RiskProfile }): Promise<{
 		withinLimits: boolean
-		violations: Array<{
+		violations: {
 			limit: string
 			current: string
 			maximum: string
-		}>
+		}[]
 	}>
 }

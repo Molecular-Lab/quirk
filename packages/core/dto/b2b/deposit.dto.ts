@@ -4,48 +4,48 @@
  */
 
 export interface CreateDepositRequest {
-  orderId?: string;
-  clientId: string;
-  userId: string;
-  fiatCurrency: string;
-  fiatAmount: string;
-  cryptoCurrency: string;
-  depositType: 'internal' | 'external';
-  gatewayProvider?: string;
-  gatewayOrderId?: string;
-  paymentUrl?: string;
-  paymentInstructions?: any;
-  chain?: string;
-  tokenSymbol?: string;
-  tokenAddress?: string;
-  onRampProvider?: string;
-  qrCode?: string;
-  expiresAt?: Date;
+	orderId?: string
+	clientId: string
+	userId: string
+	fiatCurrency: string
+	fiatAmount: string
+	cryptoCurrency: string
+	depositType: "internal" | "external"
+	gatewayProvider?: string
+	gatewayOrderId?: string
+	paymentUrl?: string
+	paymentInstructions?: any
+	chain?: string
+	tokenSymbol?: string
+	tokenAddress?: string
+	onRampProvider?: string
+	qrCode?: string
+	expiresAt?: Date
 }
 
 export interface CompleteDepositRequest {
-  orderId: string;
-  chain: string;
-  tokenAddress: string;
-  tokenSymbol: string;
-  cryptoAmount: string;
-  gatewayFee: string;
-  proxifyFee: string;
-  networkFee: string;
-  totalFees: string;
-  transactionHash?: string;  // Optional: On-chain transaction hash for verification
+	orderId: string
+	chain: string
+	tokenAddress: string
+	tokenSymbol: string
+	cryptoAmount: string
+	gatewayFee: string
+	proxifyFee: string
+	networkFee: string
+	totalFees: string
+	transactionHash?: string // Optional: On-chain transaction hash for verification
 }
 
 export interface FailDepositRequest {
-  orderId: string;
-  errorMessage: string;
-  errorCode?: string;
+	orderId: string
+	errorMessage: string
+	errorCode?: string
 }
 
 export interface GetDepositStatsRequest {
-  clientId: string;
-  startDate?: Date;
-  endDate?: Date;
+	clientId: string
+	startDate?: Date
+	endDate?: Date
 }
 
 /**
@@ -53,16 +53,16 @@ export interface GetDepositStatsRequest {
  * Returned after successfully completing multiple deposit orders
  */
 export interface BatchCompleteDepositsResponse {
-  success: boolean;
-  completedOrders: CompletedOrderInfo[];
-  totalUSDC: string;
-  custodialWallet: string;
-  mockNote?: string;
+	success: boolean
+	completedOrders: CompletedOrderInfo[]
+	totalUSDC: string
+	custodialWallet: string
+	mockNote?: string
 }
 
 export interface CompletedOrderInfo {
-  orderId: string;
-  status: string;
-  cryptoAmount: string;
-  transferTxHash?: string;  // Transaction hash from blockchain mint
+	orderId: string
+	status: string
+	cryptoAmount: string
+	transferTxHash?: string // Transaction hash from blockchain mint
 }

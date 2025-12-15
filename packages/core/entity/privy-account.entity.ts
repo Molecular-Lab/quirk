@@ -8,22 +8,22 @@
  */
 
 export interface PrivyAccountEntity {
-  id: string;
-  privyOrganizationId: string;
-  privyWalletAddress: string;
-  privyEmail: string | null;
-  walletType: "custodial" | "non-custodial";
-  createdAt: Date;
-  updatedAt: Date;
+	id: string
+	privyOrganizationId: string
+	privyWalletAddress: string
+	privyEmail: string | null
+	walletType: "custodial" | "non-custodial"
+	createdAt: Date
+	updatedAt: Date
 }
 
 export interface CreatePrivyAccountInput {
-  privyOrganizationId: string;
-  privyWalletAddress: string;
-  privyEmail?: string;
-  walletType: "custodial" | "non-custodial";
+	privyOrganizationId: string
+	privyWalletAddress: string
+	privyEmail?: string
+	walletType: "custodial" | "non-custodial"
 }
 
 export interface UpdatePrivyAccountInput {
-  privyEmail?: string;
+	privyEmail?: string
 }

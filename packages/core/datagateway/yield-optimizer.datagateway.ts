@@ -1,12 +1,12 @@
+import type { DeFiPosition } from "../entity/old/defi-position.entity"
+import type { RiskProfile } from "../entity/old/risk-profile.entity"
 import type {
-	YieldStrategy,
 	CreateYieldStrategy,
-	YieldOpportunity,
 	PortfolioOptimization,
 	StrategyRecommendation,
+	YieldOpportunity,
+	YieldStrategy,
 } from "../entity/old/yield-strategy.entity"
-import type { RiskProfile } from "../entity/old/risk-profile.entity"
-import type { DeFiPosition } from "../entity/old/defi-position.entity"
 
 /**
  * Yield Optimizer DataGateway
@@ -57,10 +57,7 @@ export interface IYieldOptimizerDataGateway {
 	/**
 	 * Calculate if rebalancing is needed
 	 */
-	shouldRebalance(params: {
-		currentPositions: DeFiPosition[]
-		riskProfile: RiskProfile
-	}): Promise<{
+	shouldRebalance(params: { currentPositions: DeFiPosition[]; riskProfile: RiskProfile }): Promise<{
 		shouldRebalance: boolean
 		reason: string
 		expectedGain: string
@@ -70,11 +67,7 @@ export interface IYieldOptimizerDataGateway {
 	/**
 	 * Calculate expected APY for a given strategy and amount
 	 */
-	calculateExpectedAPY(params: {
-		strategyId: string
-		amount: string
-		chainId: number
-	}): Promise<{
+	calculateExpectedAPY(params: { strategyId: string; amount: string; chainId: number }): Promise<{
 		expectedAPY: string
 		breakdown: {
 			baseAPY: string
@@ -86,18 +79,15 @@ export interface IYieldOptimizerDataGateway {
 	/**
 	 * Get historical performance of a strategy
 	 */
-	getStrategyPerformance(params: {
-		strategyId: string
-		period: "7d" | "30d" | "90d" | "1y"
-	}): Promise<{
+	getStrategyPerformance(params: { strategyId: string; period: "7d" | "30d" | "90d" | "1y" }): Promise<{
 		avgAPY: string
 		minAPY: string
 		maxAPY: string
 		volatility: string
-		dataPoints: Array<{
+		dataPoints: {
 			timestamp: Date
 			apy: string
 			tvl: string
-		}>
+		}[]
 	}>
 }

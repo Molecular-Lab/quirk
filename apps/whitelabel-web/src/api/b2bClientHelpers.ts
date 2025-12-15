@@ -52,6 +52,8 @@ export async function registerClient(data: {
 	websiteUrl?: string
 	customerTier?: "0-1K" | "1K-10K" | "10K-100K" | "100K-1M" | "1M+"
 	strategyRanking?: string[]
+	clientRevenueSharePercent?: string
+	platformFeePercent?: string
 	supportedCurrencies?: Currency[]
 	bankAccounts?: {
 		currency: Currency
@@ -91,6 +93,11 @@ export async function listOrganizationsByPrivyId(privyOrganizationId: string) {
  * Get organization by product ID
  */
 export async function getOrganizationByProductId(productId: string) {
+	// Check if productId is provided
+	if (!productId || productId === "undefined") {
+		throw new Error("Product ID is required")
+	}
+
 	const { status, body } = await b2bApiClient.client.getByProductId({
 		params: { productId },
 	})
@@ -99,13 +106,27 @@ export async function getOrganizationByProductId(productId: string) {
 		return body
 	}
 
-	throw new Error("Organization not found")
+	// Provide more specific error messages based on status
+	if (status === 403) {
+		throw new Error(`Access denied: Product ${productId} not in your organization`)
+	}
+
+	if (status === 404) {
+		throw new Error(`Product not found: ${productId}`)
+	}
+
+	throw new Error(`Failed to get organization for product ${productId}`)
 }
 
 /**
  * Get client profile by ID
  */
 export async function getClientProfile(id: string) {
+	// Check if id is provided
+	if (!id || id === "undefined") {
+		throw new Error("Client ID is required")
+	}
+
 	const { status, body } = await b2bApiClient.client.getById({
 		params: { id },
 	})
@@ -114,7 +135,16 @@ export async function getClientProfile(id: string) {
 		return body
 	}
 
-	throw new Error("Client not found")
+	// Provide more specific error messages based on status
+	if (status === 403) {
+		throw new Error(`Access denied: Client ${id} not in your organization`)
+	}
+
+	if (status === 404) {
+		throw new Error(`Client not found: ${id}`)
+	}
+
+	throw new Error(`Failed to get client ${id}`)
 }
 
 /**
@@ -300,8 +330,16 @@ export async function getEffectiveProductStrategies(productId: string) {
 		params: { productId },
 	})
 
-	if (status === 200) {
-		return body
+	console.log('[b2bClientHelpers] getEffectiveProductStrategies RESPONSE:', { status, body })
+
+	if (status === 200 && body.found && body.data) {
+		// Extract strategies from body.data
+		const result = {
+			strategies: body.data.strategies,
+			source: body.data.source,
+		}
+		console.log('[b2bClientHelpers] Extracted strategies:', result)
+		return result
 	}
 
 	throw new Error("Failed to get effective product strategies")
@@ -320,7 +358,7 @@ export async function getPrivyAccount(privyOrganizationId: string) {
 	})
 
 	if (status === 200) {
-		return body
+		return body.data // Return data (null if not found)
 	}
 
 	return null
@@ -443,8 +481,13 @@ export async function listPendingDeposits() {
 /**
  * Create user
  */
+/**
+ * Create or get end-user
+ * NOTE: clientId is automatically extracted from API key (via apiKeyAuth middleware)
+ * Do NOT pass clientId in the body!
+ */
 export async function createUser(
-	clientId: string,
+	_productIdOrClientId: string, // Kept for backward compatibility but not used
 	data: {
 		clientUserId: string
 		email?: string
@@ -453,7 +496,7 @@ export async function createUser(
 ) {
 	const { status, body } = await b2bApiClient.user.getOrCreate({
 		body: {
-			clientId,
+			// ✅ Do NOT send clientId - API key middleware extracts it from authenticated request
 			...data,
 		},
 	})
@@ -569,4 +612,39 @@ export async function createWithdrawal(data: {
 	}
 
 	throw new Error("Failed to create withdrawal")
+}
+
+// ============================================
+// FEE CONFIGURATION ENDPOINTS
+// ============================================
+
+/**
+ * Get fee configuration for a product
+ */
+export async function getFeeConfig(productId: string) {
+	const { status, body } = await b2bApiClient.client.getFeeConfig({
+		params: { productId },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get fee configuration")
+}
+
+/**
+ * Update fee configuration (client revenue share percentage)
+ */
+export async function updateFeeConfig(productId: string, clientRevenueSharePercent: string) {
+	const { status, body } = await b2bApiClient.client.updateFeeConfig({
+		params: { productId },
+		body: { clientRevenueSharePercent },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to update fee configuration")
 }

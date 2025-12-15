@@ -46,20 +46,20 @@ export interface ClientOrganization {
 	updatedAt: Date
 }
 
-export type BusinessType = 'ecommerce' | 'streaming' | 'gaming' | 'freelance' | 'saas' | 'other'
+export type BusinessType = "ecommerce" | "streaming" | "gaming" | "freelance" | "saas" | "other"
 
-export type KYBStatus = 'pending' | 'verified' | 'rejected'
+export type KYBStatus = "pending" | "verified" | "rejected"
 
 /**
  * B2B Client Risk Tier (different from smart contract risk tier in client-registry.entity.ts)
  * Determines allocation strategy for client's vault
  */
-export type ClientRiskTier = 'low' | 'moderate' | 'high' | 'custom'
+export type ClientRiskTier = "low" | "moderate" | "high" | "custom"
 
-export type SubscriptionTier = 'starter' | 'growth' | 'enterprise'
+export type SubscriptionTier = "starter" | "growth" | "enterprise"
 
 export interface RiskAllocation {
-	protocol: 'aave' | 'curve' | 'compound' | 'uniswap'
+	protocol: "aave" | "curve" | "compound" | "uniswap"
 	percentage: number
 }
 
@@ -124,7 +124,7 @@ export interface ClientBalance {
 export interface DefiAllocation {
 	id: string
 	clientId: string
-	protocol: 'aave' | 'curve' | 'compound' | 'uniswap'
+	protocol: "aave" | "curve" | "compound" | "uniswap"
 	chain: string
 	amountDeployed: number
 	percentage: number
@@ -139,7 +139,7 @@ export interface DefiAllocation {
 	createdAt: Date
 }
 
-export type AllocationStatus = 'active' | 'withdrawn' | 'rebalancing'
+export type AllocationStatus = "active" | "withdrawn" | "rebalancing"
 
 /**
  * Deposit Transaction Entity
@@ -150,7 +150,7 @@ export interface DepositTransaction {
 	orderId: string
 	clientId: string
 	userId: string
-	depositType: 'external' | 'internal'
+	depositType: "external" | "internal"
 	paymentMethod?: string
 	fiatAmount: number
 	cryptoAmount?: number
@@ -175,14 +175,14 @@ export interface DepositTransaction {
 }
 
 export type DepositStatus =
-	| 'pending'
-	| 'awaiting_payment'
-	| 'processing'
-	| 'completed'
-	| 'failed'
-	| 'expired'
-	| 'cancelled'
-	| 'instant_completed'
+	| "pending"
+	| "awaiting_payment"
+	| "processing"
+	| "completed"
+	| "failed"
+	| "expired"
+	| "cancelled"
+	| "instant_completed"
 
 /**
  * Withdrawal Transaction Entity
@@ -197,7 +197,7 @@ export interface WithdrawalTransaction {
 	currency: string
 	withdrawalFee: number
 	networkFee: number
-	destinationType: 'client_balance' | 'bank_account' | 'debit_card'
+	destinationType: "client_balance" | "bank_account" | "debit_card"
 	destinationDetails?: Record<string, any>
 	status: WithdrawalStatus
 	createdAt: Date
@@ -207,7 +207,7 @@ export interface WithdrawalTransaction {
 	errorCode?: string
 }
 
-export type WithdrawalStatus = 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled'
+export type WithdrawalStatus = "pending" | "processing" | "completed" | "failed" | "cancelled"
 
 /**
  * Audit Log Entity
@@ -216,7 +216,7 @@ export interface AuditLog {
 	id: string
 	clientId?: string
 	userId?: string
-	actorType: 'client' | 'end_user' | 'system' | 'admin'
+	actorType: "client" | "end_user" | "system" | "admin"
 	action: string
 	resourceType?: string
 	resourceId?: string

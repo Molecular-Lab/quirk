@@ -1,44 +1,94 @@
 import { useState } from "react"
 
-import { Check, Settings } from "lucide-react"
+import { Settings, RefreshCw } from "lucide-react"
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { useClientContextStore } from "@/store/clientContextStore"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
+import { InfoDialog } from "@/components/ui/info-dialog"
+import { useDemoStore } from "@/store/demoStore"
+import { useDemoProductStore } from "@/store/demoProductStore"
+import { getAllPersonas, type PersonaType } from "@/feature/demo/personas"
 
 export function DemoSettings() {
 	const [isOpen, setIsOpen] = useState(false)
-	const [clientId, setClientId] = useState("")
-	const [productId, setProductId] = useState("")
-	const [apiKey, setApiKey] = useState("")
-	const [saved, setSaved] = useState(false)
+	const [productConfirmDialog, setProductConfirmDialog] = useState<{
+		open: boolean
+		productId: string
+		productName: string
+	}>({ open: false, productId: "", productName: "" })
+	const [personaConfirmDialog, setPersonaConfirmDialog] = useState<{
+		open: boolean
+		persona: PersonaType | null
+		personaName: string
+	}>({ open: false, persona: null, personaName: "" })
+	const [apiKeyErrorDialog, setApiKeyErrorDialog] = useState<{
+		open: boolean
+		productName: string
+	}>({ open: false, productName: "" })
 
-	const { setClientContext } = useClientContextStore()
+	const { selectedPersona, personaData, setPersona } = useDemoStore()
+	const { selectedProduct, selectedProductId, visualizationType, availableProducts, selectProduct } = useDemoProductStore()
 
-	const handleSave = () => {
-		if (!clientId.trim() || !productId.trim() || !apiKey.trim()) {
-			alert("Please enter Client ID, Product ID, and API Key")
+	const personas = getAllPersonas()
+
+	const handleProductChange = (newProductId: string) => {
+		if (newProductId === selectedProductId) return
+
+		const product = availableProducts.find((p) => p.productId === newProductId)
+		setProductConfirmDialog({
+			open: true,
+			productId: newProductId,
+			productName: product?.companyName || newProductId,
+		})
+	}
+
+	const confirmProductChange = () => {
+		const { productId: newProductId } = productConfirmDialog
+
+		// Check if API key exists in store (should be loaded from localStorage already)
+		const apiKey = useDemoProductStore.getState().getApiKey(newProductId)
+
+		if (!apiKey) {
+			const product = availableProducts.find((p) => p.productId === newProductId)
+			setProductConfirmDialog({ open: false, productId: "", productName: "" })
+			setApiKeyErrorDialog({
+				open: true,
+				productName: product?.companyName || newProductId,
+			})
 			return
 		}
 
-		// Save to centralized clientContextStore
-		// This automatically syncs to localStorage for b2bApiClient
-		setClientContext({
-			clientId: clientId.trim(),
-			productId: productId.trim(),
-			apiKey: apiKey.trim(),
-		})
+		// Select product
+		selectProduct(newProductId)
 
-		console.log("[DemoSettings] ✅ Saved to clientContextStore:", {
-			clientId: clientId.trim(),
-			productId: productId.trim(),
-			apiKey: apiKey.trim().substring(0, 12) + "...",
-		})
+		// Reload demo to apply changes
+		window.location.reload()
+	}
 
-		setSaved(true)
-		setTimeout(() => {
-			setSaved(false)
-			setIsOpen(false)
-		}, 1500)
+	const handlePersonaChange = (newPersona: PersonaType) => {
+		if (newPersona === selectedPersona) return
+
+		setPersonaConfirmDialog({
+			open: true,
+			persona: newPersona,
+			personaName: newPersona === "bob" ? "Bob" : "Alice",
+		})
+	}
+
+	const confirmPersonaChange = () => {
+		const { persona: newPersona } = personaConfirmDialog
+		if (!newPersona) return
+
+		// Get product info for generating persona user ID
+		const productName = selectedProduct?.companyName || "demo"
+		const visualizationTypeValue = visualizationType || "ecommerce"
+
+		// Update persona in store
+		setPersona(newPersona, productName, visualizationTypeValue)
+
+		// Reload demo to apply changes
+		window.location.reload()
 	}
 
 	return (
@@ -57,79 +107,137 @@ export function DemoSettings() {
 					<SheetTitle className="text-lg font-bold text-gray-900">Demo Settings</SheetTitle>
 				</SheetHeader>
 
-				<div className="space-y-4 mt-6">
-					{/* Client ID Input */}
+				<div className="space-y-6 mt-6">
+					{/* Product Selector */}
 					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">Client ID</label>
-						<input
-							type="text"
-							value={clientId}
-							onChange={(e) => {
-								setClientId(e.target.value)
-							}}
-							placeholder="9be8eac3-a21d-4f1a-a846-65751d6d6fa9"
-							className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-						/>
-						<p className="text-xs text-gray-500 mt-1">UUID from database (client_organizations.id)</p>
-					</div>
-
-					{/* Product ID Input */}
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">Product ID</label>
-						<input
-							type="text"
-							value={productId}
-							onChange={(e) => {
-								setProductId(e.target.value)
-							}}
-							placeholder="test_product_001"
-							className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-						/>
-						<p className="text-xs text-gray-500 mt-1">Your organization's product ID</p>
-					</div>
-
-					{/* API Key Input */}
-					<div>
-						<label className="block text-sm font-medium text-gray-700 mb-2">API Key</label>
-						<input
-							type="text"
-							value={apiKey}
-							onChange={(e) => {
-								setApiKey(e.target.value)
-							}}
-							placeholder="test_pk_..."
-							className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-mono focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-						/>
-						<p className="text-xs text-gray-500 mt-1">Generated API key for authentication</p>
-					</div>
-
-					{/* Quick Copy Values */}
-					<div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-						<p className="text-xs font-medium text-blue-800 mb-2">Default Test Values:</p>
-						<div className="space-y-1">
-							<p className="text-xs font-mono text-blue-700">Client ID: 9be8eac3-a21d-4f1a-a846-65751d6d6fa9</p>
-							<p className="text-xs font-mono text-blue-700">Product ID: test_product_001</p>
-							<p className="text-xs font-mono text-blue-700">API Key: test_pk_2a2463f87bfd6756822f48698fedd4ef</p>
+						<label className="block text-sm font-medium text-gray-700 mb-2">Product</label>
+						<Select value={selectedProductId ?? undefined} onValueChange={handleProductChange}>
+							<SelectTrigger>
+								<SelectValue placeholder="Select a product..." />
+							</SelectTrigger>
+							<SelectContent>
+								{availableProducts.map((product) => (
+									<SelectItem key={product.productId} value={product.productId}>
+										<div className="flex flex-col">
+											<span className="font-medium">{product.companyName}</span>
+											<span className="text-xs text-gray-500">{product.productId}</span>
+										</div>
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+							<RefreshCw className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+							<p className="text-xs text-yellow-800">Switching product will reload the demo</p>
 						</div>
 					</div>
 
-					{/* Save Button */}
-					<button
-						onClick={handleSave}
-						disabled={saved}
-						className="w-full bg-gray-900 hover:bg-gray-800 text-white py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-					>
-						{saved ? (
-							<>
-								<Check className="w-5 h-5" />
-								Saved!
-							</>
-						) : (
-							"Save Settings"
+					{/* Selected Product Info */}
+					{selectedProduct && (
+						<div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+							<h4 className="text-sm font-semibold text-gray-950 mb-3">Current Product</h4>
+							<div className="space-y-2 text-sm">
+								<div className="flex justify-between">
+									<span className="text-gray-600">Company:</span>
+									<span className="font-medium text-gray-950">{selectedProduct.companyName}</span>
+								</div>
+								<div className="flex justify-between">
+									<span className="text-gray-600">Product ID:</span>
+									<span className="font-mono text-xs text-gray-700">{selectedProduct.productId}</span>
+								</div>
+								<div className="flex justify-between">
+									<span className="text-gray-600">Type:</span>
+									<span className="text-gray-700">{selectedProduct.businessType}</span>
+								</div>
+								<div className="flex justify-between">
+									<span className="text-gray-600">Status:</span>
+									<span className={`${selectedProduct.isActive ? "text-green-600" : "text-gray-500"} font-medium`}>
+										{selectedProduct.isActive ? "Active" : "Inactive"}
+									</span>
+								</div>
+							</div>
+						</div>
+					)}
+
+					{/* Persona Selector */}
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">Demo Persona</label>
+						<div className="space-y-2">
+							{personas.map((persona) => (
+								<button
+									key={persona.id}
+									type="button"
+									onClick={() => handlePersonaChange(persona.id)}
+									className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
+										selectedPersona === persona.id
+											? "border-blue-500 bg-blue-50"
+											: "border-gray-200 hover:border-gray-300 bg-white"
+									}`}
+								>
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-3">
+											<span className="text-2xl">{persona.avatar}</span>
+											<div>
+												<p className="font-medium text-gray-900">{persona.name}</p>
+												<p className="text-xs text-gray-500">{persona.email}</p>
+											</div>
+										</div>
+										<div className="text-right">
+											<p className="text-sm font-semibold text-gray-900">
+												${persona.balance.toLocaleString()}
+											</p>
+											<p className="text-xs text-gray-500">{persona.riskProfile}</p>
+										</div>
+									</div>
+									{selectedPersona === persona.id && personaData && (
+										<p className="text-xs text-blue-600 mt-2 font-mono">
+											ID: {personaData.clientUserId}
+										</p>
+									)}
+								</button>
+							))}
+						</div>
+						{selectedPersona && (
+							<div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start gap-2">
+								<RefreshCw className="w-4 h-4 text-yellow-600 mt-0.5 flex-shrink-0" />
+								<p className="text-xs text-yellow-800">Switching persona will reload the demo</p>
+							</div>
 						)}
-					</button>
+					</div>
 				</div>
 			</SheetContent>
+
+			{/* Product Change Confirmation Dialog */}
+			<ConfirmDialog
+				open={productConfirmDialog.open}
+				onOpenChange={(open) =>
+					setProductConfirmDialog({ open, productId: "", productName: "" })
+				}
+				title={`Switch to ${productConfirmDialog.productName}?`}
+				description="This will reload the demo and reset all progress."
+				onConfirm={confirmProductChange}
+				confirmText="Switch Product"
+			/>
+
+			{/* Persona Change Confirmation Dialog */}
+			<ConfirmDialog
+				open={personaConfirmDialog.open}
+				onOpenChange={(open) =>
+					setPersonaConfirmDialog({ open, persona: null, personaName: "" })
+				}
+				title={`Switch to ${personaConfirmDialog.personaName}?`}
+				description="This will reload the demo and reset all progress."
+				onConfirm={confirmPersonaChange}
+				confirmText="Switch Persona"
+			/>
+
+			{/* API Key Error Dialog */}
+			<InfoDialog
+				open={apiKeyErrorDialog.open}
+				onOpenChange={(open) => setApiKeyErrorDialog({ open, productName: "" })}
+				title="⚠️ API Key Not Found"
+				description={`API key not found for ${apiKeyErrorDialog.productName}.\n\nPlease go to Dashboard → API Testing to view or regenerate your API key first.`}
+			/>
 		</Sheet>
 	)
 }

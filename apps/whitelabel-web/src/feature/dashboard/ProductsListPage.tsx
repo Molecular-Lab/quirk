@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { Link, useNavigate } from "@tanstack/react-router"
 import { Building2, Check, Copy, Key, Loader2, Plus, RefreshCw, Settings, X } from "lucide-react"
@@ -11,6 +11,14 @@ export function ProductsListPage() {
 	const { products, isLoading, error, loadProducts, isLoaded } = useProducts()
 	const navigate = useNavigate()
 	const [copiedId, setCopiedId] = useState<string | null>(null)
+	const [apiKeys, setApiKeys] = useState<Record<string, string>>({})
+
+	// Load API keys from localStorage
+	useEffect(() => {
+		const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
+		setApiKeys(allKeys)
+		console.log("[ProductsListPage] Loaded API keys from localStorage:", Object.keys(allKeys))
+	}, [products]) // Reload when products change
 
 	const handleCopyToClipboard = (text: string, id: string, label: string) => {
 		navigator.clipboard.writeText(text)
@@ -95,8 +103,10 @@ export function ProductsListPage() {
 				) : (
 					<div className="space-y-4">
 						{products.map((product) => {
-							const hasApiKey = !!product.apiKeyPrefix
-
+							// ✅ Check BOTH database apiKeyPrefix AND localStorage
+							const apiKeyFromLocalStorage = apiKeys[product.productId]
+							const hasApiKey = !!product.apiKeyPrefix || !!apiKeyFromLocalStorage
+							
 							return (
 								<div
 									key={product.productId}

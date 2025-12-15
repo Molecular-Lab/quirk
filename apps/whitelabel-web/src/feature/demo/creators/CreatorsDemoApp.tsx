@@ -1,6 +1,5 @@
 import { useState } from "react"
 
-import { useNavigate } from "@tanstack/react-router"
 import { Home, TrendingUp, Wallet } from "lucide-react"
 
 import { createFiatDeposit, createUser } from "@/api/b2bClientHelpers"
@@ -13,7 +12,6 @@ import { DepositModal } from "../shared/DepositModal"
 import { creatorsCards, creatorsMockBalances } from "./creators-data"
 
 export function CreatorsDemoApp() {
-	const navigate = useNavigate()
 	const [currentCardIndex, setCurrentCardIndex] = useState(0)
 	const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
 	const [touchStart, setTouchStart] = useState(0)
@@ -33,6 +31,7 @@ export function CreatorsDemoApp() {
 		setError,
 		setIsDepositing,
 		addDeposit,
+		getPersonaUserId,
 	} = useDemoStore()
 
 	// Mock creator revenue balance (from config)
@@ -78,12 +77,14 @@ export function CreatorsDemoApp() {
 				throw new Error("No API key configured. Please set up via Demo Settings.")
 			}
 
-			// Generate a unique client user ID for demo
-			const demoUserId = `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+			// Get persona's client user ID (product-scoped) or generate random
+			const personaUserId = getPersonaUserId()
+			const demoUserId = personaUserId || `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
 			console.log("[DemoClientApp] Creating end-user account:", {
 				productId,
 				clientUserId: demoUserId,
+				isPersona: !!personaUserId,
 			})
 
 			// Call the API to create end-user account

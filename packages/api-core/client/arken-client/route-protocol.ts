@@ -16,7 +16,7 @@ export class RouteProtocols {
 	}
 
 	getDexConfig = (dexName: string, chain: string): DexConfig | undefined => {
-		const dexConfig = this.dexConfig[chain.toLowerCase()]?.[dexName.toLowerCase()]
+		const dexConfig = this.dexConfig[chain.toLowerCase()][dexName.toLowerCase()]
 		return dexConfig
 	}
 
@@ -52,7 +52,7 @@ export class RouteProtocols {
 		this.note = {}
 		const tradeRoutes = bestRateData.protocols.flatMap((protocolItem) =>
 			protocolItem.map<ArkenTradeRouteStruct>((protocol, index) => {
-				const partPool = this.getPartPool(protocol, protocolItem[index + 1]!)
+				const partPool = this.getPartPool(protocol, protocolItem[index + 1])
 				const dexConfig = this.getDexConfig(protocol.dexName.toLowerCase(), protocol.chain.toLowerCase())
 				const dexInterface = dexConfig?.dexInterface ?? 0
 				const dexAddress = dexConfig?.dexAddress ?? ""
@@ -76,7 +76,7 @@ export class RouteProtocols {
 		)
 
 		const notedKeys = Object.keys(this.note)
-		if (notedKeys.reduce<number>((prev, curr) => prev + Number(this.note[curr]) || 0, 0)) return null
+		if (notedKeys.reduce<number>((prev, curr) => prev + this.note[curr] || 0, 0)) return null
 
 		return tradeRoutes
 	}

@@ -262,9 +262,9 @@ export function DashboardLayout() {
 				</div>
 			</div>
 
-				{/* Floating AI Concierge */}
-				<FloatingConcierge />
-			</div>
-		</FloatingConciergeProvider>
+			{/* Floating AI Concierge */}
+			<FloatingConcierge />
+		</div>
+	</FloatingConciergeProvider>
 	)
 }

@@ -1,6 +1,5 @@
 import { useState } from "react"
 
-import { useNavigate } from "@tanstack/react-router"
 import { Home, TrendingUp, Wallet } from "lucide-react"
 
 import { createFiatDeposit, createUser } from "@/api/b2bClientHelpers"
@@ -10,10 +9,9 @@ import { useDemoStore } from "@/store/demoStore"
 import { DemoSettings } from "../shared/DemoSettings"
 import { DepositModal } from "../shared/DepositModal"
 
-import { ecommerceCards, ecommerceMockBalances } from "./ecommerce-data"
+import { getPersonaMockData } from "./ecommerce-data"
 
 export function EcommerceDemoApp() {
-	const navigate = useNavigate()
 	const [currentCardIndex, setCurrentCardIndex] = useState(0)
 	const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
 	const [touchStart, setTouchStart] = useState(0)
@@ -33,12 +31,19 @@ export function EcommerceDemoApp() {
 		setError,
 		setIsDepositing,
 		addDeposit,
+		getPersonaUserId,
+		selectedPersona,
 	} = useDemoStore()
 
-	// Mock merchant balance (from config)
-	const merchantBalance = ecommerceMockBalances.merchantBalance
+	// Get persona-specific mock data
+	const personaMockData = getPersonaMockData(selectedPersona)
+	const merchantBalance = personaMockData.balances.merchantBalance
 
-	const cards = ecommerceCards
+	// Use persona-specific transactions
+	const cards = [
+		{ id: "merchant", title: "Merchant", transactions: personaMockData.merchantTransactions },
+		{ id: "savings", title: "Quirk Earn", transactions: personaMockData.earnTransactions },
+	]
 
 	const handleTouchStart = (e: React.TouchEvent) => {
 		setTouchStart(e.targetTouches[0].clientX)
@@ -78,12 +83,14 @@ export function EcommerceDemoApp() {
 				throw new Error("No API key configured. Please set up via Demo Settings.")
 			}
 
-			// Generate a unique client user ID for demo
-			const demoUserId = `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+			// Get persona's client user ID (product-scoped) or generate random
+			const personaUserId = getPersonaUserId()
+			const demoUserId = personaUserId || `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
 			console.log("[DemoClientApp] Creating end-user account:", {
 				productId,
 				clientUserId: demoUserId,
+				isPersona: !!personaUserId,
 			})
 
 			// Call the API to create end-user account
@@ -185,7 +192,7 @@ export function EcommerceDemoApp() {
 								<p className="text-sm text-gray-500 mb-1">Total value</p>
 								<h2 className="text-6xl font-bold text-gray-950 mb-3">
 									$
-									{ecommerceMockBalances.merchantBalance.toLocaleString("en-US", {
+									{personaMockData.balances.merchantBalance.toLocaleString("en-US", {
 										minimumFractionDigits: 2,
 										maximumFractionDigits: 2,
 									})}
@@ -193,14 +200,14 @@ export function EcommerceDemoApp() {
 								<div className="flex items-center gap-2">
 									<span className="text-gray-700 font-medium">
 										+$
-										{ecommerceMockBalances.growthAmount.toLocaleString("en-US", {
+										{personaMockData.balances.growthAmount.toLocaleString("en-US", {
 											minimumFractionDigits: 2,
 											maximumFractionDigits: 2,
 										})}
 									</span>
 									<span className="text-gray-700 flex items-center gap-1">
 										<span>▲</span>
-										<span>{ecommerceMockBalances.growthPercentage}%</span>
+										<span>{personaMockData.balances.growthPercentage}%</span>
 									</span>
 								</div>
 							</div>
@@ -212,14 +219,14 @@ export function EcommerceDemoApp() {
 								<p className="text-sm text-gray-500 mb-1">USDC Balance</p>
 								<h2 className="text-6xl font-bold text-gray-950 mb-3">
 									{hasEarnAccount
-										? `$${ecommerceMockBalances.earnBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+										? `$${personaMockData.balances.earnBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 										: "$0.00"}
 								</h2>
 								{hasEarnAccount && (
 									<div className="flex items-center gap-2">
 										<span className="text-gray-700 font-medium">
 											+$
-											{ecommerceMockBalances.accruedInterest.toLocaleString("en-US", {
+											{personaMockData.balances.accruedInterest.toLocaleString("en-US", {
 												minimumFractionDigits: 2,
 												maximumFractionDigits: 2,
 											})}

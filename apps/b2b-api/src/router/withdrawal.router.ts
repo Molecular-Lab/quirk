@@ -86,36 +86,33 @@ export function createWithdrawalRouter(
 			try {
 				const withdrawal = await withdrawalService.getWithdrawalByOrderId(params.id);
 
-				if (!withdrawal) {
-					return {
-						status: 404 as const,
-						body: { error: "Withdrawal not found" },
-					};
-				}
-
 				// TODO: Get actual vaultId from user's vault record
 				const vaultId = "base-0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
 				return {
 					status: 200 as const,
 					body: {
-						id: withdrawal.id,
-						clientId: withdrawal.clientId,
-						userId: withdrawal.userId,
-						vaultId: vaultId,
-						requestedAmount: withdrawal.requestedAmount,
-						sharesBurned: undefined,
-						finalAmount: withdrawal.actualAmount || undefined,
-						status: withdrawal.status.toUpperCase() as any,
-						transactionHash: undefined,
-						createdAt: withdrawal.createdAt.toISOString(),
+						found: !!withdrawal,
+						data: withdrawal ? {
+							id: withdrawal.id,
+							clientId: withdrawal.clientId,
+							userId: withdrawal.userId,
+							vaultId: vaultId,
+							requestedAmount: withdrawal.requestedAmount,
+							sharesBurned: undefined,
+							finalAmount: withdrawal.actualAmount || undefined,
+							status: withdrawal.status.toUpperCase() as any,
+							transactionHash: undefined,
+							createdAt: withdrawal.createdAt.toISOString(),
+						} : null,
+						message: withdrawal ? "Withdrawal found" : "Withdrawal not found",
 					},
 				};
 			} catch (error) {
 				logger.error("Failed to get withdrawal", { error, withdrawalId: params.id });
 				return {
-					status: 404 as const,
-					body: { error: "Withdrawal not found" },
+					status: 500 as const,
+					body: { success: false, error: "Failed to get withdrawal" },
 				};
 			}
 		},		// POST /withdrawals/:id/complete

@@ -1,55 +1,121 @@
-# Dependencies
-**/node_modules
-**/.pnp
-**/.pnp.js
-
-# Testing
-**/coverage
-**/*.tsbuildinfo
-
-# Build outputs (we'll copy only what we need)
-**/dist
-**/build
-**/.turbo
-
-# Environment files
-**/.env
-**/.env.local
-**/.env.*.local
-
-# IDE
-**/.vscode
-**/.idea
-**/*.swp
-**/*.swo
-**/*~
-
-# OS
-**/.DS_Store
-**/Thumbs.db
-
 # Git
 .git
 .gitignore
+.gitattributes
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+.circleci
+
+# Documentation
+*.md
+docs
+LICENSE
+CHANGELOG*
+
+# Development files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Node modules - will be installed fresh
+**/node_modules
+**/.pnp
+**/.pnp.js
+**/.pnpm-store
+**/.turbo
+
+# Build outputs - will be built fresh
+**/dist
+**/build
+**/.next
+**/out
+**/*.tsbuildinfo
+
+# Test files
+**/coverage
+**/.nyc_output
+**/test-results
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Environment files (should be injected at runtime)
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.sample
 
 # Logs
 **/logs
 **/*.log
 **/npm-debug.log*
-**/pnpm-debug.log*
 **/yarn-debug.log*
 **/yarn-error.log*
+**/pnpm-debug.log*
+**/lerna-debug.log*
 
-# Other packages we don't need for MCP build
-apps/
-server/
+# Temporary files
+**/tmp
+**/temp
+**/.tmp
+**/.cache
 
-# Python
+# Docker files (we don't want to copy these into the image)
+**/Dockerfile*
+**/docker-compose*.yml
+**/.dockerignore
+
+# Python files (for agent)
 **/__pycache__
 **/*.py[cod]
-**/.pytest_cache
+**/*.pyo
+**/*.pyd
+**/.Python
+**/venv
+**/env
 **/.venv
+**/.pytest_cache
+**/pip-log.txt
+**/pip-delete-this-directory.txt
 
-# Documentation
-**/*.md
-!**/README.md
+# IDE configs
+.editorconfig
+.prettierrc*
+.eslintrc*
+.eslintignore
+.stylelintrc*
+
+# Misc
+.npmrc
+.yarnrc
+.pnpmfile.cjs
+.nvmrc
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+
+# Database files (for local dev)
+*.sqlite
+*.sqlite3
+*.db

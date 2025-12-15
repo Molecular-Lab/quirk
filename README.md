@@ -1,101 +1,168 @@
-# Proxify
+# Quirk
 
-**White-Label DeFi Yield Platform** - "Stripe for DeFi Yield"
+**Earn-as-a-Service Platform** - "Stripe for DeFi Yield + Plaid for Earn-in-App"
 
-> 📚 **Full product vision:** See [`PRODUCT_OWNER_FLOW.md`](./PRODUCT_OWNER_FLOW.md) | **Quick start:** See [`QUICK_START.md`](./QUICK_START.md)
+> 📚 **Documentation:** See [`docs/core/`](./docs/core/) | **Business Plan:** See [`PRODUCT_OWNER_FLOW.md`](./PRODUCT_OWNER_FLOW.md) | **Quick Start:** See [`QUICK_START.md`](./QUICK_START.md)
 
-## What is Proxify?
+## What is Quirk?
 
-Proxify enables apps to turn their users' idle cash into yield-generating assets through a white-label DeFi platform. Product owners embed our SDK, end-users deposit fiat, and funds are pooled into custodial wallets that earn yield from DeFi protocols.
+Quirk is an Earn-as-a-Service infrastructure platform enabling businesses to embed DeFi yield into their apps without building crypto infrastructure or handling compliance. Users earn yield on their idle cash anywhere—in fintech apps, on freelance platforms, in creator communities, or e-commerce sites.
 
 **Core Value Proposition:**
-- 🏦 **For Product Owners:** Earn passive income on user balances (e.g., escrow, pending payouts)
-- 💰 **For End-Users:** Earn 7%+ APY on idle funds automatically
-- 🎨 **For Proxify:** SaaS fees + % of yield generated
+- 🏦 **For Businesses:** Add yield features in weeks, not months. Earn revenue from user balances with zero crypto expertise required.
+- 💰 **For End-Users:** Earn 3-5% APY on idle funds automatically, wherever they use money.
+- 🎨 **For Quirk:** 0.5% AUM platform fee + revenue share on yield generated
 
 **How It Works:**
 ```
-Client Registration → SDK Integration → End-User Deposits (Fiat→USDC) →
-Custodial Pool → DeFi Protocols (AAVE, Curve, Compound, Uniswap) →
-Yield Distribution (Index-Based) → White-Label Dashboard
+Business embeds @quirk/sdk → End-users deposit fiat →
+Privy MPC custody pool → USDC stablecoin →
+DeFi protocols (AAVE, Compound, Morpho) → Yield earned →
+Index-based distribution → User sees earnings
 ```
 
-**Target Clients:**
-- E-commerce platforms (seller payouts)
-- Streaming platforms (creator revenue)
-- Freelancer marketplaces (escrow funds)
-- Gaming platforms (in-game balance)
-- Subscription SaaS (annual billing float)
+**Target Customers:**
+- 🏦 Fintech apps & neo-banks (yield on user balances)
+- 👨‍💼 Freelance platforms (escrow funds earn while pending)
+- 🎨 Creator platforms (revenue earns until withdrawal)
+- 🛍️ E-commerce platforms (seller pending payouts generate yield)
 
-## Quick Links
+## 📚 Core Documentation
 
-- **[⭐ Product Vision](./PRODUCT_OWNER_FLOW.md)** - Complete business plan (START HERE)
-- **[🚀 Quick Start](./QUICK_START.md)** - Database & Privy setup guide
-- **[🎓 Work Style](./docs/WORK_STYLE.md)** - Agent-first execution strategy
-- **[🔒 Security](./docs/technical/SECURITY.md)** - Security requirements
-- **[💸 On-Ramp Integration](./docs/technical/ON_OFF_RAMP_INTEGRATION.md)** - Fiat on-ramp guide
+All documentation consolidated into **5 essential files in [`docs/core/`](./docs/core/)**:
 
-## Project Structure
+| Document | Purpose | Read Time |
+|----------|---------|-----------|
+| **[ARCHITECTURE.md](./docs/core/ARCHITECTURE.md)** | System design, clean architecture, index-based accounting | 15 min |
+| **[BUSINESS.md](./docs/core/BUSINESS.md)** | Product vision, market analysis, revenue model, licensing | 20 min |
+| **[IMPLEMENTATION.md](./docs/core/IMPLEMENTATION.md)** | Setup guides, database config, core flows, authentication | 25 min |
+| **[QUICK_REFERENCE.md](./docs/core/QUICK_REFERENCE.md)** | Concepts, commands, protocols, troubleshooting | 10 min |
+| **[APP_SPECIFIC_GUIDES.md](./docs/core/APP_SPECIFIC_GUIDES.md)** | App/package implementation details (VaultId, Privy, DeFi, MockUSDC, Auth) | 15 min |
+
+**Start Here:** Read in order: Architecture → Business → Implementation → Quick Reference → App Guides
+
+## 📖 Additional Resources
+
+- **[⭐ Full Product Vision](./PRODUCT_OWNER_FLOW.md)** - Complete business plan & customer stories
+- **[🚀 Quick Start Setup](./QUICK_START.md)** - Database + Privy configuration guide
+- **[🎓 Project Context](./CLAUDE.md)** - Development standards & patterns
+
+## 🏗️ Project Structure
 
 ```
-proxify/
-├── PRODUCT_OWNER_FLOW.md            # ⭐ Complete product vision
-├── QUICK_START.md                   # Database & Privy setup
-├── CLAUDE.md                        # Project context
-├── packages/
-│   ├── core/                        # Shared entities, use cases, repositories
-│   │   ├── entity/                  # User, wallet entities
-│   │   ├── usecase/                 # Business logic
-│   │   ├── repository/              # Privy, user repositories
-│   │   ├── datagateway/             # Interface definitions
-│   │   └── migrations/              # PostgreSQL migrations
-│   └── privy-client/                # Privy SDK wrapper (archived reference)
+quirk/
+├── 📚 docs/core/
+│   ├── ARCHITECTURE.md           # System design & clean architecture
+│   ├── BUSINESS.md               # Market, revenue, compliance
+│   ├── IMPLEMENTATION.md         # Setup & core flows
+│   ├── QUICK_REFERENCE.md        # Concepts, commands, troubleshooting
+│   └── APP_SPECIFIC_GUIDES.md    # App/package implementation details
+├── PRODUCT_OWNER_FLOW.md         # Full product vision
+├── QUICK_START.md                # Setup guide
+├── CLAUDE.md                     # Development standards
 ├── apps/
-│   ├── privy-api-test/             # Main API service (Go + Fiber)
-│   │   └── src/
-│   │       ├── controller/          # HTTP endpoints
-│   │       ├── repository/          # PostgreSQL implementation
-│   │       └── routes/              # API routes
-│   ├── web/                        # White-label dashboard (Vite + React) [TODO]
-│   └── proxify-contract/           # V1/V2 smart contracts (archived)
-├── docs/
-│   ├── business/                   # Market validation, licensing
-│   ├── technical/                  # Security, on-ramp integration
-│   └── archive/                    # Old versions (V1, V2, V3)
-└── docker-compose.yml              # PostgreSQL + pgAdmin
+│   ├── b2b-api/                 # Main API service (TypeScript + Express + ts-rest)
+│   ├── whitelabel-web/          # Customer dashboard (React + Vite)
+│   └── mock-erc20/              # Test ERC-20 tokens (Hardhat)
+├── packages/
+│   ├── core/                    # Clean architecture (entities, usecases, repositories)
+│   ├── b2b-api-core/            # ts-rest API contracts
+│   ├── b2b-sdk/                 # Customer SDK (@quirk/sdk)
+│   ├── sqlcgen/                 # SQLC-generated types
+│   ├── yield-engine/            # DeFi protocol integration (AAVE, Compound, Morpho)
+│   └── ui/                      # Shared React components
+├── database/
+│   ├── migrations/              # PostgreSQL schema
+│   └── queries/                 # SQLC query definitions
+└── docker-compose.yml           # Development environment
 ```
 
-## Current Phase: V4 MVP (Phase 1)
+## 🎯 Current Phase: MVP (V4)
 
-**Goal:** Build white-label DeFi yield platform with custodial pooling
+**Goal:** Launch Earn-as-a-Service platform with AI-powered yield strategies
 
-**Timeline:** 6-8 weeks
-**Target:** 3 pilot clients (E-commerce, Streaming, Freelancer platforms)
+**Status:** 🚀 In Development
 
-**Features:**
-- ✅ Client registration & KYB
-- ✅ Privy custodial wallet per client
-- ✅ SDK for embedding (@proxify/sdk)
-- ✅ MoonPay/Apple Pay on-ramp
-- ✅ Index-based accounting (PostgreSQL)
-- ✅ AAVE deployment (low risk)
-- ✅ Basic white-label dashboard
-- ✅ Demo app: E-commerce platform
+**Completed:**
+- ✅ Client registration & onboarding via Quirk Dashboard
+- ✅ Privy Server-Side MPC Wallets (custodial infrastructure)
+- ✅ Index-based accounting system (pools + individual balances)
+- ✅ DeFi protocol integration (AAVE, Compound, Morpho)
+- ✅ AI-powered yield strategies (Conservative, Moderate, Morpho, Custom)
+- ✅ Dual authentication (API Key for SDK + Privy Session for Dashboard)
+- ✅ TypeScript full-stack (ts-rest, React, TailwindCSS)
+
+**In Progress:**
+- 🔄 On/Off ramp integration (TransFi, ZeroHash, Bridge, Magic)
+- 🔄 White-label dashboard analytics
+- 🔄 Production deployment setup
 
 **Success Metrics:**
-- 3 pilot clients onboarded
-- $50K+ AUM (Assets Under Management)
-- 5%+ APY sustained
+- 3+ pilot clients onboarded
+- $50M+ AUM
+- 3-5% average APY sustained
 
-See [`PRODUCT_OWNER_FLOW.md`](./PRODUCT_OWNER_FLOW.md) for complete implementation plan.
+See [`docs/core/IMPLEMENTATION.md`](./docs/core/IMPLEMENTATION.md) for technical details.
 
-## Development Standards
+## 🛠️ Tech Stack
 
-All code follows production-grade patterns from `~/.claude/CLAUDE.md`:
+**Backend:**
+- **Language:** TypeScript (Node.js 22+)
+- **Framework:** Express 5 + ts-rest
+- **Database:** PostgreSQL 15+ with SQLC type generation
+- **Blockchain:** Viem (Ethereum SDK)
+- **Wallet:** Privy SDK (MPC custodial wallets)
 
-- Go monorepo with workspace
-- SQLC for type-safe database operations
-- Fiber v2 for HTTP services
-- React + Vite + TypeScript for frontend
+**Frontend:**
+- **Framework:** React 19 + TypeScript
+- **Build:** Vite 6
+- **Router:** TanStack Router
+- **State:** React Query + Zustand
+- **UI:** Radix UI + TailwindCSS 4 + shadcn/ui
+
+**DevOps:**
+- **Monorepo:** TurboRepo + PNPM workspaces
+- **Containers:** Docker + Docker Compose
+- **Migrations:** golang-migrate
+- **Code Generation:** SQLC (SQL → TypeScript types)
+
+## 📖 Quick Links
+
+```bash
+# Development
+make dev                      # Start all services
+make db-start                 # Start PostgreSQL + Redis
+make db-migrate               # Run database migrations
+make sqlc-generate            # Generate types from SQL
+
+# Testing
+make test                     # Run all tests
+
+# Production
+make build                    # Build for production
+docker-compose up -d          # Run production environment
+```
+
+See [`docs/core/QUICK_REFERENCE.md`](./docs/core/QUICK_REFERENCE.md) for complete command reference.
+
+## 🔐 Security
+
+- ✅ Privy MPC wallet custody (non-custodial for Quirk)
+- ✅ API key authentication with bcrypt hashing
+- ✅ Rate limiting (100 req/min per API key)
+- ✅ Index growth safety checks (max 2× per update)
+- ✅ Audit logging for all transactions
+- ✅ Emergency pause functionality
+
+See [`docs/core/ARCHITECTURE.md`](./docs/core/ARCHITECTURE.md#-security-architecture) for security details.
+
+## 📜 License
+
+**Proprietary** - Protocolcamp
 
 ---
+
+**Last Updated:** 2025-12-11
+**Version:** 4.0 - Quirk: Earn-as-a-Service Platform
+**Status:** MVP Development
+**Docs:** Consolidated in [`docs/core/`](./docs/core/)

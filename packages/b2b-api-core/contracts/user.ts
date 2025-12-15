@@ -9,7 +9,7 @@ import { z } from "zod";
 const c = initContract();
 
 const CreateUserSchema = z.object({
-	clientId: z.string(),
+	clientId: z.string().optional(), // ✅ Optional - extracted from API key middleware (req.client)
 	clientUserId: z.string(),
 	email: z.string().optional(),
 	walletAddress: z.string().optional(),
@@ -56,8 +56,12 @@ export const userContract = c.router({
 		method: "GET",
 		path: "/users/:id",
 		responses: {
-			200: UserResponseSchema,
-			404: z.object({ error: z.string() }),
+			200: z.object({
+				found: z.boolean(),
+				data: UserResponseSchema.nullable(),
+				message: z.string().optional(),
+			}),
+			500: z.object({ success: z.boolean(), error: z.string() }),
 		},
 		summary: "Get user by ID",
 	},
@@ -67,8 +71,12 @@ export const userContract = c.router({
 		method: "GET",
 		path: "/users/client/:clientId/user/:clientUserId",
 		responses: {
-			200: UserResponseSchema,
-			404: z.object({ error: z.string() }),
+			200: z.object({
+				found: z.boolean(),
+				data: UserResponseSchema.nullable(),
+				message: z.string().optional(),
+			}),
+			500: z.object({ success: z.boolean(), error: z.string() }),
 		},
 		summary: "Get user by client and client user ID",
 	},
@@ -92,8 +100,12 @@ export const userContract = c.router({
 		method: "GET",
 		path: "/users/:userId/portfolio",
 		responses: {
-			200: UserPortfolioSchema,
-			404: z.object({ error: z.string() }),
+			200: z.object({
+				found: z.boolean(),
+				data: UserPortfolioSchema.nullable(),
+				message: z.string().optional(),
+			}),
+			500: z.object({ success: z.boolean(), error: z.string() }),
 		},
 		summary: "Get user portfolio across all vaults",
 	},
@@ -108,16 +120,20 @@ export const userContract = c.router({
 		}),
 		responses: {
 			200: z.object({
-				balance: z.string(),
-				currency: z.string(),
-				yield_earned: z.string(),
-				apy: z.string(),
-				status: z.string(),
-				shares: z.string(),
-				entry_index: z.string(),
-				current_index: z.string(),
+				found: z.boolean(),
+				data: z.object({
+					balance: z.string(),
+					currency: z.string(),
+					yield_earned: z.string(),
+					apy: z.string(),
+					status: z.string(),
+					shares: z.string(),
+					entry_index: z.string(),
+					current_index: z.string(),
+				}).nullable(),
+				message: z.string().optional(),
 			}),
-			404: z.object({ error: z.string() }),
+			500: z.object({ success: z.boolean(), error: z.string() }),
 		},
 		summary: "Get user balance for specific vault (filtered by chain/token)",
 	},
@@ -128,17 +144,21 @@ export const userContract = c.router({
 		path: "/users/:userId/vaults",
 		responses: {
 			200: z.object({
-				vaults: z.array(z.object({
-					chain: z.string(),
-					token: z.string(),
-					balance: z.string(),
-					yield_earned: z.string(),
-					apy: z.string(),
-					shares: z.string(),
-					status: z.string(),
-				})),
+				found: z.boolean(),
+				data: z.object({
+					vaults: z.array(z.object({
+						chain: z.string(),
+						token: z.string(),
+						balance: z.string(),
+						yield_earned: z.string(),
+						apy: z.string(),
+						shares: z.string(),
+						status: z.string(),
+					})),
+				}).nullable(),
+				message: z.string().optional(),
 			}),
-			404: z.object({ error: z.string() }),
+			500: z.object({ success: z.boolean(), error: z.string() }),
 		},
 		summary: "List all vaults for a user across chains/tokens",
 	},

@@ -20,24 +20,13 @@ export const riskProfileSchema = z.object({
 		.max(100)
 		.default(0.5)
 		.describe("Maximum acceptable slippage in percentage (e.g., 0.5 = 0.5%)"),
-	minAPY: z
-		.number()
-		.min(0)
-		.default(3.0)
-		.describe("Minimum acceptable APY in percentage (e.g., 5.0 = 5%)"),
-	maxAPY: z
-		.number()
-		.min(0)
-		.optional()
-		.describe("Maximum target APY (for conservative profiles)"),
+	minAPY: z.number().min(0).default(3.0).describe("Minimum acceptable APY in percentage (e.g., 5.0 = 5%)"),
+	maxAPY: z.number().min(0).optional().describe("Maximum target APY (for conservative profiles)"),
 	preferredProtocols: z
 		.array(z.string())
 		.default([])
 		.describe("List of preferred DeFi protocols (e.g., ['aave', 'compound'])"),
-	excludedProtocols: z
-		.array(z.string())
-		.default([])
-		.describe("List of protocols to avoid"),
+	excludedProtocols: z.array(z.string()).default([]).describe("List of protocols to avoid"),
 	// Auto-rebalancing settings
 	autoRebalance: z.boolean().default(true).describe("Enable automatic portfolio rebalancing"),
 	rebalanceThreshold: z
@@ -50,26 +39,13 @@ export const riskProfileSchema = z.object({
 		.default("daily")
 		.describe("How often to check for rebalance opportunities"),
 	// Position limits
-	maxPositionsPerProtocol: z
-		.number()
-		.int()
-		.positive()
-		.default(3)
-		.describe("Maximum number of positions per protocol"),
-	maxTotalPositions: z
-		.number()
-		.int()
-		.positive()
-		.default(10)
-		.describe("Maximum total number of active positions"),
+	maxPositionsPerProtocol: z.number().int().positive().default(3).describe("Maximum number of positions per protocol"),
+	maxTotalPositions: z.number().int().positive().default(10).describe("Maximum total number of active positions"),
 	minPositionValue: z
 		.string()
 		.default("10")
 		.describe("Minimum position value in USD (as string to avoid precision loss)"),
-	maxPositionValue: z
-		.string()
-		.optional()
-		.describe("Maximum position value in USD per position"),
+	maxPositionValue: z.string().optional().describe("Maximum position value in USD per position"),
 	// Timestamps
 	createdAt: z.date().default(() => new Date()),
 	updatedAt: z.date().default(() => new Date()),
