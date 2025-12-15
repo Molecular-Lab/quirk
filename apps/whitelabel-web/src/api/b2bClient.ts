@@ -47,7 +47,7 @@ export function initB2BAPIClient<T extends AppRouter>(
 	})
 
 	const client = initClient(contract, {
-		baseUrl,
+		baseUrl: baseUrl,
 		baseHeaders: {},
 		jsonQuery: true,
 		api: async (args) => {

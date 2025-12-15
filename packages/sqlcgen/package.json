@@ -11,7 +11,10 @@
 			"types": "./src/index.ts",
 			"default": "./src/index.ts"
 		},
-		"./gen/*": "./src/gen/*.ts"
+		"./src/gen/*": {
+			"types": "./src/gen/*.ts",
+			"default": "./src/gen/*.ts"
+		}
 	},
 	"scripts": {
 		"generate": "sqlc generate",

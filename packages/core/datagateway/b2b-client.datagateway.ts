@@ -4,22 +4,22 @@
  */
 
 import type {
-	ClientOrganization,
-	CreateClientParams,
-	UpdateClientRiskTierParams,
-	EndUserDeposit,
-	CreateEndUserDepositParams,
-	UpdateEndUserBalanceParams,
-	VaultIndex,
-	CreateVaultIndexParams,
-	UpdateVaultIndexParams,
+	AuditLog,
 	ClientBalance,
+	ClientOrganization,
+	ClientRiskTier,
+	CreateClientParams,
+	CreateEndUserDepositParams,
+	CreateVaultIndexParams,
 	DefiAllocation,
 	DepositTransaction,
+	EndUserDeposit,
+	UpdateClientRiskTierParams,
+	UpdateEndUserBalanceParams,
+	UpdateVaultIndexParams,
+	VaultIndex,
 	WithdrawalTransaction,
-	AuditLog,
-	ClientRiskTier,
-} from '../entity/old/b2b-client.entity'
+} from "../entity/old/b2b-client.entity"
 
 /**
  * Client Organization Data Gateway
@@ -63,7 +63,7 @@ export interface IClientOrganizationDataGateway {
 	/**
 	 * Update KYB status
 	 */
-	updateKYBStatus(id: string, status: 'pending' | 'verified' | 'rejected'): Promise<ClientOrganization>
+	updateKYBStatus(id: string, status: "pending" | "verified" | "rejected"): Promise<ClientOrganization>
 
 	/**
 	 * Update webhook configuration
@@ -183,7 +183,7 @@ export interface IDefiAllocationDataGateway {
 	 */
 	create(params: {
 		clientId: string
-		protocol: 'aave' | 'curve' | 'compound' | 'uniswap'
+		protocol: "aave" | "curve" | "compound" | "uniswap"
 		chain: string
 		amountDeployed: number
 		percentage: number
@@ -238,7 +238,7 @@ export interface IDepositTransactionDataGateway {
 		orderId: string
 		clientId: string
 		userId: string
-		depositType: 'external' | 'internal'
+		depositType: "external" | "internal"
 		paymentMethod?: string
 		fiatAmount: number
 		cryptoAmount?: number
@@ -270,11 +270,7 @@ export interface IDepositTransactionDataGateway {
 	/**
 	 * List deposits by user
 	 */
-	listByUser(
-		clientId: string,
-		userId: string,
-		params: { limit: number; offset: number },
-	): Promise<DepositTransaction[]>
+	listByUser(clientId: string, userId: string, params: { limit: number; offset: number }): Promise<DepositTransaction[]>
 
 	/**
 	 * List deposits by client
@@ -313,7 +309,7 @@ export interface IWithdrawalTransactionDataGateway {
 		currency: string
 		withdrawalFee?: number
 		networkFee?: number
-		destinationType: 'client_balance' | 'bank_account' | 'debit_card'
+		destinationType: "client_balance" | "bank_account" | "debit_card"
 		destinationDetails?: Record<string, any>
 		status?: string
 	}): Promise<WithdrawalTransaction>
@@ -348,7 +344,7 @@ export interface IAuditLogDataGateway {
 	create(params: {
 		clientId?: string
 		userId?: string
-		actorType: 'client' | 'end_user' | 'system' | 'admin'
+		actorType: "client" | "end_user" | "system" | "admin"
 		action: string
 		resourceType?: string
 		resourceId?: string
@@ -366,11 +362,7 @@ export interface IAuditLogDataGateway {
 	/**
 	 * List audit logs by user
 	 */
-	listByUser(
-		clientId: string,
-		userId: string,
-		params: { limit: number; offset: number },
-	): Promise<AuditLog[]>
+	listByUser(clientId: string, userId: string, params: { limit: number; offset: number }): Promise<AuditLog[]>
 
 	/**
 	 * List audit logs by action

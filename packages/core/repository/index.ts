@@ -1,6 +1,6 @@
 // Legacy datagateway exports (still in use)
-export * from "../datagateway/privy-wallet.datagateway"
 export * from "../datagateway/privy-user.datagateway"
+export * from "../datagateway/privy-wallet.datagateway"
 
 // PostgreSQL B2B Database Repositories (Proxify Pattern with SQLC)
 // This is the CURRENT implementation - all repositories use SQLC-generated types

@@ -1,8 +1,8 @@
 import { Address } from "viem"
+
 import { AccountSnapshot, UserAccountSummary } from "../old/account.entity"
+import { TierIndexInfo } from "../old/tier.entity"
 import { VaultIndexInfo } from "../old/vault.entity"
-import { TierIndexInfo, TierAccount, UserTierSummary } from "../old/tier.entity"
-import { WithdrawalExecution, BatchWithdrawResult } from "../old/deposit-withdraw.entity"
 
 export interface ProxifyVaultClientAdapter {
 	// Contract addresses

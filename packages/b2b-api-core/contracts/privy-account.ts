@@ -49,8 +49,12 @@ export const privyAccountContract = c.router({
 		method: "GET",
 		path: "/privy-accounts/:privyOrganizationId",
 		responses: {
-			200: PrivyAccountDto,
-			404: ErrorResponseDto,
+			200: z.object({
+				found: z.boolean(),
+				data: PrivyAccountDto.nullable(),
+				message: z.string().optional(),
+			}),
+			500: ErrorResponseDto,
 		},
 		summary: "Get Privy account by organization ID",
 	},

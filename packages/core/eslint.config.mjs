@@ -1,4 +1,3 @@
-import tseslint from 'typescript-eslint'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import baseConfig from '@proxify/eslint-config-base'
@@ -6,10 +5,10 @@ import baseConfig from '@proxify/eslint-config-base'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
-export default tseslint.config(
+export default [
 	...baseConfig,
 	{
-		ignores: ['dist/**', 'node_modules/**', '.turbo/**'],
+		ignores: ['dist/**', 'node_modules/**', '.turbo/**', '**/*.config.{js,mjs,cjs,ts}'],
 	},
 	{
 		files: ['**/*.{ts,tsx,js,jsx}'],
@@ -20,4 +19,4 @@ export default tseslint.config(
 			},
 		},
 	},
-)
+]

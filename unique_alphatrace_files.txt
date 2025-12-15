@@ -1,2 +1,0 @@
-./docs/CLEVERSE_ARCHITECTURE_ANALYSIS.md
-./packages/eslint-config-base/eslint.config.mjs

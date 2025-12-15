@@ -1,9 +1,10 @@
-import VError from "verror"
 import dayjs from "dayjs"
-import { IPrivyWalletDataGateway } from "../../datagateway/privy-wallet.datagateway"
+import VError from "verror"
+
 import { IPrivyUserDataGateway } from "../../datagateway/privy-user.datagateway"
-import { PrivyEmbeddedWallet, privyEmbeddedWalletSchema } from "../../entity/old/privy-wallet.entity"
+import { IPrivyWalletDataGateway } from "../../datagateway/privy-wallet.datagateway"
 import { PrivyUser } from "../../entity/old/privy-user.entity"
+import { PrivyEmbeddedWallet, privyEmbeddedWalletSchema } from "../../entity/old/privy-wallet.entity"
 import { safeParse } from "../../utils/safe-parse"
 
 /**
@@ -59,7 +60,7 @@ export class PrivyUsecase {
 		const { productId, userId, chainType, email, phone, metadata = {} } = params
 
 		// Prepare linked accounts
-		const linkedAccounts: Array<{ type: string; address?: string; email?: string; phoneNumber?: string }> = []
+		const linkedAccounts: { type: string; address?: string; email?: string; phoneNumber?: string }[] = []
 		if (email) {
 			linkedAccounts.push({ type: "email", email })
 		}
@@ -101,7 +102,7 @@ export class PrivyUsecase {
 		const { chainType, email, phone, customMetadata } = params
 
 		// Prepare linked accounts
-		const linkedAccounts: Array<{ type: string; address?: string; email?: string; phoneNumber?: string }> = []
+		const linkedAccounts: { type: string; address?: string; email?: string; phoneNumber?: string }[] = []
 		if (email) {
 			linkedAccounts.push({ type: "email", email })
 		}
@@ -180,7 +181,7 @@ export class PrivyUsecase {
 			)
 		})
 
-		if (!wallet || wallet.type !== "wallet") {
+		if (wallet?.type !== "wallet") {
 			throw new VError(
 				{
 					info: {

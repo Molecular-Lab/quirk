@@ -23,7 +23,7 @@ interface ProtocolCardProps {
 	onSelect?: () => void
 }
 
-export function ProtocolCard({ data, onSelect }: ProtocolCardProps) {
+export function ProtocolCard({ data }: ProtocolCardProps) {
 	const [viewMode, setViewMode] = useState<"overview" | "raw">("overview")
 
 	// Format protocol name
@@ -80,7 +80,7 @@ export function ProtocolCard({ data, onSelect }: ProtocolCardProps) {
 			{/* Content */}
 			<div className="p-4">
 				{viewMode === "overview" ? (
-					<OverviewView data={data} tvlFormatted={tvlFormatted} />
+					<OverviewView data={data} />
 				) : (
 					<RawDataView data={data} />
 				)}
@@ -106,7 +106,7 @@ export function ProtocolCard({ data, onSelect }: ProtocolCardProps) {
 	)
 }
 
-function OverviewView({ data, tvlFormatted }: { data: ProtocolData; tvlFormatted: string }) {
+function OverviewView({ data }: { data: ProtocolData }) {
 	return (
 		<div className="space-y-3">
 			{/* APY - Large and prominent */}

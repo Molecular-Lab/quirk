@@ -34,6 +34,32 @@ export const CreateClientDto = z.object({
 	// Currency & banking configuration (for off-ramp withdrawals)
 	supportedCurrencies: z.array(z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"])).optional(),
 	bankAccounts: z.array(ClientBankAccountDto).optional(),
+
+	// Fee Configuration (optional - defaults will be used if not provided)
+	clientRevenueSharePercent: z
+		.string()
+		.regex(/^\d+(\.\d+)?$/)
+		.refine(
+			(val) => {
+				const num = parseFloat(val);
+				return num >= 10.0 && num <= 20.0;
+			},
+			{ message: 'Client revenue share must be between 10% and 20%' }
+		)
+		.default('15.00')
+		.optional(),
+	platformFeePercent: z
+		.string()
+		.regex(/^\d+(\.\d+)?$/)
+		.refine(
+			(val) => {
+				const num = parseFloat(val);
+				return num >= 5.0 && num <= 10.0;
+			},
+			{ message: 'Platform fee must be between 5% and 10%' }
+		)
+		.default('7.50')
+		.optional(),
 });
 
 export const AddFundsDto = z.object({
@@ -97,6 +123,21 @@ export const ConfigureBankAccountsDto = z.object({
 	bankAccounts: z.array(ClientBankAccountDto),
 });
 
+// Update fee configuration only (Revenue Share section)
+export const UpdateFeeConfigDto = z.object({
+	clientRevenueSharePercent: z
+		.string()
+		.regex(/^\d+(\.\d+)?$/, 'Invalid percentage format')
+		.refine(
+			(val) => {
+				const num = parseFloat(val);
+				return num >= 10.0 && num <= 20.0;
+			},
+			{ message: 'Client revenue share must be between 10% and 20%' }
+		),
+	// platformFeePercent is NOT updatable by client - it's fixed by Quirk
+});
+
 // ============================================
 // RESPONSE DTOs
 // ============================================
@@ -122,6 +163,16 @@ export const ClientDto = z.object({
 	isSandbox: z.boolean().optional(),
 	supportedCurrencies: z.array(z.string()).nullable().optional(),
 	bankAccounts: z.array(ClientBankAccountDto).nullable().optional(),
+
+	// Fee Configuration (optional for backward compatibility)
+	clientRevenueSharePercent: z.string().default('15.00'),
+	platformFeePercent: z.string().default('7.50'),
+
+	// MRR/ARR (optional)
+	monthlyRecurringRevenue: z.string().nullable().optional(),
+	annualRunRate: z.string().nullable().optional(),
+	lastMrrCalculationAt: z.string().nullable().optional(),
+
 	createdAt: z.string(),
 	updatedAt: z.string(),
 });
@@ -167,3 +218,4 @@ export type ClientStatsDto = z.infer<typeof ClientStatsDto>;
 export type UpdateOrganizationInfoDto = z.infer<typeof UpdateOrganizationInfoDto>;
 export type UpdateSupportedCurrenciesDto = z.infer<typeof UpdateSupportedCurrenciesDto>;
 export type ConfigureBankAccountsDto = z.infer<typeof ConfigureBankAccountsDto>;
+export type UpdateFeeConfigDto = z.infer<typeof UpdateFeeConfigDto>;

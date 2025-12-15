@@ -29,6 +29,7 @@ import {
 	B2BUserVaultUseCase,
 	ClientGrowthIndexService, // ✅ NEW: Client growth index calculation
 	ViemClientManager, // ✅ NEW: Blockchain client for minting tokens
+	RevenueService, // ✅ NEW: Revenue tracking service
 } from "@proxify/core";
 import { b2bContract } from "@proxify/b2b-api-core";
 import { createExpressEndpoints } from "@ts-rest/express";
@@ -99,12 +100,19 @@ async function main() {
 
 	logger.info("✅ Repositories initialized");
 
+	// 2.5 Initialize Services needed by UseCases
+	const revenueService = new RevenueService({
+		clientRepository,
+		vaultRepository
+	});
+
 	// 3. Initialize UseCases
 	const clientUseCase = new B2BClientUseCase(
 		clientRepository,
 		privyAccountRepository,
 		auditRepository,
-		vaultRepository // ✅ Added for strategy configuration
+		vaultRepository,
+		revenueService // ✅ Added for revenue tracking
 	);
 	const vaultUseCase = new B2BVaultUseCase(vaultRepository, auditRepository);
 	const userUseCase = new B2BUserUseCase(

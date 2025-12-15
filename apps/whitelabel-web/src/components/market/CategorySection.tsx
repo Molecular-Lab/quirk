@@ -12,7 +12,7 @@ interface CategorySectionProps {
 	children: React.ReactNode
 }
 
-export function CategorySection({ id, title, description, defaultExpanded = true, children }: CategorySectionProps) {
+export function CategorySection({ title, description, defaultExpanded = true, children }: CategorySectionProps) {
 	const [isExpanded, setIsExpanded] = useState(defaultExpanded)
 
 	return (

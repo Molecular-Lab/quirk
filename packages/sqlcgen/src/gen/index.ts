@@ -7,6 +7,7 @@
 
 export * from './client_sql';
 export * from './client_bank_accounts_sql';
+export * from './privy_account_sql';
 export * from './vault_sql';
 export * from './vault_strategies_sql';
 export * from './deposit_sql';

@@ -1,24 +1,20 @@
-import type { IYieldOptimizerDataGateway } from "../datagateway/yield-optimizer.datagateway"
 import type {
 	IAAVEDataGateway,
-	ICurveDataGateway,
 	ICompoundDataGateway,
+	ICurveDataGateway,
 	IUniswapDataGateway,
 } from "../datagateway/defi-protocols.datagateway"
-import type {
-	YieldStrategy,
-	YieldOpportunity,
-	PortfolioOptimization,
-} from "../entity/old/yield-strategy.entity"
-import type { RiskProfile } from "../entity/old/risk-profile.entity"
+import type { IYieldOptimizerDataGateway } from "../datagateway/yield-optimizer.datagateway"
 import type { DeFiPosition } from "../entity/old/defi-position.entity"
+import type { RiskProfile } from "../entity/old/risk-profile.entity"
+import type { PortfolioOptimization, YieldOpportunity, YieldStrategy } from "../entity/old/yield-strategy.entity"
 
 /**
  * Yield Optimizer UseCase
  * Business logic for yield optimization across DeFi protocols
- * 
+ *
  * TODO: Implement in Phase 5.4
- * 
+ *
  * Responsibilities:
  * - Find best yield opportunities based on risk profile
  * - Optimize portfolio allocation
@@ -90,10 +86,7 @@ export class YieldOptimizerUseCase implements IYieldOptimizerDataGateway {
 		throw new Error("optimizePortfolio not implemented yet - Phase 5.4")
 	}
 
-	async shouldRebalance(params: {
-		currentPositions: DeFiPosition[]
-		riskProfile: RiskProfile
-	}): Promise<{
+	async shouldRebalance(params: { currentPositions: DeFiPosition[]; riskProfile: RiskProfile }): Promise<{
 		shouldRebalance: boolean
 		reason: string
 		expectedGain: string
@@ -109,11 +102,7 @@ export class YieldOptimizerUseCase implements IYieldOptimizerDataGateway {
 		throw new Error("shouldRebalance not implemented yet - Phase 5.4")
 	}
 
-	async calculateExpectedAPY(params: {
-		strategyId: string
-		amount: string
-		chainId: number
-	}): Promise<{
+	async calculateExpectedAPY(params: { strategyId: string; amount: string; chainId: number }): Promise<{
 		expectedAPY: string
 		breakdown: {
 			baseAPY: string
@@ -130,15 +119,12 @@ export class YieldOptimizerUseCase implements IYieldOptimizerDataGateway {
 		throw new Error("calculateExpectedAPY not implemented yet - Phase 5.4")
 	}
 
-	async getStrategyPerformance(params: {
-		strategyId: string
-		period: "7d" | "30d" | "90d" | "1y"
-	}): Promise<{
+	async getStrategyPerformance(params: { strategyId: string; period: "7d" | "30d" | "90d" | "1y" }): Promise<{
 		avgAPY: string
 		minAPY: string
 		maxAPY: string
 		volatility: string
-		dataPoints: Array<{ timestamp: Date; apy: string; tvl: string }>
+		dataPoints: { timestamp: Date; apy: string; tvl: string }[]
 	}> {
 		// TODO: Query historical performance data
 		// Steps:

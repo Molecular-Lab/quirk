@@ -1,13 +1,28 @@
-import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createFileRoute, redirect, useParams } from "@tanstack/react-router"
 
 import { ProductConfigPage } from "@/feature/dashboard/ProductConfigPage"
 import { useUserStore } from "@/store/userStore"
 
+// Wrapper component that forces re-mount when productId changes
+function ProductConfigPageWrapper() {
+	const { productId } = useParams({ from: "/dashboard/products/$productId" })
+
+	// Use productId as key to force complete re-mount when switching products
+	// This ensures all state is fresh and prevents stale data
+	return <ProductConfigPage key={productId} />
+}
+
 export const Route = createFileRoute("/dashboard/products/$productId")({
-	component: ProductConfigPage,
+	component: ProductConfigPageWrapper,
 	beforeLoad: ({ params }) => {
-		const { organizations, setActiveOrganization } = useUserStore.getState()
+		const { organizations, setActiveOrganization, isOrganizationsLoaded } = useUserStore.getState()
 		const { productId } = params
+
+		// If organizations haven't loaded yet, allow navigation (component will handle loading state)
+		if (!isOrganizationsLoaded) {
+			setActiveOrganization(productId)
+			return
+		}
 
 		// Validate that productId exists in user's organizations
 		const product = organizations.find((org) => org.productId === productId)
@@ -20,11 +35,7 @@ export const Route = createFileRoute("/dashboard/products/$productId")({
 			})
 		}
 
-		// Set as active product if not already active
-		const { activeProductId } = useUserStore.getState()
-		if (activeProductId !== productId) {
-			console.log(`[ProductConfig] Setting active product to ${productId}`)
-			setActiveOrganization(productId)
-		}
+		// Set as active product (always update to ensure consistency)
+		setActiveOrganization(productId)
 	},
 })

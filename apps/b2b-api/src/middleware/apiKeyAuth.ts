@@ -45,9 +45,10 @@ export function apiKeyAuth(clientUseCase: B2BClientUseCase) {
 			// Validate API key format (basic check before expensive bcrypt)
 			const apiKeyRegex = /^(prod|test)_pk_[a-f0-9]{32}$/;
 			if (!apiKeyRegex.test(apiKey)) {
-				logger.warn("[API Key Auth] Invalid API key format", { 
+				logger.warn("[API Key Auth] Invalid API key format", {
 					path: req.path,
-					prefix: apiKey.substring(0, 8) 
+					prefix: apiKey.substring(0, 12),
+					length: apiKey.length
 				});
 				return res.status(401).json({
 					success: false,
@@ -60,9 +61,9 @@ export function apiKeyAuth(clientUseCase: B2BClientUseCase) {
 			const client = await clientUseCase.validateApiKey(apiKey);
 
 			if (!client) {
-				logger.warn("[API Key Auth] Invalid API key", { 
+				logger.warn("[API Key Auth] Invalid API key", {
 					path: req.path,
-					prefix: apiKey.substring(0, 8) 
+					prefix: apiKey.substring(0, 12)
 				});
 				return res.status(401).json({
 					success: false,
