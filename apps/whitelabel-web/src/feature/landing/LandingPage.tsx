@@ -100,15 +100,9 @@ export function LandingPage() {
 				}`}
 			>
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-<<<<<<< HEAD
 					<Link to="/" className="flex items-center gap-3 group">
 						<div className="relative p-2 -m-2 rounded-lg hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 transition-all">
 							<Sparkles className="size-6 text-gray-700 group-hover:text-gray-500 transition-colors cursor-pointer" />
-=======
-					<Link to="/" className="flex items-center gap-2 group">
-						<div className="relative p-2 -m-2 rounded-lg transition-all">
-							<Sparkles className="size-6 text-gray-500 group-hover:text-gray-800 transition-colors cursor-pointer" />
->>>>>>> 6dc6c487eb4c129dde42dd707d485eaad46b57ce
 						</div>
 						<span className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
 							QUIRK

@@ -11,6 +11,7 @@ import type { ClientService } from "../service/client.service";
 import { mapDepositToDto, mapDepositsToDto } from "../mapper/deposit.mapper";
 import { logger } from "../logger";
 import { BankAccountService, getExchangeRate } from "../service/bank-account.service";
+import { ENV } from "../env";
 
 export function createDepositRouter(
 	s: ReturnType<typeof initServer>,
@@ -522,8 +523,8 @@ export function createDepositRouter(
 				logger.info("🏦 RAMP TO CUSTODIAL - Minting MockUSDC (USDQ)");
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 				// Execute the actual mint transaction using DepositService
-				const chainId = process.env.CHAIN_ID || "11155111"; // Default: Sepolia (as string)
-				const mockUSDCAddress = getMockUSDCAddress(Number(chainId) as 11155111); // Get address from constants
+				const chainId = String(ENV.CHAIN_ID); // Ethereum Sepolia (11155111) for deposits
+				const mockUSDCAddress = getMockUSDCAddress(ENV.CHAIN_ID as 11155111); // Get address from constants
 
 				logger.info(`📤 Transferring ${totalUSDC.toFixed(2)} USDC`);
 				logger.info(`📍 To: ${custodialWallet}`);
@@ -926,11 +927,11 @@ export function createDepositRouter(
 				if (!deposit) {
 					return {
 						status: 200 as const,
-					body: {
-					found: false,
-					data: null,
-					message: "Deposit not found",
-				},
+						body: {
+							found: false,
+							data: null,
+							message: "Deposit not found",
+						},
 					};
 				}
 
@@ -982,16 +983,16 @@ export function createDepositRouter(
 				return {
 					status: 200 as const,
 					body: {
-					found: true,
-					data: mapDepositToDto(deposit, clientBankAccounts),
-					message: "Deposit found",
-				},
+						found: true,
+						data: mapDepositToDto(deposit, clientBankAccounts),
+						message: "Deposit found",
+					},
 				};
 			} catch (error) {
 				logger.error("Failed to get deposit", { error, orderId: params.orderId });
 				return {
 					status: 500 as const,
-				body: { success: false, error: "Failed to get deposit" },
+					body: { success: false, error: "Failed to get deposit" },
 				};
 			}
 		},
