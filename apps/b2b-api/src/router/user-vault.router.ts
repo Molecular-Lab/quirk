@@ -26,29 +26,26 @@ export function createUserVaultRouter(
 					clientId
 				);
 
-				if (!balance) {
-					return {
-						status: 404 as const,
-						body: { error: "Balance not found" },
-					};
-				}
-
 				return {
 					status: 200 as const,
 					body: {
-						userId: balance.userId,
-						vaultId: params.vaultId,
-						shares: "0", // Simplified architecture doesn't use shares
-						entryIndex: balance.weightedEntryIndex,
-						effectiveBalance: balance.effectiveBalance,
-						yieldEarned: balance.yieldEarned,
+						found: !!balance,
+						data: balance ? {
+							userId: balance.userId,
+							vaultId: params.vaultId,
+							shares: "0", // Simplified architecture doesn't use shares
+							entryIndex: balance.weightedEntryIndex,
+							effectiveBalance: balance.effectiveBalance,
+							yieldEarned: balance.yieldEarned,
+						} : null,
+						message: balance ? "User balance found" : "User has no balance in this vault yet",
 					},
 				};
 			} catch (error) {
 				logger.error("Failed to get balance", { error, params });
 				return {
-					status: 404 as const,
-					body: { error: "Balance not found" },
+					status: 500 as const,
+					body: { success: false, error: "Failed to get balance" },
 				};
 			}
 		},

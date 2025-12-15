@@ -133,35 +133,29 @@ export const createPrivyAccountRouter = (
 
 				const account = await privyAccountService.getByOrgId(params.privyOrganizationId);
 
-				if (!account) {
-					return {
-						status: 404 as const,
-						body: {
-							success: false,
-							error: "Privy account not found",
-						},
-					};
-				}
-
 				return {
 					status: 200 as const,
 					body: {
-						id: account.id,
-						privyOrganizationId: account.privyOrganizationId,
-						privyWalletAddress: account.privyWalletAddress,
-						privyEmail: account.privyEmail,
-						walletType: account.walletType,
-						createdAt: account.createdAt.toISOString(),
-						updatedAt: account.updatedAt.toISOString(),
+						found: !!account,
+						data: account ? {
+							id: account.id,
+							privyOrganizationId: account.privyOrganizationId,
+							privyWalletAddress: account.privyWalletAddress,
+							privyEmail: account.privyEmail,
+							walletType: account.walletType,
+							createdAt: account.createdAt.toISOString(),
+							updatedAt: account.updatedAt.toISOString(),
+						} : null,
+						message: account ? "Privy account found" : "Privy account not found in database",
 					},
 				};
 			} catch (error: any) {
-				logger.error("[PrivyAccountRouter] Error getting Privy account", { 
+				logger.error("[PrivyAccountRouter] Error getting Privy account", {
 					error: error.message,
 					params,
 				});
 				return {
-					status: 400 as const,
+					status: 500 as const,
 					body: {
 						success: false,
 						error: error.message || "Failed to get Privy account",

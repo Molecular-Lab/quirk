@@ -1,6 +1,8 @@
-import type { Address } from "viem"
 import { z } from "zod"
-import { withdrawalExecutionSchema, batchWithdrawParamsSchema, type BatchWithdrawParams } from "./deposit-withdraw.entity"
+
+import { type BatchWithdrawParams, batchWithdrawParamsSchema } from "./deposit-withdraw.entity"
+
+import type { Address } from "viem"
 
 const addressSchema = z.custom<Address>()
 
@@ -132,4 +134,4 @@ export const claimClientRevenueParamsSchema = claimRevenueParamsSchema.extend({
 export type ClaimClientRevenueParams = z.infer<typeof claimClientRevenueParamsSchema>
 
 // Re-export batchWithdrawParamsSchema and BatchWithdrawParams from deposit-withdraw.entity
-export { batchWithdrawParamsSchema, type BatchWithdrawParams }
+export { type BatchWithdrawParams, batchWithdrawParamsSchema }

@@ -1,7 +1,11 @@
 import { randomUUID } from "node:crypto"
+
 import VError from "verror"
-import type { IWalletTransactionDataGateway } from "../../datagateway/wallet-transaction.datagateway"
-import type { ITransactionHistoryDataGateway } from "../../datagateway/wallet-transaction.datagateway"
+
+import type {
+	ITransactionHistoryDataGateway,
+	IWalletTransactionDataGateway,
+} from "../../datagateway/wallet-transaction.datagateway"
 import type {
 	EthereumTransactionParams,
 	EthereumTransactionResult,
@@ -190,10 +194,7 @@ export class WalletTransactionUseCase {
 	/**
 	 * Get transaction status
 	 */
-	public async getTransactionStatus(params: {
-		txHash: string
-		chainId: number
-	}): Promise<{
+	public async getTransactionStatus(params: { txHash: string; chainId: number }): Promise<{
 		status: "pending" | "confirmed" | "failed"
 		blockNumber?: number
 		gasUsed?: string

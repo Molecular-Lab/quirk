@@ -29,10 +29,7 @@ export const deFiPositionSchema = z.object({
 	createdAt: z.date().default(() => new Date()),
 	updatedAt: z.date().default(() => new Date()),
 	// Protocol-specific metadata
-	metadata: z
-		.record(z.any())
-		.optional()
-		.describe("Protocol-specific data like pool address, position ID, etc."),
+	metadata: z.record(z.any()).optional().describe("Protocol-specific data like pool address, position ID, etc."),
 })
 
 export type DeFiPosition = z.infer<typeof deFiPositionSchema>
@@ -75,7 +72,10 @@ export type UpdateDeFiPosition = z.infer<typeof updateDeFiPositionSchema>
  */
 export const positionQuerySchema = z.object({
 	endUserId: z.string().uuid().optional(),
-	walletAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+	walletAddress: z
+		.string()
+		.regex(/^0x[a-fA-F0-9]{40}$/)
+		.optional(),
 	protocol: deFiProtocolSchema.optional(),
 	chainId: z.number().int().positive().optional(),
 	status: positionStatusSchema.optional(),

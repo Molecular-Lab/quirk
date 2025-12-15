@@ -4,6 +4,7 @@
  */
 
 import { initContract } from "@ts-rest/core";
+import { z } from "zod";
 import {
 	CreateVaultDto,
 	ErrorResponseDto,
@@ -34,8 +35,12 @@ export const vaultContract = c.router({
 		method: "GET",
 		path: "/vaults/:id",
 		responses: {
-			200: VaultDto,
-			404: ErrorResponseDto,
+			200: z.object({
+				found: z.boolean(),
+				data: VaultDto.nullable(),
+				message: z.string().optional(),
+			}),
+			500: ErrorResponseDto,
 		},
 		summary: "Get vault by ID",
 	},
@@ -55,8 +60,12 @@ export const vaultContract = c.router({
 		method: "GET",
 		path: "/vaults/token/:clientId/:tokenSymbol/:chainId",
 		responses: {
-			200: VaultDto,
-			404: ErrorResponseDto,
+			200: z.object({
+				found: z.boolean(),
+				data: VaultDto.nullable(),
+				message: z.string().optional(),
+			}),
+			500: ErrorResponseDto,
 		},
 		summary: "Get vault by token details",
 	},

@@ -66,18 +66,15 @@ export class ClientRouter extends Router<typeof b2bContract> {
 
 	/**
 	 * List all clients by Privy Organization ID
+	 * Returns empty array [] if user has no products yet
 	 */
 	async listClientsByPrivyOrgId(privyOrganizationId: string) {
 		const response = await this.client.client.listByPrivyOrgId({ params: { privyOrganizationId } });
-		
+
 		if (response.status === 200) {
-			return response.body;
+			return response.body; // Array of clients (or empty array [])
 		}
-		
-		if (response.status === 404) {
-			return [];
-		}
-		
+
 		throw new APIError(response.status, "Failed to list clients");
 	}
 

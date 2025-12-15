@@ -5,7 +5,11 @@ import { Check, Sparkles } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { InfoDialog } from "@/components/ui/info-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { type PersonaType, getAllPersonas } from "@/feature/demo/personas"
 import { type VisualizationType, useDemoProductStore } from "@/store/demoProductStore"
+import { useDemoStore } from "@/store/demoStore"
 import { useUserStore } from "@/store/userStore"
 
 interface DemoOption {
@@ -47,10 +51,23 @@ const demoOptions: DemoOption[] = [
 export function DemoSelectorPage() {
 	const navigate = useNavigate()
 	const { organizations, loadOrganizations } = useUserStore()
-	const { availableProducts, selectedProductId, visualizationType, loadProducts, selectProduct, selectVisualization } =
-		useDemoProductStore()
+	const {
+		availableProducts,
+		selectedProductId,
+		selectedProduct,
+		visualizationType,
+		loadProducts,
+		selectProduct,
+		selectVisualization,
+	} = useDemoProductStore()
+	const { selectedPersona, setPersona, hasPersona } = useDemoStore()
 
-	const [step, setStep] = useState<1 | 2>(1)
+	const [step, setStep] = useState<1 | 2 | 3>(1)
+	const [apiKeyErrorDialog, setApiKeyErrorDialog] = useState<{
+		open: boolean
+		productName: string
+	}>({ open: false, productName: "" })
+	const personas = getAllPersonas()
 
 	// Load products from userStore on mount
 	useEffect(() => {
@@ -58,8 +75,17 @@ export function DemoSelectorPage() {
 		if (organizations.length === 0) {
 			loadOrganizations()
 		} else {
-			// Load into demoProductStore
-			loadProducts(organizations)
+			// Load API keys from localStorage
+			const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
+
+			console.log("[DemoSelectorPage] Loading products with API keys:", {
+				organizationsCount: organizations.length,
+				apiKeysCount: Object.keys(allKeys).length,
+				availableKeys: Object.keys(allKeys),
+			})
+
+			// Load into demoProductStore with API keys
+			loadProducts(organizations, allKeys)
 		}
 	}, [organizations, loadOrganizations, loadProducts])
 
@@ -70,13 +96,47 @@ export function DemoSelectorPage() {
 		}
 	}, [visualizationType, step])
 
+	// Auto-advance to step 3 when product selected
+	useEffect(() => {
+		if (selectedProductId && step === 2) {
+			setStep(3)
+		}
+	}, [selectedProductId, step])
+
 	const handleVisualizationSelect = (demoId: VisualizationType) => {
 		selectVisualization(demoId)
 		setStep(2)
 	}
 
 	const handleProductSelect = (productId: string) => {
+		console.log("[DemoSelectorPage] Selecting product:", productId)
+
+		// Check if API key exists in demoProductStore
+		const { getApiKey } = useDemoProductStore.getState()
+		const apiKey = getApiKey(productId)
+
+		if (!apiKey) {
+			const product = availableProducts.find((p) => p.productId === productId)
+			setApiKeyErrorDialog({
+				open: true,
+				productName: product?.companyName || productId,
+			})
+			return
+		}
+
+		// Select product (API key is already in store)
 		selectProduct(productId)
+
+		console.log("[DemoSelectorPage] ✅ Product selected with API key")
+		setStep(3)
+	}
+
+	const handlePersonaSelect = (personaId: PersonaType) => {
+		if (!selectedProduct || !visualizationType) return
+
+		console.log("[DemoSelectorPage] Selecting persona:", personaId)
+		setPersona(personaId, selectedProduct.companyName, visualizationType)
+		console.log("[DemoSelectorPage] ✅ Persona selected")
 	}
 
 	const handleStartDemo = () => {
@@ -84,13 +144,36 @@ export function DemoSelectorPage() {
 			return
 		}
 
+		// Double-check API key exists in demoProductStore before navigation
+		const { getApiKey } = useDemoProductStore.getState()
+		const apiKey = getApiKey(selectedProductId)
+
+		if (!apiKey) {
+			const product = availableProducts.find((p) => p.productId === selectedProductId)
+			setApiKeyErrorDialog({
+				open: true,
+				productName: product?.companyName || selectedProductId,
+			})
+			return
+		}
+
 		const demo = demoOptions.find((d) => d.id === visualizationType)
 		if (demo) {
+			console.log("[DemoSelectorPage] Starting demo:", demo.path)
 			navigate({ to: demo.path })
 		}
 	}
 
-	const canStartDemo = visualizationType && selectedProductId
+	// Check visualization, product, API key, AND persona all exist
+	const canStartDemo = Boolean(
+		visualizationType &&
+			selectedProductId &&
+			hasPersona() &&
+			(() => {
+				const { getApiKey } = useDemoProductStore.getState()
+				return !!getApiKey(selectedProductId)
+			})(),
+	)
 
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-gray-25 via-white to-white">
@@ -136,6 +219,21 @@ export function DemoSelectorPage() {
 						</div>
 						<span className={`text-sm font-medium ${step >= 2 ? "text-gray-950" : "text-gray-500"}`}>
 							Select Product
+						</span>
+					</div>
+
+					<div className="w-16 h-0.5 bg-gray-200" />
+
+					<div className="flex items-center gap-2">
+						<div
+							className={`flex items-center justify-center w-8 h-8 rounded-full ${
+								step >= 3 ? "bg-accent text-white" : "bg-gray-200 text-gray-500"
+							}`}
+						>
+							{selectedPersona ? <Check className="w-5 h-5" /> : "3"}
+						</div>
+						<span className={`text-sm font-medium ${step >= 3 ? "text-gray-950" : "text-gray-500"}`}>
+							Choose Persona
 						</span>
 					</div>
 				</div>
@@ -277,8 +375,14 @@ export function DemoSelectorPage() {
 										>
 											Back to Platforms
 										</Button>
-										<Button className="flex-1" disabled={!canStartDemo} onClick={handleStartDemo}>
-											Start Demo
+										<Button
+											className="flex-1"
+											disabled={!selectedProductId}
+											onClick={() => {
+												setStep(3)
+											}}
+										>
+											Next: Choose Persona
 										</Button>
 									</div>
 
@@ -302,7 +406,91 @@ export function DemoSelectorPage() {
 						</div>
 					</div>
 				)}
+
+				{/* Step 3: Choose Persona */}
+				{step === 3 && (
+					<div>
+						<div className="text-center mb-8">
+							<h1 className="text-4xl font-bold text-gray-950 mb-4">Choose your demo persona</h1>
+							<p className="text-lg text-gray-600">Test different user scenarios with pre-configured personas</p>
+						</div>
+
+						<div className="max-w-3xl mx-auto">
+							<div className="grid md:grid-cols-2 gap-6 mb-8">
+								{personas.map((persona) => (
+									<Card
+										key={persona.id}
+										className={`cursor-pointer transition-all ${
+											selectedPersona === persona.id
+												? "border-gray-200 shadow-lg ring-1 ring-gray-100"
+												: ""
+										}`}
+										onClick={() => {
+											handlePersonaSelect(persona.id)
+										}}
+									>
+										<CardHeader>
+											<div className="flex items-start justify-between">
+												<div className="flex items-center gap-3">
+													<span className="text-5xl">{persona.avatar}</span>
+													<div>
+														<CardTitle className="text-2xl">{persona.name}</CardTitle>
+														<p className="text-sm text-gray-600 mt-1">{persona.email}</p>
+													</div>
+												</div>
+												{selectedPersona === persona.id && <Check className="w-6 h-6 text-accent" />}
+											</div>
+										</CardHeader>
+										<CardContent>
+											<div className="space-y-4">
+												<div className="p-3 bg-gray-50 rounded-lg">
+													<p className="text-xs text-gray-600 mb-1">Starting Balance</p>
+													<p className="text-2xl font-bold text-gray-950">${persona.balance.toLocaleString()}</p>
+												</div>
+												<div>
+													<p className="text-xs text-gray-600 mb-1">Risk Profile</p>
+													<p className="text-sm font-medium text-gray-900 capitalize">{persona.riskProfile}</p>
+												</div>
+												<p className="text-sm text-gray-600">{persona.description}</p>
+											</div>
+										</CardContent>
+									</Card>
+								))}
+							</div>
+
+							{/* Action Buttons */}
+							<Card>
+								<CardContent className="pt-6">
+									<div className="flex gap-3">
+										<Button
+											variant="outline"
+											className="flex-1"
+											onClick={() => {
+												setStep(2)
+											}}
+										>
+											Back to Products
+										</Button>
+										<Button className="flex-1" disabled={!canStartDemo} onClick={handleStartDemo}>
+											Start Demo
+										</Button>
+									</div>
+								</CardContent>
+							</Card>
+						</div>
+					</div>
+				)}
 			</div>
+
+			{/* API Key Error Dialog */}
+			<InfoDialog
+				open={apiKeyErrorDialog.open}
+				onOpenChange={(open) => {
+					setApiKeyErrorDialog({ open, productName: "" })
+				}}
+				title="⚠️ API Key Not Found"
+				description={`API key not found for ${apiKeyErrorDialog.productName}.\n\nPlease go to Dashboard → API Testing to view or regenerate your API key first.`}
+			/>
 		</div>
 	)
 }

@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import { Address, parseUnits } from "viem"
+import { parseUnits, type Address } from "viem"
 import { usePublicClient, useWriteContract } from "wagmi"
 
 import { AAVE_POOL_ABI, AAVE_POOL_ADDRESS } from "@/lib/contracts/aave"

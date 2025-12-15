@@ -900,3 +900,395 @@ export async function listTopUsersByDeposit(sql: Sql, args: ListTopUsersByDeposi
     }));
 }
 
+export const getVaultBalancesQuery = `-- name: GetVaultBalances :one
+
+SELECT
+  id,
+  client_id,
+  chain,
+  token_symbol,
+  pending_deposit_balance,
+  total_staked_balance,
+  cumulative_yield
+FROM client_vaults
+WHERE id = $1
+LIMIT 1`;
+
+export interface GetVaultBalancesArgs {
+    id: string;
+}
+
+export interface GetVaultBalancesRow {
+    id: string;
+    clientId: string;
+    chain: string;
+    tokenSymbol: string;
+    pendingDepositBalance: string;
+    totalStakedBalance: string;
+    cumulativeYield: string;
+}
+
+export async function getVaultBalances(sql: Sql, args: GetVaultBalancesArgs): Promise<GetVaultBalancesRow | null> {
+    const rows = await sql.unsafe(getVaultBalancesQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        clientId: row[1],
+        chain: row[2],
+        tokenSymbol: row[3],
+        pendingDepositBalance: row[4],
+        totalStakedBalance: row[5],
+        cumulativeYield: row[6]
+    };
+}
+
+export const getClientTotalBalancesQuery = `-- name: GetClientTotalBalances :one
+SELECT
+  COALESCE(SUM(pending_deposit_balance), 0) AS total_pending_balance,
+  COALESCE(SUM(total_staked_balance), 0) AS total_earning_balance,
+  COALESCE(SUM(cumulative_yield), 0) AS total_cumulative_yield
+FROM client_vaults
+WHERE client_id = $1
+  AND is_active = true`;
+
+export interface GetClientTotalBalancesArgs {
+    clientId: string;
+}
+
+export interface GetClientTotalBalancesRow {
+    totalPendingBalance: string | null;
+    totalEarningBalance: string | null;
+    totalCumulativeYield: string | null;
+}
+
+export async function getClientTotalBalances(sql: Sql, args: GetClientTotalBalancesArgs): Promise<GetClientTotalBalancesRow | null> {
+    const rows = await sql.unsafe(getClientTotalBalancesQuery, [args.clientId]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        totalPendingBalance: row[0],
+        totalEarningBalance: row[1],
+        totalCumulativeYield: row[2]
+    };
+}
+
+export const addToIdleBalanceQuery = `-- name: AddToIdleBalance :exec
+UPDATE client_vaults
+SET pending_deposit_balance = pending_deposit_balance + $2,
+    total_shares = total_shares + $3,
+    updated_at = now()
+WHERE id = $1`;
+
+export interface AddToIdleBalanceArgs {
+    id: string;
+    pendingDepositBalance: string;
+    totalShares: string;
+}
+
+export async function addToIdleBalance(sql: Sql, args: AddToIdleBalanceArgs): Promise<void> {
+    await sql.unsafe(addToIdleBalanceQuery, [args.id, args.pendingDepositBalance, args.totalShares]);
+}
+
+export const moveIdleToEarningQuery = `-- name: MoveIdleToEarning :exec
+UPDATE client_vaults
+SET pending_deposit_balance = pending_deposit_balance - $2,
+    total_staked_balance = total_staked_balance + $2,
+    updated_at = now()
+WHERE id = $1
+  AND pending_deposit_balance >= $2`;
+
+export interface MoveIdleToEarningArgs {
+    id: string;
+    pendingDepositBalance: string;
+}
+
+export async function moveIdleToEarning(sql: Sql, args: MoveIdleToEarningArgs): Promise<void> {
+    await sql.unsafe(moveIdleToEarningQuery, [args.id, args.pendingDepositBalance]);
+}
+
+export const reduceEarningBalanceQuery = `-- name: ReduceEarningBalance :exec
+UPDATE client_vaults
+SET total_staked_balance = total_staked_balance - $2,
+    total_shares = total_shares - $3,
+    updated_at = now()
+WHERE id = $1
+  AND total_staked_balance >= $2`;
+
+export interface ReduceEarningBalanceArgs {
+    id: string;
+    totalStakedBalance: string;
+    totalShares: string;
+}
+
+export async function reduceEarningBalance(sql: Sql, args: ReduceEarningBalanceArgs): Promise<void> {
+    await sql.unsafe(reduceEarningBalanceQuery, [args.id, args.totalStakedBalance, args.totalShares]);
+}
+
+export const moveEarningToIdleQuery = `-- name: MoveEarningToIdle :exec
+UPDATE client_vaults
+SET total_staked_balance = total_staked_balance - $2,
+    pending_deposit_balance = pending_deposit_balance + $2,
+    updated_at = now()
+WHERE id = $1
+  AND total_staked_balance >= $2`;
+
+export interface MoveEarningToIdleArgs {
+    id: string;
+    totalStakedBalance: string;
+}
+
+export async function moveEarningToIdle(sql: Sql, args: MoveEarningToIdleArgs): Promise<void> {
+    await sql.unsafe(moveEarningToIdleQuery, [args.id, args.totalStakedBalance]);
+}
+
+export const reduceIdleBalanceQuery = `-- name: ReduceIdleBalance :exec
+UPDATE client_vaults
+SET pending_deposit_balance = pending_deposit_balance - $2,
+    updated_at = now()
+WHERE id = $1
+  AND pending_deposit_balance >= $2`;
+
+export interface ReduceIdleBalanceArgs {
+    id: string;
+    pendingDepositBalance: string;
+}
+
+export async function reduceIdleBalance(sql: Sql, args: ReduceIdleBalanceArgs): Promise<void> {
+    await sql.unsafe(reduceIdleBalanceQuery, [args.id, args.pendingDepositBalance]);
+}
+
+export const recordYieldDistributionQuery = `-- name: RecordYieldDistribution :exec
+
+UPDATE client_vaults
+SET cumulative_yield = cumulative_yield + $2,
+    total_staked_balance = total_staked_balance + $3,  -- enduser revenue stays earning
+    updated_at = now()
+WHERE id = $1`;
+
+export interface RecordYieldDistributionArgs {
+    id: string;
+    cumulativeYield: string;
+    totalStakedBalance: string;
+}
+
+export async function recordYieldDistribution(sql: Sql, args: RecordYieldDistributionArgs): Promise<void> {
+    await sql.unsafe(recordYieldDistributionQuery, [args.id, args.cumulativeYield, args.totalStakedBalance]);
+}
+
+export const getClientRevenueSummaryQuery = `-- name: GetClientRevenueSummary :one
+SELECT
+  c.id,
+  c.product_id,
+  c.company_name,
+  c.client_revenue_share_percent,
+  c.platform_fee_percent,
+  c.monthly_recurring_revenue,
+  c.annual_run_rate,
+  c.last_mrr_calculation_at,
+  COALESCE(SUM(cv.cumulative_yield), 0) AS total_raw_yield,
+  COALESCE(SUM(cv.total_staked_balance), 0) AS total_earning_balance
+FROM client_organizations c
+LEFT JOIN client_vaults cv ON c.id = cv.client_id AND cv.is_active = true
+WHERE c.id = $1
+GROUP BY c.id`;
+
+export interface GetClientRevenueSummaryArgs {
+    id: string;
+}
+
+export interface GetClientRevenueSummaryRow {
+    id: string;
+    productId: string;
+    companyName: string;
+    clientRevenueSharePercent: string;
+    platformFeePercent: string;
+    monthlyRecurringRevenue: string | null;
+    annualRunRate: string | null;
+    lastMrrCalculationAt: Date | null;
+    totalRawYield: string | null;
+    totalEarningBalance: string | null;
+}
+
+export async function getClientRevenueSummary(sql: Sql, args: GetClientRevenueSummaryArgs): Promise<GetClientRevenueSummaryRow | null> {
+    const rows = await sql.unsafe(getClientRevenueSummaryQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        productId: row[1],
+        companyName: row[2],
+        clientRevenueSharePercent: row[3],
+        platformFeePercent: row[4],
+        monthlyRecurringRevenue: row[5],
+        annualRunRate: row[6],
+        lastMrrCalculationAt: row[7],
+        totalRawYield: row[8],
+        totalEarningBalance: row[9]
+    };
+}
+
+export const updateClientMRRQuery = `-- name: UpdateClientMRR :exec
+UPDATE client_organizations
+SET monthly_recurring_revenue = $2,
+    annual_run_rate = $2 * 12,  -- ARR = MRR × 12
+    last_mrr_calculation_at = now(),
+    updated_at = now()
+WHERE id = $1`;
+
+export interface UpdateClientMRRArgs {
+    id: string;
+    monthlyRecurringRevenue: string | null;
+}
+
+export async function updateClientMRR(sql: Sql, args: UpdateClientMRRArgs): Promise<void> {
+    await sql.unsafe(updateClientMRRQuery, [args.id, args.monthlyRecurringRevenue]);
+}
+
+export const listClientsForMRRCalculationQuery = `-- name: ListClientsForMRRCalculation :many
+SELECT
+  c.id,
+  c.product_id,
+  c.client_revenue_share_percent,
+  COALESCE(SUM(cv.total_staked_balance), 0) AS total_earning_balance,
+  COALESCE(AVG(cv.apy_30d), 0) AS avg_apy_30d
+FROM client_organizations c
+LEFT JOIN client_vaults cv ON c.id = cv.client_id AND cv.is_active = true
+WHERE c.is_active = true
+GROUP BY c.id
+HAVING SUM(cv.total_staked_balance) > 0`;
+
+export interface ListClientsForMRRCalculationRow {
+    id: string;
+    productId: string;
+    clientRevenueSharePercent: string;
+    totalEarningBalance: string | null;
+    avgApy_30d: string | null;
+}
+
+export async function listClientsForMRRCalculation(sql: Sql): Promise<ListClientsForMRRCalculationRow[]> {
+    return (await sql.unsafe(listClientsForMRRCalculationQuery, []).values()).map(row => ({
+        id: row[0],
+        productId: row[1],
+        clientRevenueSharePercent: row[2],
+        totalEarningBalance: row[3],
+        avgApy_30d: row[4]
+    }));
+}
+
+export const listRecentEndUserTransactionsQuery = `-- name: ListRecentEndUserTransactions :many
+
+SELECT
+  'deposit' AS transaction_type,
+  dt.id,
+  dt.user_id,
+  dt.fiat_amount AS amount,
+  dt.currency,
+  dt.status,
+  dt.created_at AS timestamp
+FROM deposit_transactions dt
+WHERE dt.client_id = $1
+UNION ALL
+SELECT
+  'withdrawal' AS transaction_type,
+  wt.id,
+  wt.user_id,
+  wt.requested_amount AS amount,
+  wt.currency,
+  wt.status,
+  wt.created_at AS timestamp
+FROM withdrawal_transactions wt
+WHERE wt.client_id = $1
+ORDER BY timestamp DESC
+LIMIT $2 OFFSET $3`;
+
+export interface ListRecentEndUserTransactionsArgs {
+    clientId: string;
+    limit: string;
+    offset: string;
+}
+
+export interface ListRecentEndUserTransactionsRow {
+    transactionType: string;
+    id: string;
+    userId: string;
+    amount: string;
+    currency: string;
+    status: string;
+    timestamp: Date;
+}
+
+export async function listRecentEndUserTransactions(sql: Sql, args: ListRecentEndUserTransactionsArgs): Promise<ListRecentEndUserTransactionsRow[]> {
+    return (await sql.unsafe(listRecentEndUserTransactionsQuery, [args.clientId, args.limit, args.offset]).values()).map(row => ({
+        transactionType: row[0],
+        id: row[1],
+        userId: row[2],
+        amount: row[3],
+        currency: row[4],
+        status: row[5],
+        timestamp: row[6]
+    }));
+}
+
+export const getEndUserGrowthMetricsQuery = `-- name: GetEndUserGrowthMetrics :one
+SELECT
+  COUNT(DISTINCT eu.id) AS total_end_users,
+  COUNT(DISTINCT eu.id) FILTER (
+    WHERE eu.created_at >= NOW() - INTERVAL '30 days'
+  ) AS new_users_30d,
+  COUNT(DISTINCT euv.end_user_id) FILTER (
+    WHERE euv.last_deposit_at >= NOW() - INTERVAL '30 days'
+  ) AS active_users_30d,
+  COALESCE(SUM(euv.total_deposited), 0) AS total_deposited,
+  COALESCE(SUM(euv.total_withdrawn), 0) AS total_withdrawn,
+  COUNT(DISTINCT dt.id) FILTER (
+    WHERE dt.status = 'completed'
+  ) AS total_deposits,
+  COUNT(DISTINCT wt.id) FILTER (
+    WHERE wt.status = 'completed'
+  ) AS total_withdrawals
+FROM client_organizations c
+LEFT JOIN end_users eu ON c.id = eu.client_id
+LEFT JOIN end_user_vaults euv ON eu.id = euv.end_user_id AND euv.is_active = true
+LEFT JOIN deposit_transactions dt ON c.id = dt.client_id
+LEFT JOIN withdrawal_transactions wt ON c.id = wt.client_id
+WHERE c.id = $1
+GROUP BY c.id`;
+
+export interface GetEndUserGrowthMetricsArgs {
+    id: string;
+}
+
+export interface GetEndUserGrowthMetricsRow {
+    totalEndUsers: string;
+    newUsers_30d: string;
+    activeUsers_30d: string;
+    totalDeposited: string | null;
+    totalWithdrawn: string | null;
+    totalDeposits: string;
+    totalWithdrawals: string;
+}
+
+export async function getEndUserGrowthMetrics(sql: Sql, args: GetEndUserGrowthMetricsArgs): Promise<GetEndUserGrowthMetricsRow | null> {
+    const rows = await sql.unsafe(getEndUserGrowthMetricsQuery, [args.id]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        totalEndUsers: row[0],
+        newUsers_30d: row[1],
+        activeUsers_30d: row[2],
+        totalDeposited: row[3],
+        totalWithdrawn: row[4],
+        totalDeposits: row[5],
+        totalWithdrawals: row[6]
+    };
+}
+

@@ -19,7 +19,7 @@ CREATE TABLE privy_accounts (
   privy_organization_id VARCHAR(255) UNIQUE NOT NULL,
   privy_wallet_address VARCHAR(66) UNIQUE NOT NULL,
   privy_email VARCHAR(255),
-  wallet_type VARCHAR(20) NOT NULL CHECK (wallet_type IN ('MANAGED', 'USER_OWNED', 'custodial', 'non-custodial')),
+  wallet_type VARCHAR(20) NOT NULL CHECK (wallet_type IN ('MANAGED', 'USER_OWNED')),
 
   -- Timestamps
   created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -60,7 +60,22 @@ CREATE TABLE client_organizations (
 
   -- Strategy & Yield Distribution
   custom_strategy JSONB,
-  end_user_yield_portion NUMERIC(5,2),
+
+  -- Fee Configuration (3-way revenue split: Platform + Client + End-User = 100%)
+  client_revenue_share_percent NUMERIC(5,2) NOT NULL DEFAULT 15.00
+    CHECK (client_revenue_share_percent >= 10.00 AND client_revenue_share_percent <= 20.00),
+  platform_fee_percent NUMERIC(5,2) NOT NULL DEFAULT 7.50
+    CHECK (platform_fee_percent >= 5.00 AND platform_fee_percent <= 10.00),
+  performance_fee NUMERIC(5,2) DEFAULT 10.00,
+
+  -- Ensure platform + client fees don't exceed 100%
+  CONSTRAINT check_total_fees_valid
+    CHECK (platform_fee_percent + client_revenue_share_percent < 100.00),
+
+  -- MRR/ARR Tracking
+  monthly_recurring_revenue NUMERIC(20,6) DEFAULT 0 CHECK (monthly_recurring_revenue >= 0),
+  annual_run_rate NUMERIC(20,6) DEFAULT 0 CHECK (annual_run_rate >= 0),
+  last_mrr_calculation_at TIMESTAMPTZ,
 
   -- Currency Configuration
   supported_currencies JSONB DEFAULT '[]'::jsonb,
@@ -70,14 +85,10 @@ CREATE TABLE client_organizations (
   is_active BOOLEAN NOT NULL DEFAULT true,
   is_sandbox BOOLEAN NOT NULL DEFAULT false,
 
-  -- Billing
-  platform_fee NUMERIC(5,2),
-  performance_fee NUMERIC(5,2) DEFAULT 10.00,
-
-  -- Customer Tier (from migration 000002)
+  -- Customer Tier
   customer_tier VARCHAR(20),
 
-  -- Product-Level Strategy Configuration (from migration 000003)
+  -- Product-Level Strategy Configuration
   strategies_preferences JSONB DEFAULT '{}'::jsonb,
   strategies_customization JSONB DEFAULT '{}'::jsonb,
 
@@ -97,7 +108,6 @@ COMMENT ON TABLE client_organizations IS 'Product organizations - multiple per P
 COMMENT ON COLUMN client_organizations.privy_account_id IS 'Foreign key to privy_accounts (one user can have many organizations)';
 COMMENT ON COLUMN client_organizations.product_id IS 'Primary public identifier for API operations (e.g., prod_abc123)';
 COMMENT ON COLUMN client_organizations.business_type IS 'ecommerce, streaming, gaming, freelance, saas, other';
-COMMENT ON COLUMN client_organizations.end_user_yield_portion IS 'Percent of yield given to end users (e.g., 90.00)';
 COMMENT ON COLUMN client_organizations.customer_tier IS 'Customer AUM tier: 0-1K | 1K-10K | 10K-100K | 100K-1M | 1M+';
 COMMENT ON COLUMN client_organizations.strategies_preferences IS 'Initial strategy preferences captured during product creation. Format: {"defi": {"aave": 50, "compound": 30, "morpho": 20}, "cefi": {"circle": 100}, "lp": {"uniswap": 50, "sushiswap": 50}}. Sum of allocations per category should equal 100. This represents the client''s initial strategic direction.';
 COMMENT ON COLUMN client_organizations.strategies_customization IS 'Runtime strategy configuration from Market Analysis dashboard. Same format as strategies_preferences. When set, this OVERRIDES strategies_preferences. Use COALESCE(strategies_customization, strategies_preferences) to get effective strategies.';
