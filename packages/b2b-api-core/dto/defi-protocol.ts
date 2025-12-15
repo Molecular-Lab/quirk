@@ -7,7 +7,7 @@ import { z } from 'zod'
 export const ProtocolDataDto = z.object({
 	protocol: z.enum(['aave', 'compound', 'morpho']),
 	token: z.string(),
-	chainId: z.number(),
+	chainId: z.coerce.number(),
 	supplyAPY: z.string(),
 	borrowAPY: z.string().optional(),
 	tvl: z.string(),
@@ -17,14 +17,14 @@ export const ProtocolDataDto = z.object({
 	utilization: z.string(),
 	risk: z.enum(['Low', 'Medium', 'High']),
 	status: z.enum(['healthy', 'warning', 'critical']),
-	lastUpdate: z.date(),
-	protocolHealth: z.number(),
+	lastUpdate: z.coerce.date(),
+	protocolHealth: z.coerce.number(),
 	rawMetrics: z.any().optional(),
 })
 
 export const ProtocolsResponseDto = z.object({
 	protocols: z.array(ProtocolDataDto),
-	timestamp: z.date(),
+	timestamp: z.coerce.date(),
 })
 
 export const OptimizedAllocationDto = z.object({

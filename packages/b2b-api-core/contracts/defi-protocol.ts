@@ -24,7 +24,7 @@ export const defiProtocolContract = c.router({
 		path: '/defi/protocols',
 		query: z.object({
 			token: z.string(),
-			chainId: z.string(),
+			chainId: z.coerce.string(),
 		}),
 		responses: {
 			200: ProtocolsResponseDto,
@@ -39,7 +39,7 @@ export const defiProtocolContract = c.router({
 		path: '/defi/protocols/aave',
 		query: z.object({
 			token: z.string(),
-			chainId: z.string(),
+			chainId: z.coerce.string(),
 		}),
 		responses: {
 			200: ProtocolDataDto,
@@ -54,7 +54,7 @@ export const defiProtocolContract = c.router({
 		path: '/defi/protocols/compound',
 		query: z.object({
 			token: z.string(),
-			chainId: z.string(),
+			chainId: z.coerce.string(),
 		}),
 		responses: {
 			200: ProtocolDataDto,
@@ -69,7 +69,7 @@ export const defiProtocolContract = c.router({
 		path: '/defi/protocols/morpho',
 		query: z.object({
 			token: z.string(),
-			chainId: z.string(),
+			chainId: z.coerce.string(),
 		}),
 		responses: {
 			200: ProtocolDataDto,
