@@ -1,4 +1,9 @@
-import eslintConfig from "eslint-config-base"
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import eslintConfig from "@proxify/eslint-config-base"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
 export default [
 	...eslintConfig,
@@ -9,8 +14,8 @@ export default [
 		files: ["**/*.{js,mjs,cjs,ts,mts,jsx,tsx}"],
 		languageOptions: {
 			parserOptions: {
-				projectService: true,
-				tsconfigRootDir: "./tsconfig.json",
+				project: './tsconfig.json',
+				tsconfigRootDir: __dirname,
 			},
 		},
 	},

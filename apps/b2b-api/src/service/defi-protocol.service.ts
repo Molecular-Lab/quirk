@@ -87,6 +87,7 @@ export class DeFiProtocolService {
 			const adapter = this.getAaveAdapter(chainId)
 			const metrics = await adapter.getMetrics(token, chainId) // Returns YieldOpportunity
 			const protocolMetrics = await adapter.getProtocolMetrics(chainId) // Returns ProtocolMetrics
+			const metrics = await this.aaveAdapter.getMetrics(token, chainId)
 
 			// Calculate utilization from protocol-level metrics
 			const tvl = parseFloat(protocolMetrics.tvlUSD || '0')
@@ -94,6 +95,10 @@ export class DeFiProtocolService {
 			const totalBorrowed = parseFloat(protocolMetrics.totalBorrowsUSD || '0')
 			const totalSupplied = tvl // TVL = total supplied
 			const utilization = totalSupplied > 0 ? (totalBorrowed / totalSupplied) * 100 : 0
+			// Parse metrics
+			const tvl = parseFloat(metrics.tvl)
+			const liquidity = parseFloat(metrics.liquidity)
+			const utilization = metrics.utilization ? parseFloat(metrics.utilization) : 0
 
 			// Determine risk and status
 			const { risk, status, health } = this.calculateRiskMetrics(utilization, tvl)
@@ -104,10 +109,10 @@ export class DeFiProtocolService {
 				chainId,
 				supplyAPY: metrics.supplyAPY,
 				borrowAPY: metrics.borrowAPY,
-				tvl: protocolMetrics.tvlUSD,
-				liquidity: protocolMetrics.availableLiquidityUSD,
-				totalSupplied: totalSupplied.toFixed(2),
-				totalBorrowed: totalBorrowed.toFixed(2),
+				tvl: metrics.tvl,
+				liquidity: metrics.liquidity,
+				totalSupplied: metrics.tvl, // TVL represents total supplied
+				totalBorrowed: (tvl - liquidity).toFixed(2), // Calculated from TVL - available liquidity
 				utilization: utilization.toFixed(2),
 				risk,
 				status,
@@ -126,16 +131,12 @@ export class DeFiProtocolService {
 	 */
 	async fetchCompoundMetrics(token: string, chainId: number): Promise<ProtocolData> {
 		try {
-			const adapter = this.getCompoundAdapter(chainId)
-			const metrics = await adapter.getMetrics(token, chainId) // Returns YieldOpportunity
-			const protocolMetrics = await adapter.getProtocolMetrics(chainId) // Returns ProtocolMetrics
+			const metrics = await this.compoundAdapter.getMetrics(token, chainId)
 
-			// Calculate utilization from protocol-level metrics
-			const tvl = parseFloat(protocolMetrics.tvlUSD || '0')
-			const availableLiquidity = parseFloat(protocolMetrics.availableLiquidityUSD || '0')
-			const totalBorrowed = parseFloat(protocolMetrics.totalBorrowsUSD || '0')
-			const totalSupplied = tvl // TVL = total supplied
-			const utilization = totalSupplied > 0 ? (totalBorrowed / totalSupplied) * 100 : 0
+			// Parse metrics
+			const tvl = parseFloat(metrics.tvl)
+			const liquidity = parseFloat(metrics.liquidity)
+			const utilization = metrics.utilization ? parseFloat(metrics.utilization) : 0
 
 			// Determine risk and status
 			const { risk, status, health } = this.calculateRiskMetrics(utilization, tvl)
@@ -146,10 +147,10 @@ export class DeFiProtocolService {
 				chainId,
 				supplyAPY: metrics.supplyAPY,
 				borrowAPY: metrics.borrowAPY,
-				tvl: protocolMetrics.tvlUSD,
-				liquidity: protocolMetrics.availableLiquidityUSD,
-				totalSupplied: totalSupplied.toFixed(2),
-				totalBorrowed: totalBorrowed.toFixed(2),
+				tvl: metrics.tvl,
+				liquidity: metrics.liquidity,
+				totalSupplied: metrics.tvl, // TVL represents total supplied
+				totalBorrowed: (tvl - liquidity).toFixed(2), // Calculated from TVL - available liquidity
 				utilization: utilization.toFixed(2),
 				risk,
 				status,
@@ -168,16 +169,12 @@ export class DeFiProtocolService {
 	 */
 	async fetchMorphoMetrics(token: string, chainId: number): Promise<ProtocolData> {
 		try {
-			const adapter = this.getMorphoAdapter(chainId)
-			const metrics = await adapter.getMetrics(token, chainId) // Returns YieldOpportunity
-			const protocolMetrics = await adapter.getProtocolMetrics(chainId) // Returns ProtocolMetrics
+			const metrics = await this.morphoAdapter.getMetrics(token, chainId)
 
-			// Calculate utilization from protocol-level metrics
-			const tvl = parseFloat(protocolMetrics.tvlUSD || '0')
-			const availableLiquidity = parseFloat(protocolMetrics.availableLiquidityUSD || '0')
-			const totalBorrowed = parseFloat(protocolMetrics.totalBorrowsUSD || '0')
-			const totalSupplied = tvl // TVL = total supplied
-			const utilization = totalSupplied > 0 ? (totalBorrowed / totalSupplied) * 100 : 0
+			// Parse metrics
+			const tvl = parseFloat(metrics.tvl)
+			const liquidity = parseFloat(metrics.liquidity)
+			const utilization = metrics.utilization ? parseFloat(metrics.utilization) : 0
 
 			// Determine risk and status
 			const { risk, status, health } = this.calculateRiskMetrics(utilization, tvl)
@@ -187,9 +184,11 @@ export class DeFiProtocolService {
 				token,
 				chainId,
 				supplyAPY: metrics.supplyAPY,
-				tvl: protocolMetrics.tvlUSD,
-				liquidity: protocolMetrics.availableLiquidityUSD,
-				totalSupplied: totalSupplied.toFixed(2),
+				borrowAPY: metrics.borrowAPY,
+				tvl: metrics.tvl,
+				liquidity: metrics.liquidity,
+				totalSupplied: metrics.tvl, // TVL represents total supplied
+				totalBorrowed: (tvl - liquidity).toFixed(2), // Calculated from TVL - available liquidity
 				utilization: utilization.toFixed(2),
 				risk,
 				status,

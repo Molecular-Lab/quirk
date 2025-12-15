@@ -11,13 +11,13 @@ export interface IPrivyUserDataGateway {
 	 * @returns Created user object
 	 */
 	createUser(params: {
-		linkedAccounts?: Array<{
+		linkedAccounts?: {
 			type: string
 			address?: string
 			email?: string
 			phoneNumber?: string
-		}>
-		wallets?: Array<{ chainType: string }>
+		}[]
+		wallets?: { chainType: string }[]
 		customMetadata?: Record<string, any>
 	}): Promise<PrivyUser>
 
@@ -49,10 +49,7 @@ export interface IPrivyUserDataGateway {
 	 * @param options Pagination options
 	 * @returns Paginated user list
 	 */
-	listUsers(options?: {
-		limit?: number
-		cursor?: string
-	}): Promise<{
+	listUsers(options?: { limit?: number; cursor?: string }): Promise<{
 		users: PrivyUser[]
 		nextCursor?: string
 	}>

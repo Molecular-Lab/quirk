@@ -1,5 +1,6 @@
-import type { Address } from "viem"
 import { z } from "zod"
+
+import type { Address } from "viem"
 
 const addressSchema = z.custom<Address>()
 

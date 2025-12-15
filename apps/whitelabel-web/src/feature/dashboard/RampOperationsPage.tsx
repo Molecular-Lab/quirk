@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { DollarSign, RefreshCw, Sparkles, UserPlus, Users, Zap } from "lucide-react"
 
 import { listPendingDeposits } from "@/api/b2bClientHelpers"
+import { EnvironmentSelector } from "@/components/EnvironmentSelector"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useClientContextStore } from "@/store/clientContextStore"
@@ -142,9 +143,12 @@ export function RampOperationsPage() {
 			<div className="bg-white border-b border-gray-200">
 				<div className="max-w-7xl mx-auto px-6 py-6">
 					<div className="border-b border-gray-150 pb-4">
-						<div className="flex items-center gap-2 mb-1">
-							<Users className="w-6 h-6 text-gray-400" />
-							<h1 className="text-3xl font-bold text-gray-950">Ramp Operations</h1>
+						<div className="flex items-center justify-between mb-3">
+							<div className="flex items-center gap-2">
+								<Users className="w-6 h-6 text-gray-400" />
+								<h1 className="text-3xl font-bold text-gray-950">Ramp Operations</h1>
+							</div>
+							<EnvironmentSelector />
 						</div>
 						<p className="text-gray-600 mt-1">Process on-ramp deposits and off-ramp withdrawals</p>
 					</div>

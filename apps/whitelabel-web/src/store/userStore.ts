@@ -163,21 +163,23 @@ export const useUserStore = create<UserStore>()(
 
 					console.log("[UserStore] Loaded organizations:", {
 						count: organizations.length,
-						organizations: organizations.map((org: Organization) => ({
+						organizations: organizations.map((org: any) => ({
 							productId: org.productId,
 							companyName: org.companyName,
 							businessType: org.businessType,
+							apiKeyPrefix: org.apiKeyPrefix, // ✅ Show API key status in console
 						})),
 					})
 
 					// Map response to Organization interface
-					const mappedOrgs: Organization[] = organizations.map((org: Organization) => ({
+					const mappedOrgs: Organization[] = organizations.map((org: any) => ({
 						id: org.id,
 						productId: org.productId,
 						companyName: org.companyName,
 						businessType: org.businessType,
 						description: org.description ?? undefined,
 						websiteUrl: org.websiteUrl ?? undefined,
+						apiKeyPrefix: org.apiKeyPrefix ?? null, // ✅ Include API key prefix from database
 						isActive: org.isActive,
 						isSandbox: org.isSandbox,
 						createdAt: org.createdAt,

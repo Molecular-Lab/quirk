@@ -24,8 +24,29 @@ export function LoginPage() {
 	const [password, setPassword] = useState("")
 
 	// Query to check if Privy account exists in database
-	const { data: existingAccount, isLoading: isCheckingAccount } = usePrivyAccount(user?.id)
+	// Use privyOrganizationId from store (set after setPrivyCredentials) to prevent race condition
+	const { data: existingAccount, isLoading: isCheckingAccount } = usePrivyAccount(privyOrganizationId || undefined)
 	const { mutateAsync: createPrivyAccount } = useCreatePrivyAccount()
+
+	// Initialize credentials in localStorage as soon as Privy auth completes
+	// This ensures the axios interceptor can inject x-privy-org-id header for subsequent API calls
+	useEffect(() => {
+		if (!authenticated || !ready || !user) return
+
+		const embeddedWallet = wallets.find((wallet) => wallet.walletClientType === "privy")
+		if (!embeddedWallet) return
+
+		// Save credentials to store/localStorage immediately (if not already saved)
+		if (!privyOrganizationId) {
+			const walletType: "MANAGED" | "USER_OWNED" = user.wallet ? "USER_OWNED" : "MANAGED"
+			setPrivyCredentials({
+				privyOrganizationId: user.id,
+				privyEmail: user.email?.address,
+				privyWalletAddress: embeddedWallet.address,
+				walletType: walletType,
+			})
+		}
+	}, [authenticated, ready, user, wallets, privyOrganizationId, setPrivyCredentials])
 
 	// Reset state on logout
 	useEffect(() => {

@@ -4,6 +4,7 @@
  */
 
 import { initContract } from '@ts-rest/core'
+import { z } from 'zod'
 import { ErrorResponseDto } from '../dto'
 import {
 	ProtocolDataDto,
@@ -19,7 +20,10 @@ export const defiProtocolContract = c.router({
 	getAll: {
 		method: 'GET',
 		path: '/defi/protocols',
-		query: c.type<{ token: string; chainId: string }>(),
+		query: z.object({
+			token: z.string(),
+			chainId: z.string(),
+		}),
 		responses: {
 			200: ProtocolsResponseDto,
 			500: ErrorResponseDto,
@@ -31,7 +35,10 @@ export const defiProtocolContract = c.router({
 	getAAVE: {
 		method: 'GET',
 		path: '/defi/protocols/aave',
-		query: c.type<{ token: string; chainId: string }>(),
+		query: z.object({
+			token: z.string(),
+			chainId: z.string(),
+		}),
 		responses: {
 			200: ProtocolDataDto,
 			500: ErrorResponseDto,
@@ -43,7 +50,10 @@ export const defiProtocolContract = c.router({
 	getCompound: {
 		method: 'GET',
 		path: '/defi/protocols/compound',
-		query: c.type<{ token: string; chainId: string }>(),
+		query: z.object({
+			token: z.string(),
+			chainId: z.string(),
+		}),
 		responses: {
 			200: ProtocolDataDto,
 			500: ErrorResponseDto,
@@ -55,7 +65,10 @@ export const defiProtocolContract = c.router({
 	getMorpho: {
 		method: 'GET',
 		path: '/defi/protocols/morpho',
-		query: c.type<{ token: string; chainId: string }>(),
+		query: z.object({
+			token: z.string(),
+			chainId: z.string(),
+		}),
 		responses: {
 			200: ProtocolDataDto,
 			500: ErrorResponseDto,

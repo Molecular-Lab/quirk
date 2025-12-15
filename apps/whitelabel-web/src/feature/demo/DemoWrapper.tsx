@@ -26,8 +26,8 @@ interface DemoWrapperProps {
 
 export function DemoWrapper({ visualizationType }: DemoWrapperProps) {
 	const navigate = useNavigate()
-	const { organizations, loadOrganizations, apiKey } = useUserStore()
-	const { setClientContext, syncToLocalStorage } = useClientContextStore()
+	const { organizations, loadOrganizations } = useUserStore()
+	const { apiKey: clientApiKey, productId: clientProductId, hasContext } = useClientContextStore()
 	const { availableProducts, selectedProductId, selectedProduct, loadProducts, selectVisualization } =
 		useDemoProductStore()
 
@@ -41,8 +41,16 @@ export function DemoWrapper({ visualizationType }: DemoWrapperProps) {
 	// Load products into demoProductStore
 	useEffect(() => {
 		if (organizations.length > 0) {
-			console.log("[DemoWrapper] Loading products into demoProductStore:", organizations.length)
-			loadProducts(organizations)
+			// Load API keys from localStorage
+			const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
+
+			console.log("[DemoWrapper] Loading products into demoProductStore:", {
+				organizationsCount: organizations.length,
+				apiKeysCount: Object.keys(allKeys).length,
+			})
+
+			// Load products with API keys
+			loadProducts(organizations, allKeys)
 		}
 	}, [organizations, loadProducts])
 
@@ -52,25 +60,26 @@ export function DemoWrapper({ visualizationType }: DemoWrapperProps) {
 		selectVisualization(visualizationType)
 	}, [visualizationType, selectVisualization])
 
-	// Sync selected product to clientContextStore
+	// Verify client context is set (API key + productId synced from product selection)
 	useEffect(() => {
-		if (selectedProduct && selectedProductId && apiKey) {
-			console.log("[DemoWrapper] Syncing product to clientContextStore:", {
-				productId: selectedProductId,
-				companyName: selectedProduct.companyName,
-			})
+		if (selectedProductId && selectedProduct) {
+			// Check if clientContextStore has the selected product's context
+			if (!hasContext() || clientProductId !== selectedProductId) {
+				console.warn("[DemoWrapper] Client context not synced, please select product again")
+				console.log("[DemoWrapper] Expected productId:", selectedProductId, "Got:", clientProductId)
+				console.log("[DemoWrapper] Has API key:", !!clientApiKey)
 
-			setClientContext({
-				clientId: selectedProduct.id,
-				productId: selectedProductId,
-				apiKey: apiKey,
-				companyName: selectedProduct.companyName,
-				businessType: selectedProduct.businessType,
-			})
-
-			syncToLocalStorage()
+				// Redirect back to selector to reselect
+				navigate({ to: "/demo" })
+			} else {
+				console.log("[DemoWrapper] ✅ Client context verified:", {
+					productId: clientProductId,
+					hasApiKey: !!clientApiKey,
+					companyName: selectedProduct.companyName,
+				})
+			}
 		}
-	}, [selectedProduct, selectedProductId, apiKey, setClientContext, syncToLocalStorage])
+	}, [selectedProductId, selectedProduct, hasContext, clientProductId, clientApiKey, navigate])
 
 	// Redirect to selector if no product selected
 	useEffect(() => {

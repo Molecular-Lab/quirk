@@ -197,7 +197,16 @@ migrate-install: ## Install golang-migrate (macOS)
 
 migrate-up: check-migrate ## Run all pending migrations
 	@echo "$(COLOR_GREEN)🔄 Running migrations UP...$(COLOR_RESET)"
-	@migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" up || echo "$(COLOR_YELLOW)⚠️  Migrations already applied or error occurred$(COLOR_RESET)"
+	@if migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" up 2>&1 | grep -q "Dirty database"; then \
+		echo "$(COLOR_YELLOW)⚠️  Dirty database detected, forcing clean state...$(COLOR_RESET)"; \
+		migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" drop -f; \
+		echo "$(COLOR_GREEN)🔄 Re-running migrations...$(COLOR_RESET)"; \
+		migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" up; \
+	elif migrate -path $(MIGRATIONS_PATH) -database "$(DB_URL)" version 2>&1 | grep -q "no change"; then \
+		echo "$(COLOR_GREEN)✅ Migrations already up to date$(COLOR_RESET)"; \
+	else \
+		echo "$(COLOR_GREEN)✅ Migrations completed$(COLOR_RESET)"; \
+	fi
 	@echo "$(COLOR_GREEN)✅ Migrations check completed!$(COLOR_RESET)"
 
 migrate-reset: check-migrate ## Reset migrations (drop all tables and re-run)

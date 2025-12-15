@@ -48,6 +48,8 @@ export function CreateProduct() {
 		businessType: "",
 		customerTier: "",
 		strategyRanking: [] as string[],
+		clientRevenueSharePercent: "15.00",
+		platformFeePercent: "7.50",
 		currencies: [Currency.USD] as Currency[],
 		bankAccounts: {} as Record<
 			Currency,
@@ -116,14 +118,14 @@ export function CreateProduct() {
 					if (!bankData?.accountNumber) return null // Skip if no account number
 
 					return {
-						currency: currency.toString(),
+						currency: currency as Currency,
 						bank_name: bankData.bankName,
 						account_number: bankData.accountNumber,
 						account_name: bankData.accountName,
 						bank_details: bankData.swiftCode ? { swift_code: bankData.swiftCode } : undefined,
 					}
 				})
-				.filter(Boolean) // Remove null entries
+				.filter((account): account is NonNullable<typeof account> => account !== null) // Remove null entries with type guard
 
 			const payload = {
 				companyName: formData.companyName,
@@ -135,14 +137,9 @@ export function CreateProduct() {
 				privyEmail: user.email?.address,
 				customerTier: formData.customerTier as "0-1K" | "1K-10K" | "10K-100K" | "100K-1M" | "1M+",
 				strategyRanking: formData.strategyRanking,
-				supportedCurrencies: formData.currencies.map((c) => c.toString()) as (
-					| "SGD"
-					| "USD"
-					| "EUR"
-					| "THB"
-					| "TWD"
-					| "KRW"
-				)[],
+				clientRevenueSharePercent: formData.clientRevenueSharePercent,
+				platformFeePercent: formData.platformFeePercent,
+			supportedCurrencies: formData.currencies as Currency[],
 				bankAccounts: bankAccountsArray.length > 0 ? bankAccountsArray : undefined,
 			}
 

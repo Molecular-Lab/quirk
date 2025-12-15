@@ -4,19 +4,19 @@
  */
 
 export interface CreateUserRequest {
-  clientId: string;
-  userId: string;
-  userType: string;
-  userWalletAddress?: string;
+	clientId: string
+	userId: string
+	userType: string
+	userWalletAddress?: string
 }
 
 export interface GetUserPortfolioRequest {
-  clientId: string;
-  userId: string;
+	clientId: string
+	userId: string
 }
 
 export interface ListUsersByClientRequest {
-  clientId: string;
-  limit?: number;
-  offset?: number;
+	clientId: string
+	limit?: number
+	offset?: number
 }

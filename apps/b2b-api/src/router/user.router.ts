@@ -80,22 +80,19 @@ export const createUserRouter = (
 					params.id
 				);
 
-				if (!user) {
-					return {
-						status: 404 as const,
-						body: { error: "User not found" },
-					};
-				}
-
 				return {
 					status: 200 as const,
-					body: mapUserToDto(user),
+					body: {
+						found: !!user,
+						data: user ? mapUserToDto(user) : null,
+						message: user ? "User found" : "User not found",
+					},
 				};
 			} catch (error) {
 				logger.error("Failed to get user by ID", { error, userId: params.id });
 				return {
-					status: 404 as const,
-					body: { error: "User not found" },
+					status: 500 as const,
+					body: { error: "Failed to get user", success: false },
 				};
 			}
 		},
@@ -146,22 +143,19 @@ export const createUserRouter = (
 					params.clientUserId
 				);
 
-				if (!user) {
-					return {
-						status: 404 as const,
-						body: { error: "User not found" },
-					};
-				}
-
 				return {
 					status: 200 as const,
-					body: mapUserToDto(user),
+					body: {
+						found: !!user,
+						data: user ? mapUserToDto(user) : null,
+						message: user ? "User found" : "User not found",
+					},
 				};
 			} catch (error) {
 				logger.error("Failed to get user", { error, params });
 				return {
-					status: 404 as const,
-					body: { error: "User not found" },
+					status: 500 as const,
+					body: { error: "Failed to get user", success: false },
 				};
 			}
 		},
@@ -234,22 +228,19 @@ export const createUserRouter = (
 			try {
 				const portfolio = await userService.getUserPortfolio(params.userId);
 
-				if (!portfolio) {
-					return {
-						status: 404 as const,
-						body: { error: "Portfolio not found" },
-					};
-				}
-
 				return {
 					status: 200 as const,
-					body: mapUserPortfolioToDto(portfolio),
+					body: {
+						found: !!portfolio,
+						data: portfolio ? mapUserPortfolioToDto(portfolio) : null,
+						message: portfolio ? "Portfolio found" : "Portfolio not found",
+					},
 				};
 			} catch (error) {
 				logger.error("Failed to get portfolio", { error, userId: params.userId });
 				return {
-					status: 404 as const,
-					body: { error: "Portfolio not found" },
+					status: 500 as const,
+					body: { error: "Failed to get portfolio", success: false },
 				};
 			}
 		},
@@ -272,8 +263,12 @@ export const createUserRouter = (
 
 				if (!portfolio) {
 					return {
-						status: 404 as const,
-						body: { error: "User not found" },
+						status: 200 as const,
+						body: {
+							found: false,
+							data: null,
+							message: "User not found",
+						},
 					};
 				}
 
@@ -319,24 +314,30 @@ export const createUserRouter = (
 				// Calculate APY (simplified - would need time-based calculation in production)
 				const apy = "0"; // TODO: Calculate from vault growth index
 
+				const balance = {
+					balance: portfolio.totalEffectiveBalance || "0",
+					currency: "USD", // Fiat-equivalent value
+					yield_earned: portfolio.totalYieldEarned || "0",
+					apy: apy,
+					status: "active", // TODO: Get from vault status
+					shares: "0", // Removed in simplified architecture
+					entry_index: "1000000000000000000", // Default 1.0
+					current_index: "1000000000000000000", // TODO: Get from client growth index
+				};
+
 				return {
 					status: 200 as const,
 					body: {
-						balance: portfolio.totalEffectiveBalance || "0",
-						currency: "USD", // Fiat-equivalent value
-						yield_earned: portfolio.totalYieldEarned || "0",
-						apy: apy,
-						status: "active", // TODO: Get from vault status
-						shares: "0", // Removed in simplified architecture
-						entry_index: "1000000000000000000", // Default 1.0
-						current_index: "1000000000000000000", // TODO: Get from client growth index
+						found: true,
+						data: balance,
+						message: "Balance found",
 					},
 				};
 			} catch (error) {
 				logger.error("Failed to get user balance", { error, userId: params.userId });
 				return {
-					status: 404 as const,
-					body: { error: "Balance not found" },
+					status: 500 as const,
+					body: { error: "Failed to get balance", success: false },
 				};
 			}
 		},
@@ -358,8 +359,12 @@ export const createUserRouter = (
 
 				if (!portfolio) {
 					return {
-						status: 404 as const,
-						body: { error: "User not found" },
+						status: 200 as const,
+						body: {
+							found: false,
+							data: null,
+							message: "User not found",
+						},
 					};
 				}
 
@@ -414,13 +419,17 @@ export const createUserRouter = (
 
 				return {
 					status: 200 as const,
-					body: { vaults },
+					body: {
+						found: true,
+						data: { vaults },
+						message: "Vaults found",
+					},
 				};
 			} catch (error) {
 				logger.error("Failed to list user vaults", { error, userId: params.userId });
 				return {
-					status: 404 as const,
-					body: { error: "Vaults not found" },
+					status: 500 as const,
+					body: { error: "Failed to list vaults", success: false },
 				};
 			}
 		},

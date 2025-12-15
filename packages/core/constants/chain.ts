@@ -1,6 +1,9 @@
 import { type Chain } from "viem"
 import { arbitrum, base, mainnet, optimism, polygon, sepolia } from "viem/chains"
 
+import { NETWORK_CONFIG, getSupportedChainIds } from "./networks"
+
+// Currently supported chain IDs from NETWORK_CONFIG
 export type SupportedChainId = 1 | 11155111 | 10 | 42161 | 8453 | 137
 
 const CHAIN_DEFINITIONS: Record<SupportedChainId, Chain> = {
@@ -10,6 +13,15 @@ const CHAIN_DEFINITIONS: Record<SupportedChainId, Chain> = {
 	42161: arbitrum,
 	8453: base,
 	137: polygon,
+}
+
+/**
+ * Check if chainId is configured in NETWORK_CONFIG
+ * @param chainId - Chain ID to check
+ * @returns true if chain is in NETWORK_CONFIG
+ */
+export function isNetworkConfigured(chainId: number): boolean {
+	return getSupportedChainIds().includes(chainId)
 }
 
 export interface ChainAddresses {
@@ -38,22 +50,29 @@ export const createChainConstants = (params: ChainConfigParams) => {
 
 	for (const [key, value] of Object.entries(params.chains ?? {})) {
 		const numericId = Number(key) as SupportedChainId
-		if (!value || !value.rpcUrl) {
+
+		// Get RPC URL from param or fallback to NETWORK_CONFIG
+		const networkConfig = Object.values(NETWORK_CONFIG).find((n) => n.chainId === numericId)
+		const rpcUrl = value?.rpcUrl || networkConfig?.rpcUrl || ""
+
+		if (!rpcUrl) {
+			console.warn(`Skipping chain ${numericId}: No RPC URL configured`)
 			continue
 		}
 
 		const chainDefinition = CHAIN_DEFINITIONS[numericId]
 		if (!chainDefinition) {
+			console.warn(`Skipping chain ${numericId}: No viem chain definition`)
 			continue
 		}
 
 		configuredChains[numericId] = {
 			chain: chainDefinition,
-			rpcUrl: value.rpcUrl,
-			safeAddress: value.safeAddress,
-			proxifyAddress: value.proxifyAddress,
-			proxifyControllerAddress: value.proxifyControllerAddress,
-			proxifyClientRegistryAddress: value.proxifyClientRegistryAddress,
+			rpcUrl,
+			safeAddress: value?.safeAddress,
+			proxifyAddress: value?.proxifyAddress,
+			proxifyControllerAddress: value?.proxifyControllerAddress,
+			proxifyClientRegistryAddress: value?.proxifyClientRegistryAddress,
 		}
 	}
 

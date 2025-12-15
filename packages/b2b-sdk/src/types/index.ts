@@ -1,7 +1,21 @@
 /**
  * Proxify B2B SDK Type Definitions
- * Version 1.0.0
+ * Version 1.1.0 - Network Configuration Update
  */
+
+// ==================== NETWORK TYPES ====================
+
+/**
+ * Supported network identifiers
+ * - eth_mainnet: Ethereum Mainnet (chainId: 1)
+ * - eth_sepolia: Ethereum Sepolia Testnet (chainId: 11155111)
+ */
+export type NetworkKey = "eth_mainnet" | "eth_sepolia"
+
+/**
+ * Supported token symbols across all networks
+ */
+export type TokenKey = "eth" | "usdc" | "usdt" | "weth" | "mock_usdc"
 
 // ==================== ENUMS ====================
 
@@ -123,9 +137,15 @@ export interface Strategy {
 }
 
 export interface ConfigureStrategiesRequest {
-	chain: string
-	token_address: string
+	/** @deprecated Use chainId or network instead */
+	chain?: string
+	chainId?: number // 1 for mainnet, 11155111 for sepolia
+	network?: NetworkKey // 'eth_mainnet' | 'eth_sepolia'
+	/** @deprecated Use targetToken instead */
+	token_address?: string
+	/** @deprecated Use targetToken instead */
 	token_symbol?: string
+	targetToken?: TokenKey // 'usdc' | 'usdt' | 'weth' | 'mock_usdc'
 	strategies: Strategy[]
 }
 
@@ -170,7 +190,7 @@ export interface User {
 	walletAddress?: string
 	createdAt: string
 	updatedAt: string
-	vaults?: any[]
+	vaults?: UserVault[]
 }
 
 export interface CreateUserRequest {
@@ -263,6 +283,10 @@ export interface CreateFiatDepositRequest {
 	currency: Currency
 	tokenSymbol?: string
 	clientReference?: string
+	// Network configuration (optional - defaults to active network based on environment)
+	chainId?: number // 1 for mainnet, 11155111 for sepolia
+	network?: NetworkKey // 'eth_mainnet' | 'eth_sepolia'
+	targetToken?: TokenKey // 'usdc' | 'usdt' | 'weth' | 'mock_usdc'
 }
 
 export interface MockConfirmFiatDepositRequest {
@@ -289,9 +313,13 @@ export interface CompleteFiatDepositRequest {
 
 export interface InitiateCryptoDepositRequest {
 	userId: string
-	chain: string
-	tokenAddress: string
-	tokenSymbol: string
+	/** @deprecated Use chainId or network instead */
+	chain?: string
+	chainId?: number // 1 for mainnet, 11155111 for sepolia
+	network?: NetworkKey // 'eth_mainnet' | 'eth_sepolia'
+	tokenAddress?: string // Auto-resolved from targetToken if not provided
+	tokenSymbol?: string // Auto-resolved from targetToken if not provided
+	targetToken?: TokenKey // 'usdc' | 'usdt' | 'weth' | 'mock_usdc'
 	amount: string
 }
 
@@ -351,8 +379,13 @@ export interface CreateWithdrawalRequest {
 	amount: string
 	withdrawal_method?: WithdrawalMethod
 	destination_address?: string
+	/** @deprecated Use chainId or network instead */
 	chain?: string
+	chainId?: number // 1 for mainnet, 11155111 for sepolia
+	network?: NetworkKey // 'eth_mainnet' | 'eth_sepolia'
+	/** @deprecated Use targetToken instead */
 	token_address?: string
+	targetToken?: TokenKey // 'usdc' | 'usdt' | 'weth' | 'mock_usdc'
 	destination_currency?: Currency
 	end_user_bank_account?: EndUserBankAccount
 }
@@ -387,7 +420,7 @@ export interface ProtocolData {
 	risk: "Low" | "Medium" | "High"
 	status: "healthy" | "warning" | "critical"
 	lastUpdate: string
-	rawMetrics?: Record<string, any>
+	rawMetrics?: Record<string, unknown>
 }
 
 export interface ProtocolsResponse {
@@ -485,7 +518,7 @@ export interface ApiResponse<T> {
 export interface ErrorResponse {
 	error: string
 	statusCode: number
-	details?: any
+	details?: unknown
 }
 
 // ==================== SDK CONFIGURATION ====================

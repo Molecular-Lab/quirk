@@ -49,7 +49,10 @@ export interface IWalletTransactionDataGateway {
 	 * @param chainId Chain ID
 	 * @returns Transaction receipt
 	 */
-	getTransactionStatus(txHash: string, chainId: number): Promise<{
+	getTransactionStatus(
+		txHash: string,
+		chainId: number,
+	): Promise<{
 		status: "pending" | "confirmed" | "failed"
 		blockNumber?: number
 		gasUsed?: string

@@ -1,2 +1,0 @@
-./apps/prod-ref-web/src/components/Navbar/section/staticMenuItems.tsx
-./apps/prod-ref-web/src/feature/explore/list/ProtocolStats/index.tsx

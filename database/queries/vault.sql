@@ -242,3 +242,183 @@ WHERE euv.client_id = $1
   AND euv.total_deposited > 0
 ORDER BY euv.total_deposited DESC
 LIMIT $2;
+
+-- ============================================
+-- WALLET STAGES QUERIES (IDLE & EARNING BALANCES)
+-- ============================================
+
+-- name: GetVaultBalances :one
+-- Get balances for a client vault
+SELECT
+  id,
+  client_id,
+  chain,
+  token_symbol,
+  pending_deposit_balance,
+  total_staked_balance,
+  cumulative_yield
+FROM client_vaults
+WHERE id = $1
+LIMIT 1;
+
+-- name: GetClientTotalBalances :one
+-- Get aggregated balances across all vaults for a client
+SELECT
+  COALESCE(SUM(pending_deposit_balance), 0) AS total_pending_balance,
+  COALESCE(SUM(total_staked_balance), 0) AS total_earning_balance,
+  COALESCE(SUM(cumulative_yield), 0) AS total_cumulative_yield
+FROM client_vaults
+WHERE client_id = $1
+  AND is_active = true;
+
+-- name: AddToIdleBalance :exec
+-- Add funds to pending balance (after on-ramp)
+UPDATE client_vaults
+SET pending_deposit_balance = pending_deposit_balance + $2,
+    total_shares = total_shares + $3,
+    updated_at = now()
+WHERE id = $1;
+
+-- name: MoveIdleToEarning :exec
+-- Move funds from pending to staked balance (after staking to DeFi)
+UPDATE client_vaults
+SET pending_deposit_balance = pending_deposit_balance - $2,
+    total_staked_balance = total_staked_balance + $2,
+    updated_at = now()
+WHERE id = $1
+  AND pending_deposit_balance >= $2;
+
+-- name: ReduceEarningBalance :exec
+-- Reduce staked balance (after unstaking from DeFi)
+UPDATE client_vaults
+SET total_staked_balance = total_staked_balance - $2,
+    total_shares = total_shares - $3,
+    updated_at = now()
+WHERE id = $1
+  AND total_staked_balance >= $2;
+
+-- name: MoveEarningToIdle :exec
+-- Move funds from staked to pending balance (after unstaking, before withdrawal)
+UPDATE client_vaults
+SET total_staked_balance = total_staked_balance - $2,
+    pending_deposit_balance = pending_deposit_balance + $2,
+    updated_at = now()
+WHERE id = $1
+  AND total_staked_balance >= $2;
+
+-- name: ReduceIdleBalance :exec
+-- Reduce pending balance (after withdrawal)
+UPDATE client_vaults
+SET pending_deposit_balance = pending_deposit_balance - $2,
+    updated_at = now()
+WHERE id = $1
+  AND pending_deposit_balance >= $2;
+
+-- ============================================
+-- REVENUE TRACKING QUERIES
+-- ============================================
+
+-- name: RecordYieldDistribution :exec
+-- Record yield distribution (enduser revenue stays in staked balance)
+UPDATE client_vaults
+SET cumulative_yield = cumulative_yield + $2,
+    total_staked_balance = total_staked_balance + $3,  -- enduser revenue stays earning
+    updated_at = now()
+WHERE id = $1;
+
+-- name: GetClientRevenueSummary :one
+-- Get revenue summary for a client (revenue split calculated by revenue service)
+SELECT
+  c.id,
+  c.product_id,
+  c.company_name,
+  c.client_revenue_share_percent,
+  c.platform_fee_percent,
+  c.monthly_recurring_revenue,
+  c.annual_run_rate,
+  c.last_mrr_calculation_at,
+  COALESCE(SUM(cv.cumulative_yield), 0) AS total_raw_yield,
+  COALESCE(SUM(cv.total_staked_balance), 0) AS total_earning_balance
+FROM client_organizations c
+LEFT JOIN client_vaults cv ON c.id = cv.client_id AND cv.is_active = true
+WHERE c.id = $1
+GROUP BY c.id;
+
+-- name: UpdateClientMRR :exec
+-- Update client's Monthly Recurring Revenue and ARR
+UPDATE client_organizations
+SET monthly_recurring_revenue = $2,
+    annual_run_rate = $2 * 12,  -- ARR = MRR × 12
+    last_mrr_calculation_at = now(),
+    updated_at = now()
+WHERE id = $1;
+
+-- name: ListClientsForMRRCalculation :many
+-- Get clients with active earning balances for MRR calculation
+SELECT
+  c.id,
+  c.product_id,
+  c.client_revenue_share_percent,
+  COALESCE(SUM(cv.total_staked_balance), 0) AS total_earning_balance,
+  COALESCE(AVG(cv.apy_30d), 0) AS avg_apy_30d
+FROM client_organizations c
+LEFT JOIN client_vaults cv ON c.id = cv.client_id AND cv.is_active = true
+WHERE c.is_active = true
+GROUP BY c.id
+HAVING SUM(cv.total_staked_balance) > 0;
+
+-- ============================================
+-- END-USER ACTIVITY QUERIES
+-- ============================================
+
+-- name: ListRecentEndUserTransactions :many
+-- Get recent deposit/withdrawal transactions for end-users
+SELECT
+  'deposit' AS transaction_type,
+  dt.id,
+  dt.user_id,
+  dt.fiat_amount AS amount,
+  dt.currency,
+  dt.status,
+  dt.created_at AS timestamp
+FROM deposit_transactions dt
+WHERE dt.client_id = $1
+UNION ALL
+SELECT
+  'withdrawal' AS transaction_type,
+  wt.id,
+  wt.user_id,
+  wt.requested_amount AS amount,
+  wt.currency,
+  wt.status,
+  wt.created_at AS timestamp
+FROM withdrawal_transactions wt
+WHERE wt.client_id = $1
+ORDER BY timestamp DESC
+LIMIT $2 OFFSET $3;
+
+-- name: GetEndUserGrowthMetrics :one
+-- Get end-user growth metrics for a client
+SELECT
+  COUNT(DISTINCT eu.id) AS total_end_users,
+  COUNT(DISTINCT eu.id) FILTER (
+    WHERE eu.created_at >= NOW() - INTERVAL '30 days'
+  ) AS new_users_30d,
+  COUNT(DISTINCT euv.end_user_id) FILTER (
+    WHERE euv.last_deposit_at >= NOW() - INTERVAL '30 days'
+  ) AS active_users_30d,
+  COALESCE(SUM(euv.total_deposited), 0) AS total_deposited,
+  COALESCE(SUM(euv.total_withdrawn), 0) AS total_withdrawn,
+  COUNT(DISTINCT dt.id) FILTER (
+    WHERE dt.status = 'completed'
+  ) AS total_deposits,
+  COUNT(DISTINCT wt.id) FILTER (
+    WHERE wt.status = 'completed'
+  ) AS total_withdrawals
+FROM client_organizations c
+LEFT JOIN end_users eu ON c.id = eu.client_id
+LEFT JOIN end_user_vaults euv ON eu.id = euv.end_user_id AND euv.is_active = true
+LEFT JOIN deposit_transactions dt ON c.id = dt.client_id
+LEFT JOIN withdrawal_transactions wt ON c.id = wt.client_id
+WHERE c.id = $1
+GROUP BY c.id;
