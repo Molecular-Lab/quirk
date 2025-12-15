@@ -1,6 +1,7 @@
-import { createFileRoute, Navigate } from "@tanstack/react-router"
+import { createFileRoute } from "@tanstack/react-router"
 
-// Redirect to unified Yield Dashboard (Strategies tab)
+import { ExploreProtocolsPage } from "../../feature/dashboard/ExploreProtocolsPage"
+
 export const Route = createFileRoute("/dashboard/explore")({
-	component: () => <Navigate to="/dashboard/yield" search={{ tab: "strategies" }} replace />,
+	component: ExploreProtocolsPage,
 })

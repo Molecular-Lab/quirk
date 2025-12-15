@@ -11,6 +11,8 @@ import {
 	ProtocolsResponseDto,
 	OptimizationRequestDto,
 	OptimizationResponseDto,
+	MultiChainOptimizationRequestDto,
+	MultiChainOptimizationResponseDto,
 } from '../dto/defi-protocol'
 
 const c = initContract()
@@ -22,7 +24,7 @@ export const defiProtocolContract = c.router({
 		path: '/defi/protocols',
 		query: z.object({
 			token: z.string(),
-			chainId: z.string(),
+			chainId: z.coerce.string(),
 		}),
 		responses: {
 			200: ProtocolsResponseDto,
@@ -37,7 +39,7 @@ export const defiProtocolContract = c.router({
 		path: '/defi/protocols/aave',
 		query: z.object({
 			token: z.string(),
-			chainId: z.string(),
+			chainId: z.coerce.string(),
 		}),
 		responses: {
 			200: ProtocolDataDto,
@@ -52,7 +54,7 @@ export const defiProtocolContract = c.router({
 		path: '/defi/protocols/compound',
 		query: z.object({
 			token: z.string(),
-			chainId: z.string(),
+			chainId: z.coerce.string(),
 		}),
 		responses: {
 			200: ProtocolDataDto,
@@ -67,7 +69,7 @@ export const defiProtocolContract = c.router({
 		path: '/defi/protocols/morpho',
 		query: z.object({
 			token: z.string(),
-			chainId: z.string(),
+			chainId: z.coerce.string(),
 		}),
 		responses: {
 			200: ProtocolDataDto,
@@ -76,7 +78,7 @@ export const defiProtocolContract = c.router({
 		summary: 'Get Morpho protocol metrics',
 	},
 
-	// Optimize allocation based on risk profile
+	// Optimize allocation based on risk profile (single chain)
 	optimize: {
 		method: 'POST',
 		path: '/defi/optimize',
@@ -88,4 +90,18 @@ export const defiProtocolContract = c.router({
 		},
 		summary: 'Get optimized portfolio allocation based on risk profile',
 	},
+
+	// Multi-chain optimization (compares across Ethereum, Base, Arbitrum, Polygon)
+	optimizeMultiChain: {
+		method: 'POST',
+		path: '/defi/optimize-multi',
+		body: MultiChainOptimizationRequestDto,
+		responses: {
+			200: MultiChainOptimizationResponseDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Get optimized allocation across multiple chains with gas-aware net APY',
+	},
 })
+

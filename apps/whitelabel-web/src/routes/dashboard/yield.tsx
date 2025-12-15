@@ -1,12 +1,6 @@
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, Navigate } from "@tanstack/react-router"
 
-import { YieldDashboard } from "../../feature/dashboard/YieldDashboard"
-
+// Redirect to the new Explore page for backward compatibility
 export const Route = createFileRoute("/dashboard/yield")({
-	component: YieldDashboard,
-	validateSearch: (search: Record<string, unknown>) => {
-		return {
-			tab: (search.tab as "explore" | "strategies" | undefined) || "explore",
-		}
-	},
+	component: () => <Navigate to="/dashboard/explore" replace />,
 })

@@ -61,8 +61,8 @@ const MOCK_CATEGORIES = [
 ]
 
 export function MarketPage() {
-	// Fetch real DeFi protocol data
-	const { protocols, isLoading, errors } = useAllDeFiProtocols()
+	// Fetch real DeFi protocol data (Base chain)
+	const { protocols, isLoading, errors } = useAllDeFiProtocols("USDC", 8453)
 
 	// Fetch Mock USDC balance
 	const { data: balance, isLoading: balanceLoading } = useMockUSDCBalance(CUSTODIAL_WALLET_ADDRESS)

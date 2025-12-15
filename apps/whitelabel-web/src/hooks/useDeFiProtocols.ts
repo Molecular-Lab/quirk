@@ -6,8 +6,8 @@
 import { useQuery } from "@tanstack/react-query"
 import axios from "axios"
 
-// API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8888/api/v1"
+// API Base URL - b2b-api runs on port 3001 with /api/v1 prefix
+const API_BASE_URL = import.meta.env.VITE_API_URL
 
 // Protocol Data Type (matching backend)
 export interface ProtocolData {

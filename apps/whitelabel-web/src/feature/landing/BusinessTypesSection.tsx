@@ -1,205 +1,178 @@
-import "./BusinessTypes.css"
+import { useRef } from "react"
+import { ShoppingBag, CreditCard, Briefcase, Palette, Car } from "lucide-react"
+import { useScrollAnimation } from "@/hooks/useScrollAnimation"
+
+import linePayLogo from "@/assets/line-pay-seeklogo.svg"
+import wiseLogo from "@/assets/wise-plc-seeklogo.svg"
+import paypalLogo from "@/assets/paypal-seeklogo.svg"
+import upworkLogo from "@/assets/upwork-seeklogo.svg"
+import fiverrLogo from "@/assets/fiverr-seeklogo.svg"
+import toptalLogo from "@/assets/toptal-seeklogo-2.svg"
+import tiktokLogo from "@/assets/tiktok-app-icon-seeklogo.svg"
+import instagramLogo from "@/assets/instagram-new-2022-seeklogo.svg"
+import youtubeLogo from "@/assets/youtube-2017-icon-seeklogo-3.svg"
+import onlyfansLogo from "@/assets/onlyfans-seeklogo.svg"
+import grabLogo from "@/assets/grab-seeklogo.svg"
+import uberLogo from "@/assets/uber-seeklogo.svg"
+import foodpandaLogo from "@/assets/foodpanda-seeklogo.svg"
+import shopifyLogo from "@/assets/shopify-seeklogo.svg"
+import shopeeLogo from "@/assets/shopee-seeklogo.svg"
+import lazadaLogo from "@/assets/lazada-seeklogo.svg"
 
 export function BusinessTypesSection() {
+	const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 })
 	const businessTypes = [
-		{
-			title: "E-commerce",
-			description:
-				"Enable merchants to earn yield on idle balances. Seller pending payouts and treasury funds generate returns while waiting for settlement.",
-			icon: "🛍️",
-			companies: [
-				{ name: "Shopify", logo: "🏪" },
-				{ name: "Amazon", logo: "📦" },
-				{ name: "Etsy", logo: "🎁" },
-			],
-			metrics: "$50K-500K avg idle per merchant",
-		},
 		{
 			title: "Fintech",
 			description:
 				"User wallets and payment processing funds earn yield during settlement periods. Optimize treasury management with automated yield generation.",
-			icon: "💳",
-			companies: [
-				{ name: "Stripe", logo: "💳" },
-				{ name: "Square", logo: "⬜" },
-				{ name: "PayPal", logo: "💰" },
-			],
-			metrics: "Settlement period optimization",
+			icon: <CreditCard className="w-6 h-6 text-gray-900" />,
+			logos: [linePayLogo, wiseLogo, paypalLogo],
 		},
 		{
 			title: "Freelance Platforms",
 			description:
 				"Project escrow and milestone payments earn yield until release. Freelancer earnings accumulate returns while waiting for withdrawal, maximizing value for both clients and workers.",
-			icon: "💼",
-			companies: [
-				{ name: "Upwork", logo: "💼" },
-				{ name: "Fiverr", logo: "🎯" },
-				{ name: "Toptal", logo: "🌟" },
-			],
-			metrics: "Escrow period yields",
+			icon: <Briefcase className="w-6 h-6 text-gray-900" />,
+			logos: [upworkLogo, fiverrLogo, toptalLogo],
 		},
 		{
 			title: "Creator Platforms",
 			description:
 				"Creator revenue earns yield until withdrawal. Boost creator retention and satisfaction by offering competitive returns on their earnings while they focus on content.",
-			icon: "🎨",
-			companies: [
-				{ name: "Patreon", logo: "🎭" },
-				{ name: "Substack", logo: "✍️" },
-				{ name: "OnlyFans", logo: "💎" },
-			],
-			metrics: "Monthly withdrawal cycles",
+			icon: <Palette className="w-6 h-6 text-gray-900" />,
+			logos: [tiktokLogo, instagramLogo, youtubeLogo, onlyfansLogo],
 		},
 		{
 			title: "Gig Worker Platforms",
 			description:
 				"Escrow funds and driver earnings earn yield until payout. Better than 0% checking accounts, creating a competitive advantage for platform adoption and retention.",
-			icon: "🚗",
-			companies: [
-				{ name: "Uber", logo: "🚕" },
-				{ name: "DoorDash", logo: "🍔" },
-				{ name: "Lyft", logo: "🚙" },
-			],
-			metrics: "Daily earnings accumulate",
+			icon: <Car className="w-6 h-6 text-gray-900" />,
+			logos: [grabLogo, uberLogo, foodpandaLogo],
 		},
 		{
-			title: "Corporate Treasury",
+			title: "E-commerce",
 			description:
-				"Enterprise cash management with institutional-grade DeFi yield. Treasury departments can optimize idle corporate cash with better returns than traditional money market accounts.",
-			icon: "🏢",
-			companies: [
-				{ name: "Startups", logo: "🚀" },
-				{ name: "SMBs", logo: "📊" },
-				{ name: "Enterprises", logo: "🏛️" },
-			],
-			metrics: "3-5% APY on idle cash",
+				"Enable merchants to earn yield on idle balances. Seller pending payouts and treasury funds generate returns while waiting for settlement.",
+			icon: <ShoppingBag className="w-6 h-6 text-gray-900" />,
+			logos: [shopifyLogo, shopeeLogo, lazadaLogo],
 		},
 	]
 
+	const scrollerRef = useRef<HTMLDivElement>(null)
+
+	const scrollByCard = (direction: "left" | "right") => {
+		const scroller = scrollerRef.current
+		if (!scroller) return
+
+		// Use the width of the first card as the scroll step; fall back to 320px.
+		const firstCard = scroller.querySelector<HTMLElement>("[data-business-card]")
+		const step = (firstCard?.offsetWidth ?? 320) + 24 // 24px gap from gap-6
+
+		scroller.scrollBy({
+			left: direction === "left" ? -step : step,
+			behavior: "smooth",
+		})
+	}
+
 	return (
-		<section className="py-20 bg-white">
-			<div className="max-w-7xl mx-auto px-6">
+		<section className="py-24 bg-white">
+			<div
+				ref={ref as React.RefObject<HTMLDivElement>}
+				className={`max-w-none w-full mx-auto px-6 sm:px-10 lg:px-16 transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+					}`}
+			>
 				{/* Section Header */}
-				<div className="text-center mb-16">
-					<h2 className="text-5xl font-bold text-gray-950 mb-4">Support Any Platform</h2>
+				<div className="mb-12 text-center">
+					<h2 className="text-5xl font-bold text-gray-950 mb-6">Support Any Platform</h2>
 					<p className="text-xl text-gray-700 max-w-3xl mx-auto">
-						From fintech apps to creator platforms, successful businesses across industries grow and scale with Quirk's
-						Earn-as-a-Service infrastructure.
+						From fintech to creators, scale with Quirk's infrastructure.
 					</p>
 				</div>
 
-				{/* Business Type Cards - Horizontal Scroll with Animation */}
-				<div className="relative overflow-hidden pb-4">
-					<div className="flex gap-6 animate-scroll-horizontal hover:pause-animation">
-					{businessTypes.map((type, idx) => (
-						<div
-							key={idx}
-								className="flex-shrink-0 w-[450px] bg-white rounded-xl border-t-4 border-blue-500 border-x border-b border-gray-200 p-8 hover:shadow-lg transition-all"
-							>
-								{/* Icon & Title */}
-								<div className="flex items-center gap-3 mb-4">
-									<div className="text-4xl w-14 h-14 bg-blue-50 rounded-lg flex items-center justify-center">
-										{type.icon}
-									</div>
-									<h3 className="text-2xl font-bold text-gray-950">{type.title}</h3>
-								</div>
+				{/* Cards Slider */}
+				<div className="relative">
+					<div className="absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-white to-transparent pointer-events-none" />
+					<div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-white to-transparent pointer-events-none" />
 
-								{/* Description */}
-								<p className="text-gray-700 leading-relaxed mb-6">{type.description}</p>
+					<div
+						ref={scrollerRef}
+						className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide snap-x snap-mandatory px-2 sm:px-4"
+					>
+						{businessTypes.map((type, idx) => {
+							// Cycle through pastel colors: Purple, Orange, Gray
+							const bgColors = ["bg-purple-50", "bg-orange-50", "bg-gray-100"]
+							const bgColor = bgColors[idx % bgColors.length]
 
-								{/* Metrics */}
-								<div className="bg-blue-50 rounded-lg px-4 py-2 mb-6 inline-block">
-									<span className="text-sm font-medium text-gray-700">💡 {type.metrics}</span>
-								</div>
-
-								{/* Company Logos */}
-								<div className="flex items-center gap-4 pt-4 border-t border-gray-100">
-									<span className="text-sm text-gray-500 font-medium">Platforms:</span>
-									<div className="flex items-center gap-3">
-										{type.companies.map((company, companyIdx) => (
-											<div
-												key={companyIdx}
-												className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
-											>
-												<span className="text-lg">{company.logo}</span>
-												<span className="text-xs font-medium text-gray-600">{company.name}</span>
+							return (
+								<div
+									key={idx}
+									data-business-card
+									className={`snap-center flex-shrink-0 w-[360px] sm:w-[400px] lg:w-[460px] ${bgColor} rounded-3xl p-8 flex flex-col justify-between hover:shadow-md transition-all`}
+								>
+									<div>
+										{/* Icon Header */}
+										<div className="flex items-center gap-4 mb-8">
+											<div className="w-12 h-12 rounded-full bg-white/60 flex items-center justify-center">
+												{type.icon}
 											</div>
-										))}
+											<h3 className="text-2xl font-bold text-gray-950">{type.title}</h3>
+										</div>
+
+										{/* Description/Tags */}
+										<div className="mb-8">
+											<p className="text-gray-700 text-lg leading-relaxed">
+												{type.description}
+											</p>
+										</div>
+									</div>
+
+									{/* Apps Footer */}
+									<div>
+										<p className="text-gray-500 text-sm font-mono uppercase tracking-wider mb-4">
+											APPS
+										</p>
+										<div className="flex items-center gap-4 flex-wrap">
+											{type.logos.map((logo, logoIdx) => {
+												// Toptal logo has a taller aspect ratio and needs special sizing
+												const isToptal = logo === toptalLogo
+												return (
+													<div
+														key={logoIdx}
+														className={`${isToptal ? "h-16 px-6" : "h-14 px-5"} bg-white rounded-xl flex items-center justify-center shadow border border-gray-200`}
+													>
+														<img
+															src={logo}
+															alt=""
+															className={isToptal ? "h-12 w-auto object-contain max-w-[120px]" : "h-8 w-auto object-contain max-w-[96px]"}
+														/>
+													</div>
+												)
+											})}
+										</div>
 									</div>
 								</div>
+							)
+						})}
+					</div>
 
-								{/* Learn More Link */}
-								<a
-									href="#"
-									className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 font-medium text-sm mt-4 group"
-								>
-									Learn more
-									<svg
-										className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-										fill="none"
-										viewBox="0 0 24 24"
-										stroke="currentColor"
-									>
-										<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-									</svg>
-								</a>
-							</div>
-						))}
-						{/* Duplicate for seamless loop */}
-						{businessTypes.map((type, idx) => (
-						<div
-							key={`duplicate-${idx}`}
-							className="flex-shrink-0 w-[450px] bg-white rounded-xl border-t-4 border-blue-500 border-x border-b border-gray-200 p-8 hover:shadow-lg transition-all"
+					<div className="pointer-events-none absolute inset-y-0 flex items-center justify-between w-full">
+						<button
+							type="button"
+							onClick={() => scrollByCard("left")}
+							className="pointer-events-auto hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg border border-gray-200 hover:-translate-x-0.5 transition"
+							aria-label="Scroll left"
 						>
-							{/* Icon & Title */}
-							<div className="flex items-center gap-3 mb-4">
-								<div className="text-4xl w-14 h-14 bg-blue-50 rounded-lg flex items-center justify-center">
-									{type.icon}
-								</div>
-								<h3 className="text-2xl font-bold text-gray-950">{type.title}</h3>
-							</div>
-
-							{/* Description */}
-							<p className="text-gray-700 leading-relaxed mb-6">{type.description}</p>
-
-							{/* Metrics */}
-							<div className="bg-blue-50 rounded-lg px-4 py-2 mb-6 inline-block">
-								<span className="text-sm font-medium text-gray-700">💡 {type.metrics}</span>
-							</div>
-
-							{/* Company Logos */}
-							<div className="flex items-center gap-4 pt-4 border-t border-gray-100">
-								<span className="text-sm text-gray-500 font-medium">Platforms:</span>
-								<div className="flex items-center gap-3">
-									{type.companies.map((company, companyIdx) => (
-										<div
-											key={companyIdx}
-											className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 rounded-md hover:bg-gray-100 transition-colors"
-										>
-											<span className="text-lg">{company.logo}</span>
-											<span className="text-xs font-medium text-gray-600">{company.name}</span>
-										</div>
-									))}
-								</div>
-							</div>
-
-							{/* Learn More Link */}
-							<a
-								href="#"
-								className="inline-flex items-center gap-2 text-gray-900 hover:text-gray-700 font-medium text-sm mt-4 group"
-							>
-								Learn more
-								<svg
-									className="w-4 h-4 group-hover:translate-x-1 transition-transform"
-									fill="none"
-									viewBox="0 0 24 24"
-									stroke="currentColor"
-								>
-									<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-								</svg>
-							</a>
-						</div>
-					))}
+							<span className="text-2xl font-semibold text-gray-700">‹</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => scrollByCard("right")}
+							className="pointer-events-auto hidden md:flex h-12 w-12 items-center justify-center rounded-full bg-white shadow-lg border border-gray-200 hover:translate-x-0.5 transition"
+							aria-label="Scroll right"
+						>
+							<span className="text-2xl font-semibold text-gray-700">›</span>
+						</button>
 					</div>
 				</div>
 			</div>
