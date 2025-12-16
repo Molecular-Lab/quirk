@@ -8,10 +8,10 @@ import quirkLogo from "@/assets/quirk-logo.svg"
 
 import { BusinessTypesSection } from "./BusinessTypesSection"
 import { CustomizeEarnSection } from "./CustomizeEarnSection"
+import { GetStartedSection } from "./GetStartedSection"
 import { IntegrationSection } from "./IntegrationSection"
 import { NewHeroSection } from "./NewHeroSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
-import { GetStartedSection } from "./GetStartedSection"
 import { TradingStrategiesSection } from "./TradingStrategiesSection"
 
 export function LandingPage() {
@@ -95,23 +95,24 @@ export function LandingPage() {
 		<div className="min-h-screen bg-gradient-to-b from-blue-50/30 via-purple-50/10 to-white">
 			{/* Header - Pure glass blur (no background color) */}
 			<header
-				className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl ${isScrolled ? "border-b border-gray-200/30 shadow-sm" : "border-b border-transparent"
-					}`}
+				className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl ${
+					isScrolled ? "border-b border-gray-200/30 shadow-sm" : "border-b border-transparent"
+				}`}
 			>
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 					<Link to="/" className="flex items-center gap-3 group">
-						<div className="relative p-2 -m-2 rounded-lg hover:bg-gradient-to-br hover:from-blue-50 hover:to-indigo-50 transition-all">
+						<div className="relative p-2 -m-2 rounded-lg transition-all">
 							<img src={quirkLogo} alt="Quirk Logo" className="size-16 cursor-pointer" />
 						</div>
-						<span className="text-3xl font-bold tracking-tight" style={{ fontFamily: 'Helvetica, Arial, sans-serif' }}>
-							QUIRK
-						</span>
 					</Link>
 					<nav className="hidden md:flex items-center gap-6">
 						<Link to="/demo" className="text-lg text-gray-700 hover:text-gray-950 transition-colors font-medium">
 							Demo
 						</Link>
-						<button onClick={handleSignIn} className="text-lg text-gray-700 hover:text-gray-950 transition-colors font-medium">
+						<button
+							onClick={handleSignIn}
+							className="text-lg text-gray-700 hover:text-gray-950 transition-colors font-medium"
+						>
 							Sign In
 						</button>
 						<button
