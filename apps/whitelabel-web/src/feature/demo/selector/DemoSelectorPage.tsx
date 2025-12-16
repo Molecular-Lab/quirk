@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react"
 
 import { useNavigate } from "@tanstack/react-router"
-import { Check, Sparkles } from "lucide-react"
+import { Check } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { InfoDialog } from "@/components/ui/info-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { LandingNavbar } from "@/feature/landing/LandingNavbar"
 import { type PersonaType, getAllPersonas } from "@/feature/demo/personas"
+import { LandingNavbar } from "@/feature/landing/LandingNavbar"
 import { type VisualizationType, useDemoProductStore } from "@/store/demoProductStore"
 import { useDemoStore } from "@/store/demoStore"
 import { useUserStore } from "@/store/userStore"
@@ -412,9 +412,7 @@ export function DemoSelectorPage() {
 									<Card
 										key={persona.id}
 										className={`cursor-pointer transition-all ${
-											selectedPersona === persona.id
-												? "border-gray-200 shadow-lg ring-1 ring-gray-100"
-												: ""
+											selectedPersona === persona.id ? "border-gray-200 shadow-lg ring-1 ring-gray-100" : ""
 										}`}
 										onClick={() => {
 											handlePersonaSelect(persona.id)

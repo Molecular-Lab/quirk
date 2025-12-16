@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from "react"
+import { type ReactNode, createContext, useContext, useState } from "react"
 
 interface FloatingConciergeContextType {
 	isOpen: boolean
@@ -45,4 +45,3 @@ export function useFloatingConcierge() {
 	}
 	return context
 }
-

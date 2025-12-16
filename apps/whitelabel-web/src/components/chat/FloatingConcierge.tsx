@@ -1,6 +1,8 @@
-import { useState, useRef, useEffect } from "react"
+import { useEffect, useRef, useState } from "react"
+
 import axios from "axios"
-import { Bot, MessageCircle, X, User, Send } from "lucide-react"
+import { Bot, Send, User, X } from "lucide-react"
+
 import { useFloatingConcierge } from "../../contexts/FloatingConciergeContext"
 
 const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8002"
@@ -107,7 +109,9 @@ export function FloatingConcierge() {
 			{!isOpen ? (
 				// Minimized Square Button
 				<button
-					onClick={() => setContextIsOpen(true)}
+					onClick={() => {
+						setContextIsOpen(true)
+					}}
 					className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl shadow-2xl hover:shadow-3xl hover:scale-105 transition-all duration-200 flex flex-col items-center justify-center gap-0.5"
 				>
 					<Bot className="w-6 h-6" />
@@ -128,7 +132,9 @@ export function FloatingConcierge() {
 							</div>
 						</div>
 						<button
-							onClick={() => setContextIsOpen(false)}
+							onClick={() => {
+								setContextIsOpen(false)
+							}}
 							className="text-white/80 hover:text-white transition-colors"
 						>
 							<X className="w-6 h-6" />
@@ -145,13 +151,12 @@ export function FloatingConcierge() {
 									</div>
 								)}
 								<div
-									className={`max-w-[75%] rounded-2xl px-4 py-3 ${msg.role === "user" ? "bg-green-500 text-white" : "bg-white text-gray-800 border border-gray-200"
-										}`}
+									className={`max-w-[75%] rounded-2xl px-4 py-3 ${
+										msg.role === "user" ? "bg-green-500 text-white" : "bg-white text-gray-800 border border-gray-200"
+									}`}
 								>
 									<p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-									<p
-										className={`text-[10px] mt-1 ${msg.role === "user" ? "text-green-100" : "text-gray-400"}`}
-									>
+									<p className={`text-[10px] mt-1 ${msg.role === "user" ? "text-green-100" : "text-gray-400"}`}>
 										{msg.timestamp.toLocaleTimeString()}
 									</p>
 								</div>
@@ -209,7 +214,9 @@ export function FloatingConcierge() {
 							<input
 								type="text"
 								value={chatInput}
-								onChange={(e) => setChatInput(e.target.value)}
+								onChange={(e) => {
+									setChatInput(e.target.value)
+								}}
 								onKeyPress={(e) => {
 									if (e.key === "Enter" && !e.shiftKey) {
 										e.preventDefault()
@@ -225,7 +232,13 @@ export function FloatingConcierge() {
 								disabled={isSending || !chatInput.trim()}
 								className="px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:from-green-600 hover:to-emerald-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm flex items-center gap-2"
 							>
-								{isSending ? "..." : <><Send className="w-4 h-4" /> Send</>}
+								{isSending ? (
+									"..."
+								) : (
+									<>
+										<Send className="w-4 h-4" /> Send
+									</>
+								)}
 							</button>
 						</div>
 					</div>
@@ -234,4 +247,3 @@ export function FloatingConcierge() {
 		</div>
 	)
 }
-

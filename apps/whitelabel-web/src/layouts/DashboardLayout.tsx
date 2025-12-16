@@ -12,12 +12,11 @@ import {
 	Menu,
 	Search,
 	Sliders,
-	Sparkles,
 	X,
 } from "lucide-react"
 
 import QuirkLogo from "@/assets/quirk-logo.svg"
-
+import { FloatingConcierge } from "@/components/chat/FloatingConcierge"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,18 +29,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-
-import { FloatingConcierge } from "@/components/chat/FloatingConcierge"
 import { FloatingConciergeProvider } from "@/contexts/FloatingConciergeContext"
 
 // Zustand stores
-import { useUserStore } from "@/store/userStore"
-import { useDemoStore } from "@/store/demoStore"
-import { useDemoProductStore } from "@/store/demoProductStore"
-import { useOnboardingStore } from "@/store/onboardingStore"
-import { useApiStore } from "@/store/apiStore"
-import { useVaultStore } from "@/store/vaultStore"
 import { useAuthFlowStore } from "@/hooks/useAuthFlow"
+import { useApiStore } from "@/store/apiStore"
+import { useDemoProductStore } from "@/store/demoProductStore"
+import { useDemoStore } from "@/store/demoStore"
+import { useOnboardingStore } from "@/store/onboardingStore"
+import { useUserStore } from "@/store/userStore"
+import { useVaultStore } from "@/store/vaultStore"
 
 const navigation = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -290,9 +287,9 @@ export function DashboardLayout() {
 					</div>
 				</div>
 
-			{/* Floating AI Concierge */}
-			<FloatingConcierge />
-		</div>
-	</FloatingConciergeProvider>
+				{/* Floating AI Concierge */}
+				<FloatingConcierge />
+			</div>
+		</FloatingConciergeProvider>
 	)
 }
