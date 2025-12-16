@@ -14,7 +14,9 @@ function PrivyProviderInner({ children }: { children: React.ReactNode }) {
 			walletChainType: "ethereum-only",
 		},
 		embeddedWallets: {
-			createOnLogin: "all-users",
+			ethereum: {
+				createOnLogin: "all-users",
+			},
 		},
 		// Disable analytics in development to avoid CORS warnings
 		...(isDev && {
