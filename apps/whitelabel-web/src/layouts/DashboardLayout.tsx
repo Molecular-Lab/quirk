@@ -12,7 +12,6 @@ import {
 	Menu,
 	Search,
 	Sliders,
-	Sparkles,
 	X,
 } from "lucide-react"
 
@@ -37,7 +36,6 @@ import { FloatingConciergeProvider } from "@/contexts/FloatingConciergeContext"
 const navigation = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
 	{ name: "Explore Protocols", href: "/dashboard/explore", icon: Compass },
-	{ name: "Create Strategies", href: "/dashboard/strategies", icon: Sparkles },
 	{ name: "Products", href: "/dashboard/products", icon: Sliders },
 	{ name: "Operations", href: "/dashboard/operations", icon: ArrowLeftRight },
 	{ name: "Integration", href: "/dashboard/integration", icon: BookText },
