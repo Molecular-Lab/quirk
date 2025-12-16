@@ -12,6 +12,7 @@ import {
 	Menu,
 	Search,
 	Sliders,
+	Sparkles,
 	X,
 } from "lucide-react"
 
@@ -33,6 +34,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { FloatingConcierge } from "@/components/chat/FloatingConcierge"
 import { FloatingConciergeProvider } from "@/contexts/FloatingConciergeContext"
 
+// Zustand stores
+import { useUserStore } from "@/store/userStore"
+import { useDemoStore } from "@/store/demoStore"
+import { useDemoProductStore } from "@/store/demoProductStore"
+import { useOnboardingStore } from "@/store/onboardingStore"
+import { useApiStore } from "@/store/apiStore"
+import { useVaultStore } from "@/store/vaultStore"
+import { useAuthFlowStore } from "@/hooks/useAuthFlow"
+
 const navigation = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
 	{ name: "Explore Protocols", href: "/dashboard/explore", icon: Compass },
@@ -47,7 +57,27 @@ export function DashboardLayout() {
 	const { user, logout } = usePrivy()
 
 	const handleLogout = async () => {
+		console.log("[DashboardLayout] Starting logout process...")
+
+		// Clear all Zustand stores
+		console.log("[DashboardLayout] Clearing all stores...")
+
+		// userStore.clearCredentials() cascades to clientContextStore.clearContext()
+		useUserStore.getState().clearCredentials()
+		useDemoStore.getState().resetDemo()
+		useDemoProductStore.getState().reset()
+		useOnboardingStore.getState().resetOnboarding()
+		useApiStore.getState().clearHistory()
+		useVaultStore.getState().clearTransactions()
+		useAuthFlowStore.getState().clearAuthFlow()
+
+		console.log("[DashboardLayout] ✅ All stores cleared")
+
+		// Privy logout
 		await logout()
+		console.log("[DashboardLayout] ✅ Privy logout complete")
+
+		// Navigate to home
 		void navigate({ to: "/" })
 	}
 
