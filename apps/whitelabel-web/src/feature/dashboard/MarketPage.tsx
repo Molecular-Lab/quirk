@@ -83,23 +83,6 @@ export function MarketPage() {
 	// Calculate total TVL from real protocols
 	const totalTVL = protocols.reduce((sum, p) => sum + parseFloat(p.tvl || "0"), 0)
 
-<<<<<<< HEAD
-=======
-	// Handle deployment
-	const handleDeploy = (selectedProtocols: string[]) => {
-		console.log("Deploying to protocols:", selectedProtocols)
-		// TODO: Implement actual deployment logic
-		alert(
-			`Deployment to ${selectedProtocols.join(", ")} initiated!\n\nThis is a mock deployment. Real implementation coming in Phase 4.`,
-		)
-	}
-
-	// Placeholder for AI analysis (now handled by FloatingConcierge)
-	const handleAnalysisComplete = (data: any) => {
-		console.log("AI Analysis:", data)
-	}
-
->>>>>>> 6dc6c487eb4c129dde42dd707d485eaad46b57ce
 	return (
 		<div className="min-h-screen bg-gray-50 text-gray-900">
 			<div className="max-w-[1600px] mx-auto px-6 py-8">
@@ -136,12 +119,6 @@ export function MarketPage() {
 				</div>
 
 				<div className="space-y-6">
-<<<<<<< HEAD
-=======
-					{/* Executor Section */}
-					<ExecutorSection protocols={protocols} onDeploy={handleDeploy} />
-
->>>>>>> 6dc6c487eb4c129dde42dd707d485eaad46b57ce
 					{/* Market Categories */}
 					<div className="space-y-6">
 						{/* Stats Overview */}

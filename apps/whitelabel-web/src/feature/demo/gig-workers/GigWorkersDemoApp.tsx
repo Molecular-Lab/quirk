@@ -3,6 +3,7 @@ import { useState } from "react"
 import { Home, TrendingUp, Wallet } from "lucide-react"
 
 import { createFiatDeposit, createUser } from "@/api/b2bClientHelpers"
+import { LandingNavbar } from "@/feature/landing/LandingNavbar"
 import { useClientContextStore } from "@/store/clientContextStore"
 import { useDemoStore } from "@/store/demoStore"
 
@@ -159,6 +160,9 @@ export function GigWorkersDemoApp() {
 
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-gray-25 via-white to-white">
+			{/* Navbar */}
+			<LandingNavbar />
+
 			{/* Main Content */}
 			<div className="max-w-md mx-auto bg-white min-h-screen pb-20">
 				{/* Header */}

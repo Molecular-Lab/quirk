@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { InfoDialog } from "@/components/ui/info-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { LandingNavbar } from "@/feature/landing/LandingNavbar"
 import { type PersonaType, getAllPersonas } from "@/feature/demo/personas"
 import { type VisualizationType, useDemoProductStore } from "@/store/demoProductStore"
 import { useDemoStore } from "@/store/demoStore"
@@ -177,18 +178,8 @@ export function DemoSelectorPage() {
 
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-gray-25 via-white to-white">
-			{/* Header */}
-			<header className="max-w-7xl mx-auto px-6 py-8">
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<Sparkles className="size-6 text-accent" />
-						<span className="text-xl font-bold text-gray-950">Quirk Demo</span>
-					</div>
-					<Button variant="ghost" onClick={() => navigate({ to: "/dashboard" })}>
-						Back to Dashboard
-					</Button>
-				</div>
-			</header>
+			{/* Navbar */}
+			<LandingNavbar />
 
 			{/* Main Content */}
 			<div className="max-w-7xl mx-auto px-6 pb-12">
