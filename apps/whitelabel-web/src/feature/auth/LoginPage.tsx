@@ -179,7 +179,30 @@ export function LoginPage() {
 
 	// Handle social login via Privy
 	const handleSocialLogin = () => {
-		login()
+		console.log("🔵 [LoginPage] Login button clicked!", {
+			ready,
+			authenticated,
+			isCheckingProduct,
+			canLogin: ready && !isCheckingProduct,
+		})
+
+		if (!ready) {
+			console.warn("⚠️ [LoginPage] Privy not ready yet, cannot login")
+			return
+		}
+
+		if (isCheckingProduct) {
+			console.warn("⚠️ [LoginPage] Already checking product, cannot login")
+			return
+		}
+
+		console.log("✅ [LoginPage] Calling Privy login()...")
+		try {
+			login()
+			console.log("✅ [LoginPage] Privy login() called successfully")
+		} catch (error) {
+			console.error("❌ [LoginPage] Error calling Privy login():", error)
+		}
 	}
 
 	// Handle email/password login (placeholder)

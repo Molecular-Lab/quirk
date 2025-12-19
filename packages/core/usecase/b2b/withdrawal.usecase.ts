@@ -19,12 +19,14 @@
 import BigNumber from "bignumber.js"
 
 import { ClientGrowthIndexService } from "../../service/client-growth-index.service"
+import { RevenueService } from "../../service/revenue.service"
 
 import type { CreateWithdrawalRequest, WithdrawalResponse } from "../../dto/b2b"
 import type { AuditRepository } from "../../repository/postgres/audit.repository"
 import type { UserRepository } from "../../repository/postgres/end_user.repository"
 import type { VaultRepository } from "../../repository/postgres/vault.repository"
 import type { WithdrawalRepository } from "../../repository/postgres/withdrawal.repository"
+import type { RevenueRepository } from "../../repository/postgres/revenue.repository"
 import type {
 	CreateWithdrawalRow,
 	GetWithdrawalByOrderIDRow,
@@ -39,22 +41,39 @@ export class B2BWithdrawalUseCase {
 		private readonly vaultRepository: VaultRepository,
 		private readonly userRepository: UserRepository,
 		private readonly auditRepository: AuditRepository,
+		private readonly revenueRepository: RevenueRepository,
 		private readonly clientGrowthIndexService: ClientGrowthIndexService,
+		private readonly revenueService: RevenueService,
 	) {}
 
 	/**
-	 * Request withdrawal (FLOW 8 - SIMPLIFIED)
+	 * Request withdrawal (FLOW 8 - SIMPLIFIED with environment support)
 	 *
 	 * ✅ NEW FLOW:
 	 * 1. Calculate client growth index (weighted average across all vaults)
 	 * 2. Calculate user current value (total_deposited × client_growth_index / entry_index)
 	 * 3. Validate withdrawal amount against current value
-	 * 4. Create withdrawal_transaction (FIAT)
+	 * 4. Create withdrawal_transaction (FIAT) with environment tracking
 	 * 5. Create withdrawal_queue (CRYPTO unstaking plan)
 	 * 6. Update end_user_vault.total_withdrawn
 	 */
 	async requestWithdrawal(request: CreateWithdrawalRequest): Promise<WithdrawalResponse> {
-		const { clientId, userId, amount, orderId, destinationType, destinationDetails } = request
+		const { clientId, userId, amount, orderId, destinationType, destinationDetails, environment, network, oracleAddress, deductFees } = request
+
+		// Determine environment and network
+		// Default to sandbox if not specified
+		const withdrawalEnvironment = environment || "sandbox"
+		const withdrawalNetwork = network || (withdrawalEnvironment === "sandbox" ? "sepolia" : "mainnet")
+
+		// Default to deducting fees (true) unless explicitly set to false
+		const shouldDeductFees = deductFees !== false
+
+		console.log("[Withdrawal] Creating withdrawal with environment:", {
+			environment: withdrawalEnvironment,
+			network: withdrawalNetwork,
+			oracleAddress,
+			deductFees: shouldDeductFees,
+		})
 
 		// Get end_user
 		const endUser = await this.userRepository.getByClientAndUserId(clientId, userId)
@@ -87,6 +106,7 @@ export class B2BWithdrawalUseCase {
 		)
 
 		const withdrawalAmount = new BigNumber(amount)
+		const totalDeposited = new BigNumber(userVault.totalDeposited)
 
 		console.log("[Withdrawal] Balance Check:", {
 			userId: endUser.id,
@@ -102,7 +122,75 @@ export class B2BWithdrawalUseCase {
 			throw new Error(`Insufficient balance. Requested: ${amount}, Available: ${currentValue.toString()}`)
 		}
 
-		// ✅ STEP 5: Create FIAT withdrawal transaction
+		// ✅ STEP 4.5: Calculate yield and revenue split
+		const totalYield = currentValue.minus(totalDeposited)
+		let actualWithdrawalAmount = withdrawalAmount
+		let feeBreakdown: WithdrawalResponse["feeBreakdown"] | undefined
+
+		if (totalYield.isGreaterThan(0)) {
+			// User has earned yield, calculate revenue split
+			// Get the vault for the client (to find vaultId for revenue service)
+			const clientVaults = await this.vaultRepository.listClientVaults(clientId)
+			if (clientVaults.length === 0) {
+				throw new Error(`No client vault found for ${clientId}`)
+			}
+			const clientVault = clientVaults[0]
+
+			// Calculate yield distribution
+			const distribution = await this.revenueService.distributeYield(
+				clientVault.id,
+				totalYield.toString()
+			)
+
+			console.log("[Withdrawal] Fee Distribution:", {
+				totalYield: totalYield.toString(),
+				enduserRevenue: distribution.enduserRevenue,
+				clientRevenue: distribution.clientRevenue,
+				platformRevenue: distribution.platformRevenue,
+				deductFees: shouldDeductFees,
+			})
+
+			// Record revenue distribution
+			await this.revenueRepository.createDistribution({
+				withdrawalTransactionId: null, // Will update after withdrawal is created
+				vaultId: clientVault.id,
+				rawYield: distribution.rawYield,
+				enduserRevenue: distribution.enduserRevenue,
+				clientRevenue: distribution.clientRevenue,
+				platformRevenue: distribution.platformRevenue,
+				clientRevenuePercent: distribution.clientRevenuePercent,
+				platformFeePercent: distribution.platformFeePercent,
+				isDeducted: shouldDeductFees,
+			})
+
+			// Calculate actual withdrawal amount based on fee deduction
+			if (shouldDeductFees) {
+				// Deduct fees: user gets principal + their share of yield
+				const userNetYield = new BigNumber(distribution.enduserRevenue)
+				actualWithdrawalAmount = totalDeposited.plus(userNetYield)
+
+				console.log("[Withdrawal] Fees deducted:", {
+					originalAmount: withdrawalAmount.toString(),
+					actualAmount: actualWithdrawalAmount.toString(),
+					platformFee: distribution.platformRevenue,
+					clientFee: distribution.clientRevenue,
+					userNetYield: userNetYield.toString(),
+				})
+			}
+
+			// Build fee breakdown for response
+			feeBreakdown = {
+				totalYield: totalYield.toString(),
+				platformFee: distribution.platformRevenue,
+				clientFee: distribution.clientRevenue,
+				userNetYield: distribution.enduserRevenue,
+				feesDeducted: shouldDeductFees,
+				platformFeePercent: distribution.platformFeePercent,
+				clientFeePercent: distribution.clientRevenuePercent,
+			}
+		}
+
+		// ✅ STEP 5: Create FIAT withdrawal transaction with environment support
 		const withdrawal = await this.withdrawalRepository.create({
 			orderId,
 			clientId,
@@ -112,6 +200,10 @@ export class B2BWithdrawalUseCase {
 			destinationType,
 			destinationDetails: destinationDetails || null,
 			status: "pending",
+			// ✅ Environment support
+			environment: withdrawalEnvironment,
+			network: withdrawalNetwork,
+			oracleAddress: oracleAddress || null,
 		})
 
 		if (!withdrawal) {
@@ -123,11 +215,11 @@ export class B2BWithdrawalUseCase {
 			clientId,
 			withdrawal.id,
 			userVault.id,
-			amount, // Withdrawal amount (fiat-based, no shares)
+			actualWithdrawalAmount.toString(), // Use actual amount after fee deduction
 		)
 
 		// ✅ STEP 7: Update end_user_vault.total_withdrawn
-		await this.vaultRepository.updateVaultWithdrawal(userVault.id, withdrawalAmount.toString())
+		await this.vaultRepository.updateVaultWithdrawal(userVault.id, actualWithdrawalAmount.toString())
 
 		// ✅ STEP 8: Update user timestamp
 		await this.userRepository.updateWithdrawalTimestamp(endUser.id)
@@ -140,12 +232,20 @@ export class B2BWithdrawalUseCase {
 			action: "withdrawal_request",
 			resourceType: "withdrawal_transaction",
 			resourceId: withdrawal.id,
-			description: `Withdrawal: ${amount} USD`,
+			description: `Withdrawal: ${amount} USD (${withdrawalEnvironment})${shouldDeductFees ? " with fees deducted" : " fees deferred"}`,
 			metadata: {
-				amount,
+				requestedAmount: amount,
+				actualAmount: actualWithdrawalAmount.toString(),
 				currentValue: currentValue.toString(),
+				totalDeposited: totalDeposited.toString(),
+				totalYield: totalYield.toString(),
 				clientGrowthIndex,
 				clientGrowthIndexDecimal: new BigNumber(clientGrowthIndex).dividedBy("1e18").toString(),
+				environment: withdrawalEnvironment,
+				network: withdrawalNetwork,
+				oracleAddress,
+				feesDeducted: shouldDeductFees,
+				feeBreakdown,
 			},
 			ipAddress: null,
 			userAgent: null,
@@ -155,10 +255,12 @@ export class B2BWithdrawalUseCase {
 			orderId,
 			userId: endUser.id,
 			clientId,
-			amount,
+			requestedAmount: amount,
+			actualAmount: actualWithdrawalAmount.toString(),
+			feesDeducted: shouldDeductFees,
 		})
 
-		return this.mapToResponse(withdrawal)
+		return this.mapToResponse(withdrawal, feeBreakdown)
 	}
 
 	/**
@@ -270,6 +372,7 @@ export class B2BWithdrawalUseCase {
 	 */
 	private mapToResponse(
 		withdrawal: CreateWithdrawalRow | GetWithdrawalByOrderIDRow | ListWithdrawalsRow | ListWithdrawalsByUserRow,
+		feeBreakdown?: WithdrawalResponse["feeBreakdown"],
 	): WithdrawalResponse {
 		return {
 			id: withdrawal.id,
@@ -283,6 +386,7 @@ export class B2BWithdrawalUseCase {
 			destinationType: withdrawal.destinationType,
 			createdAt: withdrawal.createdAt,
 			completedAt: withdrawal.completedAt,
+			feeBreakdown,
 		}
 	}
 }

@@ -258,10 +258,27 @@ export const createUserRouter = (
 					authType: apiKeyClient ? "api_key" : privySession ? "privy" : "none",
 				});
 
-				// Get portfolio (simplified - aggregated totals, no multi-chain)
-				const portfolio = await userService.getUserPortfolio(params.userId);
+				// Determine clientId from auth
+				let clientId: string | undefined;
+				if (apiKeyClient) {
+					clientId = apiKeyClient.id;
+				} else if (privySession && privySession.products.length > 0) {
+					// For Privy, try first product (or could require clientId param)
+					clientId = privySession.products[0].id;
+				}
 
-				if (!portfolio) {
+				if (!clientId) {
+					logger.error("Cannot determine clientId from auth");
+					return {
+						status: 401 as const,
+						body: { error: "Authentication failed - client ID not found" },
+					};
+				}
+
+				// ✅ FIX: Use getUserBalance instead of getUserPortfolio for correct calculation
+				const userBalance = await userVaultService.getUserBalance(params.userId, clientId);
+
+				if (!userBalance) {
 					return {
 						status: 200 as const,
 						body: {
@@ -275,10 +292,10 @@ export const createUserRouter = (
 				// Verify authorization
 				// For API key: user must belong to this client
 				if (apiKeyClient) {
-					if (portfolio.clientId !== apiKeyClient.id) {
+					if (userBalance.clientId !== apiKeyClient.id) {
 						logger.warn("API key client attempting to access another client's user balance", {
 							apiKeyClientId: apiKeyClient.id,
-							userClientId: portfolio.clientId,
+							userClientId: userBalance.clientId,
 						});
 						return {
 							status: 403 as const,
@@ -289,10 +306,10 @@ export const createUserRouter = (
 				// For Privy: user must belong to one of the organization's products
 				else if (privySession) {
 					const productIds = privySession.products.map((p: any) => p.id);
-					if (!productIds.includes(portfolio.clientId)) {
+					if (!productIds.includes(userBalance.clientId)) {
 						logger.warn("Privy user attempting to access user from outside organization", {
 							privyOrgId: privySession.organizationId,
-							userClientId: portfolio.clientId,
+							userClientId: userBalance.clientId,
 						});
 						return {
 							status: 403 as const,
@@ -309,20 +326,20 @@ export const createUserRouter = (
 					};
 				}
 
-				// ✅ SIMPLIFIED: One vault per user per client, no chain/token filtering
-				// All balances are aggregated across chains internally
-				// Calculate APY (simplified - would need time-based calculation in production)
-				const apy = "0"; // TODO: Calculate from vault growth index
+				// ✅ FIX: Get actual client growth index and APY
+				const clientGrowthIndex = await userVaultService.getClientGrowthIndex(userBalance.clientId);
+				const apy = await userVaultService.calculateAPY(userBalance.clientId, 30); // 30-day APY
 
+				// ✅ FIX: Return correct values from calculation
 				const balance = {
-					balance: portfolio.totalEffectiveBalance || "0",
-					currency: "USD", // Fiat-equivalent value
-					yield_earned: portfolio.totalYieldEarned || "0",
-					apy: apy,
-					status: "active", // TODO: Get from vault status
+					balance: userBalance.effectiveBalance, // ✅ Calculated from Client Growth Index
+					currency: "USD",
+					yield_earned: userBalance.yieldEarned, // ✅ Calculated: effectiveBalance - totalDeposited
+					apy: apy, // ✅ Calculated from historical index growth
+					status: userBalance.isActive ? "active" : "inactive",
 					shares: "0", // Removed in simplified architecture
-					entry_index: "1000000000000000000", // Default 1.0
-					current_index: "1000000000000000000", // TODO: Get from client growth index
+					entry_index: userBalance.weightedEntryIndex, // ✅ Actual entry index from database
+					current_index: clientGrowthIndex, // ✅ Calculated client growth index
 				};
 
 				return {

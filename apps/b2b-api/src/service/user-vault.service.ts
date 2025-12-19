@@ -1,14 +1,18 @@
 /**
  * UserVault Service - Business logic for user vault operations
- * 
+ *
  * SIMPLIFIED ARCHITECTURE: ONE vault per user per client
  */
 
 import type { B2BUserVaultUseCase } from "@proxify/core/usecase/b2b/user-vault.usecase";
+import type { ClientGrowthIndexService } from "@proxify/core/service/client-growth-index.service";
 import { logger } from "../logger";
 
 export class UserVaultService {
-	constructor(private readonly userVaultUseCase: B2BUserVaultUseCase) {}
+	constructor(
+		private readonly userVaultUseCase: B2BUserVaultUseCase,
+		private readonly clientGrowthIndexService: ClientGrowthIndexService
+	) {}
 
 	/**
 	 * Get user balance (simplified - single vault per client)
@@ -45,6 +49,30 @@ export class UserVaultService {
 			return users;
 		} catch (error) {
 			logger.error("Failed to list vault users", { error, clientId });
+			throw error;
+		}
+	}
+
+	/**
+	 * Get client growth index (current)
+	 */
+	async getClientGrowthIndex(clientId: string): Promise<string> {
+		try {
+			return await this.clientGrowthIndexService.calculateClientGrowthIndex(clientId);
+		} catch (error) {
+			logger.error("Failed to get client growth index", { error, clientId });
+			throw error;
+		}
+	}
+
+	/**
+	 * Calculate historical APY for client
+	 */
+	async calculateAPY(clientId: string, lookbackDays: number = 30): Promise<string> {
+		try {
+			return await this.clientGrowthIndexService.calculateHistoricalAPY(clientId, lookbackDays);
+		} catch (error) {
+			logger.error("Failed to calculate APY", { error, clientId, lookbackDays });
 			throw error;
 		}
 	}

@@ -141,11 +141,12 @@ export class B2BClientUseCase {
 
 	/**
 	 * Create new client
-	 * Auto-generates API key during registration
+	 * Auto-generates BOTH sandbox and production API keys during registration
 	 */
 	async createClient(request: CreateClientRequest): Promise<
 		GetClientByProductIdRow & {
-			api_key?: string
+			sandbox_api_key?: string
+			production_api_key?: string
 			vaults: { id: string; chain: string; tokenSymbol: string; tokenAddress: string }[]
 		}
 	> {
@@ -156,12 +157,20 @@ export class B2BClientUseCase {
 			throw new Error(`Product ID '${request.productId}' already exists`)
 		}
 
-		// ✅ Auto-generate API key during registration
-		const isSandbox = request.isSandbox ?? false
-		const apiKey = generateApiKey(isSandbox)
-		const apiKeyHash = await hashApiKey(apiKey)
-		const apiKeyPrefix = extractPrefix(apiKey)
-		console.log(`[Client Creation] Creating client WITH API key, prefix: ${apiKeyPrefix}`)
+		// ✅ Auto-generate BOTH sandbox and production API keys during registration
+		const sandboxApiKey = generateApiKey(true) // pk_test_xxx
+		const productionApiKey = generateApiKey(false) // pk_live_xxx
+
+		const sandboxApiKeyHash = await hashApiKey(sandboxApiKey)
+		const productionApiKeyHash = await hashApiKey(productionApiKey)
+
+		const sandboxApiKeyPrefix = extractPrefix(sandboxApiKey)
+		const productionApiKeyPrefix = extractPrefix(productionApiKey)
+
+		console.log(`[Client Creation] Creating client with BOTH API keys:`, {
+			sandboxPrefix: sandboxApiKeyPrefix,
+			productionPrefix: productionApiKeyPrefix,
+		})
 
 		// Step 1: Get or create Privy account (idempotent)
 		const privyAccount = await this.privyAccountRepository.getOrCreate({
@@ -181,33 +190,20 @@ export class B2BClientUseCase {
 			websiteUrl: request.websiteUrl || null,
 		}
 
-		// These additional properties will need to be set via update after creation
-		const additionalProps = {
-			customerTier: request.customerTier || null,
-			apiKeyHash: apiKeyHash, // ✅ Auto-generated API key hash
-			apiKeyPrefix: apiKeyPrefix, // ✅ Auto-generated API key prefix
-			webhookUrls: request.webhookUrls || null,
-			webhookSecret: request.webhookSecret || null,
-			customStrategy: request.strategyRanking
-				? JSON.stringify({ ranking: request.strategyRanking })
-				: request.customStrategy || null,
-			strategiesPreferences: null, // Will be set later if needed
-			strategiesCustomization: null, // Will be set via Market Analysis dashboard
-			// Fee Configuration (3-way revenue split)
-			clientRevenueSharePercent: request.clientRevenueSharePercent || "15.00",
-			platformFeePercent: request.platformFeePercent || "7.50",
-			performanceFee: request.performanceFee || null,
-			isActive: request.isActive ?? true,
-			isSandbox: request.isSandbox ?? false,
-			supportedCurrencies: request.supportedCurrencies || [],
-			bankAccounts: request.bankAccounts ? JSON.stringify(request.bankAccounts) : "[]",
-		}
-
 		const client = await this.clientRepository.create(args)
 
 		if (!client) {
 			throw new Error("Failed to create client")
 		}
+
+		// ✅ Store BOTH sandbox and production API keys using dedicated query
+		await this.clientRepository.storeEnvironmentAPIKeys(
+			client.id,
+			sandboxApiKeyHash,
+			sandboxApiKeyPrefix,
+			productionApiKeyHash,
+			productionApiKeyPrefix,
+		)
 
 		// Initialize balance
 		await this.clientRepository.createBalance({
@@ -228,7 +224,8 @@ export class B2BClientUseCase {
 			description: `Client created: ${request.companyName}`,
 			metadata: {
 				productId: request.productId,
-				apiKeyPrefix: apiKeyPrefix, // Log API key prefix for audit trail
+				sandboxApiKeyPrefix: sandboxApiKeyPrefix, // Log sandbox API key prefix
+				productionApiKeyPrefix: productionApiKeyPrefix, // Log production API key prefix
 				customerTier: request.customerTier,
 			},
 			ipAddress: null,
@@ -311,18 +308,19 @@ export class B2BClientUseCase {
 			}
 		}
 
-		// Step 4: Return combined data (client + Privy info from JOIN + created vaults + API key)
+		// Step 4: Return combined data (client + Privy info from JOIN + created vaults + BOTH API keys)
 		const result = await this.clientRepository.getByProductId(request.productId)
 		if (!result) {
 			throw new Error("Failed to retrieve created client")
 		}
 
-		// Return WITH API key (shown only once!)
+		// Return WITH BOTH API keys (shown only once!)
 		return {
 			...result,
 			vaults: createdVaults,
-			api_key: apiKey, // ✅ Include API key in response (shown only once during registration)
-		} as typeof result & { api_key: string; vaults: typeof createdVaults }
+			sandbox_api_key: sandboxApiKey, // ✅ Include sandbox API key (shown only once during registration)
+			production_api_key: productionApiKey, // ✅ Include production API key (shown only once during registration)
+		} as typeof result & { sandbox_api_key: string; production_api_key: string; vaults: typeof createdVaults }
 	}
 
 	/**

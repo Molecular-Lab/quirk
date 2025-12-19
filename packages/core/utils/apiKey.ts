@@ -11,19 +11,19 @@ const SALT_ROUNDS = 10
 
 /**
  * Generate a new API key
- * Format: {environment}_pk_{random32chars}
+ * Format: pk_{environment}_{random32chars} (Stripe-style)
  *
  * Examples:
- *   prod_pk_7a9f3e2b1c4d8f6e5a0b9c8d7e6f5a4b  (Production)
- *   test_pk_1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f  (Sandbox)
+ *   pk_live_7a9f3e2b1c4d8f6e5a0b9c8d7e6f5a4b  (Production)
+ *   pk_test_1c2d3e4f5a6b7c8d9e0f1a2b3c4d5e6f  (Sandbox)
  *
  * @param isSandbox - Whether this is a sandbox/test key
  * @returns Secure API key (shown only once!)
  */
 export function generateApiKey(isSandbox = false): string {
-	const env = isSandbox ? "test" : "prod"
+	const env = isSandbox ? "test" : "live"
 	const random = randomBytes(16).toString("hex") // 32 hex chars
-	return `${env}_pk_${random}`
+	return `pk_${env}_${random}`
 }
 
 /**
@@ -51,15 +51,15 @@ export async function verifyApiKey(apiKey: string, hash: string): Promise<boolea
 
 /**
  * Extract API key prefix for fast database lookup
- * Prefix is first 12 characters (environment + type + first 4 hex chars)
+ * Prefix is first 12 characters (pk + environment + first 4 hex chars)
  * This ensures uniqueness per product
  *
  * Examples:
- *   prod_pk_7a9f (Production)
- *   test_pk_1c2d (Sandbox)
+ *   pk_live_7a9f (Production)
+ *   pk_test_1c2d (Sandbox)
  *
  * @param apiKey - Full API key
- * @returns First 12 characters (e.g., "prod_pk_8ad2")
+ * @returns First 12 characters (e.g., "pk_live_8ad2")
  */
 export function extractPrefix(apiKey: string): string {
 	return apiKey.substring(0, 12)
@@ -67,12 +67,12 @@ export function extractPrefix(apiKey: string): string {
 
 /**
  * Validate API key format
- * Must match: {prod|test}_pk_{32 hex chars}
+ * Must match: pk_{live|test}_{32 hex chars}
  *
  * @param apiKey - API key to validate
  * @returns True if format is valid
  */
 export function isValidApiKeyFormat(apiKey: string): boolean {
-	const pattern = /^(prod|test)_pk_[a-f0-9]{32}$/
+	const pattern = /^pk_(live|test)_[a-f0-9]{32}$/
 	return pattern.test(apiKey)
 }

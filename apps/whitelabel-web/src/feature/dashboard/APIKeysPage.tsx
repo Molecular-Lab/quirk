@@ -2,6 +2,7 @@ import { useState } from "react"
 
 import { AlertCircle, Copy, Eye, EyeOff, Key, Plus, Trash2 } from "lucide-react"
 
+import { EnvironmentToggle } from "@/components/environment/EnvironmentToggle"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface APIKey {
@@ -84,15 +85,18 @@ export function APIKeysPage() {
 					<h1 className="text-3xl font-bold text-gray-900">API Keys</h1>
 					<p className="text-gray-600 mt-1">Manage your API keys for authentication</p>
 				</div>
-				<button
-					onClick={() => {
-						setShowCreateModal(true)
-					}}
-					className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
-				>
-					<Plus className="w-4 h-4" />
-					Create API Key
-				</button>
+				<div className="flex items-center gap-4">
+					<EnvironmentToggle />
+					<button
+						onClick={() => {
+							setShowCreateModal(true)
+						}}
+						className="flex items-center gap-2 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+					>
+						<Plus className="w-4 h-4" />
+						Create API Key
+					</button>
+				</div>
 			</div>
 
 			{/* Security Notice */}

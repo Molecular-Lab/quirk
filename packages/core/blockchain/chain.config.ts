@@ -1,21 +1,23 @@
 /**
  * Chain configuration for supported networks
- * Supports Sepolia and Base Sepolia testnets
+ * Supports both testnets (Sepolia, Base Sepolia) and mainnets (Ethereum, Base)
  */
 
-import { type Chain, sepolia, baseSepolia } from 'viem/chains'
+import { type Chain, sepolia, baseSepolia, mainnet, base } from 'viem/chains'
 
-export type MockTokenChainId = '11155111' | '84532' // Sepolia | Base Sepolia
+export type MockTokenChainId = '11155111' | '84532' // Sepolia | Base Sepolia (testnets)
+export type MainnetChainId = '1' | '8453' // Ethereum Mainnet | Base Mainnet
+export type ProxifyChainId = MockTokenChainId | MainnetChainId
 
-export interface MockTokenChainConfig {
+export interface ProxifyChainConfig {
   chain: Chain
   rpcUrl?: string
 }
 
 /**
- * Get chain configuration for a given chain ID
+ * Get chain configuration for testnet chains (mock token minting)
  */
-export function getMockTokenChainConfig(chainId: MockTokenChainId): MockTokenChainConfig {
+export function getMockTokenChainConfig(chainId: MockTokenChainId): ProxifyChainConfig {
   switch (chainId) {
     case '11155111': // Sepolia
       return {
@@ -28,6 +30,38 @@ export function getMockTokenChainConfig(chainId: MockTokenChainId): MockTokenCha
         rpcUrl: process.env.BASE_SEPOLIA_RPC_URL,
       }
     default:
-      throw new Error(`Unsupported chain ID: ${chainId}`)
+      throw new Error(`Unsupported testnet chain ID: ${chainId}`)
   }
+}
+
+/**
+ * Get chain configuration for mainnet chains (DeFi protocol queries)
+ */
+export function getMainnetChainConfig(chainId: MainnetChainId): ProxifyChainConfig {
+  switch (chainId) {
+    case '1': // Ethereum Mainnet
+      return {
+        chain: mainnet,
+        rpcUrl: process.env.ETHEREUM_RPC_URL || process.env.MAINNET_RPC_URL,
+      }
+    case '8453': // Base Mainnet
+      return {
+        chain: base,
+        rpcUrl: process.env.BASE_RPC_URL || process.env.BASE_MAINNET_RPC_URL,
+      }
+    default:
+      throw new Error(`Unsupported mainnet chain ID: ${chainId}`)
+  }
+}
+
+/**
+ * Get chain configuration for any supported chain
+ */
+export function getChainConfig(chainId: ProxifyChainId): ProxifyChainConfig {
+  // Try mainnet first
+  if (chainId === '1' || chainId === '8453') {
+    return getMainnetChainConfig(chainId as MainnetChainId)
+  }
+  // Fall back to testnet
+  return getMockTokenChainConfig(chainId as MockTokenChainId)
 }

@@ -21,6 +21,10 @@ export interface CreateDepositRequest {
 	onRampProvider?: string
 	qrCode?: string
 	expiresAt?: Date
+	// Environment support (sandbox vs production)
+	environment?: "sandbox" | "production"
+	network?: string // e.g., "sepolia", "mainnet"
+	oracleAddress?: string // Oracle custodial wallet address
 }
 
 export interface CompleteDepositRequest {

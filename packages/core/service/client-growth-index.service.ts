@@ -24,9 +24,13 @@
 import BigNumber from "bignumber.js"
 
 import type { VaultRepository } from "../repository/postgres/vault.repository"
+import type { RevenueRepository } from "../repository/postgres/revenue.repository"
 
 export class ClientGrowthIndexService {
-	constructor(private readonly vaultRepository: VaultRepository) {}
+	constructor(
+		private readonly vaultRepository: VaultRepository,
+		private readonly revenueRepository?: RevenueRepository, // Optional for backward compatibility
+	) {}
 
 	/**
 	 * Calculate client's weighted average growth index
@@ -128,5 +132,67 @@ export class ClientGrowthIndexService {
 			vaultCount: vaults.length,
 			vaults: breakdown,
 		}
+	}
+
+	/**
+	 * Calculate client-wide historical APY based on weighted vault performance
+	 *
+	 * Formula:
+	 * 1. For each vault, calculate rolling APY over lookbackDays
+	 * 2. Weight each vault's APY by its current AUM
+	 * 3. Return weighted average: Σ(vault_APY × vault_AUM) / Σ(vault_AUM)
+	 *
+	 * @param clientId - Client ID
+	 * @param lookbackDays - Number of days to look back (default: 30)
+	 * @returns APY as percentage string (e.g., "5.25" for 5.25% APY)
+	 */
+	async calculateHistoricalAPY(clientId: string, lookbackDays: number = 30): Promise<string> {
+		// If revenue repository not injected, cannot calculate APY
+		if (!this.revenueRepository) {
+			return "0"
+		}
+
+		const vaults = await this.vaultRepository.listClientVaults(clientId)
+
+		if (vaults.length === 0) {
+			return "0"
+		}
+
+		let totalAUM = new BigNumber(0)
+		let weightedAPYSum = new BigNumber(0)
+
+		for (const vault of vaults) {
+			// Calculate vault AUM
+			const stakedBalance = new BigNumber(vault.totalStakedBalance || "0")
+			const pendingBalance = new BigNumber(vault.pendingDepositBalance || "0")
+			const vaultAUM = stakedBalance.plus(pendingBalance)
+
+			// Skip vaults with zero AUM
+			if (vaultAUM.isZero()) {
+				continue
+			}
+
+			// Get vault's rolling APY from index history
+			// Note: If no history exists (new vault), APY will be null
+			const apyData = await this.revenueRepository.calculateRollingAPY(vault.id, lookbackDays)
+
+			if (apyData && apyData.annualizedApy) {
+				const vaultAPY = new BigNumber(apyData.annualizedApy)
+
+				// Weight APY by vault AUM
+				totalAUM = totalAUM.plus(vaultAUM)
+				weightedAPYSum = weightedAPYSum.plus(vaultAUM.multipliedBy(vaultAPY))
+			}
+		}
+
+		// If no vaults have historical data, return 0
+		if (totalAUM.isZero()) {
+			return "0"
+		}
+
+		// Calculate weighted average APY
+		const clientAPY = weightedAPYSum.dividedBy(totalAUM).decimalPlaces(2, BigNumber.ROUND_DOWN)
+
+		return clientAPY.toString()
 	}
 }

@@ -21,6 +21,7 @@ import {
 	DepositRepository,
 	WithdrawalRepository,
 	AuditRepository,
+	RevenueRepository, // ✅ NEW: Revenue distribution tracking
 	B2BClientUseCase,
 	B2BVaultUseCase,
 	B2BUserUseCase,
@@ -97,6 +98,7 @@ async function main() {
 	const depositRepository = new DepositRepository(sql);
 	const withdrawalRepository = new WithdrawalRepository(sql);
 	const auditRepository = new AuditRepository(sql);
+	const revenueRepository = new RevenueRepository(sql);
 
 	logger.info("✅ Repositories initialized");
 
@@ -123,7 +125,7 @@ async function main() {
 	);
 
 	// ✅ Initialize ClientGrowthIndexService for simplified vault architecture
-	const clientGrowthIndexService = new ClientGrowthIndexService(vaultRepository);
+	const clientGrowthIndexService = new ClientGrowthIndexService(vaultRepository, revenueRepository);
 
 	const depositUseCase = new B2BDepositUseCase(
 		depositRepository,
@@ -138,7 +140,9 @@ async function main() {
 		vaultRepository,
 		userRepository,
 		auditRepository,
-		clientGrowthIndexService // ✅ NEW: Client growth index calculation
+		revenueRepository, // ✅ NEW: Revenue distribution tracking
+		clientGrowthIndexService, // ✅ NEW: Client growth index calculation
+		revenueService // ✅ NEW: Revenue split calculation
 	);
 	const userVaultUseCase = new B2BUserVaultUseCase(
 		vaultRepository,
@@ -156,7 +160,7 @@ async function main() {
 	const userService = new UserService(userUseCase);
 	const depositService = new DepositService(depositUseCase);
 	const withdrawalService = new WithdrawalService(withdrawalUseCase);
-	const userVaultService = new UserVaultService(userVaultUseCase);
+	const userVaultService = new UserVaultService(userVaultUseCase, clientGrowthIndexService);
 	const privyAccountService = new PrivyAccountService(privyAccountRepository);
 
 	logger.info("✅ Services initialized");

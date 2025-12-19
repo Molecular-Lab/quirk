@@ -20,6 +20,12 @@ import {
 	deactivateClient,
 	deleteClient,
 	storeAPIKey as updateClientAPIKey, // Using storeAPIKey as updateClientAPIKey
+	// Environment API Keys (Sandbox + Production)
+	storeEnvironmentAPIKeys,
+	getClientBySandboxAPIKey,
+	getClientByProductionAPIKey,
+	regenerateSandboxAPIKey,
+	regenerateProductionAPIKey,
 	getClientBalance,
 	createClientBalance,
 	addToAvailableBalance,
@@ -61,6 +67,12 @@ import {
 	type GetClientByProductIdRow, // Fixed: was GetClientsByPrivyOrgIDRow
 	type GetClientByAPIKeyPrefixRow,
 	type GetClientByAPIKeyHashRow,
+	// Environment API Key types
+	type StoreEnvironmentAPIKeysRow,
+	type GetClientBySandboxAPIKeyRow,
+	type GetClientByProductionAPIKeyRow,
+	type RegenerateSandboxAPIKeyRow,
+	type RegenerateProductionAPIKeyRow,
 	type ListClientsRow,
 	// type ListActiveClientsRow,  // TODO: Add this query
 	type CreateClientArgs,
@@ -243,6 +255,65 @@ export class ClientRepository {
 	 */
 	async updateApiKey(id: string, apiKeyHash: string, apiKeyPrefix: string): Promise<void> {
 		await updateClientAPIKey(this.sql, { id, apiKeyHash, apiKeyPrefix })
+	}
+
+	/**
+	 * Store both sandbox and production API keys
+	 */
+	async storeEnvironmentAPIKeys(
+		clientId: string,
+		sandboxApiKey: string,
+		sandboxApiSecret: string,
+		productionApiKey: string,
+		productionApiSecret: string,
+	): Promise<StoreEnvironmentAPIKeysRow | null> {
+		return await storeEnvironmentAPIKeys(this.sql, {
+			id: clientId,
+			sandboxApiKey,
+			sandboxApiSecret,
+			productionApiKey,
+			productionApiSecret,
+		})
+	}
+
+	/**
+	 * Get client by sandbox API key hash
+	 */
+	async getClientBySandboxKey(apiKeyHash: string): Promise<GetClientBySandboxAPIKeyRow | null> {
+		return await getClientBySandboxAPIKey(this.sql, { sandboxApiKey: apiKeyHash })
+	}
+
+	/**
+	 * Get client by production API key hash
+	 */
+	async getClientByProductionKey(apiKeyHash: string): Promise<GetClientByProductionAPIKeyRow | null> {
+		return await getClientByProductionAPIKey(this.sql, { productionApiKey: apiKeyHash })
+	}
+
+	/**
+	 * Regenerate sandbox API key
+	 */
+	async regenerateSandboxKey(clientId: string, apiKeyHash: string, apiKeyPrefix: string): Promise<RegenerateSandboxAPIKeyRow | null> {
+		return await regenerateSandboxAPIKey(this.sql, {
+			id: clientId,
+			sandboxApiKey: apiKeyHash,
+			sandboxApiSecret: apiKeyPrefix,
+		})
+	}
+
+	/**
+	 * Regenerate production API key
+	 */
+	async regenerateProductionKey(
+		clientId: string,
+		apiKeyHash: string,
+		apiKeyPrefix: string,
+	): Promise<RegenerateProductionAPIKeyRow | null> {
+		return await regenerateProductionAPIKey(this.sql, {
+			id: clientId,
+			productionApiKey: apiKeyHash,
+			productionApiSecret: apiKeyPrefix,
+		})
 	}
 
 	// ==========================================

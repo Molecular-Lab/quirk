@@ -2,7 +2,7 @@ import { Sql } from "postgres";
 
 export const getWithdrawalQuery = `-- name: GetWithdrawal :one
 
-SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code FROM withdrawal_transactions
+SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code, environment, network, oracle_address FROM withdrawal_transactions
 WHERE id = $1 LIMIT 1`;
 
 export interface GetWithdrawalArgs {
@@ -28,6 +28,9 @@ export interface GetWithdrawalRow {
     failedAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function getWithdrawal(sql: Sql, args: GetWithdrawalArgs): Promise<GetWithdrawalRow | null> {
@@ -54,12 +57,15 @@ export async function getWithdrawal(sql: Sql, args: GetWithdrawalArgs): Promise<
         completedAt: row[14],
         failedAt: row[15],
         errorMessage: row[16],
-        errorCode: row[17]
+        errorCode: row[17],
+        environment: row[18],
+        network: row[19],
+        oracleAddress: row[20]
     };
 }
 
 export const getWithdrawalByOrderIDQuery = `-- name: GetWithdrawalByOrderID :one
-SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code FROM withdrawal_transactions
+SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code, environment, network, oracle_address FROM withdrawal_transactions
 WHERE order_id = $1 LIMIT 1`;
 
 export interface GetWithdrawalByOrderIDArgs {
@@ -85,6 +91,9 @@ export interface GetWithdrawalByOrderIDRow {
     failedAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function getWithdrawalByOrderID(sql: Sql, args: GetWithdrawalByOrderIDArgs): Promise<GetWithdrawalByOrderIDRow | null> {
@@ -111,12 +120,15 @@ export async function getWithdrawalByOrderID(sql: Sql, args: GetWithdrawalByOrde
         completedAt: row[14],
         failedAt: row[15],
         errorMessage: row[16],
-        errorCode: row[17]
+        errorCode: row[17],
+        environment: row[18],
+        network: row[19],
+        oracleAddress: row[20]
     };
 }
 
 export const getWithdrawalByGatewayOrderIDQuery = `-- name: GetWithdrawalByGatewayOrderID :one
-SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code FROM withdrawal_transactions
+SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code, environment, network, oracle_address FROM withdrawal_transactions
 WHERE gateway_order_id = $1 LIMIT 1`;
 
 export interface GetWithdrawalByGatewayOrderIDArgs {
@@ -142,6 +154,9 @@ export interface GetWithdrawalByGatewayOrderIDRow {
     failedAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function getWithdrawalByGatewayOrderID(sql: Sql, args: GetWithdrawalByGatewayOrderIDArgs): Promise<GetWithdrawalByGatewayOrderIDRow | null> {
@@ -168,12 +183,15 @@ export async function getWithdrawalByGatewayOrderID(sql: Sql, args: GetWithdrawa
         completedAt: row[14],
         failedAt: row[15],
         errorMessage: row[16],
-        errorCode: row[17]
+        errorCode: row[17],
+        environment: row[18],
+        network: row[19],
+        oracleAddress: row[20]
     };
 }
 
 export const getWithdrawalByOrderIDForUpdateQuery = `-- name: GetWithdrawalByOrderIDForUpdate :one
-SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code FROM withdrawal_transactions
+SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code, environment, network, oracle_address FROM withdrawal_transactions
 WHERE order_id = $1
 FOR UPDATE
 LIMIT 1`;
@@ -201,6 +219,9 @@ export interface GetWithdrawalByOrderIDForUpdateRow {
     failedAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function getWithdrawalByOrderIDForUpdate(sql: Sql, args: GetWithdrawalByOrderIDForUpdateArgs): Promise<GetWithdrawalByOrderIDForUpdateRow | null> {
@@ -227,12 +248,15 @@ export async function getWithdrawalByOrderIDForUpdate(sql: Sql, args: GetWithdra
         completedAt: row[14],
         failedAt: row[15],
         errorMessage: row[16],
-        errorCode: row[17]
+        errorCode: row[17],
+        environment: row[18],
+        network: row[19],
+        oracleAddress: row[20]
     };
 }
 
 export const listWithdrawalsQuery = `-- name: ListWithdrawals :many
-SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code FROM withdrawal_transactions
+SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code, environment, network, oracle_address FROM withdrawal_transactions
 WHERE client_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3`;
@@ -262,6 +286,9 @@ export interface ListWithdrawalsRow {
     failedAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listWithdrawals(sql: Sql, args: ListWithdrawalsArgs): Promise<ListWithdrawalsRow[]> {
@@ -283,12 +310,15 @@ export async function listWithdrawals(sql: Sql, args: ListWithdrawalsArgs): Prom
         completedAt: row[14],
         failedAt: row[15],
         errorMessage: row[16],
-        errorCode: row[17]
+        errorCode: row[17],
+        environment: row[18],
+        network: row[19],
+        oracleAddress: row[20]
     }));
 }
 
 export const listWithdrawalsByUserQuery = `-- name: ListWithdrawalsByUser :many
-SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code FROM withdrawal_transactions
+SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code, environment, network, oracle_address FROM withdrawal_transactions
 WHERE client_id = $1
   AND user_id = $2
 ORDER BY created_at DESC
@@ -320,6 +350,9 @@ export interface ListWithdrawalsByUserRow {
     failedAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listWithdrawalsByUser(sql: Sql, args: ListWithdrawalsByUserArgs): Promise<ListWithdrawalsByUserRow[]> {
@@ -341,12 +374,15 @@ export async function listWithdrawalsByUser(sql: Sql, args: ListWithdrawalsByUse
         completedAt: row[14],
         failedAt: row[15],
         errorMessage: row[16],
-        errorCode: row[17]
+        errorCode: row[17],
+        environment: row[18],
+        network: row[19],
+        oracleAddress: row[20]
     }));
 }
 
 export const listWithdrawalsByStatusQuery = `-- name: ListWithdrawalsByStatus :many
-SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code FROM withdrawal_transactions
+SELECT id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code, environment, network, oracle_address FROM withdrawal_transactions
 WHERE client_id = $1
   AND status = $2
 ORDER BY created_at DESC
@@ -378,6 +414,9 @@ export interface ListWithdrawalsByStatusRow {
     failedAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listWithdrawalsByStatus(sql: Sql, args: ListWithdrawalsByStatusArgs): Promise<ListWithdrawalsByStatusRow[]> {
@@ -399,7 +438,10 @@ export async function listWithdrawalsByStatus(sql: Sql, args: ListWithdrawalsByS
         completedAt: row[14],
         failedAt: row[15],
         errorMessage: row[16],
-        errorCode: row[17]
+        errorCode: row[17],
+        environment: row[18],
+        network: row[19],
+        oracleAddress: row[20]
     }));
 }
 
@@ -412,11 +454,14 @@ INSERT INTO withdrawal_transactions (
   currency,
   destination_type,
   destination_details,
-  status
+  status,
+  environment,
+  network,
+  oracle_address
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
-RETURNING id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code`;
+RETURNING id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code, environment, network, oracle_address`;
 
 export interface CreateWithdrawalArgs {
     orderId: string;
@@ -427,6 +472,9 @@ export interface CreateWithdrawalArgs {
     destinationType: string;
     destinationDetails: any | null;
     status: string;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export interface CreateWithdrawalRow {
@@ -448,10 +496,13 @@ export interface CreateWithdrawalRow {
     failedAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function createWithdrawal(sql: Sql, args: CreateWithdrawalArgs): Promise<CreateWithdrawalRow | null> {
-    const rows = await sql.unsafe(createWithdrawalQuery, [args.orderId, args.clientId, args.userId, args.requestedAmount, args.currency, args.destinationType, args.destinationDetails, args.status]).values();
+    const rows = await sql.unsafe(createWithdrawalQuery, [args.orderId, args.clientId, args.userId, args.requestedAmount, args.currency, args.destinationType, args.destinationDetails, args.status, args.environment, args.network, args.oracleAddress]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -474,7 +525,10 @@ export async function createWithdrawal(sql: Sql, args: CreateWithdrawalArgs): Pr
         completedAt: row[14],
         failedAt: row[15],
         errorMessage: row[16],
-        errorCode: row[17]
+        errorCode: row[17],
+        environment: row[18],
+        network: row[19],
+        oracleAddress: row[20]
     };
 }
 
@@ -518,7 +572,7 @@ SET status = 'completed',
     actual_amount = COALESCE($2, actual_amount),
     completed_at = now()
 WHERE id = $1
-RETURNING id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code`;
+RETURNING id, order_id, client_id, user_id, requested_amount, actual_amount, currency, withdrawal_fee, network_fee, gateway_order_id, destination_type, destination_details, status, created_at, completed_at, failed_at, error_message, error_code, environment, network, oracle_address`;
 
 export interface CompleteWithdrawalArgs {
     id: string;
@@ -544,6 +598,9 @@ export interface CompleteWithdrawalRow {
     failedAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function completeWithdrawal(sql: Sql, args: CompleteWithdrawalArgs): Promise<CompleteWithdrawalRow | null> {
@@ -570,7 +627,10 @@ export async function completeWithdrawal(sql: Sql, args: CompleteWithdrawalArgs)
         completedAt: row[14],
         failedAt: row[15],
         errorMessage: row[16],
-        errorCode: row[17]
+        errorCode: row[17],
+        environment: row[18],
+        network: row[19],
+        oracleAddress: row[20]
     };
 }
 

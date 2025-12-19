@@ -22,20 +22,23 @@ const CreateWithdrawalSchema = z.object({
 	userId: z.string(),
 	vaultId: z.string().optional(), // Optional for simplified architecture
 	amount: z.string(),
-	
+
 	// ✅ NEW: Withdrawal method selection
 	withdrawal_method: z.enum(["crypto", "fiat_to_client", "fiat_to_end_user"]).default("crypto"),
-	
+
 	// For crypto withdrawal
 	destination_address: z.string().optional(), // Required for crypto
 	chain: z.string().optional(), // e.g., "8453" for Base
 	token_address: z.string().optional(),
-	
+
 	// For fiat withdrawal
 	destination_currency: z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"]).optional(),
-	
+
 	// For fiat_to_end_user only
 	end_user_bank_account: EndUserBankAccountSchema.optional(),
+
+	// ✅ Fee deduction control (default: true)
+	deductFees: z.boolean().optional().default(true),
 });
 
 const CompleteWithdrawalSchema = z.object({
@@ -56,16 +59,29 @@ const WithdrawalResponseSchema = z.object({
 	sharesBurned: z.string().optional(),
 	finalAmount: z.string().optional(),
 	status: z.enum(["PENDING", "QUEUED", "PROCESSING", "COMPLETED", "FAILED"]),
-	
+
 	// Withdrawal method info
 	withdrawal_method: z.enum(["crypto", "fiat_to_client", "fiat_to_end_user"]).optional(),
 	destination_currency: z.string().optional(),
 	destination_address: z.string().optional(),
-	
+
 	// Transaction info
 	transactionHash: z.string().optional(),
 	offRampReference: z.string().optional(), // For fiat withdrawals
-	
+
+	// ✅ Fee breakdown (optional - only present if yield was earned)
+	feeBreakdown: z
+		.object({
+			totalYield: z.string(), // Total yield earned since deposit
+			platformFee: z.string(), // Fee taken by Proxify platform
+			clientFee: z.string(), // Fee taken by client
+			userNetYield: z.string(), // Net yield received by user
+			feesDeducted: z.boolean(), // Whether fees were deducted or deferred
+			platformFeePercent: z.string(), // Platform fee % applied
+			clientFeePercent: z.string(), // Client fee % applied
+		})
+		.optional(),
+
 	createdAt: z.string(),
 	completedAt: z.string().optional(),
 });

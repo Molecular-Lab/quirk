@@ -384,13 +384,14 @@ export const createClientRouter = (
 				logger.info("Client created successfully", {
 					clientId: client.id,
 					productId,
-					apiKeyReturned: !!client.api_key, // API key auto-generated and returned once
+					sandboxApiKeyReturned: !!client.sandbox_api_key,
+					productionApiKeyReturned: !!client.production_api_key,
 				});
 
 				// Normalize bankAccounts (DB may store JSON string)
 				const bankAccounts = normalizeBankAccounts(client.bankAccounts)
 
-				// Return response WITH api_key (shown only once!)
+				// Return response WITH BOTH API keys (shown only once!)
 				return {
 					status: 201 as const,
 					body: {
@@ -408,7 +409,8 @@ export const createClientRouter = (
 						isSandbox: client.isSandbox || false,
 						createdAt: client.createdAt.toISOString(),
 						updatedAt: client.updatedAt.toISOString(),
-						apiKey: client.api_key, // ✅ Include API key (shown only once during registration!)
+						sandboxApiKey: client.sandbox_api_key, // ✅ Sandbox API key (pk_test_xxx)
+						productionApiKey: client.production_api_key, // ✅ Production API key (pk_live_xxx)
 					},
 				};
 			} catch (error: any) {

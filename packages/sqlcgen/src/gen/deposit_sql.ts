@@ -2,7 +2,7 @@ import { Sql } from "postgres";
 
 export const getDepositQuery = `-- name: GetDeposit :one
 
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE id = $1 LIMIT 1`;
 
 export interface GetDepositArgs {
@@ -43,6 +43,9 @@ export interface GetDepositRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function getDeposit(sql: Sql, args: GetDepositArgs): Promise<GetDepositRow | null> {
@@ -84,12 +87,15 @@ export async function getDeposit(sql: Sql, args: GetDepositArgs): Promise<GetDep
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     };
 }
 
 export const getDepositByOrderIDQuery = `-- name: GetDepositByOrderID :one
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE order_id = $1 LIMIT 1`;
 
 export interface GetDepositByOrderIDArgs {
@@ -130,6 +136,9 @@ export interface GetDepositByOrderIDRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function getDepositByOrderID(sql: Sql, args: GetDepositByOrderIDArgs): Promise<GetDepositByOrderIDRow | null> {
@@ -171,12 +180,15 @@ export async function getDepositByOrderID(sql: Sql, args: GetDepositByOrderIDArg
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     };
 }
 
 export const getDepositByGatewayOrderIDQuery = `-- name: GetDepositByGatewayOrderID :one
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE gateway_order_id = $1 LIMIT 1`;
 
 export interface GetDepositByGatewayOrderIDArgs {
@@ -217,6 +229,9 @@ export interface GetDepositByGatewayOrderIDRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function getDepositByGatewayOrderID(sql: Sql, args: GetDepositByGatewayOrderIDArgs): Promise<GetDepositByGatewayOrderIDRow | null> {
@@ -258,12 +273,15 @@ export async function getDepositByGatewayOrderID(sql: Sql, args: GetDepositByGat
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     };
 }
 
 export const getDepositByOrderIDForUpdateQuery = `-- name: GetDepositByOrderIDForUpdate :one
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE order_id = $1
 FOR UPDATE
 LIMIT 1`;
@@ -306,6 +324,9 @@ export interface GetDepositByOrderIDForUpdateRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function getDepositByOrderIDForUpdate(sql: Sql, args: GetDepositByOrderIDForUpdateArgs): Promise<GetDepositByOrderIDForUpdateRow | null> {
@@ -347,12 +368,15 @@ export async function getDepositByOrderIDForUpdate(sql: Sql, args: GetDepositByO
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     };
 }
 
 export const listDepositsQuery = `-- name: ListDeposits :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE client_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3`;
@@ -397,6 +421,9 @@ export interface ListDepositsRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listDeposits(sql: Sql, args: ListDepositsArgs): Promise<ListDepositsRow[]> {
@@ -433,12 +460,15 @@ export async function listDeposits(sql: Sql, args: ListDepositsArgs): Promise<Li
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     }));
 }
 
 export const listDepositsByUserQuery = `-- name: ListDepositsByUser :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE client_id = $1
   AND user_id = $2
 ORDER BY created_at DESC
@@ -485,6 +515,9 @@ export interface ListDepositsByUserRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listDepositsByUser(sql: Sql, args: ListDepositsByUserArgs): Promise<ListDepositsByUserRow[]> {
@@ -521,12 +554,15 @@ export async function listDepositsByUser(sql: Sql, args: ListDepositsByUserArgs)
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     }));
 }
 
 export const listDepositsByStatusQuery = `-- name: ListDepositsByStatus :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE client_id = $1
   AND status = $2
 ORDER BY created_at DESC
@@ -573,6 +609,9 @@ export interface ListDepositsByStatusRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listDepositsByStatus(sql: Sql, args: ListDepositsByStatusArgs): Promise<ListDepositsByStatusRow[]> {
@@ -609,12 +648,15 @@ export async function listDepositsByStatus(sql: Sql, args: ListDepositsByStatusA
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     }));
 }
 
 export const listPendingDepositsQuery = `-- name: ListPendingDeposits :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE status = 'pending'
   AND client_id = $1
   AND (expires_at IS NULL OR expires_at > now())
@@ -658,6 +700,9 @@ export interface ListPendingDepositsRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listPendingDeposits(sql: Sql, args: ListPendingDepositsArgs): Promise<ListPendingDepositsRow[]> {
@@ -694,12 +739,15 @@ export async function listPendingDeposits(sql: Sql, args: ListPendingDepositsArg
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     }));
 }
 
 export const listExpiredDepositsQuery = `-- name: ListExpiredDeposits :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE status = 'pending'
   AND expires_at <= now()
 ORDER BY created_at ASC
@@ -743,6 +791,9 @@ export interface ListExpiredDepositsRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listExpiredDeposits(sql: Sql, args: ListExpiredDepositsArgs): Promise<ListExpiredDepositsRow[]> {
@@ -779,7 +830,10 @@ export async function listExpiredDeposits(sql: Sql, args: ListExpiredDepositsArg
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     }));
 }
 
@@ -810,13 +864,16 @@ INSERT INTO deposit_transactions (
   token_symbol,
   token_address,
   on_ramp_provider,
-  qr_code
+  qr_code,
+  environment,
+  network,
+  oracle_address
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
   $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-  $21, $22, $23, $24, $25, $26
+  $21, $22, $23, $24, $25, $26, $27, $28, $29
 )
-RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code`;
+RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address`;
 
 export interface CreateDepositArgs {
     orderId: string;
@@ -845,6 +902,9 @@ export interface CreateDepositArgs {
     tokenAddress: string | null;
     onRampProvider: string | null;
     qrCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export interface CreateDepositRow {
@@ -881,10 +941,13 @@ export interface CreateDepositRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function createDeposit(sql: Sql, args: CreateDepositArgs): Promise<CreateDepositRow | null> {
-    const rows = await sql.unsafe(createDepositQuery, [args.orderId, args.clientId, args.userId, args.depositType, args.paymentMethod, args.fiatAmount, args.cryptoAmount, args.currency, args.cryptoCurrency, args.gatewayFee, args.proxifyFee, args.networkFee, args.totalFees, args.status, args.paymentUrl, args.gatewayOrderId, args.clientBalanceId, args.deductedFromClient, args.walletAddress, args.expiresAt, args.paymentInstructions, args.chain, args.tokenSymbol, args.tokenAddress, args.onRampProvider, args.qrCode]).values();
+    const rows = await sql.unsafe(createDepositQuery, [args.orderId, args.clientId, args.userId, args.depositType, args.paymentMethod, args.fiatAmount, args.cryptoAmount, args.currency, args.cryptoCurrency, args.gatewayFee, args.proxifyFee, args.networkFee, args.totalFees, args.status, args.paymentUrl, args.gatewayOrderId, args.clientBalanceId, args.deductedFromClient, args.walletAddress, args.expiresAt, args.paymentInstructions, args.chain, args.tokenSymbol, args.tokenAddress, args.onRampProvider, args.qrCode, args.environment, args.network, args.oracleAddress]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -922,7 +985,10 @@ export async function createDeposit(sql: Sql, args: CreateDepositArgs): Promise<
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     };
 }
 
@@ -954,7 +1020,7 @@ SET status = 'completed',
     transaction_hash = COALESCE($7, transaction_hash),
     completed_at = now()
 WHERE id = $1
-RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code`;
+RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address`;
 
 export interface CompleteDepositArgs {
     id: string;
@@ -1000,6 +1066,9 @@ export interface CompleteDepositRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function completeDeposit(sql: Sql, args: CompleteDepositArgs): Promise<CompleteDepositRow | null> {
@@ -1041,7 +1110,10 @@ export async function completeDeposit(sql: Sql, args: CompleteDepositArgs): Prom
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     };
 }
 
@@ -1052,7 +1124,7 @@ SET status = 'completed',
     transaction_hash = $3,
     completed_at = now()
 WHERE order_id = $1
-RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code`;
+RETURNING id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address`;
 
 export interface CompleteDepositByOrderIDArgs {
     orderId: string;
@@ -1094,6 +1166,9 @@ export interface CompleteDepositByOrderIDRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function completeDepositByOrderID(sql: Sql, args: CompleteDepositByOrderIDArgs): Promise<CompleteDepositByOrderIDRow | null> {
@@ -1135,7 +1210,10 @@ export async function completeDepositByOrderID(sql: Sql, args: CompleteDepositBy
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     };
 }
 
@@ -1417,7 +1495,7 @@ export async function getDepositStats(sql: Sql, args: GetDepositStatsArgs): Prom
 export const listAllPendingDepositsQuery = `-- name: ListAllPendingDeposits :many
 
 
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE status = 'pending'
   AND deposit_type = 'external'
 ORDER BY created_at ASC`;
@@ -1456,6 +1534,9 @@ export interface ListAllPendingDepositsRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listAllPendingDeposits(sql: Sql): Promise<ListAllPendingDepositsRow[]> {
@@ -1492,12 +1573,15 @@ export async function listAllPendingDeposits(sql: Sql): Promise<ListAllPendingDe
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     }));
 }
 
 export const listPendingDepositsByClientQuery = `-- name: ListPendingDepositsByClient :many
-SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code FROM deposit_transactions
+SELECT id, order_id, client_id, user_id, deposit_type, payment_method, fiat_amount, crypto_amount, currency, crypto_currency, gateway_fee, proxify_fee, network_fee, total_fees, status, payment_url, gateway_order_id, client_balance_id, deducted_from_client, wallet_address, chain, token_symbol, token_address, on_ramp_provider, qr_code, transaction_hash, payment_instructions, created_at, completed_at, failed_at, expires_at, error_message, error_code, environment, network, oracle_address FROM deposit_transactions
 WHERE client_id = $1
   AND status = 'pending'
   AND deposit_type = 'external'
@@ -1541,6 +1625,9 @@ export interface ListPendingDepositsByClientRow {
     expiresAt: Date | null;
     errorMessage: string | null;
     errorCode: string | null;
+    environment: string | null;
+    network: string | null;
+    oracleAddress: string | null;
 }
 
 export async function listPendingDepositsByClient(sql: Sql, args: ListPendingDepositsByClientArgs): Promise<ListPendingDepositsByClientRow[]> {
@@ -1577,7 +1664,10 @@ export async function listPendingDepositsByClient(sql: Sql, args: ListPendingDep
         failedAt: row[29],
         expiresAt: row[30],
         errorMessage: row[31],
-        errorCode: row[32]
+        errorCode: row[32],
+        environment: row[33],
+        network: row[34],
+        oracleAddress: row[35]
     }));
 }
 

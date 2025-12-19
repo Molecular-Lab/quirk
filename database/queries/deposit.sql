@@ -84,11 +84,14 @@ INSERT INTO deposit_transactions (
   token_symbol,
   token_address,
   on_ramp_provider,
-  qr_code
+  qr_code,
+  environment,
+  network,
+  oracle_address
 ) VALUES (
   $1, $2, $3, $4, $5, $6, $7, $8, $9, $10,
   $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
-  $21, $22, $23, $24, $25, $26
+  $21, $22, $23, $24, $25, $26, $27, $28, $29
 )
 RETURNING *;
 

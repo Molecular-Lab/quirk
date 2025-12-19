@@ -174,6 +174,64 @@ SET
 WHERE id = $1;
 
 -- ============================================
+-- DUAL API KEY MANAGEMENT (Sandbox + Production)
+-- ============================================
+
+-- name: StoreEnvironmentAPIKeys :one
+-- Store both sandbox and production API keys during client creation
+UPDATE client_organizations
+SET
+  sandbox_api_key = $2,
+  sandbox_api_secret = $3,
+  production_api_key = $4,
+  production_api_secret = $5,
+  updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: GetClientBySandboxAPIKey :one
+-- Get client by sandbox API key hash (for sandbox mode authentication)
+SELECT
+  co.*,
+  pa.privy_wallet_address,
+  pa.privy_organization_id,
+  pa.wallet_type
+FROM client_organizations co
+LEFT JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.sandbox_api_key = $1 AND co.is_active = true;
+
+-- name: GetClientByProductionAPIKey :one
+-- Get client by production API key hash (for production mode authentication)
+SELECT
+  co.*,
+  pa.privy_wallet_address,
+  pa.privy_organization_id,
+  pa.wallet_type
+FROM client_organizations co
+LEFT JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.production_api_key = $1 AND co.is_active = true;
+
+-- name: RegenerateSandboxAPIKey :one
+-- Regenerate sandbox API key
+UPDATE client_organizations
+SET
+  sandbox_api_key = $2,
+  sandbox_api_secret = $3,
+  updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- name: RegenerateProductionAPIKey :one
+-- Regenerate production API key
+UPDATE client_organizations
+SET
+  production_api_key = $2,
+  production_api_secret = $3,
+  updated_at = now()
+WHERE id = $1
+RETURNING *;
+
+-- ============================================
 -- WEBHOOK CONFIGURATION
 -- ============================================
 

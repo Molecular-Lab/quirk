@@ -16,6 +16,7 @@ export class WithdrawalService {
 		orderId: string;
 		destinationType: "client_balance" | "bank_account" | "debit_card" | "crypto_wallet";
 		destinationDetails?: any;
+		deductFees?: boolean; // ✅ Optional fee deduction control (default: true)
 	}) {
 		return await this.withdrawalUseCase.requestWithdrawal(request);
 	}

@@ -50,9 +50,12 @@ INSERT INTO withdrawal_transactions (
   currency,
   destination_type,
   destination_details,
-  status
+  status,
+  environment,
+  network,
+  oracle_address
 ) VALUES (
-  $1, $2, $3, $4, $5, $6, $7, $8
+  $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
 )
 RETURNING *;
 

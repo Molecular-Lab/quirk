@@ -8,6 +8,7 @@ import usdcLogo from "@/assets/usd-coin-usdc-logo.png"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useEnvironmentStore } from "@/store/environmentStore"
 
 interface OnRampModalProps {
 	isOpen: boolean
@@ -44,6 +45,18 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 	const [cryptoToken, setCryptoToken] = useState("USDC")
 	const [step, setStep] = useState<"select" | "summary" | "processing" | "success" | "error">("select")
 	const [errorMessage, setErrorMessage] = useState("")
+
+	// Get environment from store
+	const { apiEnvironment, getConfig } = useEnvironmentStore()
+	const networkConfig = getConfig()
+	const isSandbox = apiEnvironment === "sandbox"
+
+	console.log("[OnRampModal] Environment context:", {
+		apiEnvironment,
+		network: networkConfig.name,
+		isTestnet: networkConfig.isTestnet,
+		oracleEnvVar: isSandbox ? "ORACLE_SANDBOX" : "ORACLE_PROD",
+	})
 
 	// Mutation hook for batch completing deposits
 	const batchCompleteMutation = useMutation({
@@ -220,6 +233,31 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 
 					{step === "summary" && (
 						<div className="space-y-4">
+							{/* Environment Indicator */}
+							<div
+								className={`rounded-xl p-3 border-2 ${
+									isSandbox
+										? "bg-yellow-50 border-yellow-300"
+										: "bg-red-50 border-red-300"
+								}`}
+							>
+								<div className="flex items-center justify-between">
+									<div className="flex items-center gap-2">
+										<span className="text-xs font-semibold uppercase tracking-wide">
+											{isSandbox ? "🧪 Sandbox Mode" : "⚠️ Production Mode"}
+										</span>
+									</div>
+									<span className="text-xs font-medium">
+										{networkConfig.name}
+									</span>
+								</div>
+								<p className="text-xs mt-1" style={{ color: isSandbox ? "#92400e" : "#7f1d1d" }}>
+									{isSandbox
+										? "Using testnet - No real funds will be transferred"
+										: "Using mainnet - Real USDC will be transferred"}
+								</p>
+							</div>
+
 							{/* Order Summary */}
 							<div className="border border-gray-200 rounded-xl p-4">
 								<h3 className="text-sm font-semibold text-gray-900 mb-3">Order Details</h3>

@@ -75,20 +75,34 @@ export class VaultRepository {
 		clientId: string,
 		chain: string,
 		tokenAddress: string,
+		environment: "sandbox" | "production",
 	): Promise<GetClientVaultByTokenRow | null> {
-		return await getClientVaultByToken(this.sql, { clientId, chain, tokenAddress })
+		return await getClientVaultByToken(this.sql, { clientId, chain, tokenAddress, environment })
 	}
 
 	async getClientVaultForUpdate(
 		clientId: string,
 		chain: string,
 		tokenAddress: string,
+		environment: "sandbox" | "production",
 	): Promise<GetClientVaultByTokenForUpdateRow | null> {
-		return await getClientVaultByTokenForUpdate(this.sql, { clientId, chain, tokenAddress })
+		return await getClientVaultByTokenForUpdate(this.sql, { clientId, chain, tokenAddress, environment })
 	}
 
 	async listClientVaults(clientId: string): Promise<ListClientVaultsRow[]> {
 		return await listClientVaults(this.sql, { clientId })
+	}
+
+	async listAllVaults(): Promise<any[]> {
+		// Query all vaults for index update cron job
+		return await this.sql`
+			SELECT id, client_id, chain, token_address, token_symbol,
+			       current_index, total_staked_balance, custodial_wallet_address,
+			       environment, last_index_update, created_at
+			FROM client_vaults
+			WHERE is_active = true
+			ORDER BY last_index_update ASC NULLS FIRST
+		`
 	}
 
 	async listVaultsPendingStake(pendingDepositBalance = "0"): Promise<ListClientVaultsPendingStakeRow[]> {
@@ -165,11 +179,15 @@ export class VaultRepository {
 	}
 
 	/**
-	 * Get user vault for a specific client (simplified - no chain/token)
-	 * ONE vault per user per client
+	 * Get user vault for a specific client and environment
+	 * User can have TWO vaults per client: one for sandbox, one for production
 	 */
-	async getEndUserVaultByClient(endUserId: string, clientId: string): Promise<GetEndUserVaultByClientRow | null> {
-		return await getEndUserVaultByClient(this.sql, { endUserId, clientId })
+	async getEndUserVaultByClient(
+		endUserId: string,
+		clientId: string,
+		environment: "sandbox" | "production",
+	): Promise<GetEndUserVaultByClientRow | null> {
+		return await getEndUserVaultByClient(this.sql, { endUserId, clientId, environment })
 	}
 
 	/**
@@ -178,8 +196,9 @@ export class VaultRepository {
 	async getEndUserVaultByClientForUpdate(
 		endUserId: string,
 		clientId: string,
+		environment: "sandbox" | "production",
 	): Promise<GetEndUserVaultByClientForUpdateRow | null> {
-		return await getEndUserVaultByClientForUpdate(this.sql, { endUserId, clientId })
+		return await getEndUserVaultByClientForUpdate(this.sql, { endUserId, clientId, environment })
 	}
 
 	/**

@@ -36,6 +36,12 @@ const envSchema = z.object({
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	MAINNET_RPC_URL: z.string().optional(),
 	SEPOLIA_RPC_URL: z.string().optional(),
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// ORACLE ADDRESSES (for deposits & withdrawals)
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	ORACLE_SANDBOX: z.string().optional(), // Sandbox/testnet oracle custodial address
+	ORACLE_PROD: z.string().optional(),    // Production/mainnet oracle custodial address
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

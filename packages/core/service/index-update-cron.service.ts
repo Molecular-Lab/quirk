@@ -126,7 +126,7 @@ export class IndexUpdateCronService {
 		const indexUpdate = YieldCalculationService.calculateNewIndex({
 			currentIndex: vault.currentIndex,
 			totalStaked: vault.totalStakedBalance,
-			dailyAPY,
+			annualAPY: weightedAPY, // ✅ Pass weighted annual APY, not daily
 		})
 
 		// Persist to database

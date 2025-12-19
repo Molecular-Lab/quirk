@@ -89,11 +89,11 @@ export class YieldCalculationService {
 	static calculateNewIndex(params: {
 		currentIndex: string // BigInt as string (scaled by 1e18)
 		totalStaked: string // Current total staked amount
-		dailyAPY: number // Daily APY percentage
+		annualAPY: number // ✅ RENAMED: Annual APY percentage (e.g., 5.0 for 5%)
 	}): IndexUpdateResult {
 		const currentIndexDecimal = new Decimal(params.currentIndex)
 		const totalStakedDecimal = new Decimal(params.totalStaked)
-		const dailyGrowthRate = this.calculateDailyGrowthRate(params.dailyAPY * 365) // Convert daily to annual for formula
+		const dailyGrowthRate = this.calculateDailyGrowthRate(params.annualAPY) // ✅ FIXED: No longer multiplying by 365
 
 		// Calculate yield generated today
 		const yieldGenerated = totalStakedDecimal.times(dailyGrowthRate)

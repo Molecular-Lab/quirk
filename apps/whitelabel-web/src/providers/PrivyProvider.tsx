@@ -24,8 +24,11 @@ function PrivyProviderInner({ children }: { children: React.ReactNode }) {
 		}),
 	}
 
+	console.log("🔍 [PrivyProvider] Full config:", config)
+
 	// Check if PRIVY_APP_ID is configured
 	if (!ENV.PRIVY_APP_ID || ENV.PRIVY_APP_ID === "your_privy_app_id_here") {
+		console.error("❌ [PrivyProvider] PRIVY_APP_ID is not configured!")
 		console.error("⚠️ PRIVY_APP_ID is not configured. Please set VITE_PRIVY_APP_ID in your .env file")
 		console.error("Get your app ID from https://dashboard.privy.io/")
 
@@ -66,6 +69,8 @@ function PrivyProviderInner({ children }: { children: React.ReactNode }) {
 			</div>
 		)
 	}
+
+	console.log("✅ [PrivyProvider] Rendering BasePrivyProvider with appId:", ENV.PRIVY_APP_ID)
 
 	return (
 		<BasePrivyProvider appId={ENV.PRIVY_APP_ID} config={config}>

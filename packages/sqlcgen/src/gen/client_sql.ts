@@ -11,7 +11,7 @@ INSERT INTO client_organizations (
   website_url
 )
 VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn`;
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn, sandbox_api_key, sandbox_api_secret, production_api_key, production_api_secret, sandbox_apy_simulation_rate, production_use_real_defi`;
 
 export interface CreateClientArgs {
     privyAccountId: string;
@@ -60,6 +60,12 @@ export interface CreateClientRow {
     activeUsers_30d: number | null;
     totalDeposited: string | null;
     totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
 }
 
 export async function createClient(sql: Sql, args: CreateClientArgs): Promise<CreateClientRow | null> {
@@ -105,13 +111,19 @@ export async function createClient(sql: Sql, args: CreateClientArgs): Promise<Cr
         newUsers_30d: row[33],
         activeUsers_30d: row[34],
         totalDeposited: row[35],
-        totalWithdrawn: row[36]
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
     };
 }
 
 export const getClientQuery = `-- name: GetClient :one
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn, co.sandbox_api_key, co.sandbox_api_secret, co.production_api_key, co.production_api_secret, co.sandbox_apy_simulation_rate, co.production_use_real_defi,
   pa.privy_wallet_address,
   pa.privy_organization_id,
   pa.wallet_type
@@ -161,6 +173,12 @@ export interface GetClientRow {
     activeUsers_30d: number | null;
     totalDeposited: string | null;
     totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
     privyWalletAddress: string;
     privyOrganizationId: string;
     walletType: string;
@@ -210,9 +228,15 @@ export async function getClient(sql: Sql, args: GetClientArgs): Promise<GetClien
         activeUsers_30d: row[34],
         totalDeposited: row[35],
         totalWithdrawn: row[36],
-        privyWalletAddress: row[37],
-        privyOrganizationId: row[38],
-        walletType: row[39]
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42],
+        privyWalletAddress: row[43],
+        privyOrganizationId: row[44],
+        walletType: row[45]
     };
 }
 
@@ -318,7 +342,7 @@ export async function getClientByProductId(sql: Sql, args: GetClientByProductIdA
 }
 
 export const getClientByPrivyOrgIdQuery = `-- name: GetClientByPrivyOrgId :one
-SELECT co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn FROM client_organizations co
+SELECT co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn, co.sandbox_api_key, co.sandbox_api_secret, co.production_api_key, co.production_api_secret, co.sandbox_apy_simulation_rate, co.production_use_real_defi FROM client_organizations co
 JOIN privy_accounts pa ON co.privy_account_id = pa.id
 WHERE pa.privy_organization_id = $1
 LIMIT 1`;
@@ -365,6 +389,12 @@ export interface GetClientByPrivyOrgIdRow {
     activeUsers_30d: number | null;
     totalDeposited: string | null;
     totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
 }
 
 export async function getClientByPrivyOrgId(sql: Sql, args: GetClientByPrivyOrgIdArgs): Promise<GetClientByPrivyOrgIdRow | null> {
@@ -410,13 +440,19 @@ export async function getClientByPrivyOrgId(sql: Sql, args: GetClientByPrivyOrgI
         newUsers_30d: row[33],
         activeUsers_30d: row[34],
         totalDeposited: row[35],
-        totalWithdrawn: row[36]
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
     };
 }
 
 export const getAllClientsByPrivyOrgIdQuery = `-- name: GetAllClientsByPrivyOrgId :many
 SELECT
-  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn,
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn, co.sandbox_api_key, co.sandbox_api_secret, co.production_api_key, co.production_api_secret, co.sandbox_apy_simulation_rate, co.production_use_real_defi,
   pa.privy_organization_id,
   pa.wallet_type
 FROM client_organizations co
@@ -467,6 +503,12 @@ export interface GetAllClientsByPrivyOrgIdRow {
     activeUsers_30d: number | null;
     totalDeposited: string | null;
     totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
     privyOrganizationId: string;
     walletType: string;
 }
@@ -510,13 +552,19 @@ export async function getAllClientsByPrivyOrgId(sql: Sql, args: GetAllClientsByP
         activeUsers_30d: row[34],
         totalDeposited: row[35],
         totalWithdrawn: row[36],
-        privyOrganizationId: row[37],
-        walletType: row[38]
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42],
+        privyOrganizationId: row[43],
+        walletType: row[44]
     }));
 }
 
 export const listClientsQuery = `-- name: ListClients :many
-SELECT id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn FROM client_organizations
+SELECT id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn, sandbox_api_key, sandbox_api_secret, production_api_key, production_api_secret, sandbox_apy_simulation_rate, production_use_real_defi FROM client_organizations
 WHERE is_active = true
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2`;
@@ -564,6 +612,12 @@ export interface ListClientsRow {
     activeUsers_30d: number | null;
     totalDeposited: string | null;
     totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
 }
 
 export async function listClients(sql: Sql, args: ListClientsArgs): Promise<ListClientsRow[]> {
@@ -604,7 +658,13 @@ export async function listClients(sql: Sql, args: ListClientsArgs): Promise<List
         newUsers_30d: row[33],
         activeUsers_30d: row[34],
         totalDeposited: row[35],
-        totalWithdrawn: row[36]
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
     }));
 }
 
@@ -616,7 +676,7 @@ SET
   website_url = COALESCE($4, website_url),
   updated_at = now()
 WHERE id = $1
-RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn`;
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn, sandbox_api_key, sandbox_api_secret, production_api_key, production_api_secret, sandbox_apy_simulation_rate, production_use_real_defi`;
 
 export interface UpdateClientArgs {
     id: string;
@@ -663,6 +723,12 @@ export interface UpdateClientRow {
     activeUsers_30d: number | null;
     totalDeposited: string | null;
     totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
 }
 
 export async function updateClient(sql: Sql, args: UpdateClientArgs): Promise<UpdateClientRow | null> {
@@ -708,7 +774,13 @@ export async function updateClient(sql: Sql, args: UpdateClientArgs): Promise<Up
         newUsers_30d: row[33],
         activeUsers_30d: row[34],
         totalDeposited: row[35],
-        totalWithdrawn: row[36]
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
     };
 }
 
@@ -720,7 +792,7 @@ SET
   website_url = COALESCE($4, website_url),
   updated_at = now()
 WHERE product_id = $1
-RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn`;
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn, sandbox_api_key, sandbox_api_secret, production_api_key, production_api_secret, sandbox_apy_simulation_rate, production_use_real_defi`;
 
 export interface UpdateClientByProductIdArgs {
     productId: string;
@@ -767,6 +839,12 @@ export interface UpdateClientByProductIdRow {
     activeUsers_30d: number | null;
     totalDeposited: string | null;
     totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
 }
 
 export async function updateClientByProductId(sql: Sql, args: UpdateClientByProductIdArgs): Promise<UpdateClientByProductIdRow | null> {
@@ -812,7 +890,13 @@ export async function updateClientByProductId(sql: Sql, args: UpdateClientByProd
         newUsers_30d: row[33],
         activeUsers_30d: row[34],
         totalDeposited: row[35],
-        totalWithdrawn: row[36]
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
     };
 }
 
@@ -916,7 +1000,7 @@ export async function storeAPIKey(sql: Sql, args: StoreAPIKeyArgs): Promise<Stor
 }
 
 export const getClientByAPIKeyPrefixQuery = `-- name: GetClientByAPIKeyPrefix :one
-SELECT id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn FROM client_organizations
+SELECT id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn, sandbox_api_key, sandbox_api_secret, production_api_key, production_api_secret, sandbox_apy_simulation_rate, production_use_real_defi FROM client_organizations
 WHERE api_key_prefix = $1 AND is_active = true`;
 
 export interface GetClientByAPIKeyPrefixArgs {
@@ -961,6 +1045,12 @@ export interface GetClientByAPIKeyPrefixRow {
     activeUsers_30d: number | null;
     totalDeposited: string | null;
     totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
 }
 
 export async function getClientByAPIKeyPrefix(sql: Sql, args: GetClientByAPIKeyPrefixArgs): Promise<GetClientByAPIKeyPrefixRow | null> {
@@ -1006,12 +1096,18 @@ export async function getClientByAPIKeyPrefix(sql: Sql, args: GetClientByAPIKeyP
         newUsers_30d: row[33],
         activeUsers_30d: row[34],
         totalDeposited: row[35],
-        totalWithdrawn: row[36]
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
     };
 }
 
 export const getClientByAPIKeyHashQuery = `-- name: GetClientByAPIKeyHash :one
-SELECT id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn FROM client_organizations
+SELECT id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn, sandbox_api_key, sandbox_api_secret, production_api_key, production_api_secret, sandbox_apy_simulation_rate, production_use_real_defi FROM client_organizations
 WHERE api_key_hash = $1 AND is_active = true`;
 
 export interface GetClientByAPIKeyHashArgs {
@@ -1056,6 +1152,12 @@ export interface GetClientByAPIKeyHashRow {
     activeUsers_30d: number | null;
     totalDeposited: string | null;
     totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
 }
 
 export async function getClientByAPIKeyHash(sql: Sql, args: GetClientByAPIKeyHashArgs): Promise<GetClientByAPIKeyHashRow | null> {
@@ -1101,7 +1203,13 @@ export async function getClientByAPIKeyHash(sql: Sql, args: GetClientByAPIKeyHas
         newUsers_30d: row[33],
         activeUsers_30d: row[34],
         totalDeposited: row[35],
-        totalWithdrawn: row[36]
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
     };
 }
 
@@ -1119,6 +1227,591 @@ export interface RevokeAPIKeyArgs {
 
 export async function revokeAPIKey(sql: Sql, args: RevokeAPIKeyArgs): Promise<void> {
     await sql.unsafe(revokeAPIKeyQuery, [args.id]);
+}
+
+export const storeEnvironmentAPIKeysQuery = `-- name: StoreEnvironmentAPIKeys :one
+
+UPDATE client_organizations
+SET
+  sandbox_api_key = $2,
+  sandbox_api_secret = $3,
+  production_api_key = $4,
+  production_api_secret = $5,
+  updated_at = now()
+WHERE id = $1
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn, sandbox_api_key, sandbox_api_secret, production_api_key, production_api_secret, sandbox_apy_simulation_rate, production_use_real_defi`;
+
+export interface StoreEnvironmentAPIKeysArgs {
+    id: string;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+}
+
+export interface StoreEnvironmentAPIKeysRow {
+    id: string;
+    privyAccountId: string;
+    productId: string;
+    companyName: string;
+    businessType: string;
+    description: string | null;
+    websiteUrl: string | null;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
+    webhookUrls: string[] | null;
+    webhookSecret: string | null;
+    customStrategy: any | null;
+    clientRevenueSharePercent: string;
+    platformFeePercent: string;
+    performanceFee: string | null;
+    monthlyRecurringRevenue: string | null;
+    annualRunRate: string | null;
+    lastMrrCalculationAt: Date | null;
+    supportedCurrencies: any | null;
+    bankAccounts: any | null;
+    isActive: boolean;
+    isSandbox: boolean;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
+    createdAt: Date;
+    updatedAt: Date;
+    idleBalance: string | null;
+    earningBalance: string | null;
+    clientRevenueEarned: string | null;
+    platformRevenueEarned: string | null;
+    enduserRevenueEarned: string | null;
+    totalEndUsers: number | null;
+    newUsers_30d: number | null;
+    activeUsers_30d: number | null;
+    totalDeposited: string | null;
+    totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
+}
+
+export async function storeEnvironmentAPIKeys(sql: Sql, args: StoreEnvironmentAPIKeysArgs): Promise<StoreEnvironmentAPIKeysRow | null> {
+    const rows = await sql.unsafe(storeEnvironmentAPIKeysQuery, [args.id, args.sandboxApiKey, args.sandboxApiSecret, args.productionApiKey, args.productionApiSecret]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        clientRevenueSharePercent: row[12],
+        platformFeePercent: row[13],
+        performanceFee: row[14],
+        monthlyRecurringRevenue: row[15],
+        annualRunRate: row[16],
+        lastMrrCalculationAt: row[17],
+        supportedCurrencies: row[18],
+        bankAccounts: row[19],
+        isActive: row[20],
+        isSandbox: row[21],
+        customerTier: row[22],
+        strategiesPreferences: row[23],
+        strategiesCustomization: row[24],
+        createdAt: row[25],
+        updatedAt: row[26],
+        idleBalance: row[27],
+        earningBalance: row[28],
+        clientRevenueEarned: row[29],
+        platformRevenueEarned: row[30],
+        enduserRevenueEarned: row[31],
+        totalEndUsers: row[32],
+        newUsers_30d: row[33],
+        activeUsers_30d: row[34],
+        totalDeposited: row[35],
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
+    };
+}
+
+export const getClientBySandboxAPIKeyQuery = `-- name: GetClientBySandboxAPIKey :one
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn, co.sandbox_api_key, co.sandbox_api_secret, co.production_api_key, co.production_api_secret, co.sandbox_apy_simulation_rate, co.production_use_real_defi,
+  pa.privy_wallet_address,
+  pa.privy_organization_id,
+  pa.wallet_type
+FROM client_organizations co
+LEFT JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.sandbox_api_key = $1 AND co.is_active = true`;
+
+export interface GetClientBySandboxAPIKeyArgs {
+    sandboxApiKey: string | null;
+}
+
+export interface GetClientBySandboxAPIKeyRow {
+    id: string;
+    privyAccountId: string;
+    productId: string;
+    companyName: string;
+    businessType: string;
+    description: string | null;
+    websiteUrl: string | null;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
+    webhookUrls: string[] | null;
+    webhookSecret: string | null;
+    customStrategy: any | null;
+    clientRevenueSharePercent: string;
+    platformFeePercent: string;
+    performanceFee: string | null;
+    monthlyRecurringRevenue: string | null;
+    annualRunRate: string | null;
+    lastMrrCalculationAt: Date | null;
+    supportedCurrencies: any | null;
+    bankAccounts: any | null;
+    isActive: boolean;
+    isSandbox: boolean;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
+    createdAt: Date;
+    updatedAt: Date;
+    idleBalance: string | null;
+    earningBalance: string | null;
+    clientRevenueEarned: string | null;
+    platformRevenueEarned: string | null;
+    enduserRevenueEarned: string | null;
+    totalEndUsers: number | null;
+    newUsers_30d: number | null;
+    activeUsers_30d: number | null;
+    totalDeposited: string | null;
+    totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
+    privyWalletAddress: string | null;
+    privyOrganizationId: string | null;
+    walletType: string | null;
+}
+
+export async function getClientBySandboxAPIKey(sql: Sql, args: GetClientBySandboxAPIKeyArgs): Promise<GetClientBySandboxAPIKeyRow | null> {
+    const rows = await sql.unsafe(getClientBySandboxAPIKeyQuery, [args.sandboxApiKey]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        clientRevenueSharePercent: row[12],
+        platformFeePercent: row[13],
+        performanceFee: row[14],
+        monthlyRecurringRevenue: row[15],
+        annualRunRate: row[16],
+        lastMrrCalculationAt: row[17],
+        supportedCurrencies: row[18],
+        bankAccounts: row[19],
+        isActive: row[20],
+        isSandbox: row[21],
+        customerTier: row[22],
+        strategiesPreferences: row[23],
+        strategiesCustomization: row[24],
+        createdAt: row[25],
+        updatedAt: row[26],
+        idleBalance: row[27],
+        earningBalance: row[28],
+        clientRevenueEarned: row[29],
+        platformRevenueEarned: row[30],
+        enduserRevenueEarned: row[31],
+        totalEndUsers: row[32],
+        newUsers_30d: row[33],
+        activeUsers_30d: row[34],
+        totalDeposited: row[35],
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42],
+        privyWalletAddress: row[43],
+        privyOrganizationId: row[44],
+        walletType: row[45]
+    };
+}
+
+export const getClientByProductionAPIKeyQuery = `-- name: GetClientByProductionAPIKey :one
+SELECT
+  co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.api_key_hash, co.api_key_prefix, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.created_at, co.updated_at, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn, co.sandbox_api_key, co.sandbox_api_secret, co.production_api_key, co.production_api_secret, co.sandbox_apy_simulation_rate, co.production_use_real_defi,
+  pa.privy_wallet_address,
+  pa.privy_organization_id,
+  pa.wallet_type
+FROM client_organizations co
+LEFT JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.production_api_key = $1 AND co.is_active = true`;
+
+export interface GetClientByProductionAPIKeyArgs {
+    productionApiKey: string | null;
+}
+
+export interface GetClientByProductionAPIKeyRow {
+    id: string;
+    privyAccountId: string;
+    productId: string;
+    companyName: string;
+    businessType: string;
+    description: string | null;
+    websiteUrl: string | null;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
+    webhookUrls: string[] | null;
+    webhookSecret: string | null;
+    customStrategy: any | null;
+    clientRevenueSharePercent: string;
+    platformFeePercent: string;
+    performanceFee: string | null;
+    monthlyRecurringRevenue: string | null;
+    annualRunRate: string | null;
+    lastMrrCalculationAt: Date | null;
+    supportedCurrencies: any | null;
+    bankAccounts: any | null;
+    isActive: boolean;
+    isSandbox: boolean;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
+    createdAt: Date;
+    updatedAt: Date;
+    idleBalance: string | null;
+    earningBalance: string | null;
+    clientRevenueEarned: string | null;
+    platformRevenueEarned: string | null;
+    enduserRevenueEarned: string | null;
+    totalEndUsers: number | null;
+    newUsers_30d: number | null;
+    activeUsers_30d: number | null;
+    totalDeposited: string | null;
+    totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
+    privyWalletAddress: string | null;
+    privyOrganizationId: string | null;
+    walletType: string | null;
+}
+
+export async function getClientByProductionAPIKey(sql: Sql, args: GetClientByProductionAPIKeyArgs): Promise<GetClientByProductionAPIKeyRow | null> {
+    const rows = await sql.unsafe(getClientByProductionAPIKeyQuery, [args.productionApiKey]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        clientRevenueSharePercent: row[12],
+        platformFeePercent: row[13],
+        performanceFee: row[14],
+        monthlyRecurringRevenue: row[15],
+        annualRunRate: row[16],
+        lastMrrCalculationAt: row[17],
+        supportedCurrencies: row[18],
+        bankAccounts: row[19],
+        isActive: row[20],
+        isSandbox: row[21],
+        customerTier: row[22],
+        strategiesPreferences: row[23],
+        strategiesCustomization: row[24],
+        createdAt: row[25],
+        updatedAt: row[26],
+        idleBalance: row[27],
+        earningBalance: row[28],
+        clientRevenueEarned: row[29],
+        platformRevenueEarned: row[30],
+        enduserRevenueEarned: row[31],
+        totalEndUsers: row[32],
+        newUsers_30d: row[33],
+        activeUsers_30d: row[34],
+        totalDeposited: row[35],
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42],
+        privyWalletAddress: row[43],
+        privyOrganizationId: row[44],
+        walletType: row[45]
+    };
+}
+
+export const regenerateSandboxAPIKeyQuery = `-- name: RegenerateSandboxAPIKey :one
+UPDATE client_organizations
+SET
+  sandbox_api_key = $2,
+  sandbox_api_secret = $3,
+  updated_at = now()
+WHERE id = $1
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn, sandbox_api_key, sandbox_api_secret, production_api_key, production_api_secret, sandbox_apy_simulation_rate, production_use_real_defi`;
+
+export interface RegenerateSandboxAPIKeyArgs {
+    id: string;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+}
+
+export interface RegenerateSandboxAPIKeyRow {
+    id: string;
+    privyAccountId: string;
+    productId: string;
+    companyName: string;
+    businessType: string;
+    description: string | null;
+    websiteUrl: string | null;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
+    webhookUrls: string[] | null;
+    webhookSecret: string | null;
+    customStrategy: any | null;
+    clientRevenueSharePercent: string;
+    platformFeePercent: string;
+    performanceFee: string | null;
+    monthlyRecurringRevenue: string | null;
+    annualRunRate: string | null;
+    lastMrrCalculationAt: Date | null;
+    supportedCurrencies: any | null;
+    bankAccounts: any | null;
+    isActive: boolean;
+    isSandbox: boolean;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
+    createdAt: Date;
+    updatedAt: Date;
+    idleBalance: string | null;
+    earningBalance: string | null;
+    clientRevenueEarned: string | null;
+    platformRevenueEarned: string | null;
+    enduserRevenueEarned: string | null;
+    totalEndUsers: number | null;
+    newUsers_30d: number | null;
+    activeUsers_30d: number | null;
+    totalDeposited: string | null;
+    totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
+}
+
+export async function regenerateSandboxAPIKey(sql: Sql, args: RegenerateSandboxAPIKeyArgs): Promise<RegenerateSandboxAPIKeyRow | null> {
+    const rows = await sql.unsafe(regenerateSandboxAPIKeyQuery, [args.id, args.sandboxApiKey, args.sandboxApiSecret]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        clientRevenueSharePercent: row[12],
+        platformFeePercent: row[13],
+        performanceFee: row[14],
+        monthlyRecurringRevenue: row[15],
+        annualRunRate: row[16],
+        lastMrrCalculationAt: row[17],
+        supportedCurrencies: row[18],
+        bankAccounts: row[19],
+        isActive: row[20],
+        isSandbox: row[21],
+        customerTier: row[22],
+        strategiesPreferences: row[23],
+        strategiesCustomization: row[24],
+        createdAt: row[25],
+        updatedAt: row[26],
+        idleBalance: row[27],
+        earningBalance: row[28],
+        clientRevenueEarned: row[29],
+        platformRevenueEarned: row[30],
+        enduserRevenueEarned: row[31],
+        totalEndUsers: row[32],
+        newUsers_30d: row[33],
+        activeUsers_30d: row[34],
+        totalDeposited: row[35],
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
+    };
+}
+
+export const regenerateProductionAPIKeyQuery = `-- name: RegenerateProductionAPIKey :one
+UPDATE client_organizations
+SET
+  production_api_key = $2,
+  production_api_secret = $3,
+  updated_at = now()
+WHERE id = $1
+RETURNING id, privy_account_id, product_id, company_name, business_type, description, website_url, api_key_hash, api_key_prefix, webhook_urls, webhook_secret, custom_strategy, client_revenue_share_percent, platform_fee_percent, performance_fee, monthly_recurring_revenue, annual_run_rate, last_mrr_calculation_at, supported_currencies, bank_accounts, is_active, is_sandbox, customer_tier, strategies_preferences, strategies_customization, created_at, updated_at, idle_balance, earning_balance, client_revenue_earned, platform_revenue_earned, enduser_revenue_earned, total_end_users, new_users_30d, active_users_30d, total_deposited, total_withdrawn, sandbox_api_key, sandbox_api_secret, production_api_key, production_api_secret, sandbox_apy_simulation_rate, production_use_real_defi`;
+
+export interface RegenerateProductionAPIKeyArgs {
+    id: string;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+}
+
+export interface RegenerateProductionAPIKeyRow {
+    id: string;
+    privyAccountId: string;
+    productId: string;
+    companyName: string;
+    businessType: string;
+    description: string | null;
+    websiteUrl: string | null;
+    apiKeyHash: string | null;
+    apiKeyPrefix: string | null;
+    webhookUrls: string[] | null;
+    webhookSecret: string | null;
+    customStrategy: any | null;
+    clientRevenueSharePercent: string;
+    platformFeePercent: string;
+    performanceFee: string | null;
+    monthlyRecurringRevenue: string | null;
+    annualRunRate: string | null;
+    lastMrrCalculationAt: Date | null;
+    supportedCurrencies: any | null;
+    bankAccounts: any | null;
+    isActive: boolean;
+    isSandbox: boolean;
+    customerTier: string | null;
+    strategiesPreferences: any | null;
+    strategiesCustomization: any | null;
+    createdAt: Date;
+    updatedAt: Date;
+    idleBalance: string | null;
+    earningBalance: string | null;
+    clientRevenueEarned: string | null;
+    platformRevenueEarned: string | null;
+    enduserRevenueEarned: string | null;
+    totalEndUsers: number | null;
+    newUsers_30d: number | null;
+    activeUsers_30d: number | null;
+    totalDeposited: string | null;
+    totalWithdrawn: string | null;
+    sandboxApiKey: string | null;
+    sandboxApiSecret: string | null;
+    productionApiKey: string | null;
+    productionApiSecret: string | null;
+    sandboxApySimulationRate: string | null;
+    productionUseRealDefi: boolean | null;
+}
+
+export async function regenerateProductionAPIKey(sql: Sql, args: RegenerateProductionAPIKeyArgs): Promise<RegenerateProductionAPIKeyRow | null> {
+    const rows = await sql.unsafe(regenerateProductionAPIKeyQuery, [args.id, args.productionApiKey, args.productionApiSecret]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        privyAccountId: row[1],
+        productId: row[2],
+        companyName: row[3],
+        businessType: row[4],
+        description: row[5],
+        websiteUrl: row[6],
+        apiKeyHash: row[7],
+        apiKeyPrefix: row[8],
+        webhookUrls: row[9],
+        webhookSecret: row[10],
+        customStrategy: row[11],
+        clientRevenueSharePercent: row[12],
+        platformFeePercent: row[13],
+        performanceFee: row[14],
+        monthlyRecurringRevenue: row[15],
+        annualRunRate: row[16],
+        lastMrrCalculationAt: row[17],
+        supportedCurrencies: row[18],
+        bankAccounts: row[19],
+        isActive: row[20],
+        isSandbox: row[21],
+        customerTier: row[22],
+        strategiesPreferences: row[23],
+        strategiesCustomization: row[24],
+        createdAt: row[25],
+        updatedAt: row[26],
+        idleBalance: row[27],
+        earningBalance: row[28],
+        clientRevenueEarned: row[29],
+        platformRevenueEarned: row[30],
+        enduserRevenueEarned: row[31],
+        totalEndUsers: row[32],
+        newUsers_30d: row[33],
+        activeUsers_30d: row[34],
+        totalDeposited: row[35],
+        totalWithdrawn: row[36],
+        sandboxApiKey: row[37],
+        sandboxApiSecret: row[38],
+        productionApiKey: row[39],
+        productionApiSecret: row[40],
+        sandboxApySimulationRate: row[41],
+        productionUseRealDefi: row[42]
+    };
 }
 
 export const updateWebhookConfigQuery = `-- name: UpdateWebhookConfig :one

@@ -12,6 +12,12 @@ export interface CreateWithdrawalRequest {
 	orderId: string
 	destinationType: "client_balance" | "bank_account" | "debit_card" | "crypto_wallet"
 	destinationDetails?: any
+	// Environment support (sandbox vs production)
+	environment?: "sandbox" | "production"
+	network?: string // e.g., "sepolia", "mainnet"
+	oracleAddress?: string // Oracle custodial wallet address that sends the withdrawal
+	// Revenue split control
+	deductFees?: boolean // If true, deduct platform/client fees from withdrawal; if false, defer fees for later settlement (default: true)
 }
 
 export interface WithdrawalResponse {
@@ -26,6 +32,16 @@ export interface WithdrawalResponse {
 	destinationType: string
 	createdAt: Date
 	completedAt: Date | null
+	// Fee breakdown (if withdrawal processed)
+	feeBreakdown?: {
+		totalYield: string // Total yield earned since deposit
+		platformFee: string // Fee taken by Proxify platform
+		clientFee: string // Fee taken by client
+		userNetYield: string // Net yield received by user
+		feesDeducted: boolean // Whether fees were deducted or deferred
+		platformFeePercent: string // Platform fee percentage applied
+		clientFeePercent: string // Client fee percentage applied
+	}
 }
 
 export interface CompleteWithdrawalRequest {

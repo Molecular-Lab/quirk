@@ -11,28 +11,30 @@ SELECT * FROM client_vaults
 WHERE id = $1 LIMIT 1;
 
 -- name: GetClientVaultByToken :one
-SELECT 
+SELECT
   cv.*,
-  pa.privy_wallet_address as custodial_wallet_address
+  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
 FROM client_vaults cv
 JOIN client_organizations co ON cv.client_id = co.id
 JOIN privy_accounts pa ON co.privy_account_id = pa.id
 WHERE cv.client_id = $1
   AND cv.chain = $2
   AND cv.token_address = $3
+  AND cv.environment = $4
 LIMIT 1;
 
 -- name: GetClientVaultByTokenForUpdate :one
 -- Use in transactions to lock the vault row
-SELECT 
+SELECT
   cv.*,
-  pa.privy_wallet_address as custodial_wallet_address
+  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
 FROM client_vaults cv
 JOIN client_organizations co ON cv.client_id = co.id
 JOIN privy_accounts pa ON co.privy_account_id = pa.id
 WHERE cv.client_id = $1
   AND cv.chain = $2
   AND cv.token_address = $3
+  AND cv.environment = $4
 FOR UPDATE
 LIMIT 1;
 
@@ -59,15 +61,17 @@ WITH new_vault AS (
     total_shares,
     pending_deposit_balance,
     total_staked_balance,
-    cumulative_yield
+    cumulative_yield,
+    environment,
+    custodial_wallet_address
   ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
   )
   RETURNING *
 )
-SELECT 
+SELECT
   nv.*,
-  pa.privy_wallet_address as custodial_wallet_address
+  COALESCE(nv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
 FROM new_vault nv
 JOIN client_organizations co ON nv.client_id = co.id
 JOIN privy_accounts pa ON co.privy_account_id = pa.id;
@@ -158,10 +162,11 @@ SELECT * FROM end_user_vaults
 WHERE id = $1 LIMIT 1;
 
 -- name: GetEndUserVaultByClient :one
--- Get user's vault for a specific client
+-- Get user's vault for a specific client and environment
 SELECT * FROM end_user_vaults
 WHERE end_user_id = $1
   AND client_id = $2
+  AND environment = $3
 LIMIT 1;
 
 -- name: GetEndUserVaultByClientForUpdate :one
@@ -169,6 +174,7 @@ LIMIT 1;
 SELECT * FROM end_user_vaults
 WHERE end_user_id = $1
   AND client_id = $2
+  AND environment = $3
 FOR UPDATE
 LIMIT 1;
 
@@ -183,9 +189,10 @@ INSERT INTO end_user_vaults (
   end_user_id,
   client_id,
   total_deposited,
-  weighted_entry_index
+  weighted_entry_index,
+  environment
 ) VALUES (
-  $1, $2, $3, $4
+  $1, $2, $3, $4, $5
 )
 RETURNING *;
 

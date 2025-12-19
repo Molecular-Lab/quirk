@@ -37,7 +37,7 @@ export class B2BDepositUseCase {
 	}
 
 	/**
-	 * Create deposit transaction
+	 * Create deposit transaction with environment support
 	 */
 	async createDeposit(request: CreateDepositRequest): Promise<CreateDepositRow> {
 		// Validate client
@@ -53,6 +53,17 @@ export class B2BDepositUseCase {
 			"custodial", // Default userType
 			undefined, // No wallet address yet
 		)
+
+		// Determine environment and network
+		// Default to sandbox if not specified
+		const environment = request.environment || "sandbox"
+		const network = request.network || (environment === "sandbox" ? "sepolia" : "mainnet")
+
+		console.log("[Deposit] Creating deposit with environment:", {
+			environment,
+			network,
+			oracleAddress: request.oracleAddress,
+		})
 
 		// Create deposit args
 		const args: CreateDepositArgs = {
@@ -82,6 +93,10 @@ export class B2BDepositUseCase {
 			tokenAddress: request.tokenAddress || null,
 			onRampProvider: request.onRampProvider || request.gatewayProvider || null,
 			qrCode: request.qrCode || null,
+			// ✅ Environment support
+			environment,
+			network,
+			oracleAddress: request.oracleAddress || null,
 		}
 
 		const deposit = await this.depositRepository.create(args)

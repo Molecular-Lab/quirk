@@ -45,6 +45,7 @@ export { DepositRepository } from "./deposit.repository"
 export { UserRepository } from "./end_user.repository"
 export { VaultRepository } from "./vault.repository"
 export { WithdrawalRepository } from "./withdrawal.repository"
+export { RevenueRepository } from "./revenue.repository"
 
 // Re-export commonly used SQLC types for convenience
 export type {

@@ -1,8 +1,8 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { Home, TrendingUp, Wallet } from "lucide-react"
 
-import { createFiatDeposit, createUser } from "@/api/b2bClientHelpers"
+import { createFiatDeposit, createUser, getUserBalance } from "@/api/b2bClientHelpers"
 import { LandingNavbar } from "@/feature/landing/LandingNavbar"
 import { useClientContextStore } from "@/store/clientContextStore"
 import { useDemoStore } from "@/store/demoStore"
@@ -12,11 +12,27 @@ import { DepositModal } from "../shared/DepositModal"
 
 import { getPersonaMockData } from "./ecommerce-data"
 
+// Real balance type from API
+interface UserBalance {
+	balance: string
+	currency: string
+	yield_earned: string
+	apy: string
+	status: string
+	entry_index: string
+	current_index: string
+}
+
 export function EcommerceDemoApp() {
 	const [currentCardIndex, setCurrentCardIndex] = useState(0)
 	const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
 	const [touchStart, setTouchStart] = useState(0)
 	const [touchEnd, setTouchEnd] = useState(0)
+
+	// Real balance state
+	const [realBalance, setRealBalance] = useState<UserBalance | null>(null)
+	const [isLoadingBalance, setIsLoadingBalance] = useState(false)
+	const [balanceError, setBalanceError] = useState<string | null>(null)
 
 	// Get client context (productId, clientId, apiKey)
 	const { productId, hasApiKey } = useClientContextStore()
@@ -36,9 +52,48 @@ export function EcommerceDemoApp() {
 		selectedPersona,
 	} = useDemoStore()
 
+	// Function to fetch balance
+	const fetchBalance = async () => {
+		if (!endUserId || !hasEarnAccount) {
+			setRealBalance(null)
+			return
+		}
+
+		setIsLoadingBalance(true)
+		setBalanceError(null)
+
+		try {
+			console.log("[EcommerceDemoApp] Fetching real balance for user:", endUserId)
+			const response = await getUserBalance(endUserId)
+
+			if (response.found && response.data) {
+				console.log("[EcommerceDemoApp] Real balance fetched:", response.data)
+				setRealBalance(response.data)
+			} else {
+				console.warn("[EcommerceDemoApp] Balance not found for user:", endUserId)
+				setBalanceError("Balance not found")
+			}
+		} catch (err) {
+			console.error("[EcommerceDemoApp] Failed to fetch balance:", err)
+			setBalanceError(err instanceof Error ? err.message : "Failed to load balance")
+		} finally {
+			setIsLoadingBalance(false)
+		}
+	}
+
+	// Fetch real balance when endUserId exists
+	useEffect(() => {
+		fetchBalance()
+	}, [endUserId, hasEarnAccount])
+
 	// Get persona-specific mock data
 	const personaMockData = getPersonaMockData(selectedPersona)
 	const merchantBalance = personaMockData.balances.merchantBalance
+
+	// Use real balance if available, otherwise use mock
+	const earnBalance = realBalance ? parseFloat(realBalance.balance) : personaMockData.balances.earnBalance
+	const yieldEarned = realBalance ? parseFloat(realBalance.yield_earned) : personaMockData.balances.accruedInterest
+	const apy = realBalance ? parseFloat(realBalance.apy) : 0
 
 	// Use persona-specific transactions
 	const cards = [
@@ -153,6 +208,12 @@ export function EcommerceDemoApp() {
 					status: "pending",
 					createdAt: new Date().toISOString(),
 				})
+
+				// Refetch balance after successful deposit
+				console.log("[EcommerceDemoApp] Deposit successful, refreshing balance...")
+				setTimeout(() => {
+					fetchBalance()
+				}, 1000) // Wait 1s for backend to process
 			}
 
 			// Success - modal will show success UI
@@ -218,25 +279,32 @@ export function EcommerceDemoApp() {
 						</>
 					) : (
 						<>
-							{/* Savings View - Pure Numbers */}
+							{/* Savings View - Real Balance from API */}
 							<div className="mb-2">
 								<p className="text-sm text-gray-500 mb-1">USDC Balance</p>
 								<h2 className="text-6xl font-bold text-gray-950 mb-3">
 									{hasEarnAccount
-										? `$${personaMockData.balances.earnBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+										? isLoadingBalance
+											? "Loading..."
+											: `$${earnBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 										: "$0.00"}
 								</h2>
-								{hasEarnAccount && (
+								{hasEarnAccount && !isLoadingBalance && (
 									<div className="flex items-center gap-2">
 										<span className="text-gray-700 font-medium">
 											+$
-											{personaMockData.balances.accruedInterest.toLocaleString("en-US", {
+											{yieldEarned.toLocaleString("en-US", {
 												minimumFractionDigits: 2,
 												maximumFractionDigits: 2,
 											})}
 										</span>
-										<span className="text-gray-500 text-sm">Accrued Interest</span>
+										<span className="text-gray-500 text-sm">
+											Yield Earned {apy > 0 && `(${apy.toFixed(2)}% APY)`}
+										</span>
 									</div>
+								)}
+								{balanceError && (
+									<p className="text-sm text-red-500 mt-2">⚠️ {balanceError}</p>
 								)}
 							</div>
 						</>

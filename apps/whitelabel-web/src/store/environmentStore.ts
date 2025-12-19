@@ -2,7 +2,9 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { NETWORK_CONFIG, type NetworkKey } from "@proxify/core/constants"
 
+// Environment types
 export type Environment = "dev" | "prod"
+export type ApiEnvironment = "sandbox" | "production"
 
 export interface EnvironmentConfig {
 	chainId: number
@@ -40,6 +42,7 @@ export const ENV_CONFIG: Record<Environment, EnvironmentConfig> = {
 }
 
 interface EnvironmentState {
+	// Blockchain environment (dev = testnet, prod = mainnet)
 	environment: Environment
 	setEnvironment: (env: Environment) => void
 	getConfig: () => EnvironmentConfig
@@ -47,10 +50,19 @@ interface EnvironmentState {
 	getChainId: () => number // Get current chain ID
 	isTestnet: () => boolean
 	isEnabled: (env: Environment) => boolean
+
+	// API environment (sandbox vs production for API keys)
+	apiEnvironment: ApiEnvironment
+	setApiEnvironment: (env: ApiEnvironment) => void
+	toggleApiEnvironment: () => void
+	isSandbox: () => boolean
+	isProduction: () => boolean
+	getApiKeyPrefix: () => "pk_test" | "pk_live"
 }
 
-const initialState: Pick<EnvironmentState, "environment"> = {
-	environment: "dev", // Default to dev/testnet
+const initialState: Pick<EnvironmentState, "environment" | "apiEnvironment"> = {
+	environment: "dev", // Default to dev/testnet for blockchain
+	apiEnvironment: "sandbox", // Default to sandbox for API keys
 }
 
 export const useEnvironmentStore = create<EnvironmentState>()(
@@ -58,6 +70,7 @@ export const useEnvironmentStore = create<EnvironmentState>()(
 		(set, get) => ({
 			...initialState,
 
+			// Blockchain environment methods
 			setEnvironment: (env: Environment) => {
 				// Don't allow switching to disabled environments
 				if (!ENV_CONFIG[env].enabled) {
@@ -94,9 +107,44 @@ export const useEnvironmentStore = create<EnvironmentState>()(
 			isEnabled: (env: Environment) => {
 				return ENV_CONFIG[env].enabled
 			},
+
+			// API environment methods (sandbox vs production for API keys)
+			setApiEnvironment: (env: ApiEnvironment) => {
+				console.log("[environmentStore] Switching API environment:", {
+					from: get().apiEnvironment,
+					to: env,
+				})
+				set({ apiEnvironment: env })
+			},
+
+			toggleApiEnvironment: () => {
+				const current = get().apiEnvironment
+				const next: ApiEnvironment = current === "sandbox" ? "production" : "sandbox"
+				console.log("[environmentStore] Toggling API environment:", {
+					from: current,
+					to: next,
+				})
+				set({ apiEnvironment: next })
+			},
+
+			isSandbox: () => {
+				return get().apiEnvironment === "sandbox"
+			},
+
+			isProduction: () => {
+				return get().apiEnvironment === "production"
+			},
+
+			getApiKeyPrefix: () => {
+				return get().apiEnvironment === "sandbox" ? "pk_test" : "pk_live"
+			},
 		}),
 		{
 			name: "proxify-environment", // localStorage key
+			partialize: (state) => ({
+				environment: state.environment,
+				apiEnvironment: state.apiEnvironment,
+			}),
 		},
 	),
 )

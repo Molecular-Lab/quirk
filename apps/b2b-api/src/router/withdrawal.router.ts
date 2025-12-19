@@ -45,7 +45,13 @@ export function createWithdrawalRouter(
 					};
 				}
 
-				logger.info("Requesting withdrawal", { clientId, userId: body.userId, vaultId: body.vaultId, amount: body.amount });
+				logger.info("Requesting withdrawal", {
+					clientId,
+					userId: body.userId,
+					vaultId: body.vaultId,
+					amount: body.amount,
+					deductFees: body.deductFees,
+				});
 
 				const withdrawal = await withdrawalService.requestWithdrawal({
 					clientId, // ✅ Use clientId from authenticated request
@@ -55,6 +61,7 @@ export function createWithdrawalRouter(
 					amount: body.amount,
 					orderId: `WTH-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
 					destinationType: "client_balance",
+					deductFees: body.deductFees, // ✅ Pass fee deduction control
 				});
 
 				return {
@@ -70,6 +77,7 @@ export function createWithdrawalRouter(
 						status: withdrawal.status.toUpperCase() as any,
 						transactionHash: undefined,
 						createdAt: withdrawal.createdAt.toISOString(),
+						feeBreakdown: withdrawal.feeBreakdown, // ✅ Include fee breakdown
 					},
 				};
 			} catch (error) {
