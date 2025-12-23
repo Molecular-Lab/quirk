@@ -1,6 +1,6 @@
 import { network, artifacts } from 'hardhat'
 import { Address, formatUnits, parseUnits, getContract } from 'viem'
-import { getMockUSDCAddress } from '@proxify/core/constants'
+import { getMockUSDCAddress } from '@quirk/core/constants'
 
 /**
  * @title Mint MockUSDC to Custodial Wallet (Hardhat v3 + Viem)
@@ -14,7 +14,7 @@ import { getMockUSDCAddress } from '@proxify/core/constants'
  *   CUSTODIAL_WALLET  - Client's Privy custodial wallet address
  *   AMOUNT            - Amount of USDC to mint (e.g., "1000.50")
  *
- * Note: MOCK_USDC_ADDRESS is now imported from @proxify/core/constants
+ * Note: MOCK_USDC_ADDRESS is now imported from @quirk/core/constants
  */
 
 async function main() {

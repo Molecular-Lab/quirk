@@ -24,6 +24,6 @@
     "@nomicfoundation/hardhat-ethers": "^4.0.2",
     "@nomicfoundation/hardhat-verify": "^3.0.4",
     "@openzeppelin/contracts": "^5.4.0",
-    "@proxify/core": "workspace:*"
+    "@quirk/core": "workspace:*"
   }
 }
