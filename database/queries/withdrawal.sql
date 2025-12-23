@@ -224,3 +224,31 @@ FROM withdrawal_transactions
 WHERE client_id = sqlc.arg('client_id')
   AND created_at >= sqlc.arg('start_date')  -- start date
   AND created_at <= sqlc.arg('end_date'); -- end date
+
+-- ============================================
+-- ENVIRONMENT-FILTERED QUERIES
+-- ============================================
+
+-- name: ListWithdrawalsByClientAndEnvironment :many
+-- Get withdrawals for a client filtered by status and environment
+SELECT * FROM withdrawal_transactions
+WHERE client_id = $1
+  AND status = COALESCE(sqlc.narg('status'), status)
+  AND environment = COALESCE(sqlc.narg('environment'), environment)
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: ListPendingWithdrawalsByEnvironment :many
+-- Get pending withdrawals filtered by environment (for Operations Dashboard)
+SELECT * FROM withdrawal_transactions
+WHERE status = 'pending'
+  AND environment = $1
+ORDER BY created_at ASC;
+
+-- name: ListPendingWithdrawalsByClientAndEnvironment :many
+-- Get pending withdrawals for a specific client filtered by environment
+SELECT * FROM withdrawal_transactions
+WHERE client_id = $1
+  AND status = 'pending'
+  AND environment = $2
+ORDER BY created_at ASC;

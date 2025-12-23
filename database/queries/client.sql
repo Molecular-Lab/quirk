@@ -36,8 +36,8 @@ SELECT
   co.business_type,
   co.description,
   co.website_url,
-  co.api_key_hash,
-  co.api_key_prefix,
+  SUBSTRING(co.sandbox_api_key, 1, 20) AS sandbox_api_key_prefix,
+  SUBSTRING(co.production_api_key, 1, 20) AS production_api_key_prefix,
   co.webhook_urls,
   co.webhook_secret,
   co.custom_strategy,
@@ -70,6 +70,8 @@ LIMIT 1;
 -- Retrieve ALL organizations for a Privy user (for aggregation)
 SELECT
   co.*,
+  SUBSTRING(co.sandbox_api_key, 1, 20) AS sandbox_api_key_prefix,
+  SUBSTRING(co.production_api_key, 1, 20) AS production_api_key_prefix,
   pa.privy_organization_id,
   pa.wallet_type
 FROM client_organizations co
@@ -141,40 +143,7 @@ DELETE FROM client_organizations
 WHERE id = $1;
 
 -- ============================================
--- API KEY MANAGEMENT
--- ============================================
-
--- name: StoreAPIKey :one
--- Store hashed API key after generation
-UPDATE client_organizations
-SET
-  api_key_hash = $2,
-  api_key_prefix = $3,
-  updated_at = now()
-WHERE id = $1
-RETURNING api_key_prefix;
-
--- name: GetClientByAPIKeyPrefix :one
--- Get client by API key prefix (first step of validation)
-SELECT * FROM client_organizations
-WHERE api_key_prefix = $1 AND is_active = true;
-
--- name: GetClientByAPIKeyHash :one
--- Verify API key (used in authentication)
-SELECT * FROM client_organizations
-WHERE api_key_hash = $1 AND is_active = true;
-
--- name: RevokeAPIKey :exec
--- Revoke (clear) API key
-UPDATE client_organizations
-SET
-  api_key_hash = NULL,
-  api_key_prefix = NULL,
-  updated_at = now()
-WHERE id = $1;
-
--- ============================================
--- DUAL API KEY MANAGEMENT (Sandbox + Production)
+-- API KEY MANAGEMENT (Sandbox + Production)
 -- ============================================
 
 -- name: StoreEnvironmentAPIKeys :one
@@ -191,6 +160,7 @@ RETURNING *;
 
 -- name: GetClientBySandboxAPIKey :one
 -- Get client by sandbox API key hash (for sandbox mode authentication)
+-- NOTE: Used for direct hash lookup (not for bcrypt validation flow)
 SELECT
   co.*,
   pa.privy_wallet_address,
@@ -202,6 +172,7 @@ WHERE co.sandbox_api_key = $1 AND co.is_active = true;
 
 -- name: GetClientByProductionAPIKey :one
 -- Get client by production API key hash (for production mode authentication)
+-- NOTE: Used for direct hash lookup (not for bcrypt validation flow)
 SELECT
   co.*,
   pa.privy_wallet_address,
@@ -210,6 +181,30 @@ SELECT
 FROM client_organizations co
 LEFT JOIN privy_accounts pa ON co.privy_account_id = pa.id
 WHERE co.production_api_key = $1 AND co.is_active = true;
+
+-- name: GetClientBySandboxAPIKeyPrefix :one
+-- Get client by sandbox API key prefix (for bcrypt validation flow)
+-- Step 1: Look up by prefix, Step 2: Verify raw key against stored hash
+SELECT
+  co.*,
+  pa.privy_wallet_address,
+  pa.privy_organization_id,
+  pa.wallet_type
+FROM client_organizations co
+LEFT JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.sandbox_api_secret = $1 AND co.is_active = true;
+
+-- name: GetClientByProductionAPIKeyPrefix :one
+-- Get client by production API key prefix (for bcrypt validation flow)
+-- Step 1: Look up by prefix, Step 2: Verify raw key against stored hash
+SELECT
+  co.*,
+  pa.privy_wallet_address,
+  pa.privy_organization_id,
+  pa.wallet_type
+FROM client_organizations co
+LEFT JOIN privy_accounts pa ON co.privy_account_id = pa.id
+WHERE co.production_api_secret = $1 AND co.is_active = true;
 
 -- name: RegenerateSandboxAPIKey :one
 -- Regenerate sandbox API key
@@ -479,14 +474,30 @@ RETURNING
 -- ============================================
 
 -- name: GetAggregatedDashboardSummary :one
--- Aggregate dashboard metrics across ALL client organizations for a Privy user
+-- Aggregate dashboard metrics across ALL client organizations for a Privy user (with optional environment filter)
+-- Note: This query aggregates from client_organizations which stores pre-computed metrics
+-- For real-time environment filtering, the metrics should be computed from underlying tables
 SELECT
   -- Company Info (use first org as representative)
   (SELECT company_name FROM client_organizations WHERE privy_account_id = pa.id LIMIT 1) AS company_name,
 
-  -- Aggregated Balances (sum across all orgs)
-  COALESCE(SUM(co.idle_balance), 0) AS total_idle_balance,
-  COALESCE(SUM(co.earning_balance), 0) AS total_earning_balance,
+  -- Aggregated Balances from client_vaults (with environment filter)
+  COALESCE((
+    SELECT SUM(cv.pending_deposit_balance)
+    FROM client_vaults cv
+    JOIN client_organizations co2 ON cv.client_id = co2.id
+    WHERE co2.privy_account_id = pa.id
+      AND cv.is_active = true
+      AND (sqlc.narg('environment')::varchar IS NULL OR cv.environment = sqlc.narg('environment')::varchar)
+  ), 0) AS total_idle_balance,
+  COALESCE((
+    SELECT SUM(cv.total_staked_balance)
+    FROM client_vaults cv
+    JOIN client_organizations co2 ON cv.client_id = co2.id
+    WHERE co2.privy_account_id = pa.id
+      AND cv.is_active = true
+      AND (sqlc.narg('environment')::varchar IS NULL OR cv.environment = sqlc.narg('environment')::varchar)
+  ), 0) AS total_earning_balance,
   COALESCE(SUM(co.client_revenue_earned), 0) AS total_client_revenue,
   COALESCE(SUM(co.platform_revenue_earned), 0) AS total_platform_revenue,
   COALESCE(SUM(co.enduser_revenue_earned), 0) AS total_enduser_revenue,
@@ -524,12 +535,47 @@ SELECT
   -- Last calculation timestamp (most recent across all orgs)
   MAX(co.last_mrr_calculation_at) AS last_calculated_at,
 
-  -- Aggregated End-User Metrics
-  COALESCE(SUM(co.total_end_users), 0) AS total_end_users,
-  COALESCE(SUM(co.new_users_30d), 0) AS new_users_30d,
-  COALESCE(SUM(co.active_users_30d), 0) AS active_users_30d,
-  COALESCE(SUM(co.total_deposited), 0) AS total_deposited,
-  COALESCE(SUM(co.total_withdrawn), 0) AS total_withdrawn
+  -- Aggregated End-User Metrics (with environment filter)
+  COALESCE((
+    SELECT COUNT(DISTINCT eu.id)
+    FROM end_users eu
+    JOIN client_organizations co2 ON eu.client_id = co2.id
+    WHERE co2.privy_account_id = pa.id
+      AND (sqlc.narg('environment')::varchar IS NULL OR eu.environment = sqlc.narg('environment')::varchar)
+  ), 0) AS total_end_users,
+  COALESCE((
+    SELECT COUNT(DISTINCT eu.id)
+    FROM end_users eu
+    JOIN client_organizations co2 ON eu.client_id = co2.id
+    WHERE co2.privy_account_id = pa.id
+      AND eu.created_at >= NOW() - INTERVAL '30 days'
+      AND (sqlc.narg('environment')::varchar IS NULL OR eu.environment = sqlc.narg('environment')::varchar)
+  ), 0) AS new_users_30d,
+  COALESCE((
+    SELECT COUNT(DISTINCT euv.end_user_id)
+    FROM end_user_vaults euv
+    JOIN end_users eu ON euv.end_user_id = eu.id
+    JOIN client_organizations co2 ON eu.client_id = co2.id
+    WHERE co2.privy_account_id = pa.id
+      AND euv.last_deposit_at >= NOW() - INTERVAL '30 days'
+      AND (sqlc.narg('environment')::varchar IS NULL OR euv.environment = sqlc.narg('environment')::varchar)
+  ), 0) AS active_users_30d,
+  COALESCE((
+    SELECT SUM(dt.fiat_amount::numeric)
+    FROM deposit_transactions dt
+    JOIN client_organizations co2 ON dt.client_id = co2.id
+    WHERE co2.privy_account_id = pa.id
+      AND dt.status = 'completed'
+      AND (sqlc.narg('environment')::varchar IS NULL OR dt.environment = sqlc.narg('environment')::varchar)
+  ), 0) AS total_deposited,
+  COALESCE((
+    SELECT SUM(wt.requested_amount::numeric)
+    FROM withdrawal_transactions wt
+    JOIN client_organizations co2 ON wt.client_id = co2.id
+    WHERE co2.privy_account_id = pa.id
+      AND wt.status = 'completed'
+      AND (sqlc.narg('environment')::varchar IS NULL OR wt.environment = sqlc.narg('environment')::varchar)
+  ), 0) AS total_withdrawn
 
 FROM privy_accounts pa
 LEFT JOIN client_organizations co ON pa.id = co.privy_account_id AND co.is_active = true

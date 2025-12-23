@@ -269,14 +269,15 @@ WHERE id = $1
 LIMIT 1;
 
 -- name: GetClientTotalBalances :one
--- Get aggregated balances across all vaults for a client
+-- Get aggregated balances across all vaults for a client (with optional environment filter)
 SELECT
   COALESCE(SUM(pending_deposit_balance), 0) AS total_pending_balance,
   COALESCE(SUM(total_staked_balance), 0) AS total_earning_balance,
   COALESCE(SUM(cumulative_yield), 0) AS total_cumulative_yield
 FROM client_vaults
 WHERE client_id = $1
-  AND is_active = true;
+  AND is_active = true
+  AND (sqlc.narg('environment')::varchar IS NULL OR environment = sqlc.narg('environment')::varchar);
 
 -- name: AddToIdleBalance :exec
 -- Add funds to pending balance (after on-ramp)
@@ -379,7 +380,7 @@ HAVING SUM(cv.total_staked_balance) > 0;
 -- ============================================
 
 -- name: ListRecentEndUserTransactions :many
--- Get recent deposit/withdrawal transactions for end-users
+-- Get recent deposit/withdrawal transactions for end-users (with optional environment filter)
 SELECT
   'deposit' AS transaction_type,
   dt.id,
@@ -390,6 +391,7 @@ SELECT
   dt.created_at AS timestamp
 FROM deposit_transactions dt
 WHERE dt.client_id = $1
+  AND (sqlc.narg('environment')::varchar IS NULL OR dt.environment = sqlc.narg('environment')::varchar)
 UNION ALL
 SELECT
   'withdrawal' AS transaction_type,
@@ -401,11 +403,12 @@ SELECT
   wt.created_at AS timestamp
 FROM withdrawal_transactions wt
 WHERE wt.client_id = $1
+  AND (sqlc.narg('environment')::varchar IS NULL OR wt.environment = sqlc.narg('environment')::varchar)
 ORDER BY timestamp DESC
 LIMIT $2 OFFSET $3;
 
 -- name: GetEndUserGrowthMetrics :one
--- Get end-user growth metrics for a client
+-- Get end-user growth metrics for a client (with optional environment filter)
 SELECT
   COUNT(DISTINCT eu.id) AS total_end_users,
   COUNT(DISTINCT eu.id) FILTER (
@@ -424,8 +427,12 @@ SELECT
   ) AS total_withdrawals
 FROM client_organizations c
 LEFT JOIN end_users eu ON c.id = eu.client_id
+  AND (sqlc.narg('environment')::varchar IS NULL OR eu.environment = sqlc.narg('environment')::varchar)
 LEFT JOIN end_user_vaults euv ON eu.id = euv.end_user_id AND euv.is_active = true
+  AND (sqlc.narg('environment')::varchar IS NULL OR euv.environment = sqlc.narg('environment')::varchar)
 LEFT JOIN deposit_transactions dt ON c.id = dt.client_id
+  AND (sqlc.narg('environment')::varchar IS NULL OR dt.environment = sqlc.narg('environment')::varchar)
 LEFT JOIN withdrawal_transactions wt ON c.id = wt.client_id
+  AND (sqlc.narg('environment')::varchar IS NULL OR wt.environment = sqlc.narg('environment')::varchar)
 WHERE c.id = $1
 GROUP BY c.id;

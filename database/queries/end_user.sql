@@ -30,9 +30,10 @@ INSERT INTO end_users (
   user_id,
   user_type,
   user_wallet_address,
-  is_active
+  is_active,
+  status
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6
 )
 RETURNING *;
 
@@ -74,6 +75,13 @@ UPDATE end_users
 SET is_active = false,
     updated_at = now()
 WHERE id = $1;
+
+-- name: UpdateEndUserStatus :one
+UPDATE end_users
+SET status = $2,
+    updated_at = now()
+WHERE id = $1
+RETURNING *;
 
 -- name: DeleteEndUser :exec
 DELETE FROM end_users

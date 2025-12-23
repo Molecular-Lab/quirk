@@ -232,3 +232,20 @@ WHERE client_id = $1
   AND status = 'pending'
   AND deposit_type = 'external'
 ORDER BY created_at ASC;
+
+-- name: ListAllPendingDepositsByEnvironment :many
+-- Get all pending deposits filtered by environment (for Operations Dashboard)
+SELECT * FROM deposit_transactions
+WHERE status = 'pending'
+  AND deposit_type = 'external'
+  AND environment = $1
+ORDER BY created_at ASC;
+
+-- name: ListPendingDepositsByClientAndEnvironment :many
+-- Get pending deposits for a specific client filtered by environment
+SELECT * FROM deposit_transactions
+WHERE client_id = $1
+  AND status = 'pending'
+  AND deposit_type = 'external'
+  AND environment = $2
+ORDER BY created_at ASC;
