@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { YieldAggregator } from '@proxify/yield-engine';
+import { YieldAggregator } from '@quirk/yield-engine';
 
 // Create a shared aggregator instance
 const aggregator = new YieldAggregator();
@@ -190,10 +190,10 @@ export const aggregatorTools = [
 			chainId: z
 				.number()
 				.describe('Chain ID (1=Ethereum, 137=Polygon, 8453=Base, 42161=Arbitrum)'),
-			protocol1: z.enum(['aave', 'compound', 'morpho']).describe('First protocol to compare'),
+			protocol1: z.enum(['aave', 'compound', 'morpho']).describe('First protocol - must be exactly "aave", "compound", or "morpho"'),
 			protocol2: z
 				.enum(['aave', 'compound', 'morpho'])
-				.describe('Second protocol to compare'),
+				.describe('Second protocol - must be exactly "aave", "compound", or "morpho"'),
 		}),
 		handler: async (args: {
 			token: string;

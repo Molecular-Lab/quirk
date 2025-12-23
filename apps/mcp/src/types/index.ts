@@ -40,4 +40,4 @@ export type {
 	AggregatedMetrics,
 	AggregatedOpportunities,
 	AggregatedPositions,
-} from '@proxify/yield-engine';
+} from '@quirk/yield-engine';

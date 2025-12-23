@@ -1,0 +1,10 @@
+{
+	"name": "@quirk/agent",
+	"version": "0.1.0",
+	"description": "AI-powered DeFi yield optimization agent",
+	"private": true,
+	"scripts": {
+		"dev": "$HOME/.local/bin/uv run python src/api_server.py",
+		"start": "$HOME/.local/bin/uv run python src/api_server.py"
+	}
+}

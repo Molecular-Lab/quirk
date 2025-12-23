@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { YieldOptimizer } from '@proxify/yield-engine';
+import { YieldOptimizer } from '@quirk/yield-engine';
 
 // Create a shared optimizer instance
 const optimizer = new YieldOptimizer();
@@ -81,7 +81,7 @@ export const optimizerTools = [
 		name: 'compare_position',
 		description: 'Compare a current position against all available opportunities to see potential improvements',
 		inputSchema: z.object({
-			protocol: z.enum(['aave', 'compound', 'morpho']).describe('Current protocol'),
+			protocol: z.enum(['aave', 'compound', 'morpho']).describe('Current protocol - must be exactly "aave", "compound", or "morpho"'),
 			token: z.string().describe('Token symbol (e.g., USDC, USDT)'),
 			chainId: z
 				.number()
@@ -145,7 +145,7 @@ export const optimizerTools = [
 		description:
 			'Get detailed rebalancing recommendation with gas cost analysis and break-even calculations',
 		inputSchema: z.object({
-			protocol: z.enum(['aave', 'compound', 'morpho']).describe('Current protocol'),
+			protocol: z.enum(['aave', 'compound', 'morpho']).describe('Current protocol - must be exactly "aave", "compound", or "morpho"'),
 			token: z.string().describe('Token symbol (e.g., USDC, USDT)'),
 			chainId: z
 				.number()

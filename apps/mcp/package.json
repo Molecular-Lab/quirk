@@ -1,26 +1,27 @@
 {
-	"name": "@proxify/mcp",
+	"name": "@quirk/mcp",
 	"version": "0.1.0",
 	"description": "MCP server for yield optimization agent",
 	"type": "module",
 	"main": "./dist/index.js",
 	"bin": {
-		"proxify-mcp": "./dist/index.js"
+		"quirk-mcp": "./dist/index.js"
 	},
 	"scripts": {
 		"build": "tsup",
-		"dev": "tsup --watch",
-		"start": "node dist/index.js"
+		"dev": "PORT=3001 tsx watch src/index.ts",
+		"start": "PORT=3001 node dist/index.js"
 	},
 	"dependencies": {
 		"@modelcontextprotocol/sdk": "^1.0.4",
-		"@proxify/yield-engine": "workspace:*",
+		"@quirk/yield-engine": "workspace:*",
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@proxify/tsconfig": "workspace:*",
+		"@quirk/tsconfig": "workspace:*",
 		"@types/node": "^22.10.2",
 		"tsup": "^8.3.5",
+		"tsx": "^4.19.2",
 		"typescript": "catalog:"
 	},
 	"keywords": [

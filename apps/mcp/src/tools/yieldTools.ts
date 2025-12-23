@@ -144,17 +144,17 @@ export const yieldTools = [
 	},
 	{
 		name: 'optimize_portfolio',
-		description: 'Get portfolio optimization suggestions based on risk tolerance',
+		description: 'Get portfolio optimization suggestions based on risk tolerance. IMPORTANT: riskTolerance must be exactly one of: "low", "medium", or "high"',
 		inputSchema: z.object({
 			currentHoldings: z.array(
 				z.object({
-					asset: z.string(),
-					amount: z.number(),
-					currentYield: z.number(),
+					asset: z.string().describe('Asset symbol (e.g., USDC, ETH)'),
+					amount: z.number().describe('Amount in USD'),
+					currentYield: z.number().describe('Current APY as percentage (e.g., 5.2 for 5.2%)'),
 				})
-			),
-			riskTolerance: z.enum(['low', 'medium', 'high']),
-			targetYield: z.number().optional(),
+			).describe('Array of current holdings'),
+			riskTolerance: z.enum(['low', 'medium', 'high']).describe('Risk tolerance level - must be exactly "low", "medium", or "high"'),
+			targetYield: z.number().optional().describe('Optional target APY percentage'),
 		}),
 		handler: async (args: {
 			currentHoldings: Array<{

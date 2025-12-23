@@ -34,6 +34,26 @@ async function main() {
 			const body = Buffer.concat(chunks).toString('utf-8');
 			const parsedBody = body ? JSON.parse(body) : undefined;
 
+			// Handle simple REST API endpoint (/agent)
+			if (req.url === '/agent' && parsedBody && parsedBody.message) {
+				// Enable CORS
+				res.setHeader('Access-Control-Allow-Origin', '*');
+				res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+				res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Accept');
+				res.setHeader('Content-Type', 'application/json');
+
+				// Simple response for now
+				const response = {
+					response: `I received your message: "${parsedBody.message}". The AI agent integration is working! However, the actual AI processing is not yet implemented. This is a placeholder response.`,
+					session_id: parsedBody.session_id,
+					timestamp: new Date().toISOString(),
+				};
+
+				res.writeHead(200);
+				res.end(JSON.stringify(response));
+				return;
+			}
+
 			// Get or create session ID
 			const sessionId = (req.headers['mcp-session-id'] as string) || randomUUID();
 
@@ -42,7 +62,7 @@ async function main() {
 			if (!sessionServer) {
 				sessionServer = new McpServer(
 					{
-						name: '@proxify/mcp',
+						name: '@quirk/mcp',
 						version: '0.1.0',
 					},
 					{
@@ -128,7 +148,7 @@ async function main() {
 
 	// Start HTTP server
 	httpServer.listen(PORT, HOST, () => {
-		console.error(`Proxify MCP Yield Optimization Server running on http://${HOST}:${PORT}`);
+		console.error(`Quirk MCP Yield Optimization Server running on http://${HOST}:${PORT}`);
 		console.error(`Endpoint: POST http://${HOST}:${PORT}/`);
 		console.error(`Active sessions: ${activeSessions.size}`);
 	});
