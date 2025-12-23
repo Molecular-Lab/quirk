@@ -1,168 +1,143 @@
 # Quirk
 
-**Earn-as-a-Service Platform** - "Stripe for DeFi Yield + Plaid for Earn-in-App"
+**Earn-as-a-Service Platform** — Enable any app to offer DeFi yield without building crypto infrastructure.
 
-> 📚 **Documentation:** See [`docs/core/`](./docs/core/) | **Business Plan:** See [`PRODUCT_OWNER_FLOW.md`](./PRODUCT_OWNER_FLOW.md) | **Quick Start:** See [`QUICK_START.md`](./QUICK_START.md)
+## Overview
 
-## What is Quirk?
+Quirk is a B2B2C infrastructure platform that lets businesses embed DeFi yield into their applications. Users earn yield on idle funds wherever they spend money—fintech apps, freelance platforms, creator communities, or e-commerce sites.
 
-Quirk is an Earn-as-a-Service infrastructure platform enabling businesses to embed DeFi yield into their apps without building crypto infrastructure or handling compliance. Users earn yield on their idle cash anywhere—in fintech apps, on freelance platforms, in creator communities, or e-commerce sites.
-
-**Core Value Proposition:**
-- 🏦 **For Businesses:** Add yield features in weeks, not months. Earn revenue from user balances with zero crypto expertise required.
-- 💰 **For End-Users:** Earn 3-5% APY on idle funds automatically, wherever they use money.
-- 🎨 **For Quirk:** 0.5% AUM platform fee + revenue share on yield generated
-
-**How It Works:**
 ```
-Business embeds @quirk/sdk → End-users deposit fiat →
-Privy MPC custody pool → USDC stablecoin →
-DeFi protocols (AAVE, Compound, Morpho) → Yield earned →
-Index-based distribution → User sees earnings
+Business → Embeds SDK → Users Deposit → Custodial Wallet → DeFi Protocols → Yield Distribution
 ```
 
-**Target Customers:**
-- 🏦 Fintech apps & neo-banks (yield on user balances)
-- 👨‍💼 Freelance platforms (escrow funds earn while pending)
-- 🎨 Creator platforms (revenue earns until withdrawal)
-- 🛍️ E-commerce platforms (seller pending payouts generate yield)
+**Value Proposition:**
+- **Businesses:** Add yield features in weeks. Earn revenue from user balances with zero crypto expertise.
+- **End-Users:** Earn 3-5% APY on idle funds automatically.
+- **Platform:** 0.5% AUM fee + revenue share on yield.
 
-## 📚 Core Documentation
-
-All documentation consolidated into **5 essential files in [`docs/core/`](./docs/core/)**:
-
-| Document | Purpose | Read Time |
-|----------|---------|-----------|
-| **[ARCHITECTURE.md](./docs/core/ARCHITECTURE.md)** | System design, clean architecture, index-based accounting | 15 min |
-| **[BUSINESS.md](./docs/core/BUSINESS.md)** | Product vision, market analysis, revenue model, licensing | 20 min |
-| **[IMPLEMENTATION.md](./docs/core/IMPLEMENTATION.md)** | Setup guides, database config, core flows, authentication | 25 min |
-| **[QUICK_REFERENCE.md](./docs/core/QUICK_REFERENCE.md)** | Concepts, commands, protocols, troubleshooting | 10 min |
-| **[APP_SPECIFIC_GUIDES.md](./docs/core/APP_SPECIFIC_GUIDES.md)** | App/package implementation details (VaultId, Privy, DeFi, MockUSDC, Auth) | 15 min |
-
-**Start Here:** Read in order: Architecture → Business → Implementation → Quick Reference → App Guides
-
-## 📖 Additional Resources
-
-- **[⭐ Full Product Vision](./PRODUCT_OWNER_FLOW.md)** - Complete business plan & customer stories
-- **[🚀 Quick Start Setup](./QUICK_START.md)** - Database + Privy configuration guide
-- **[🎓 Project Context](./CLAUDE.md)** - Development standards & patterns
-
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 quirk/
-├── 📚 docs/core/
-│   ├── ARCHITECTURE.md           # System design & clean architecture
-│   ├── BUSINESS.md               # Market, revenue, compliance
-│   ├── IMPLEMENTATION.md         # Setup & core flows
-│   ├── QUICK_REFERENCE.md        # Concepts, commands, troubleshooting
-│   └── APP_SPECIFIC_GUIDES.md    # App/package implementation details
-├── PRODUCT_OWNER_FLOW.md         # Full product vision
-├── QUICK_START.md                # Setup guide
-├── CLAUDE.md                     # Development standards
 ├── apps/
-│   ├── b2b-api/                 # Main API service (TypeScript + Express + ts-rest)
-│   ├── whitelabel-web/          # Customer dashboard (React + Vite)
-│   └── mock-erc20/              # Test ERC-20 tokens (Hardhat)
+│   ├── b2b-api/              # Main API (Express + ts-rest)
+│   ├── whitelabel-web/       # Dashboard (React + Vite)
+│   ├── mock-erc20/           # Test tokens (Hardhat)
+│   ├── agent/                # AI yield agent
+│   └── mcp/                  # MCP server
 ├── packages/
-│   ├── core/                    # Clean architecture (entities, usecases, repositories)
-│   ├── b2b-api-core/            # ts-rest API contracts
-│   ├── b2b-sdk/                 # Customer SDK (@quirk/sdk)
-│   ├── sqlcgen/                 # SQLC-generated types
-│   ├── yield-engine/            # DeFi protocol integration (AAVE, Compound, Morpho)
-│   └── ui/                      # Shared React components
+│   ├── core/                 # Business logic (entities, usecases, repositories)
+│   ├── b2b-api-core/         # API contracts (ts-rest + Zod)
+│   ├── b2b-sdk/              # Customer SDK
+│   ├── sqlcgen/              # Generated database types
+│   └── yield-engine/         # DeFi protocol adapters
 ├── database/
-│   ├── migrations/              # PostgreSQL schema
-│   └── queries/                 # SQLC query definitions
-└── docker-compose.yml           # Development environment
+│   ├── migrations/           # PostgreSQL schema
+│   └── queries/              # SQLC queries
+└── docs/
+    └── core/                 # Documentation
 ```
 
-## 🎯 Current Phase: MVP (V4)
+## Quick Start
 
-**Goal:** Launch Earn-as-a-Service platform with AI-powered yield strategies
+### Prerequisites
+- Node.js 22+
+- PNPM 9+
+- PostgreSQL 15+
+- Docker (optional)
 
-**Status:** 🚀 In Development
-
-**Completed:**
-- ✅ Client registration & onboarding via Quirk Dashboard
-- ✅ Privy Server-Side MPC Wallets (custodial infrastructure)
-- ✅ Index-based accounting system (pools + individual balances)
-- ✅ DeFi protocol integration (AAVE, Compound, Morpho)
-- ✅ AI-powered yield strategies (Conservative, Moderate, Morpho, Custom)
-- ✅ Dual authentication (API Key for SDK + Privy Session for Dashboard)
-- ✅ TypeScript full-stack (ts-rest, React, TailwindCSS)
-
-**In Progress:**
-- 🔄 On/Off ramp integration (TransFi, ZeroHash, Bridge, Magic)
-- 🔄 White-label dashboard analytics
-- 🔄 Production deployment setup
-
-**Success Metrics:**
-- 3+ pilot clients onboarded
-- $50M+ AUM
-- 3-5% average APY sustained
-
-See [`docs/core/IMPLEMENTATION.md`](./docs/core/IMPLEMENTATION.md) for technical details.
-
-## 🛠️ Tech Stack
-
-**Backend:**
-- **Language:** TypeScript (Node.js 22+)
-- **Framework:** Express 5 + ts-rest
-- **Database:** PostgreSQL 15+ with SQLC type generation
-- **Blockchain:** Viem (Ethereum SDK)
-- **Wallet:** Privy SDK (MPC custodial wallets)
-
-**Frontend:**
-- **Framework:** React 19 + TypeScript
-- **Build:** Vite 6
-- **Router:** TanStack Router
-- **State:** React Query + Zustand
-- **UI:** Radix UI + TailwindCSS 4 + shadcn/ui
-
-**DevOps:**
-- **Monorepo:** TurboRepo + PNPM workspaces
-- **Containers:** Docker + Docker Compose
-- **Migrations:** golang-migrate
-- **Code Generation:** SQLC (SQL → TypeScript types)
-
-## 📖 Quick Links
+### Setup
 
 ```bash
-# Development
-make dev                      # Start all services
-make db-start                 # Start PostgreSQL + Redis
-make db-migrate               # Run database migrations
-make sqlc-generate            # Generate types from SQL
+# Install dependencies
+pnpm install
 
-# Testing
-make test                     # Run all tests
+# Start databases
+docker-compose up -d postgres redis
 
-# Production
-make build                    # Build for production
-docker-compose up -d          # Run production environment
+# Run migrations
+make db-migrate
+
+# Generate types
+make sqlc-generate
+
+# Start development
+make dev
 ```
 
-See [`docs/core/QUICK_REFERENCE.md`](./docs/core/QUICK_REFERENCE.md) for complete command reference.
+### Commands
 
-## 🔐 Security
+| Command | Description |
+|---------|-------------|
+| `make dev` | Start all services |
+| `make dev-api` | Start API only |
+| `make dev-web` | Start web only |
+| `make db-migrate` | Run migrations |
+| `make db-rollback` | Rollback migration |
+| `make sqlc-generate` | Generate TypeScript from SQL |
+| `make build` | Production build |
 
-- ✅ Privy MPC wallet custody (non-custodial for Quirk)
-- ✅ API key authentication with bcrypt hashing
-- ✅ Rate limiting (100 req/min per API key)
-- ✅ Index growth safety checks (max 2× per update)
-- ✅ Audit logging for all transactions
-- ✅ Emergency pause functionality
+## Architecture
 
-See [`docs/core/ARCHITECTURE.md`](./docs/core/ARCHITECTURE.md#-security-architecture) for security details.
+### Clean Architecture Layers
 
-## 📜 License
+```
+Router (HTTP) → Service → UseCase (Business Logic) → Repository (Database)
+```
 
-**Proprietary** - Protocolcamp
+### Key Concepts
 
----
+**Index-Based Accounting:** Track individual balances in pooled custody using a growth index (similar to Compound's cToken).
 
-**Last Updated:** 2025-12-11
-**Version:** 4.0 - Quirk: Earn-as-a-Service Platform
-**Status:** MVP Development
-**Docs:** Consolidated in [`docs/core/`](./docs/core/)
+```typescript
+userValue = (depositAmount × currentIndex) / entryIndex
+```
+
+**Dual Authentication:**
+- API Key (`X-API-Key`) — For SDK integration
+- Privy Session (`X-Privy-Org-ID`) — For dashboard access
+
+### DeFi Integration
+
+Supported protocols via `packages/yield-engine/`:
+- AAVE V3 (Low risk)
+- Compound V3 (Low risk)
+- Morpho (Medium risk)
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|------------|
+| Backend | TypeScript, Express 5, ts-rest |
+| Database | PostgreSQL 15+, SQLC |
+| Frontend | React 19, Vite 6, TailwindCSS 4 |
+| Blockchain | Viem, Privy MPC Wallets |
+| Monorepo | TurboRepo, PNPM |
+
+## Documentation
+
+See [`docs/core/`](./docs/core/) for detailed documentation:
+
+- **ARCHITECTURE.md** — System design, data flow, security
+- **BUSINESS.md** — Market strategy, revenue model, compliance
+
+## Environment Variables
+
+```bash
+# Database
+DATABASE_URL="postgresql://user:pass@localhost:5432/quirk_dev"
+
+# Privy (MPC Wallets)
+PRIVY_APP_ID="your-app-id"
+PRIVY_APP_SECRET="your-app-secret"
+
+# Blockchain
+MAINNET_RPC_URL="https://eth-mainnet.g.alchemy.com/v2/..."
+SEPOLIA_RPC_URL="https://eth-sepolia.g.alchemy.com/v2/..."
+```
+
+See `.env.example` for all variables.
+
+## License
+
+Proprietary — Molecular Lab

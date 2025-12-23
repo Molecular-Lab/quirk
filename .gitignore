@@ -188,3 +188,6 @@ docs/.vuepress/dist/
 # NOTES.md
 # scratch/
 # playground/
+# Python virtual environment
+.venv/
+venv/
