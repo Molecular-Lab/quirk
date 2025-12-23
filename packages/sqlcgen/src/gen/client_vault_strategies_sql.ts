@@ -6,7 +6,7 @@ SET
   strategies = $2::jsonb,
   updated_at = now()
 WHERE id = $1
-RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at, last_successful_index_update, environment, custodial_wallet_address`;
+RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at`;
 
 export interface UpdateVaultStrategiesArgs {
     id: string;
@@ -22,18 +22,18 @@ export interface UpdateVaultStrategiesRow {
     totalShares: string;
     currentIndex: string;
     lastIndexUpdate: Date;
+    lastSuccessfulIndexUpdate: Date | null;
     pendingDepositBalance: string;
     totalStakedBalance: string;
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
     strategies: any | null;
+    environment: string;
+    custodialWalletAddress: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    lastSuccessfulIndexUpdate: Date | null;
-    environment: string;
-    custodialWalletAddress: string | null;
 }
 
 export async function updateVaultStrategies(sql: Sql, args: UpdateVaultStrategiesArgs): Promise<UpdateVaultStrategiesRow | null> {
@@ -51,23 +51,23 @@ export async function updateVaultStrategies(sql: Sql, args: UpdateVaultStrategie
         totalShares: row[5],
         currentIndex: row[6],
         lastIndexUpdate: row[7],
-        pendingDepositBalance: row[8],
-        totalStakedBalance: row[9],
-        cumulativeYield: row[10],
-        apy_7d: row[11],
-        apy_30d: row[12],
-        strategies: row[13],
-        isActive: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        lastSuccessfulIndexUpdate: row[17],
-        environment: row[18],
-        custodialWalletAddress: row[19]
+        lastSuccessfulIndexUpdate: row[8],
+        pendingDepositBalance: row[9],
+        totalStakedBalance: row[10],
+        cumulativeYield: row[11],
+        apy_7d: row[12],
+        apy_30d: row[13],
+        strategies: row[14],
+        environment: row[15],
+        custodialWalletAddress: row[16],
+        isActive: row[17],
+        createdAt: row[18],
+        updatedAt: row[19]
     };
 }
 
 export const getVaultWithStrategiesQuery = `-- name: GetVaultWithStrategies :one
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at, last_successful_index_update, environment, custodial_wallet_address FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at FROM client_vaults
 WHERE id = $1`;
 
 export interface GetVaultWithStrategiesArgs {
@@ -83,18 +83,18 @@ export interface GetVaultWithStrategiesRow {
     totalShares: string;
     currentIndex: string;
     lastIndexUpdate: Date;
+    lastSuccessfulIndexUpdate: Date | null;
     pendingDepositBalance: string;
     totalStakedBalance: string;
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
     strategies: any | null;
+    environment: string;
+    custodialWalletAddress: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    lastSuccessfulIndexUpdate: Date | null;
-    environment: string;
-    custodialWalletAddress: string | null;
 }
 
 export async function getVaultWithStrategies(sql: Sql, args: GetVaultWithStrategiesArgs): Promise<GetVaultWithStrategiesRow | null> {
@@ -112,18 +112,18 @@ export async function getVaultWithStrategies(sql: Sql, args: GetVaultWithStrateg
         totalShares: row[5],
         currentIndex: row[6],
         lastIndexUpdate: row[7],
-        pendingDepositBalance: row[8],
-        totalStakedBalance: row[9],
-        cumulativeYield: row[10],
-        apy_7d: row[11],
-        apy_30d: row[12],
-        strategies: row[13],
-        isActive: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        lastSuccessfulIndexUpdate: row[17],
-        environment: row[18],
-        custodialWalletAddress: row[19]
+        lastSuccessfulIndexUpdate: row[8],
+        pendingDepositBalance: row[9],
+        totalStakedBalance: row[10],
+        cumulativeYield: row[11],
+        apy_7d: row[12],
+        apy_30d: row[13],
+        strategies: row[14],
+        environment: row[15],
+        custodialWalletAddress: row[16],
+        isActive: row[17],
+        createdAt: row[18],
+        updatedAt: row[19]
     };
 }
 

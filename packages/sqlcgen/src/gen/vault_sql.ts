@@ -3,7 +3,7 @@ import { Sql } from "postgres";
 export const getClientVaultQuery = `-- name: GetClientVault :one
 
 
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at, last_successful_index_update, environment, custodial_wallet_address FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at FROM client_vaults
 WHERE id = $1 LIMIT 1`;
 
 export interface GetClientVaultArgs {
@@ -19,18 +19,18 @@ export interface GetClientVaultRow {
     totalShares: string;
     currentIndex: string;
     lastIndexUpdate: Date;
+    lastSuccessfulIndexUpdate: Date | null;
     pendingDepositBalance: string;
     totalStakedBalance: string;
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
     strategies: any | null;
+    environment: string;
+    custodialWalletAddress: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    lastSuccessfulIndexUpdate: Date | null;
-    environment: string;
-    custodialWalletAddress: string | null;
 }
 
 export async function getClientVault(sql: Sql, args: GetClientVaultArgs): Promise<GetClientVaultRow | null> {
@@ -48,24 +48,24 @@ export async function getClientVault(sql: Sql, args: GetClientVaultArgs): Promis
         totalShares: row[5],
         currentIndex: row[6],
         lastIndexUpdate: row[7],
-        pendingDepositBalance: row[8],
-        totalStakedBalance: row[9],
-        cumulativeYield: row[10],
-        apy_7d: row[11],
-        apy_30d: row[12],
-        strategies: row[13],
-        isActive: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        lastSuccessfulIndexUpdate: row[17],
-        environment: row[18],
-        custodialWalletAddress: row[19]
+        lastSuccessfulIndexUpdate: row[8],
+        pendingDepositBalance: row[9],
+        totalStakedBalance: row[10],
+        cumulativeYield: row[11],
+        apy_7d: row[12],
+        apy_30d: row[13],
+        strategies: row[14],
+        environment: row[15],
+        custodialWalletAddress: row[16],
+        isActive: row[17],
+        createdAt: row[18],
+        updatedAt: row[19]
     };
 }
 
 export const getClientVaultByTokenQuery = `-- name: GetClientVaultByToken :one
 SELECT
-  cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.is_active, cv.created_at, cv.updated_at, cv.last_successful_index_update, cv.environment, cv.custodial_wallet_address,
+  cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.last_successful_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.environment, cv.custodial_wallet_address, cv.is_active, cv.created_at, cv.updated_at,
   COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
 FROM client_vaults cv
 JOIN client_organizations co ON cv.client_id = co.id
@@ -92,18 +92,18 @@ export interface GetClientVaultByTokenRow {
     totalShares: string;
     currentIndex: string;
     lastIndexUpdate: Date;
+    lastSuccessfulIndexUpdate: Date | null;
     pendingDepositBalance: string;
     totalStakedBalance: string;
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
     strategies: any | null;
+    environment: string;
+    custodialWalletAddress: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    lastSuccessfulIndexUpdate: Date | null;
-    environment: string;
-    custodialWalletAddress: string | null;
     custodialWalletAddress_2: string;
 }
 
@@ -122,25 +122,25 @@ export async function getClientVaultByToken(sql: Sql, args: GetClientVaultByToke
         totalShares: row[5],
         currentIndex: row[6],
         lastIndexUpdate: row[7],
-        pendingDepositBalance: row[8],
-        totalStakedBalance: row[9],
-        cumulativeYield: row[10],
-        apy_7d: row[11],
-        apy_30d: row[12],
-        strategies: row[13],
-        isActive: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        lastSuccessfulIndexUpdate: row[17],
-        environment: row[18],
-        custodialWalletAddress: row[19],
+        lastSuccessfulIndexUpdate: row[8],
+        pendingDepositBalance: row[9],
+        totalStakedBalance: row[10],
+        cumulativeYield: row[11],
+        apy_7d: row[12],
+        apy_30d: row[13],
+        strategies: row[14],
+        environment: row[15],
+        custodialWalletAddress: row[16],
+        isActive: row[17],
+        createdAt: row[18],
+        updatedAt: row[19],
         custodialWalletAddress_2: row[20]
     };
 }
 
 export const getClientVaultByTokenForUpdateQuery = `-- name: GetClientVaultByTokenForUpdate :one
 SELECT
-  cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.is_active, cv.created_at, cv.updated_at, cv.last_successful_index_update, cv.environment, cv.custodial_wallet_address,
+  cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.last_successful_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.environment, cv.custodial_wallet_address, cv.is_active, cv.created_at, cv.updated_at,
   COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
 FROM client_vaults cv
 JOIN client_organizations co ON cv.client_id = co.id
@@ -168,18 +168,18 @@ export interface GetClientVaultByTokenForUpdateRow {
     totalShares: string;
     currentIndex: string;
     lastIndexUpdate: Date;
+    lastSuccessfulIndexUpdate: Date | null;
     pendingDepositBalance: string;
     totalStakedBalance: string;
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
     strategies: any | null;
+    environment: string;
+    custodialWalletAddress: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    lastSuccessfulIndexUpdate: Date | null;
-    environment: string;
-    custodialWalletAddress: string | null;
     custodialWalletAddress_2: string;
 }
 
@@ -198,24 +198,24 @@ export async function getClientVaultByTokenForUpdate(sql: Sql, args: GetClientVa
         totalShares: row[5],
         currentIndex: row[6],
         lastIndexUpdate: row[7],
-        pendingDepositBalance: row[8],
-        totalStakedBalance: row[9],
-        cumulativeYield: row[10],
-        apy_7d: row[11],
-        apy_30d: row[12],
-        strategies: row[13],
-        isActive: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        lastSuccessfulIndexUpdate: row[17],
-        environment: row[18],
-        custodialWalletAddress: row[19],
+        lastSuccessfulIndexUpdate: row[8],
+        pendingDepositBalance: row[9],
+        totalStakedBalance: row[10],
+        cumulativeYield: row[11],
+        apy_7d: row[12],
+        apy_30d: row[13],
+        strategies: row[14],
+        environment: row[15],
+        custodialWalletAddress: row[16],
+        isActive: row[17],
+        createdAt: row[18],
+        updatedAt: row[19],
         custodialWalletAddress_2: row[20]
     };
 }
 
 export const listClientVaultsQuery = `-- name: ListClientVaults :many
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at, last_successful_index_update, environment, custodial_wallet_address FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at FROM client_vaults
 WHERE client_id = $1
 ORDER BY created_at DESC`;
 
@@ -232,18 +232,18 @@ export interface ListClientVaultsRow {
     totalShares: string;
     currentIndex: string;
     lastIndexUpdate: Date;
+    lastSuccessfulIndexUpdate: Date | null;
     pendingDepositBalance: string;
     totalStakedBalance: string;
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
     strategies: any | null;
+    environment: string;
+    custodialWalletAddress: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    lastSuccessfulIndexUpdate: Date | null;
-    environment: string;
-    custodialWalletAddress: string | null;
 }
 
 export async function listClientVaults(sql: Sql, args: ListClientVaultsArgs): Promise<ListClientVaultsRow[]> {
@@ -256,23 +256,23 @@ export async function listClientVaults(sql: Sql, args: ListClientVaultsArgs): Pr
         totalShares: row[5],
         currentIndex: row[6],
         lastIndexUpdate: row[7],
-        pendingDepositBalance: row[8],
-        totalStakedBalance: row[9],
-        cumulativeYield: row[10],
-        apy_7d: row[11],
-        apy_30d: row[12],
-        strategies: row[13],
-        isActive: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        lastSuccessfulIndexUpdate: row[17],
-        environment: row[18],
-        custodialWalletAddress: row[19]
+        lastSuccessfulIndexUpdate: row[8],
+        pendingDepositBalance: row[9],
+        totalStakedBalance: row[10],
+        cumulativeYield: row[11],
+        apy_7d: row[12],
+        apy_30d: row[13],
+        strategies: row[14],
+        environment: row[15],
+        custodialWalletAddress: row[16],
+        isActive: row[17],
+        createdAt: row[18],
+        updatedAt: row[19]
     }));
 }
 
 export const listClientVaultsPendingStakeQuery = `-- name: ListClientVaultsPendingStake :many
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at, last_successful_index_update, environment, custodial_wallet_address FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at FROM client_vaults
 WHERE pending_deposit_balance >= $1  -- minimum threshold (e.g., 10000)
   AND is_active = true
 ORDER BY pending_deposit_balance DESC`;
@@ -290,18 +290,18 @@ export interface ListClientVaultsPendingStakeRow {
     totalShares: string;
     currentIndex: string;
     lastIndexUpdate: Date;
+    lastSuccessfulIndexUpdate: Date | null;
     pendingDepositBalance: string;
     totalStakedBalance: string;
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
     strategies: any | null;
+    environment: string;
+    custodialWalletAddress: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    lastSuccessfulIndexUpdate: Date | null;
-    environment: string;
-    custodialWalletAddress: string | null;
 }
 
 export async function listClientVaultsPendingStake(sql: Sql, args: ListClientVaultsPendingStakeArgs): Promise<ListClientVaultsPendingStakeRow[]> {
@@ -314,18 +314,18 @@ export async function listClientVaultsPendingStake(sql: Sql, args: ListClientVau
         totalShares: row[5],
         currentIndex: row[6],
         lastIndexUpdate: row[7],
-        pendingDepositBalance: row[8],
-        totalStakedBalance: row[9],
-        cumulativeYield: row[10],
-        apy_7d: row[11],
-        apy_30d: row[12],
-        strategies: row[13],
-        isActive: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        lastSuccessfulIndexUpdate: row[17],
-        environment: row[18],
-        custodialWalletAddress: row[19]
+        lastSuccessfulIndexUpdate: row[8],
+        pendingDepositBalance: row[9],
+        totalStakedBalance: row[10],
+        cumulativeYield: row[11],
+        apy_7d: row[12],
+        apy_30d: row[13],
+        strategies: row[14],
+        environment: row[15],
+        custodialWalletAddress: row[16],
+        isActive: row[17],
+        createdAt: row[18],
+        updatedAt: row[19]
     }));
 }
 
@@ -346,10 +346,10 @@ WITH new_vault AS (
   ) VALUES (
     $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
   )
-  RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, is_active, created_at, updated_at, last_successful_index_update, environment, custodial_wallet_address
+  RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at
 )
 SELECT
-  nv.id, nv.client_id, nv.chain, nv.token_address, nv.token_symbol, nv.total_shares, nv.current_index, nv.last_index_update, nv.pending_deposit_balance, nv.total_staked_balance, nv.cumulative_yield, nv.apy_7d, nv.apy_30d, nv.strategies, nv.is_active, nv.created_at, nv.updated_at, nv.last_successful_index_update, nv.environment, nv.custodial_wallet_address,
+  nv.id, nv.client_id, nv.chain, nv.token_address, nv.token_symbol, nv.total_shares, nv.current_index, nv.last_index_update, nv.last_successful_index_update, nv.pending_deposit_balance, nv.total_staked_balance, nv.cumulative_yield, nv.apy_7d, nv.apy_30d, nv.strategies, nv.environment, nv.custodial_wallet_address, nv.is_active, nv.created_at, nv.updated_at,
   COALESCE(nv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
 FROM new_vault nv
 JOIN client_organizations co ON nv.client_id = co.id
@@ -378,18 +378,18 @@ export interface CreateClientVaultRow {
     totalShares: string;
     currentIndex: string;
     lastIndexUpdate: Date;
+    lastSuccessfulIndexUpdate: Date | null;
     pendingDepositBalance: string;
     totalStakedBalance: string;
     cumulativeYield: string;
     apy_7d: string | null;
     apy_30d: string | null;
     strategies: any | null;
+    environment: string;
+    custodialWalletAddress: string | null;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    lastSuccessfulIndexUpdate: Date | null;
-    environment: string;
-    custodialWalletAddress: string | null;
     custodialWalletAddress_2: string;
 }
 
@@ -408,18 +408,18 @@ export async function createClientVault(sql: Sql, args: CreateClientVaultArgs): 
         totalShares: row[5],
         currentIndex: row[6],
         lastIndexUpdate: row[7],
-        pendingDepositBalance: row[8],
-        totalStakedBalance: row[9],
-        cumulativeYield: row[10],
-        apy_7d: row[11],
-        apy_30d: row[12],
-        strategies: row[13],
-        isActive: row[14],
-        createdAt: row[15],
-        updatedAt: row[16],
-        lastSuccessfulIndexUpdate: row[17],
-        environment: row[18],
-        custodialWalletAddress: row[19],
+        lastSuccessfulIndexUpdate: row[8],
+        pendingDepositBalance: row[9],
+        totalStakedBalance: row[10],
+        cumulativeYield: row[11],
+        apy_7d: row[12],
+        apy_30d: row[13],
+        strategies: row[14],
+        environment: row[15],
+        custodialWalletAddress: row[16],
+        isActive: row[17],
+        createdAt: row[18],
+        updatedAt: row[19],
         custodialWalletAddress_2: row[20]
     };
 }
@@ -597,7 +597,7 @@ export async function reduceStakedBalance(sql: Sql, args: ReduceStakedBalanceArg
 
 export const getEndUserVaultQuery = `-- name: GetEndUserVault :one
 
-SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at, environment FROM end_user_vaults
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at FROM end_user_vaults
 WHERE id = $1 LIMIT 1`;
 
 export interface GetEndUserVaultArgs {
@@ -613,10 +613,10 @@ export interface GetEndUserVaultRow {
     weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
+    environment: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    environment: string;
 }
 
 export async function getEndUserVault(sql: Sql, args: GetEndUserVaultArgs): Promise<GetEndUserVaultRow | null> {
@@ -634,15 +634,15 @@ export async function getEndUserVault(sql: Sql, args: GetEndUserVaultArgs): Prom
         weightedEntryIndex: row[5],
         lastDepositAt: row[6],
         lastWithdrawalAt: row[7],
-        isActive: row[8],
-        createdAt: row[9],
-        updatedAt: row[10],
-        environment: row[11]
+        environment: row[8],
+        isActive: row[9],
+        createdAt: row[10],
+        updatedAt: row[11]
     };
 }
 
 export const getEndUserVaultByClientQuery = `-- name: GetEndUserVaultByClient :one
-SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at, environment FROM end_user_vaults
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at FROM end_user_vaults
 WHERE end_user_id = $1
   AND client_id = $2
   AND environment = $3
@@ -663,10 +663,10 @@ export interface GetEndUserVaultByClientRow {
     weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
+    environment: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    environment: string;
 }
 
 export async function getEndUserVaultByClient(sql: Sql, args: GetEndUserVaultByClientArgs): Promise<GetEndUserVaultByClientRow | null> {
@@ -684,15 +684,15 @@ export async function getEndUserVaultByClient(sql: Sql, args: GetEndUserVaultByC
         weightedEntryIndex: row[5],
         lastDepositAt: row[6],
         lastWithdrawalAt: row[7],
-        isActive: row[8],
-        createdAt: row[9],
-        updatedAt: row[10],
-        environment: row[11]
+        environment: row[8],
+        isActive: row[9],
+        createdAt: row[10],
+        updatedAt: row[11]
     };
 }
 
 export const getEndUserVaultByClientForUpdateQuery = `-- name: GetEndUserVaultByClientForUpdate :one
-SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at, environment FROM end_user_vaults
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at FROM end_user_vaults
 WHERE end_user_id = $1
   AND client_id = $2
   AND environment = $3
@@ -714,10 +714,10 @@ export interface GetEndUserVaultByClientForUpdateRow {
     weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
+    environment: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    environment: string;
 }
 
 export async function getEndUserVaultByClientForUpdate(sql: Sql, args: GetEndUserVaultByClientForUpdateArgs): Promise<GetEndUserVaultByClientForUpdateRow | null> {
@@ -735,15 +735,15 @@ export async function getEndUserVaultByClientForUpdate(sql: Sql, args: GetEndUse
         weightedEntryIndex: row[5],
         lastDepositAt: row[6],
         lastWithdrawalAt: row[7],
-        isActive: row[8],
-        createdAt: row[9],
-        updatedAt: row[10],
-        environment: row[11]
+        environment: row[8],
+        isActive: row[9],
+        createdAt: row[10],
+        updatedAt: row[11]
     };
 }
 
 export const listEndUserVaultsQuery = `-- name: ListEndUserVaults :many
-SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at, environment FROM end_user_vaults
+SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at FROM end_user_vaults
 WHERE end_user_id = $1
 ORDER BY created_at DESC`;
 
@@ -760,10 +760,10 @@ export interface ListEndUserVaultsRow {
     weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
+    environment: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    environment: string;
 }
 
 export async function listEndUserVaults(sql: Sql, args: ListEndUserVaultsArgs): Promise<ListEndUserVaultsRow[]> {
@@ -776,10 +776,10 @@ export async function listEndUserVaults(sql: Sql, args: ListEndUserVaultsArgs): 
         weightedEntryIndex: row[5],
         lastDepositAt: row[6],
         lastWithdrawalAt: row[7],
-        isActive: row[8],
-        createdAt: row[9],
-        updatedAt: row[10],
-        environment: row[11]
+        environment: row[8],
+        isActive: row[9],
+        createdAt: row[10],
+        updatedAt: row[11]
     }));
 }
 
@@ -793,7 +793,7 @@ INSERT INTO end_user_vaults (
 ) VALUES (
   $1, $2, $3, $4, $5
 )
-RETURNING id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, is_active, created_at, updated_at, environment`;
+RETURNING id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at`;
 
 export interface CreateEndUserVaultArgs {
     endUserId: string;
@@ -812,10 +812,10 @@ export interface CreateEndUserVaultRow {
     weightedEntryIndex: string;
     lastDepositAt: Date | null;
     lastWithdrawalAt: Date | null;
+    environment: string;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
-    environment: string;
 }
 
 export async function createEndUserVault(sql: Sql, args: CreateEndUserVaultArgs): Promise<CreateEndUserVaultRow | null> {
@@ -833,10 +833,10 @@ export async function createEndUserVault(sql: Sql, args: CreateEndUserVaultArgs)
         weightedEntryIndex: row[5],
         lastDepositAt: row[6],
         lastWithdrawalAt: row[7],
-        isActive: row[8],
-        createdAt: row[9],
-        updatedAt: row[10],
-        environment: row[11]
+        environment: row[8],
+        isActive: row[9],
+        createdAt: row[10],
+        updatedAt: row[11]
     };
 }
 
@@ -1012,10 +1012,12 @@ SELECT
   COALESCE(SUM(cumulative_yield), 0) AS total_cumulative_yield
 FROM client_vaults
 WHERE client_id = $1
-  AND is_active = true`;
+  AND is_active = true
+  AND ($2::varchar IS NULL OR environment = $2::varchar)`;
 
 export interface GetClientTotalBalancesArgs {
     clientId: string;
+    environment: string | null;
 }
 
 export interface GetClientTotalBalancesRow {
@@ -1025,7 +1027,7 @@ export interface GetClientTotalBalancesRow {
 }
 
 export async function getClientTotalBalances(sql: Sql, args: GetClientTotalBalancesArgs): Promise<GetClientTotalBalancesRow | null> {
-    const rows = await sql.unsafe(getClientTotalBalancesQuery, [args.clientId]).values();
+    const rows = await sql.unsafe(getClientTotalBalancesQuery, [args.clientId, args.environment]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -1254,6 +1256,7 @@ SELECT
   dt.created_at AS timestamp
 FROM deposit_transactions dt
 WHERE dt.client_id = $1
+  AND ($4::varchar IS NULL OR dt.environment = $4::varchar)
 UNION ALL
 SELECT
   'withdrawal' AS transaction_type,
@@ -1265,6 +1268,7 @@ SELECT
   wt.created_at AS timestamp
 FROM withdrawal_transactions wt
 WHERE wt.client_id = $1
+  AND ($4::varchar IS NULL OR wt.environment = $4::varchar)
 ORDER BY timestamp DESC
 LIMIT $2 OFFSET $3`;
 
@@ -1272,6 +1276,7 @@ export interface ListRecentEndUserTransactionsArgs {
     clientId: string;
     limit: string;
     offset: string;
+    environment: string | null;
 }
 
 export interface ListRecentEndUserTransactionsRow {
@@ -1285,7 +1290,7 @@ export interface ListRecentEndUserTransactionsRow {
 }
 
 export async function listRecentEndUserTransactions(sql: Sql, args: ListRecentEndUserTransactionsArgs): Promise<ListRecentEndUserTransactionsRow[]> {
-    return (await sql.unsafe(listRecentEndUserTransactionsQuery, [args.clientId, args.limit, args.offset]).values()).map(row => ({
+    return (await sql.unsafe(listRecentEndUserTransactionsQuery, [args.clientId, args.limit, args.offset, args.environment]).values()).map(row => ({
         transactionType: row[0],
         id: row[1],
         userId: row[2],
@@ -1315,14 +1320,19 @@ SELECT
   ) AS total_withdrawals
 FROM client_organizations c
 LEFT JOIN end_users eu ON c.id = eu.client_id
+  AND ($2::varchar IS NULL OR eu.environment = $2::varchar)
 LEFT JOIN end_user_vaults euv ON eu.id = euv.end_user_id AND euv.is_active = true
+  AND ($2::varchar IS NULL OR euv.environment = $2::varchar)
 LEFT JOIN deposit_transactions dt ON c.id = dt.client_id
+  AND ($2::varchar IS NULL OR dt.environment = $2::varchar)
 LEFT JOIN withdrawal_transactions wt ON c.id = wt.client_id
+  AND ($2::varchar IS NULL OR wt.environment = $2::varchar)
 WHERE c.id = $1
 GROUP BY c.id`;
 
 export interface GetEndUserGrowthMetricsArgs {
     id: string;
+    environment: string | null;
 }
 
 export interface GetEndUserGrowthMetricsRow {
@@ -1336,7 +1346,7 @@ export interface GetEndUserGrowthMetricsRow {
 }
 
 export async function getEndUserGrowthMetrics(sql: Sql, args: GetEndUserGrowthMetricsArgs): Promise<GetEndUserGrowthMetricsRow | null> {
-    const rows = await sql.unsafe(getEndUserGrowthMetricsQuery, [args.id]).values();
+    const rows = await sql.unsafe(getEndUserGrowthMetricsQuery, [args.id, args.environment]).values();
     if (rows.length !== 1) {
         return null;
     }

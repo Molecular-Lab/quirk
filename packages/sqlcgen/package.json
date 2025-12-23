@@ -1,7 +1,7 @@
 {
-	"name": "@proxify/sqlcgen",
+	"name": "@quirk/sqlcgen",
 	"version": "1.0.0",
-	"description": "SQLC-generated TypeScript queries for Proxify B2B platform",
+	"description": "SQLC-generated TypeScript queries for Quirk B2B platform",
 	"private": true,
 	"type": "module",
 	"main": "./src/index.ts",

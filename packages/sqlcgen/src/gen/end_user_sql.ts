@@ -2,7 +2,7 @@ import { Sql } from "postgres";
 
 export const getEndUserQuery = `-- name: GetEndUser :one
 
-SELECT id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at FROM end_users
+SELECT id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at, status, environment FROM end_users
 WHERE id = $1 LIMIT 1`;
 
 export interface GetEndUserArgs {
@@ -21,6 +21,8 @@ export interface GetEndUserRow {
     lastWithdrawalAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    status: string;
+    environment: string;
 }
 
 export async function getEndUser(sql: Sql, args: GetEndUserArgs): Promise<GetEndUserRow | null> {
@@ -40,12 +42,14 @@ export async function getEndUser(sql: Sql, args: GetEndUserArgs): Promise<GetEnd
         lastDepositAt: row[7],
         lastWithdrawalAt: row[8],
         createdAt: row[9],
-        updatedAt: row[10]
+        updatedAt: row[10],
+        status: row[11],
+        environment: row[12]
     };
 }
 
 export const getEndUserByClientAndUserIDQuery = `-- name: GetEndUserByClientAndUserID :one
-SELECT id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at FROM end_users
+SELECT id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at, status, environment FROM end_users
 WHERE client_id = $1
   AND user_id = $2
 LIMIT 1`;
@@ -67,6 +71,8 @@ export interface GetEndUserByClientAndUserIDRow {
     lastWithdrawalAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    status: string;
+    environment: string;
 }
 
 export async function getEndUserByClientAndUserID(sql: Sql, args: GetEndUserByClientAndUserIDArgs): Promise<GetEndUserByClientAndUserIDRow | null> {
@@ -86,12 +92,14 @@ export async function getEndUserByClientAndUserID(sql: Sql, args: GetEndUserByCl
         lastDepositAt: row[7],
         lastWithdrawalAt: row[8],
         createdAt: row[9],
-        updatedAt: row[10]
+        updatedAt: row[10],
+        status: row[11],
+        environment: row[12]
     };
 }
 
 export const listEndUsersQuery = `-- name: ListEndUsers :many
-SELECT id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at FROM end_users
+SELECT id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at, status, environment FROM end_users
 WHERE client_id = $1
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3`;
@@ -114,6 +122,8 @@ export interface ListEndUsersRow {
     lastWithdrawalAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    status: string;
+    environment: string;
 }
 
 export async function listEndUsers(sql: Sql, args: ListEndUsersArgs): Promise<ListEndUsersRow[]> {
@@ -128,12 +138,14 @@ export async function listEndUsers(sql: Sql, args: ListEndUsersArgs): Promise<Li
         lastDepositAt: row[7],
         lastWithdrawalAt: row[8],
         createdAt: row[9],
-        updatedAt: row[10]
+        updatedAt: row[10],
+        status: row[11],
+        environment: row[12]
     }));
 }
 
 export const listActiveEndUsersQuery = `-- name: ListActiveEndUsers :many
-SELECT id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at FROM end_users
+SELECT id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at, status, environment FROM end_users
 WHERE client_id = $1
   AND is_active = true
 ORDER BY created_at DESC`;
@@ -154,6 +166,8 @@ export interface ListActiveEndUsersRow {
     lastWithdrawalAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    status: string;
+    environment: string;
 }
 
 export async function listActiveEndUsers(sql: Sql, args: ListActiveEndUsersArgs): Promise<ListActiveEndUsersRow[]> {
@@ -168,7 +182,9 @@ export async function listActiveEndUsers(sql: Sql, args: ListActiveEndUsersArgs)
         lastDepositAt: row[7],
         lastWithdrawalAt: row[8],
         createdAt: row[9],
-        updatedAt: row[10]
+        updatedAt: row[10],
+        status: row[11],
+        environment: row[12]
     }));
 }
 
@@ -178,11 +194,12 @@ INSERT INTO end_users (
   user_id,
   user_type,
   user_wallet_address,
-  is_active
+  is_active,
+  status
 ) VALUES (
-  $1, $2, $3, $4, $5
+  $1, $2, $3, $4, $5, $6
 )
-RETURNING id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at`;
+RETURNING id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at, status, environment`;
 
 export interface CreateEndUserArgs {
     clientId: string;
@@ -190,6 +207,7 @@ export interface CreateEndUserArgs {
     userType: string;
     userWalletAddress: string | null;
     isActive: boolean;
+    status: string;
 }
 
 export interface CreateEndUserRow {
@@ -204,10 +222,12 @@ export interface CreateEndUserRow {
     lastWithdrawalAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    status: string;
+    environment: string;
 }
 
 export async function createEndUser(sql: Sql, args: CreateEndUserArgs): Promise<CreateEndUserRow | null> {
-    const rows = await sql.unsafe(createEndUserQuery, [args.clientId, args.userId, args.userType, args.userWalletAddress, args.isActive]).values();
+    const rows = await sql.unsafe(createEndUserQuery, [args.clientId, args.userId, args.userType, args.userWalletAddress, args.isActive, args.status]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -223,7 +243,9 @@ export async function createEndUser(sql: Sql, args: CreateEndUserArgs): Promise<
         lastDepositAt: row[7],
         lastWithdrawalAt: row[8],
         createdAt: row[9],
-        updatedAt: row[10]
+        updatedAt: row[10],
+        status: row[11],
+        environment: row[12]
     };
 }
 
@@ -233,7 +255,7 @@ SET user_wallet_address = COALESCE($2, user_wallet_address),
     is_active = COALESCE($3, is_active),
     updated_at = now()
 WHERE id = $1
-RETURNING id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at`;
+RETURNING id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at, status, environment`;
 
 export interface UpdateEndUserArgs {
     id: string;
@@ -253,6 +275,8 @@ export interface UpdateEndUserRow {
     lastWithdrawalAt: Date | null;
     createdAt: Date;
     updatedAt: Date;
+    status: string;
+    environment: string;
 }
 
 export async function updateEndUser(sql: Sql, args: UpdateEndUserArgs): Promise<UpdateEndUserRow | null> {
@@ -272,7 +296,9 @@ export async function updateEndUser(sql: Sql, args: UpdateEndUserArgs): Promise<
         lastDepositAt: row[7],
         lastWithdrawalAt: row[8],
         createdAt: row[9],
-        updatedAt: row[10]
+        updatedAt: row[10],
+        status: row[11],
+        environment: row[12]
     };
 }
 
@@ -345,6 +371,57 @@ export interface DeactivateEndUserArgs {
 
 export async function deactivateEndUser(sql: Sql, args: DeactivateEndUserArgs): Promise<void> {
     await sql.unsafe(deactivateEndUserQuery, [args.id]);
+}
+
+export const updateEndUserStatusQuery = `-- name: UpdateEndUserStatus :one
+UPDATE end_users
+SET status = $2,
+    updated_at = now()
+WHERE id = $1
+RETURNING id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at, status, environment`;
+
+export interface UpdateEndUserStatusArgs {
+    id: string;
+    status: string;
+}
+
+export interface UpdateEndUserStatusRow {
+    id: string;
+    clientId: string;
+    userId: string;
+    userType: string;
+    userWalletAddress: string | null;
+    isActive: boolean;
+    firstDepositAt: Date | null;
+    lastDepositAt: Date | null;
+    lastWithdrawalAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    status: string;
+    environment: string;
+}
+
+export async function updateEndUserStatus(sql: Sql, args: UpdateEndUserStatusArgs): Promise<UpdateEndUserStatusRow | null> {
+    const rows = await sql.unsafe(updateEndUserStatusQuery, [args.id, args.status]).values();
+    if (rows.length !== 1) {
+        return null;
+    }
+    const row = rows[0];
+    return {
+        id: row[0],
+        clientId: row[1],
+        userId: row[2],
+        userType: row[3],
+        userWalletAddress: row[4],
+        isActive: row[5],
+        firstDepositAt: row[6],
+        lastDepositAt: row[7],
+        lastWithdrawalAt: row[8],
+        createdAt: row[9],
+        updatedAt: row[10],
+        status: row[11],
+        environment: row[12]
+    };
 }
 
 export const deleteEndUserQuery = `-- name: DeleteEndUser :exec

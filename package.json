@@ -1,5 +1,5 @@
 {
-	"name": "@proxify/root",
+	"name": "@quirk/root",
 	"private": true,
 	"scripts": {
 		"build": "turbo build",
@@ -10,11 +10,13 @@
 		"format": "prettier --write \"**/*.{ts,tsx,md}\"",
 		"db:generate": "sqlc generate",
 		"db:migrate": "./scripts/migrate.sh",
-		"dev:api": "pnpm --filter @proxify/core dev",
-		"dev:web": "pnpm --filter web dev"
+		"dev:api": "pnpm --filter @quirk/core dev",
+		"dev:web": "pnpm --filter web dev",
+		"dev:mcp": "pnpm --filter @quirk/mcp dev",
+		"dev:agent": "pnpm --filter @quirk/agent dev"
 	},
 	"devDependencies": {
-		"@proxify/eslint-config-base": "workspace:*",
+		"@quirk/eslint-config-base": "workspace:*",
 		"eslint": "catalog:",
 		"prettier": "^3.5.3",
 		"turbo": "^2.5.2"
