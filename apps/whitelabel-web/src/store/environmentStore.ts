@@ -1,6 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import { NETWORK_CONFIG, type NetworkKey } from "@proxify/core/constants"
+import { NETWORK_CONFIG, type NetworkKey } from "@quirk/core/constants"
 
 // Environment types
 export type Environment = "dev" | "prod"
@@ -35,7 +35,7 @@ export const ENV_CONFIG: Record<Environment, EnvironmentConfig> = {
 		name: NETWORK_CONFIG.eth_mainnet.name,
 		rpcUrl: NETWORK_CONFIG.eth_mainnet.rpcUrl || import.meta.env.VITE_MAINNET_RPC_URL || "https://eth.llamarpc.com",
 		explorerUrl: NETWORK_CONFIG.eth_mainnet.explorerUrl,
-		enabled: false, // Disabled for now (MVP focuses on testnet)
+		enabled: true, // Enabled for production testing
 		networkKey: "eth_mainnet",
 		isTestnet: NETWORK_CONFIG.eth_mainnet.isTestnet,
 	},
@@ -58,6 +58,9 @@ interface EnvironmentState {
 	isSandbox: () => boolean
 	isProduction: () => boolean
 	getApiKeyPrefix: () => "pk_test" | "pk_live"
+
+	// Reset method
+	reset: () => void
 }
 
 const initialState: Pick<EnvironmentState, "environment" | "apiEnvironment"> = {
@@ -78,14 +81,18 @@ export const useEnvironmentStore = create<EnvironmentState>()(
 					return
 				}
 
+				// Sync apiEnvironment with blockchain environment
+				const newApiEnv: ApiEnvironment = env === "prod" ? "production" : "sandbox"
+
 				console.log("[environmentStore] Switching environment:", {
 					from: get().environment,
 					to: env,
 					chainId: ENV_CONFIG[env].chainId,
 					network: ENV_CONFIG[env].name,
+					apiEnvironment: newApiEnv,
 				})
 
-				set({ environment: env })
+				set({ environment: env, apiEnvironment: newApiEnv })
 			},
 
 			getConfig: () => {
@@ -138,13 +145,35 @@ export const useEnvironmentStore = create<EnvironmentState>()(
 			getApiKeyPrefix: () => {
 				return get().apiEnvironment === "sandbox" ? "pk_test" : "pk_live"
 			},
+
+			// Reset to initial state
+			reset: () => {
+				set(initialState)
+			},
 		}),
 		{
-			name: "proxify-environment", // localStorage key
+			name: "quirk-environment", // localStorage key
 			partialize: (state) => ({
 				environment: state.environment,
 				apiEnvironment: state.apiEnvironment,
 			}),
+			// Sync environments on hydration to fix any desync'd localStorage values
+			onRehydrateStorage: () => (state) => {
+				if (state) {
+					const expectedApiEnv: ApiEnvironment = state.environment === "prod" ? "production" : "sandbox"
+					if (state.apiEnvironment !== expectedApiEnv) {
+						console.log("[environmentStore] Fixing desync'd apiEnvironment on hydration:", {
+							environment: state.environment,
+							was: state.apiEnvironment,
+							correctedTo: expectedApiEnv,
+						})
+						// Use setTimeout to avoid hydration race condition
+						setTimeout(() => {
+							useEnvironmentStore.setState({ apiEnvironment: expectedApiEnv })
+						}, 0)
+					}
+				}
+			},
 		},
 	),
 )

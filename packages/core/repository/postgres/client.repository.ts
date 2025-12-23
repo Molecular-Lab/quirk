@@ -1,5 +1,5 @@
 /**
- * Client Organization Repository - Proxify Pattern
+ * Client Organization Repository - Quirk Pattern
  *
  * ✅ Wraps SQLC-generated queries from database/queries/client.sql
  * ✅ Adds business logic for client management
@@ -10,8 +10,6 @@ import {
 	// Query functions
 	getClient,
 	getClientByProductId, // Fixed: was getClientsByPrivyOrgID
-	getClientByAPIKeyPrefix,
-	getClientByAPIKeyHash,
 	listClients,
 	// listActiveClients,  // TODO: Add this query
 	createClient,
@@ -19,11 +17,12 @@ import {
 	activateClient,
 	deactivateClient,
 	deleteClient,
-	storeAPIKey as updateClientAPIKey, // Using storeAPIKey as updateClientAPIKey
 	// Environment API Keys (Sandbox + Production)
 	storeEnvironmentAPIKeys,
 	getClientBySandboxAPIKey,
 	getClientByProductionAPIKey,
+	getClientBySandboxAPIKeyPrefix,
+	getClientByProductionAPIKeyPrefix,
 	regenerateSandboxAPIKey,
 	regenerateProductionAPIKey,
 	getClientBalance,
@@ -65,12 +64,12 @@ import {
 	// Types
 	type GetClientRow,
 	type GetClientByProductIdRow, // Fixed: was GetClientsByPrivyOrgIDRow
-	type GetClientByAPIKeyPrefixRow,
-	type GetClientByAPIKeyHashRow,
 	// Environment API Key types
 	type StoreEnvironmentAPIKeysRow,
 	type GetClientBySandboxAPIKeyRow,
 	type GetClientByProductionAPIKeyRow,
+	type GetClientBySandboxAPIKeyPrefixRow,
+	type GetClientByProductionAPIKeyPrefixRow,
 	type RegenerateSandboxAPIKeyRow,
 	type RegenerateProductionAPIKeyRow,
 	type ListClientsRow,
@@ -109,7 +108,7 @@ import {
 	type GetEndUserGrowthMetricsRow,
 	type ListClientsForMRRCalculationRow,
 	type ListRecentEndUserTransactionsRow,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"
 import { Sql } from "postgres"
 
 import { verifyApiKey } from "../../utils/apiKey"
@@ -177,22 +176,6 @@ export class ClientRepository {
 	}
 
 	/**
-	 * Get client by API key prefix
-	 * First step in API key validation
-	 */
-	async getByApiKeyPrefix(prefix: string): Promise<GetClientByAPIKeyPrefixRow | null> {
-		return await getClientByAPIKeyPrefix(this.sql, { apiKeyPrefix: prefix })
-	}
-
-	/**
-	 * Get client by API key hash
-	 * Direct lookup for validated API keys
-	 */
-	async getByApiKeyHash(hash: string): Promise<GetClientByAPIKeyHashRow | null> {
-		return await getClientByAPIKeyHash(this.sql, { apiKeyHash: hash })
-	}
-
-	/**
 	 * List all clients with pagination
 	 */
 	async list(limit = 20, offset = 0): Promise<ListClientsRow[]> {
@@ -251,13 +234,6 @@ export class ClientRepository {
 	}
 
 	/**
-	 * Update client API key
-	 */
-	async updateApiKey(id: string, apiKeyHash: string, apiKeyPrefix: string): Promise<void> {
-		await updateClientAPIKey(this.sql, { id, apiKeyHash, apiKeyPrefix })
-	}
-
-	/**
 	 * Store both sandbox and production API keys
 	 */
 	async storeEnvironmentAPIKeys(
@@ -288,6 +264,22 @@ export class ClientRepository {
 	 */
 	async getClientByProductionKey(apiKeyHash: string): Promise<GetClientByProductionAPIKeyRow | null> {
 		return await getClientByProductionAPIKey(this.sql, { productionApiKey: apiKeyHash })
+	}
+
+	/**
+	 * Get client by sandbox API key prefix (for bcrypt validation flow)
+	 * First step: lookup by prefix, then verify raw key against stored hash
+	 */
+	async getClientBySandboxKeyPrefix(prefix: string): Promise<GetClientBySandboxAPIKeyPrefixRow | null> {
+		return await getClientBySandboxAPIKeyPrefix(this.sql, { sandboxApiSecret: prefix })
+	}
+
+	/**
+	 * Get client by production API key prefix (for bcrypt validation flow)
+	 * First step: lookup by prefix, then verify raw key against stored hash
+	 */
+	async getClientByProductionKeyPrefix(prefix: string): Promise<GetClientByProductionAPIKeyPrefixRow | null> {
+		return await getClientByProductionAPIKeyPrefix(this.sql, { productionApiSecret: prefix })
 	}
 
 	/**
@@ -420,42 +412,72 @@ export class ClientRepository {
 
 	/**
 	 * Validate API key and return client
-	 * ✅ Two-step validation: prefix lookup → hash compare
+	 * ✅ Environment-aware validation: detects sandbox (pk_test_) vs production (pk_live_)
+	 * ✅ Two-step flow: prefix lookup → bcrypt hash verification
+	 *
+	 * @returns Client data with environment info, or null if invalid
 	 */
-	async validateApiKey(apiKey: string): Promise<GetClientByAPIKeyHashRow | null> {
-		// Step 1: Extract prefix (first 12 chars for uniqueness)
-		const prefix = apiKey.substring(0, 12)
-		console.log(`[validateApiKey] Step 1: Extracted prefix: "${prefix}"`)
+	async validateApiKey(apiKey: string): Promise<(GetClientBySandboxAPIKeyPrefixRow | GetClientByProductionAPIKeyPrefixRow) & { environment: 'sandbox' | 'production' } | null> {
+		// Step 1: Determine environment from prefix
+		const isSandbox = apiKey.startsWith('pk_test_')
+		const isProduction = apiKey.startsWith('pk_live_')
+		const environment = isSandbox ? 'sandbox' : 'production'
 
-		// Step 2: Get client by prefix (fast lookup)
-		const client = await this.getByApiKeyPrefix(prefix)
-		console.log(`[validateApiKey] Step 2: Client lookup by prefix:`, {
+		console.log(`[validateApiKey] Step 1: Detected environment: ${environment}`, {
+			isSandbox,
+			isProduction,
+			keyPrefix: apiKey.substring(0, 16),
+		})
+
+		if (!isSandbox && !isProduction) {
+			console.log(`[validateApiKey] ❌ FAILED: Invalid API key format (must start with pk_test_ or pk_live_)`)
+			return null
+		}
+
+		// Step 2: Extract prefix for lookup (first 16 chars: "pk_test_" + 8 unique chars)
+		const keyPrefix = apiKey.substring(0, 16)
+		console.log(`[validateApiKey] Step 2: Looking up by ${environment} API key prefix: "${keyPrefix}"`)
+
+		// Step 3: Query by environment-specific key PREFIX (fast indexed lookup)
+		let client: GetClientBySandboxAPIKeyPrefixRow | GetClientByProductionAPIKeyPrefixRow | null = null
+
+		if (isSandbox) {
+			client = await this.getClientBySandboxKeyPrefix(keyPrefix)
+		} else {
+			client = await this.getClientByProductionKeyPrefix(keyPrefix)
+		}
+
+		console.log(`[validateApiKey] Step 3: Prefix lookup result:`, {
 			found: !!client,
-			hasHash: client ? !!client.apiKeyHash : false,
 			productId: client?.productId,
 			companyName: client?.companyName,
 		})
 
-		if (!client?.apiKeyHash) {
-			console.log(
-				`[validateApiKey] ❌ FAILED at Step 2: ${!client ? "No client found with prefix" : "Client found but no hash stored"}`,
-			)
+		if (!client) {
+			console.log(`[validateApiKey] ❌ FAILED: No client found with ${environment} API key prefix "${keyPrefix}"`)
 			return null
 		}
 
-		// Step 3: Verify API key against stored hash (constant-time via bcrypt)
-		console.log(`[validateApiKey] Step 3: Verifying bcrypt hash...`)
-		const isValid = await verifyApiKey(apiKey, client.apiKeyHash)
-		console.log(`[validateApiKey] Step 3 result: Hash ${isValid ? "✅ matches" : "❌ does NOT match"}`)
+		// Step 4: Verify the raw key against stored bcrypt hash (constant-time comparison)
+		const storedHash = isSandbox ? client.sandboxApiKey : client.productionApiKey
+
+		if (!storedHash) {
+			console.log(`[validateApiKey] ❌ FAILED: No ${environment} API key hash stored for client`)
+			return null
+		}
+
+		console.log(`[validateApiKey] Step 4: Verifying bcrypt hash...`)
+		const isValid = await verifyApiKey(apiKey, storedHash)
+		console.log(`[validateApiKey] Step 4 result: Hash ${isValid ? "✅ matches" : "❌ does NOT match"}`)
 
 		if (!isValid) {
-			console.log(`[validateApiKey] ❌ FAILED at Step 3: Hash mismatch`)
+			console.log(`[validateApiKey] ❌ FAILED: Hash mismatch for ${environment} key`)
 			return null
 		}
 
-		// Step 4: Return client if valid
-		console.log(`[validateApiKey] ✅ SUCCESS: API key validated for ${client.companyName} (${client.productId})`)
-		return client
+		// Step 5: Return client with environment info
+		console.log(`[validateApiKey] ✅ SUCCESS: API key validated for ${client.companyName} (${client.productId}) in ${environment} mode`)
+		return { ...client, environment }
 	}
 
 	/**
@@ -761,9 +783,14 @@ export class ClientRepository {
 	/**
 	 * Get aggregated balances across all vaults for a client
 	 * Returns: total idle balance, earning balance, and revenue earned
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getTotalBalances(clientId: string): Promise<GetClientTotalBalancesRow | null> {
-		return await getClientTotalBalances(this.sql, { clientId })
+	async getTotalBalances(clientId: string, environment?: "sandbox" | "production"): Promise<GetClientTotalBalancesRow | null> {
+		console.log(`[ClientRepository] getTotalBalances - environment filter: ${environment || "all"}`)
+		return await getClientTotalBalances(this.sql, {
+			clientId,
+			environment: environment || null,
+		})
 	}
 
 	// ==========================================
@@ -829,25 +856,34 @@ export class ClientRepository {
 	/**
 	 * Get recent end-user transactions (deposits + withdrawals)
 	 * Returns unified transaction feed for dashboard
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
 	async getRecentEndUserTransactions(
 		clientId: string,
 		limit = 20,
 		offset = 0,
+		environment?: "sandbox" | "production",
 	): Promise<ListRecentEndUserTransactionsRow[]> {
+		console.log(`[ClientRepository] getRecentEndUserTransactions - environment filter: ${environment || "all"}`)
 		return await listRecentEndUserTransactions(this.sql, {
 			clientId,
 			limit: limit.toString(),
 			offset: offset.toString(),
+			environment: environment || null,
 		})
 	}
 
 	/**
 	 * Get end-user growth metrics
 	 * Returns: total users, new users (30d), active users (30d), deposits, withdrawals
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getEndUserGrowthMetrics(clientId: string): Promise<GetEndUserGrowthMetricsRow | null> {
-		return await getEndUserGrowthMetrics(this.sql, { id: clientId })
+	async getEndUserGrowthMetrics(clientId: string, environment?: "sandbox" | "production"): Promise<GetEndUserGrowthMetricsRow | null> {
+		console.log(`[ClientRepository] getEndUserGrowthMetrics - environment filter: ${environment || "all"}`)
+		return await getEndUserGrowthMetrics(this.sql, {
+			id: clientId,
+			environment: environment || null,
+		})
 	}
 
 	// ==========================================
@@ -857,18 +893,19 @@ export class ClientRepository {
 	/**
 	 * Get all dashboard metrics in one call
 	 * Convenience method that combines multiple queries
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getDashboardMetrics(clientId: string): Promise<{
+	async getDashboardMetrics(clientId: string, environment?: "sandbox" | "production"): Promise<{
 		balances: GetClientTotalBalancesRow | null
 		revenue: GetClientRevenueSummaryRow | null
 		growth: GetEndUserGrowthMetricsRow | null
 		recentTransactions: ListRecentEndUserTransactionsRow[]
 	}> {
 		const [balances, revenue, growth, recentTransactions] = await Promise.all([
-			this.getTotalBalances(clientId),
+			this.getTotalBalances(clientId, environment),
 			this.getRevenueSummary(clientId),
-			this.getEndUserGrowthMetrics(clientId),
-			this.getRecentEndUserTransactions(clientId, 10, 0),
+			this.getEndUserGrowthMetrics(clientId, environment),
+			this.getRecentEndUserTransactions(clientId, 10, 0, environment),
 		])
 
 		return {
@@ -900,10 +937,15 @@ export class ClientRepository {
 	 * Get aggregated dashboard summary across ALL products for a Privy user
 	 * Sums: idle_balance, earning_balance, revenue metrics, end-user metrics
 	 * Calculates weighted averages for revenue percentages
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getAggregatedDashboardSummary(privyOrganizationId: string): Promise<GetAggregatedDashboardSummaryRow | null> {
+	async getAggregatedDashboardSummary(privyOrganizationId: string, environment?: "sandbox" | "production"): Promise<GetAggregatedDashboardSummaryRow | null> {
 		try {
-			return await getAggregatedDashboardSummary(this.sql, { privyOrganizationId })
+			console.log(`[ClientRepository] getAggregatedDashboardSummary - environment filter: ${environment || "all"}`)
+			return await getAggregatedDashboardSummary(this.sql, {
+				privyOrganizationId,
+				environment: environment || null,
+			})
 		} catch (error) {
 			console.error("[ClientRepository] Error getting aggregated dashboard summary:", error)
 			throw error

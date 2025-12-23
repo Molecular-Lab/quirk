@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react"
 
-import { Home, TrendingUp, Wallet } from "lucide-react"
+import { Home, Loader2, RefreshCw, TrendingUp, Wallet } from "lucide-react"
 
-import { createFiatDeposit, createUser, getUserBalance } from "@/api/b2bClientHelpers"
+import { createFiatDeposit, createUser, getUserBalance, getUserByClientUserId, createWithdrawal } from "@/api/b2bClientHelpers"
 import { LandingNavbar } from "@/feature/landing/LandingNavbar"
 import { useClientContextStore } from "@/store/clientContextStore"
 import { useDemoStore } from "@/store/demoStore"
@@ -35,7 +35,7 @@ export function CreatorsDemoApp() {
 	const [balanceError, setBalanceError] = useState<string | null>(null)
 
 	// Get client context (productId, clientId, apiKey)
-	const { productId, hasApiKey } = useClientContextStore()
+	const { productId, clientId, hasApiKey } = useClientContextStore()
 
 	// Get demo-specific state from demoStore
 	const {
@@ -43,6 +43,7 @@ export function CreatorsDemoApp() {
 		isCreatingAccount,
 		endUserId,
 		error,
+		selectedEnvironment,
 		setIsCreatingAccount,
 		setEndUser,
 		setError,
@@ -62,8 +63,8 @@ export function CreatorsDemoApp() {
 		setBalanceError(null)
 
 		try {
-			console.log("[CreatorsDemoApp] Fetching real balance for user:", endUserId)
-			const response = await getUserBalance(endUserId)
+			console.log("[CreatorsDemoApp] Fetching real balance for user:", endUserId, "environment:", selectedEnvironment)
+			const response = await getUserBalance(endUserId, { environment: selectedEnvironment })
 
 			if (response.found && response.data) {
 				console.log("[CreatorsDemoApp] Real balance fetched:", response.data)
@@ -80,10 +81,40 @@ export function CreatorsDemoApp() {
 		}
 	}
 
-	// Fetch real balance when endUserId exists
+	// Fetch real balance when endUserId exists or environment changes
 	useEffect(() => {
 		fetchBalance()
-	}, [endUserId, hasEarnAccount])
+	}, [endUserId, hasEarnAccount, selectedEnvironment])
+
+	// Check for existing user on mount (sync local state with backend)
+	useEffect(() => {
+		const checkExistingUser = async () => {
+			// Skip if already have an account loaded or no clientId
+			if (hasEarnAccount || !clientId) return
+
+			// Get persona's deterministic userId
+			const personaUserId = getPersonaUserId()
+			if (!personaUserId) return
+
+			try {
+				console.log("[CreatorsDemoApp] Checking for existing user:", personaUserId)
+				const user = await getUserByClientUserId(clientId, personaUserId)
+				if (user) {
+					// User exists in backend - sync to local state
+					setEndUser({
+						endUserId: user.id,
+						endUserClientUserId: personaUserId,
+					})
+					console.log("[CreatorsDemoApp] Found existing user:", user.id)
+				}
+			} catch (err) {
+				// Non-blocking - user can still create new account
+				console.warn("[CreatorsDemoApp] Failed to check for existing user:", err)
+			}
+		}
+
+		checkExistingUser()
+	}, [clientId, hasEarnAccount, selectedEnvironment, getPersonaUserId, setEndUser])
 
 	// Use real balance if available, otherwise use mock
 	const earnBalance = realBalance ? parseFloat(realBalance.balance) : creatorsMockBalances.earnBalance
@@ -143,20 +174,24 @@ export function CreatorsDemoApp() {
 				isPersona: !!personaUserId,
 			})
 
-			// Call the API to create end-user account
+			// Call the API to create end-user account with pending_onboarding status
 			const response = await createUser(productId, {
 				clientUserId: demoUserId,
 				email: "demo@example.com", // Optional demo email
+				status: "pending_onboarding", // ✅ User needs to complete onboarding first
 			})
 
 			console.log("[DemoClientApp] End-user created successfully:", response)
 
 			// Store the end user ID in demoStore
-			if (response && typeof response === "object" && "id" in response) {
+			if (response && typeof response === "object" && "id" in response && "clientId" in response) {
 				setEndUser({
 					endUserId: response.id,
 					endUserClientUserId: demoUserId,
 				})
+
+				// ✅ Redirect to onboarding flow (include productId for fetching strategies)
+				window.location.href = `/onboarding/${demoUserId}?userId=${response.id}&clientId=${response.clientId}&productId=${productId}&returnPath=/demo`
 			} else {
 				throw new Error("Invalid response from API")
 			}
@@ -189,6 +224,7 @@ export function CreatorsDemoApp() {
 				amount: amount.toString(),
 				currency: "USD",
 				tokenSymbol: "USDC",
+				environment: selectedEnvironment,
 			})
 
 			console.log("[DemoClientApp] Deposit order created:", response)
@@ -219,17 +255,97 @@ export function CreatorsDemoApp() {
 		}
 	}
 
+	const handleWithdraw = async () => {
+		if (!endUserId) {
+			setError("No end-user account found. Please create an account first.")
+			return
+		}
+
+		// Get current balance
+		const currentBalance = realBalance ? parseFloat(realBalance.balance) : 0
+		if (currentBalance <= 0) {
+			setError("Insufficient balance for withdrawal.")
+			return
+		}
+
+		// Prompt for withdrawal amount
+		const amountStr = window.prompt(`Enter withdrawal amount (Available: ${currentBalance.toFixed(2)}):`)
+		if (!amountStr) return // User cancelled
+
+		const amount = parseFloat(amountStr)
+		if (isNaN(amount) || amount <= 0) {
+			setError("Please enter a valid amount.")
+			return
+		}
+
+		if (amount > currentBalance) {
+			setError(`Withdrawal amount (${amount.toFixed(2)}) exceeds available balance (${currentBalance.toFixed(2)}).`)
+			return
+		}
+
+		setIsDepositing(true) // Reuse deposit loading state
+		setError(null)
+
+		try {
+			console.log("[CreatorsDemoApp] Creating withdrawal:", {
+				userId: endUserId,
+				amount: amount.toString(),
+				environment: selectedEnvironment,
+			})
+
+			// Call the API to create withdrawal
+			const response = await createWithdrawal({
+				userId: endUserId,
+				amount: amount.toString(),
+				withdrawal_method: "fiat_to_end_user",
+				destination_currency: "USD",
+				environment: selectedEnvironment, // ✅ Pass environment parameter
+			})
+
+			console.log("[CreatorsDemoApp] Withdrawal successful:", response)
+
+			// Refetch balance after successful withdrawal
+			setTimeout(() => {
+				fetchBalance()
+			}, 1000)
+
+			// Show success message
+			alert(`✅ Withdrawal of ${amount.toFixed(2)} initiated successfully!`)
+		} catch (err) {
+			console.error("[CreatorsDemoApp] Failed to create withdrawal:", err)
+			setError(err instanceof Error ? err.message : "Failed to create withdrawal. Please try again.")
+		} finally {
+			setIsDepositing(false)
+		}
+	}
+
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-gray-25 via-white to-white">
 			{/* Navbar */}
 			<LandingNavbar />
 
 			{/* Main Content */}
-			<div className="max-w-md mx-auto bg-white min-h-screen pb-20">
+			<div className="max-w-md mx-auto bg-white min-h-screen pt-20 pb-20">
 				{/* Header */}
 				<div className="px-5 pt-8 pb-5">
 					<div className="flex items-center justify-between">
-						<h1 className="text-2xl font-bold text-gray-950">{currentCard.title}</h1>
+						<div>
+							<h1 className="text-2xl font-bold text-gray-950">{currentCard.title}</h1>
+							{/* Environment Badge */}
+							<div className="mt-2">
+								{selectedEnvironment === "production" ? (
+									<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-800 border border-orange-300">
+										<span className="inline-flex h-1.5 w-1.5 rounded-full bg-orange-500"></span>
+										Production
+									</span>
+								) : (
+									<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800 border border-green-300">
+										<span className="inline-flex h-1.5 w-1.5 rounded-full bg-green-500"></span>
+										Sandbox
+									</span>
+								)}
+							</div>
+						</div>
 						<button className="p-2 hover:bg-gray-50 rounded-lg transition-colors">
 							<span className="text-2xl">⚙️</span>
 						</button>
@@ -275,11 +391,23 @@ export function CreatorsDemoApp() {
 						<>
 							{/* Savings View - Real Balance from API */}
 							<div className="mb-2">
-								<p className="text-sm text-gray-500 mb-1">USDC Balance</p>
+								<div className="flex items-center justify-between mb-1">
+									<p className="text-sm text-gray-500">USDC Balance</p>
+									{hasEarnAccount && (
+										<button
+											onClick={() => fetchBalance()}
+											disabled={isLoadingBalance}
+											className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50"
+											title="Refresh balance"
+										>
+											<RefreshCw className={`h-4 w-4 ${isLoadingBalance ? "animate-spin" : ""}`} />
+										</button>
+									)}
+								</div>
 								<h2 className="text-6xl font-bold text-gray-950 mb-3">
 									{hasEarnAccount
 										? isLoadingBalance
-											? "Loading..."
+											? <Loader2 className="h-12 w-12 animate-spin text-gray-400 mx-auto" />
 											: `$${earnBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 										: "$0.00"}
 								</h2>
@@ -353,7 +481,11 @@ export function CreatorsDemoApp() {
 								>
 									Deposit
 								</button>
-								<button className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-900 py-4 rounded-2xl font-medium text-base transition-colors border border-gray-200">
+								<button
+									onClick={handleWithdraw}
+									disabled={!realBalance || parseFloat(realBalance.balance) <= 0}
+									className="flex-1 bg-gray-50 hover:bg-gray-100 text-gray-900 py-4 rounded-2xl font-medium text-base transition-colors border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+								>
 									Withdraw
 								</button>
 							</div>

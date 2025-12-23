@@ -1,5 +1,5 @@
 /**
- * @proxify/yield-engine
+ * @quirk/yield-engine
  *
  * A comprehensive yield optimization engine that aggregates and compares
  * yields across multiple DeFi protocols (AAVE, Compound, Morpho).

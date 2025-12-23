@@ -6,7 +6,7 @@
  */
 
 // TODO: Fix yield-engine package exports
-// import { AaveAdapter, CompoundAdapter, MorphoAdapter } from "@proxify/yield-engine"
+// import { AaveAdapter, CompoundAdapter, MorphoAdapter } from "@quirk/yield-engine"
 const AaveAdapter = {} as any
 const CompoundAdapter = {} as any
 const MorphoAdapter = {} as any

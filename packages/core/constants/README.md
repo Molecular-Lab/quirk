@@ -1,6 +1,6 @@
 # @proxify/core/constants
 
-Centralized blockchain constants for the Proxify platform.
+Centralized blockchain constants for the Quirk platform.
 
 ## 📚 Contents
 

@@ -4,8 +4,8 @@
 
 import type { initServer } from "@ts-rest/express";
 import { randomBytes } from "crypto";
-import { b2bContract } from "@proxify/b2b-api-core";
-import { getMockUSDCAddress } from "@proxify/core/constants";
+import { b2bContract } from "@quirk/b2b-api-core";
+import { getMockUSDCAddress } from "@quirk/core/constants";
 import type { DepositService } from "../service/deposit.service";
 import type { ClientService } from "../service/client.service";
 import { mapDepositToDto, mapDepositsToDto } from "../mapper/deposit.mapper";
@@ -53,7 +53,7 @@ export function createDepositRouter(
 					};
 				}
 
-				// ✅ INTERNAL ROUTING: Proxify decides which on-ramp to use based on currency
+				// ✅ INTERNAL ROUTING: Quirk decides which on-ramp to use based on currency
 				let onRampProvider = "proxify_gateway";
 
 				// Smart routing based on currency
@@ -73,10 +73,10 @@ export function createDepositRouter(
 
 				// ✅ DEPOSITS: Always use PROXIFY's bank accounts (fixed, hardcoded)
 				// Client's bank accounts (from Configure Settlement Banking) are for OFF-RAMP withdrawals only!
-				// Flow: End-user sends money to PROXIFY's bank → Proxify mints shares
+				// Flow: End-user sends money to PROXIFY's bank → Quirk mints shares
 				const bankAccount = BankAccountService.getBankAccount(body.currency);
 
-				logger.info("Using Proxify's bank account for deposit", {
+				logger.info("Using Quirk's bank account for deposit", {
 					clientId,
 					currency: body.currency,
 					bankName: bankAccount.bankName
@@ -98,14 +98,14 @@ export function createDepositRouter(
 					? `${process.env.FRONTEND_URL}/payment-session/${orderId}`
 					: `http://localhost:5173/payment-session/${orderId}`;
 
-				// Extract bank details from Proxify's BankAccountService (camelCase format)
+				// Extract bank details from Quirk's BankAccountService (camelCase format)
 				const paymentInstructions = {
 					paymentMethod: "bank_transfer" as const,
 					currency: body.currency,
 					amount: body.amount,
 					reference: orderId,
 
-					// Proxify's bank account details (from BankAccountService)
+					// Quirk's bank account details (from BankAccountService)
 					bankName: bankAccount.bankName,
 					accountNumber: bankAccount.accountNumber,
 					accountName: bankAccount.accountName,
@@ -134,6 +134,7 @@ export function createDepositRouter(
 					chain: "base", // Default chain for on-ramp
 					tokenSymbol: body.tokenSymbol,
 					expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+					environment: body.environment || "sandbox", // ✅ Pass environment from request
 				});
 
 				logger.info("Deposit created in unified deposit_transactions table", { orderId });
@@ -736,21 +737,26 @@ export function createDepositRouter(
 
 		// GET /deposits/pending - List pending deposit orders (Operations Dashboard)
 		// ⚠️ MUST be BEFORE getByOrderId to avoid route conflict
-		listPending: async ({ req }) => {
+		listPending: async ({ query, req }) => {
 			try {
 				// Dual auth: Support both SDK (API key) and Dashboard (Privy)
 				const apiKeyClient = (req as any).client;
 				const privySession = (req as any).privy;
 
+				// ✅ Extract environment from query params
+				const environment = query?.environment as "sandbox" | "production" | undefined;
+
 				// For dashboard (Privy auth), show all deposits across all products
 				if (privySession) {
 					logger.info("Fetching pending deposits (Dashboard)", {
 						privyOrgId: privySession.organizationId,
-						productsCount: privySession.products.length
+						productsCount: privySession.products.length,
+						environment: environment || "all",
 					});
 
 					// Get ALL pending deposits (for all products under this organization)
-					const deposits = await depositService.listAllPendingDeposits();
+					// ✅ Pass environment to filter at DB level
+					const deposits = await depositService.listAllPendingDeposits(environment);
 
 					// Filter to only deposits from this organization's products
 					const productIds = privySession.products.map((p: any) => p.id);
@@ -788,9 +794,13 @@ export function createDepositRouter(
 
 				// For SDK (API key), show deposits for single client only
 				if (apiKeyClient) {
-					logger.info("Fetching pending deposits (SDK)", { clientId: apiKeyClient.id });
+					logger.info("Fetching pending deposits (SDK)", {
+						clientId: apiKeyClient.id,
+						environment: environment || "all",
+					});
 
-					const deposits = await depositService.listAllPendingDeposits();
+					// ✅ Pass environment to filter at DB level
+					const deposits = await depositService.listAllPendingDeposits(environment);
 
 					// Filter to only this client's deposits
 					const filteredDeposits = deposits.filter((d) => d.clientId === apiKeyClient.id);

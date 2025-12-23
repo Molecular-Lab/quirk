@@ -1,5 +1,5 @@
 {
-	"name": "@proxify/core",
+	"name": "@quirk/core",
 	"version": "0.1.0",
 	"type": "module",
 	"main": "./index.ts",
@@ -13,7 +13,7 @@
 	},
 	"dependencies": {
 		"@privy-io/node": "^0.4.1",
-		"@proxify/sqlcgen": "workspace:*",
+		"@quirk/sqlcgen": "workspace:*",
 		"@ts-rest/core": "catalog:",
 		"@types/bcrypt": "^6.0.0",
 		"axios": "catalog:",
@@ -28,8 +28,8 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@proxify/eslint-config-base": "workspace:*",
-		"@proxify/tsconfig": "workspace:*",
+		"@quirk/eslint-config-base": "workspace:*",
+		"@quirk/tsconfig": "workspace:*",
 		"@types/node": "^22.10.1",
 		"@types/uuid": "^10.0.0",
 		"@types/verror": "^1.10.11",

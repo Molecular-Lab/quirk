@@ -1,5 +1,5 @@
 /**
- * Repository Layer Exports - Proxify Pattern
+ * Repository Layer Exports - Quirk Pattern
  *
  * All repositories use 100% SQLC-generated type-safe queries.
  * Import repositories from this index for clean service layer integration.
@@ -13,7 +13,7 @@
  *   VaultRepository,
  *   DepositRepository,
  *   AuditRepository
- * } from '@proxify/core/repository/postgres';
+ * } from '@quirk/core/repository/postgres';
  *
  * // Inject into service layer
  * class DepositService {
@@ -83,4 +83,4 @@ export type {
 	ListDepositsRow,
 	ListWithdrawalsRow,
 	UpdateClientRow,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"

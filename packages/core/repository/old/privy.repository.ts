@@ -6,7 +6,7 @@ import { PrivyUserRepository } from "./user.repository"
 /**
  * Privy Repository Aggregator
  * Combines all Privy-related repositories
- * Following pattern from Proxify architecture
+ * Following pattern from Quirk architecture
  */
 export class PrivyRepository {
 	readonly wallet: PrivyWalletRepository

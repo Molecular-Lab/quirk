@@ -90,7 +90,7 @@ export function MarketPage() {
 				<div className="mb-8 flex justify-between items-start">
 					<div>
 						<h1 className="text-[32px] font-bold text-gray-900 mb-2">Market Intelligence</h1>
-						<p className="text-gray-600">Real-time DeFi analytics powered by Proxify Yield Engine</p>
+						<p className="text-gray-600">Real-time DeFi analytics powered by Quirk Yield Engine</p>
 					</div>
 					<div className="text-right bg-white px-6 py-4 rounded-2xl border border-gray-200 shadow-sm">
 						{balanceLoading ? (

@@ -11,14 +11,6 @@ export function ProductsListPage() {
 	const { products, isLoading, error, loadProducts, isLoaded } = useProducts()
 	const navigate = useNavigate()
 	const [copiedId, setCopiedId] = useState<string | null>(null)
-	const [apiKeys, setApiKeys] = useState<Record<string, string>>({})
-
-	// Load API keys from localStorage
-	useEffect(() => {
-		const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
-		setApiKeys(allKeys)
-		console.log("[ProductsListPage] Loaded API keys from localStorage:", Object.keys(allKeys))
-	}, [products]) // Reload when products change
 
 	const handleCopyToClipboard = (text: string, id: string, label: string) => {
 		navigator.clipboard.writeText(text)
@@ -75,7 +67,7 @@ export function ProductsListPage() {
 				<div className="mb-8 flex items-start justify-between">
 					<div>
 						<h1 className="text-3xl font-bold text-gray-900 mb-2">Products</h1>
-						<p className="text-gray-600">Manage your Proxify products and configurations</p>
+						<p className="text-gray-600">Manage your Quirk products and configurations</p>
 					</div>
 					<button
 						onClick={handleRefresh}
@@ -103,10 +95,11 @@ export function ProductsListPage() {
 				) : (
 					<div className="space-y-4">
 						{products.map((product) => {
-							// ✅ Check BOTH database apiKeyPrefix AND localStorage
-							const apiKeyFromLocalStorage = apiKeys[product.productId]
-							const hasApiKey = !!product.apiKeyPrefix || !!apiKeyFromLocalStorage
-							
+							// ✅ Check for sandbox/production API keys
+							const hasSandboxKey = !!product.sandboxApiKeyPrefix
+							const hasProductionKey = !!product.productionApiKeyPrefix
+							const hasAnyKey = hasSandboxKey || hasProductionKey
+
 							return (
 								<div
 									key={product.productId}
@@ -160,42 +153,70 @@ export function ProductsListPage() {
 												</div>
 											</div>
 
-											{/* API Key Status */}
+											{/* API Keys Status */}
 											<div className="bg-gray-50 rounded-lg p-3">
-												<label className="block text-xs font-medium text-gray-600 mb-1">API Key</label>
-												<div className="flex items-center gap-2">
-													{hasApiKey ? (
-														<>
-															<code className="text-sm font-mono text-gray-900 flex-1 truncate">
-																{product.apiKeyPrefix}...
-															</code>
-															<button
-																onClick={() => {
-																	handleCopyToClipboard(
-																		product.apiKeyPrefix ?? "",
-																		`api-${product.id}`,
-																		"API Key Prefix",
-																	)
-																}}
-																className="p-1.5 hover:bg-gray-200 rounded transition-colors"
-																title="Copy API Key Prefix"
-															>
-																{copiedId === `api-${product.id}` ? (
-																	<Check className="w-4 h-4 text-green-600" />
-																) : (
-																	<Copy className="w-4 h-4 text-gray-600" />
-																)}
-															</button>
-															<span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-700 rounded-full">
-																Generated
-															</span>
-														</>
-													) : (
-														<div className="flex items-center gap-2 text-sm text-orange-600">
-															<Key className="w-4 h-4" />
-															<span>Not Generated</span>
-														</div>
-													)}
+												<label className="block text-xs font-medium text-gray-600 mb-1">API Keys</label>
+												<div className="space-y-2">
+													{/* Sandbox Key */}
+													<div className="flex items-center gap-2">
+														<span className="text-xs text-gray-500 w-16">Sandbox:</span>
+														{hasSandboxKey ? (
+															<>
+																<code className="text-xs font-mono text-gray-900 flex-1 truncate">
+																	{product.sandboxApiKeyPrefix}...
+																</code>
+																<button
+																	onClick={() => {
+																		handleCopyToClipboard(
+																			product.sandboxApiKeyPrefix ?? "",
+																			`sandbox-${product.id}`,
+																			"Sandbox Key Prefix",
+																		)
+																	}}
+																	className="p-1 hover:bg-gray-200 rounded transition-colors"
+																	title="Copy Sandbox Key Prefix"
+																>
+																	{copiedId === `sandbox-${product.id}` ? (
+																		<Check className="w-3 h-3 text-green-600" />
+																	) : (
+																		<Copy className="w-3 h-3 text-gray-600" />
+																	)}
+																</button>
+															</>
+														) : (
+															<span className="text-xs text-orange-600">Not Generated</span>
+														)}
+													</div>
+													{/* Production Key */}
+													<div className="flex items-center gap-2">
+														<span className="text-xs text-gray-500 w-16">Production:</span>
+														{hasProductionKey ? (
+															<>
+																<code className="text-xs font-mono text-gray-900 flex-1 truncate">
+																	{product.productionApiKeyPrefix}...
+																</code>
+																<button
+																	onClick={() => {
+																		handleCopyToClipboard(
+																			product.productionApiKeyPrefix ?? "",
+																			`prod-${product.id}`,
+																			"Production Key Prefix",
+																		)
+																	}}
+																	className="p-1 hover:bg-gray-200 rounded transition-colors"
+																	title="Copy Production Key Prefix"
+																>
+																	{copiedId === `prod-${product.id}` ? (
+																		<Check className="w-3 h-3 text-green-600" />
+																	) : (
+																		<Copy className="w-3 h-3 text-gray-600" />
+																	)}
+																</button>
+															</>
+														) : (
+															<span className="text-xs text-orange-600">Not Generated</span>
+														)}
+													</div>
 												</div>
 											</div>
 										</div>

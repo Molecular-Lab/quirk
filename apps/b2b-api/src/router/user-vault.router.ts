@@ -5,7 +5,7 @@
  */
 
 import type { initServer } from "@ts-rest/express";
-import { b2bContract } from "@proxify/b2b-api-core";
+import { b2bContract } from "@quirk/b2b-api-core";
 import type { UserVaultService } from "../service/user-vault.service";
 import { logger } from "../logger";
 
@@ -14,16 +14,18 @@ export function createUserVaultRouter(
 	userVaultService: UserVaultService
 ) {
 	return s.router(b2bContract.userVault, {
-		// GET /user-vaults/:userId/:vaultId/balance
-		getBalance: async ({ params }) => {
+		// GET /user-vaults/:userId/:vaultId/balance?environment=sandbox|production
+		getBalance: async ({ params, query }) => {
 			try {
 				// In simplified architecture, vaultId is just an identifier
 				// We use the vaultId as clientId for now
 				const clientId = params.vaultId;
+				const environment = query?.environment || "sandbox";
 
 				const balance = await userVaultService.getUserBalance(
 					params.userId,
-					clientId
+					clientId,
+					environment
 				);
 
 				return {
@@ -50,16 +52,17 @@ export function createUserVaultRouter(
 			}
 		},
 
-		// GET /user-vaults/:vaultId/users
+		// GET /user-vaults/:vaultId/users?environment=sandbox|production
 		listVaultUsers: async ({ params, query }) => {
 			try {
+				const environment = query?.environment || "sandbox";
 				const limit = query?.limit ? parseInt(query.limit) : 50;
 				const offset = query?.offset ? parseInt(query.offset) : 0;
 
 				// In simplified architecture, vaultId is clientId
 				const clientId = params.vaultId;
 
-				const users = await userVaultService.listVaultUsers(clientId, limit, offset);
+				const users = await userVaultService.listVaultUsers(clientId, environment, limit, offset);
 
 				return {
 					status: 200 as const,

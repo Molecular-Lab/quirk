@@ -182,7 +182,7 @@ export function DemoSelectorPage() {
 			<LandingNavbar />
 
 			{/* Main Content */}
-			<div className="max-w-7xl mx-auto px-6 pb-12">
+			<div className="max-w-7xl mx-auto px-6 pt-28 pb-12">
 				{/* Step Indicator */}
 				<div className="flex items-center justify-center gap-4 mb-12">
 					<div className="flex items-center gap-2">

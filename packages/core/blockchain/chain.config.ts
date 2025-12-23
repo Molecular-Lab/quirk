@@ -7,9 +7,9 @@ import { type Chain, sepolia, baseSepolia, mainnet, base } from 'viem/chains'
 
 export type MockTokenChainId = '11155111' | '84532' // Sepolia | Base Sepolia (testnets)
 export type MainnetChainId = '1' | '8453' // Ethereum Mainnet | Base Mainnet
-export type ProxifyChainId = MockTokenChainId | MainnetChainId
+export type QuirkChainId = MockTokenChainId | MainnetChainId
 
-export interface ProxifyChainConfig {
+export interface QuirkChainConfig {
   chain: Chain
   rpcUrl?: string
 }
@@ -17,7 +17,7 @@ export interface ProxifyChainConfig {
 /**
  * Get chain configuration for testnet chains (mock token minting)
  */
-export function getMockTokenChainConfig(chainId: MockTokenChainId): ProxifyChainConfig {
+export function getMockTokenChainConfig(chainId: MockTokenChainId): QuirkChainConfig {
   switch (chainId) {
     case '11155111': // Sepolia
       return {
@@ -37,7 +37,7 @@ export function getMockTokenChainConfig(chainId: MockTokenChainId): ProxifyChain
 /**
  * Get chain configuration for mainnet chains (DeFi protocol queries)
  */
-export function getMainnetChainConfig(chainId: MainnetChainId): ProxifyChainConfig {
+export function getMainnetChainConfig(chainId: MainnetChainId): QuirkChainConfig {
   switch (chainId) {
     case '1': // Ethereum Mainnet
       return {
@@ -57,7 +57,7 @@ export function getMainnetChainConfig(chainId: MainnetChainId): ProxifyChainConf
 /**
  * Get chain configuration for any supported chain
  */
-export function getChainConfig(chainId: ProxifyChainId): ProxifyChainConfig {
+export function getChainConfig(chainId: QuirkChainId): QuirkChainConfig {
   // Try mainnet first
   if (chainId === '1' || chainId === '8453') {
     return getMainnetChainConfig(chainId as MainnetChainId)

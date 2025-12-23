@@ -1,5 +1,5 @@
 {
-	"extends": "@proxify/tsconfig/base.json",
+	"extends": "@quirk/tsconfig/base.json",
 	"compilerOptions": {
 		"outDir": "./dist",
 		"rootDir": "./src",

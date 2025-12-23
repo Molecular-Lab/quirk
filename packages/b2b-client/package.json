@@ -1,5 +1,5 @@
 {
-	"name": "@proxify/b2b-client",
+	"name": "@quirk/b2b-client",
 	"version": "1.0.0",
 	"private": false,
 	"type": "module",
@@ -15,7 +15,7 @@
 		"test": "vitest"
 	},
 	"dependencies": {
-		"@proxify/core": "workspace:*",
+		"@quirk/core": "workspace:*",
 		"axios": "catalog:",
 		"dotenv": "^16.4.7",
 		"zod": "catalog:"

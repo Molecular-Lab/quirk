@@ -1,4 +1,4 @@
-import { b2bContract } from "@proxify/b2b-api-core"
+import { b2bContract } from "@quirk/b2b-api-core"
 import { type AppRouter, type ClientArgs, type InitClientReturn, initClient } from "@ts-rest/core"
 import { type AxiosInstance, type Method, isAxiosError } from "axios"
 

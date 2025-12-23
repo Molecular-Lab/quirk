@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { usePrivy } from "@privy-io/react-auth"
+import { usePrivy, useWallets } from "@privy-io/react-auth"
 import { useNavigate } from "@tanstack/react-router"
 import clsx from "clsx"
 import { AnimatePresence, motion } from "framer-motion"
@@ -9,6 +9,7 @@ import { toast } from "sonner"
 
 import { registerClient } from "@/api/b2bClientHelpers"
 import { Input } from "@/components/ui/input"
+import { useUserStore } from "@/store/userStore"
 import { Currency } from "@/types"
 
 const customerTiers = [
@@ -39,6 +40,7 @@ const currencies = [
 export function CreateProduct() {
 	const navigate = useNavigate()
 	const { user } = usePrivy()
+	const { wallets } = useWallets()
 	const [currentStep, setCurrentStep] = useState(0)
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -49,7 +51,7 @@ export function CreateProduct() {
 		customerTier: "",
 		strategyRanking: [] as string[],
 		clientRevenueSharePercent: "15.00",
-		platformFeePercent: "7.50",
+		platformFeePercent: "10.00",
 		currencies: [Currency.USD] as Currency[],
 		bankAccounts: {} as Record<
 			Currency,
@@ -103,8 +105,16 @@ export function CreateProduct() {
 	}
 
 	const handleSubmit = async () => {
-		if (!user?.wallet?.address) {
-			toast.error("Please connect your wallet")
+		// Find Privy embedded wallet (not external wallet like MetaMask)
+		const embeddedWallet = wallets.find((wallet) => wallet.walletClientType === "privy")
+
+		if (!embeddedWallet) {
+			toast.error("No embedded wallet found. Please ensure you have a Privy wallet.")
+			return
+		}
+
+		if (!user) {
+			toast.error("Please log in to continue")
 			return
 		}
 
@@ -132,7 +142,7 @@ export function CreateProduct() {
 				businessType: formData.businessType,
 				walletType: "MANAGED" as const,
 				privyOrganizationId: user.id || "",
-				privyWalletAddress: user.wallet.address,
+				privyWalletAddress: embeddedWallet.address, // Always use Privy embedded wallet, not external wallet
 				vaultsToCreate: "both" as const,
 				privyEmail: user.email?.address,
 				customerTier: formData.customerTier as "0-1K" | "1K-10K" | "10K-100K" | "100K-1M" | "1M+",
@@ -144,6 +154,18 @@ export function CreateProduct() {
 			}
 
 			const client = await registerClient(payload)
+
+			// ✅ Add to userStore so dashboard loads immediately without refresh
+			useUserStore.getState().addOrganization({
+				id: client.id,
+				productId: client.productId,
+				companyName: client.companyName,
+				businessType: client.businessType,
+				isActive: true,
+				isSandbox: true,
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
+			})
 
 			toast.success(
 				<div>

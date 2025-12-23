@@ -216,7 +216,7 @@ export class FiatOnRampService {
 				method: "wire",
 				amount: params.amount,
 				currency: params.currency,
-				bankName: "Proxify Bank (Mock)",
+				bankName: "Quirk Bank (Mock)",
 				accountNumber: "1234567890",
 				routingNumber: "021000021",
 				swiftCode: "PROXUS33",
@@ -252,7 +252,7 @@ export class FiatOnRampService {
 		// Mock conversion (1:1 for simplicity, real rate would vary)
 		const fiatAmount = parseFloat(params.fiatAmount)
 		const gatewayFee = fiatAmount * 0.01 // 1% gateway fee
-		const proxifyFee = fiatAmount * 0.005 // 0.5% Proxify fee
+		const proxifyFee = fiatAmount * 0.005 // 0.5% Quirk fee
 		const networkFee = 1.0 // $1 network fee
 		const totalFees = gatewayFee + proxifyFee + networkFee
 		const cryptoAmount = fiatAmount - totalFees

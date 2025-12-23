@@ -1,12 +1,12 @@
 /**
- * @proxify/mock-token-client
+ * @quirk/mock-token-client
  *
  * MockUSDC/USDQ client for reading token stats and minting tokens
  * Follows the old-ref-contract-executor-client pattern with separate read/write clients
  *
  * Usage:
  * ```typescript
- * import { MockTokenViemClient, MockUSDCClient } from '@proxify/mock-token-client'
+ * import { MockTokenViemClient, MockUSDCClient } from '@quirk/mock-token-client'
  *
  * // Initialize with minter private key
  * MockTokenViemClient.init('0x...')

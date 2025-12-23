@@ -398,6 +398,9 @@ export const clientContract = c.router({
 	getRevenueMetrics: {
 		method: "GET",
 		path: "/clients/product/:productId/revenue",
+		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional(),
+		}),
 		responses: {
 			200: z.object({
 				found: z.boolean(),
@@ -429,6 +432,9 @@ export const clientContract = c.router({
 	getEndUserGrowthMetrics: {
 		method: "GET",
 		path: "/clients/product/:productId/end-users/metrics",
+		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional(),
+		}),
 		responses: {
 			200: z.object({
 				found: z.boolean(),
@@ -456,6 +462,7 @@ export const clientContract = c.router({
 		query: z.object({
 			page: z.coerce.number().int().min(1).default(1),
 			limit: z.coerce.number().int().min(1).max(100).default(20),
+			environment: z.enum(["sandbox", "production"]).optional(),
 		}),
 		responses: {
 			200: z.object({
@@ -494,6 +501,9 @@ export const clientContract = c.router({
 	getWalletBalances: {
 		method: "GET",
 		path: "/clients/product/:productId/wallet/balances",
+		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional(),
+		}),
 		responses: {
 			200: z.object({
 				found: z.boolean(),
@@ -521,6 +531,9 @@ export const clientContract = c.router({
 	getDashboardSummary: {
 		method: "GET",
 		path: "/clients/product/:productId/dashboard",
+		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional(),
+		}),
 		responses: {
 			200: z.object({
 				found: z.boolean(),
@@ -576,6 +589,9 @@ export const clientContract = c.router({
 	getAggregateDashboardSummary: {
 		method: "GET",
 		path: "/clients/dashboard/aggregate",
+		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional(),
+		}),
 		responses: {
 			200: z.object({
 				found: z.boolean(),

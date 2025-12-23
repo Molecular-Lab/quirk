@@ -7,7 +7,6 @@
 
 // Main SDK client
 export { QuirkSDK } from "./client"
-export { QuirkSDK as ProxifySDK } from "./client" // Backward compatibility alias
 
 // Resource classes
 export { ClientResource } from "./resources/clients"
@@ -32,7 +31,7 @@ export {
 	AuthenticationError,
 	NetworkError,
 	NotFoundError,
-	ProxifyError,
+	QuirkError,
 	RateLimitError,
 	ServerError,
 	ValidationError,

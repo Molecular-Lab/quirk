@@ -10,7 +10,7 @@
  *
  * @example
  * ```typescript
- * import { clientSchema, createClientSchema } from '@proxify/core/entity/database';
+ * import { clientSchema, createClientSchema } from '@quirk/core/entity/database';
  *
  * // Validate database row
  * const client = clientSchema.parse(dbRow);

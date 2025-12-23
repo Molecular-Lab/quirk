@@ -3,7 +3,7 @@
  * Transforms database rows to API DTOs
  */
 
-import type { GetDepositByOrderIDRow, CreateDepositRow } from "@proxify/sqlcgen";
+import type { GetDepositByOrderIDRow, CreateDepositRow } from "@quirk/sqlcgen";
 import { BankAccountService } from "../service/bank-account.service";
 
 interface BankAccount {

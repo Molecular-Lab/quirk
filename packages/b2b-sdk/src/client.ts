@@ -105,6 +105,6 @@ export class QuirkSDK {
 	 * Check if SDK is configured for sandbox mode
 	 */
 	get isSandbox(): boolean {
-		return this.httpClient.client.defaults.baseURL?.includes("sandbox") || false
+		return this.httpClient.baseURL?.includes("sandbox") || false
 	}
 }

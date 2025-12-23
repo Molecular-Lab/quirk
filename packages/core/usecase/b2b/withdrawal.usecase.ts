@@ -33,7 +33,7 @@ import type {
 	GetWithdrawalStatsRow,
 	ListWithdrawalsByUserRow,
 	ListWithdrawalsRow,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"
 
 export class B2BWithdrawalUseCase {
 	constructor(
@@ -90,10 +90,10 @@ export class B2BWithdrawalUseCase {
 			growthIndexDecimal: new BigNumber(clientGrowthIndex).dividedBy("1e18").toString(),
 		})
 
-		// ✅ STEP 2: Get end_user_vault (simplified - no chain/token, just clientId)
-		const userVault = await this.vaultRepository.getEndUserVaultByClientForUpdate(endUser.id, clientId)
+		// ✅ STEP 2: Get end_user_vault for this environment (with row lock)
+		const userVault = await this.vaultRepository.getEndUserVaultByClientForUpdate(endUser.id, clientId, withdrawalEnvironment)
 		if (!userVault) {
-			throw new Error(`User has no vault for client ${clientId}`)
+			throw new Error(`User has no vault for client ${clientId} in ${withdrawalEnvironment} environment`)
 		}
 
 		// ✅ STEP 3: Calculate user current value
@@ -284,6 +284,25 @@ export class B2BWithdrawalUseCase {
 	 */
 	async listWithdrawalsByUser(clientId: string, userId: string, limit = 100): Promise<WithdrawalResponse[]> {
 		const withdrawals = await this.withdrawalRepository.listByUser(clientId, userId, limit)
+		return withdrawals.map((w: any) => this.mapToResponse(w))
+	}
+
+	/**
+	 * List pending withdrawals by environment (for Operations Dashboard)
+	 */
+	async listPendingWithdrawalsByEnvironment(environment: "sandbox" | "production"): Promise<WithdrawalResponse[]> {
+		const withdrawals = await this.withdrawalRepository.listPendingByEnvironment(environment)
+		return withdrawals.map((w: any) => this.mapToResponse(w))
+	}
+
+	/**
+	 * List pending withdrawals by client and environment
+	 */
+	async listPendingWithdrawalsByClientAndEnvironment(
+		clientId: string,
+		environment: "sandbox" | "production",
+	): Promise<WithdrawalResponse[]> {
+		const withdrawals = await this.withdrawalRepository.listPendingByClientAndEnvironment(clientId, environment)
 		return withdrawals.map((w: any) => this.mapToResponse(w))
 	}
 

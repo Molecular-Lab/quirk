@@ -2,8 +2,9 @@
  * B2B User Vault DTO - Request/Response Types
  * Used for API ↔ UseCase communication
  *
- * SIMPLIFIED ARCHITECTURE (Nov 2025):
- * - ONE vault per user per client (no chain/token)
+ * ENVIRONMENT-AWARE ARCHITECTURE (Dec 2025):
+ * - One vault per user per client PER ENVIRONMENT
+ * - Separate vaults for sandbox (mock tokens) and production (real USDC)
  * - Fiat-based tracking with weightedEntryIndex
  * - Balance calculation uses client growth index
  */
@@ -11,11 +12,13 @@
 export interface UserBalanceRequest {
 	userId: string
 	clientId: string
+	environment?: "sandbox" | "production" // Defaults to "sandbox"
 }
 
 export interface UserBalanceResponse {
 	userId: string
 	clientId: string
+	environment?: "sandbox" | "production" // Which environment this balance is for
 
 	// Balance information (fiat-based)
 	totalDeposited: string // Fiat amount deposited
@@ -43,6 +46,7 @@ export interface UserPortfolioResponse {
 
 export interface ListVaultUsersRequest {
 	clientId: string
+	environment?: "sandbox" | "production" // Defaults to "sandbox"
 	limit?: number
 	offset?: number
 }

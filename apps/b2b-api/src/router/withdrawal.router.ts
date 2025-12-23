@@ -3,7 +3,7 @@
  */
 
 import type { initServer } from "@ts-rest/express";
-import { b2bContract } from "@proxify/b2b-api-core";
+import { b2bContract } from "@quirk/b2b-api-core";
 import type { WithdrawalService } from "../service/withdrawal.service";
 import { mapWithdrawalToDto, mapWithdrawalsToDto } from "../mapper/withdrawal.mapper";
 import { logger } from "../logger";
@@ -183,6 +183,104 @@ export function createWithdrawalRouter(
 				return {
 					status: 400 as const,
 					body: { error: "Failed to fail withdrawal" },
+				};
+			}
+		},
+
+		// GET /withdrawals/pending - List pending withdrawals (Operations Dashboard)
+		// ⚠️ MUST be BEFORE listByClient to avoid route conflict
+		listPending: async ({ query, req }) => {
+			try {
+				// Dual auth: Support both SDK (API key) and Dashboard (Privy)
+				const apiKeyClient = (req as any).client;
+				const privySession = (req as any).privy;
+
+				// ✅ Extract environment from query params
+				const environment = query?.environment as "sandbox" | "production" | undefined;
+
+				// For dashboard (Privy auth), show all withdrawals across all products
+				if (privySession) {
+					logger.info("Fetching pending withdrawals (Dashboard)", {
+						privyOrgId: privySession.organizationId,
+						productsCount: privySession.products.length,
+						environment: environment || "all",
+					});
+
+					// ✅ Pass environment to filter at DB level
+					const withdrawals = await withdrawalService.listPendingWithdrawals(environment);
+
+					// Filter to only withdrawals from this organization's products
+					const productIds = privySession.products.map((p: any) => p.id);
+					const filteredWithdrawals = withdrawals.filter((w) => productIds.includes(w.clientId));
+
+					logger.info("Pending withdrawals fetched successfully (Dashboard)", {
+						privyOrgId: privySession.organizationId,
+						count: filteredWithdrawals.length,
+					});
+
+					return {
+						status: 200 as const,
+						body: {
+							withdrawals: filteredWithdrawals.map((w) => ({
+								id: w.id,
+								clientId: w.clientId,
+								userId: w.userId,
+								requestedAmount: w.requestedAmount,
+								status: w.status.toUpperCase() as any,
+								createdAt: w.createdAt.toISOString(),
+							})),
+						},
+					};
+				}
+
+				// For SDK (API key), show withdrawals for single client only
+				if (apiKeyClient) {
+					logger.info("Fetching pending withdrawals (SDK)", {
+						clientId: apiKeyClient.id,
+						environment: environment || "all",
+					});
+
+					// ✅ Pass environment to filter at DB level
+					const withdrawals = await withdrawalService.listPendingWithdrawalsByClient(
+						apiKeyClient.id,
+						environment
+					);
+
+					logger.info("Pending withdrawals fetched successfully (SDK)", {
+						clientId: apiKeyClient.id,
+						count: withdrawals.length,
+					});
+
+					return {
+						status: 200 as const,
+						body: {
+							withdrawals: withdrawals.map((w) => ({
+								id: w.id,
+								clientId: w.clientId,
+								userId: w.userId,
+								requestedAmount: w.requestedAmount,
+								status: w.status.toUpperCase() as any,
+								createdAt: w.createdAt.toISOString(),
+							})),
+						},
+					};
+				}
+
+				// Neither auth found
+				logger.error("Authentication missing for list pending withdrawals");
+				return {
+					status: 401 as const,
+					body: {
+						withdrawals: [],
+					},
+				};
+			} catch (error) {
+				logger.error("Failed to list pending withdrawals", { error });
+				return {
+					status: 200 as const,
+					body: {
+						withdrawals: [],
+					},
 				};
 			}
 		},

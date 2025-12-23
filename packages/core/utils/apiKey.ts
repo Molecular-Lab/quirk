@@ -51,18 +51,18 @@ export async function verifyApiKey(apiKey: string, hash: string): Promise<boolea
 
 /**
  * Extract API key prefix for fast database lookup
- * Prefix is first 12 characters (pk + environment + first 4 hex chars)
- * This ensures uniqueness per product
+ * Prefix is first 16 characters (pk + environment + first 8 hex chars)
+ * This ensures uniqueness per product (~4 billion combinations)
  *
  * Examples:
- *   pk_live_7a9f (Production)
- *   pk_test_1c2d (Sandbox)
+ *   pk_live_7a9f3e2b (Production)
+ *   pk_test_1c2d3e4f (Sandbox)
  *
  * @param apiKey - Full API key
- * @returns First 12 characters (e.g., "pk_live_8ad2")
+ * @returns First 16 characters (e.g., "pk_live_8ad2f1c3")
  */
 export function extractPrefix(apiKey: string): string {
-	return apiKey.substring(0, 12)
+	return apiKey.substring(0, 16)
 }
 
 /**

@@ -21,7 +21,9 @@ export interface Organization {
 	businessType: string
 	description?: string
 	websiteUrl?: string
-	apiKeyPrefix?: string | null // First 8-12 chars of API key (e.g., "test_pk_abc123...")
+	apiKeyPrefix?: string | null // Deprecated - use sandboxApiKeyPrefix/productionApiKeyPrefix
+	sandboxApiKeyPrefix?: string | null // Sandbox API key prefix (pk_test_xxx)
+	productionApiKeyPrefix?: string | null // Production API key prefix (pk_live_xxx)
 	isActive: boolean
 	isSandbox: boolean
 	createdAt: string
@@ -104,6 +106,7 @@ export const useUserStore = create<UserStore>()(
 				set({
 					organizations: [...orgs, org],
 					activeProductId: org.productId, // Auto-select new org
+					isOrganizationsLoaded: true, // Mark as loaded since we have at least one org
 				})
 			},
 
@@ -112,6 +115,7 @@ export const useUserStore = create<UserStore>()(
 				set({
 					organizations: orgs,
 					activeProductId: orgs.length > 0 ? orgs[0].productId : null,
+					isOrganizationsLoaded: true, // Mark as loaded when organizations are set
 				})
 			},
 
@@ -167,7 +171,8 @@ export const useUserStore = create<UserStore>()(
 							productId: org.productId,
 							companyName: org.companyName,
 							businessType: org.businessType,
-							apiKeyPrefix: org.apiKeyPrefix, // ✅ Show API key status in console
+							sandboxApiKeyPrefix: org.sandboxApiKeyPrefix, // ✅ Show sandbox API key status
+							productionApiKeyPrefix: org.productionApiKeyPrefix, // ✅ Show production API key status
 						})),
 					})
 
@@ -179,7 +184,9 @@ export const useUserStore = create<UserStore>()(
 						businessType: org.businessType,
 						description: org.description ?? undefined,
 						websiteUrl: org.websiteUrl ?? undefined,
-						apiKeyPrefix: org.apiKeyPrefix ?? null, // ✅ Include API key prefix from database
+						apiKeyPrefix: org.apiKeyPrefix ?? null, // Deprecated - kept for backward compatibility
+						sandboxApiKeyPrefix: org.sandboxApiKeyPrefix ?? null, // ✅ Sandbox API key prefix (pk_test_xxx)
+						productionApiKeyPrefix: org.productionApiKeyPrefix ?? null, // ✅ Production API key prefix (pk_live_xxx)
 						isActive: org.isActive,
 						isSandbox: org.isSandbox,
 						createdAt: org.createdAt,

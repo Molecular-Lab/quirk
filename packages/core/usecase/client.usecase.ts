@@ -16,7 +16,7 @@ import type {
   GetClientBalanceRow,
   CreateClientBalanceArgs,
   GetClientStatsRow,
-} from '@proxify/sqlcgen';
+} from '@quirk/sqlcgen';
 
 export interface ClientUsecaseDeps {
   clientRepository: ClientRepository;

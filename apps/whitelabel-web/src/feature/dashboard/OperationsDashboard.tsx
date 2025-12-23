@@ -4,6 +4,7 @@ import { DollarSign, RefreshCw, Sparkles, UserPlus, Users, Zap } from "lucide-re
 
 import { listPendingDeposits } from "@/api/b2bClientHelpers"
 import { useClientContextStore } from "@/store/clientContextStore"
+import { useEnvironmentStore } from "@/store/environmentStore"
 
 import { OnRampModal } from "./OnRampModal"
 
@@ -28,6 +29,9 @@ export function OperationsDashboard() {
 	// Get client context for API authentication
 	const { clientId, productId, hasContext, hasApiKey } = useClientContextStore()
 
+	// Get environment from store
+	const { apiEnvironment } = useEnvironmentStore()
+
 	useEffect(() => {
 		// Log client context for debugging
 		console.log("[OperationsDashboard] Client context:", {
@@ -38,7 +42,7 @@ export function OperationsDashboard() {
 		})
 
 		loadPendingOrders()
-	}, [])
+	}, [apiEnvironment]) // Refetch when environment changes
 
 	const loadPendingOrders = async (forceRefresh = false) => {
 		setIsLoading(true)
@@ -57,7 +61,8 @@ export function OperationsDashboard() {
 			const timestamp = forceRefresh ? `?_t=${Date.now()}` : ""
 			console.log(`[OperationsDashboard] Loading pending orders (forceRefresh=${forceRefresh})${timestamp}`)
 
-			const response = await listPendingDeposits()
+			// ✅ Pass environment to filter deposits by sandbox/production
+			const response = await listPendingDeposits(apiEnvironment)
 			console.log("[OperationsDashboard] Pending deposits response:", response)
 
 			// API returns { deposits: [...], summary: [...] }
@@ -177,15 +182,6 @@ export function OperationsDashboard() {
 							${totalPendingAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
 						</p>
 						<p className="text-xs text-gray-500 mt-1">Pending USDC minting</p>
-					</div>
-
-					<div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-						<div className="flex items-center justify-between mb-2">
-							<p className="text-sm font-medium text-gray-600">Onboarding Speed</p>
-							<Zap className="w-5 h-5 text-gray-400" />
-						</div>
-						<p className="text-3xl font-bold text-gray-900">~2 min</p>
-						<p className="text-xs text-gray-500 mt-1">Average time to activate</p>
 					</div>
 				</div>
 

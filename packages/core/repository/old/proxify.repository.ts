@@ -2,7 +2,7 @@ import type { Address } from "viem"
 import type {
 	AccountBalance,
 	AccountSnapshot,
-	ProxifyVaultClientAdapter,
+	QuirkVaultClientAdapter,
 	SafeClientAdapter,
 	SafeInfo,
 	TierAccount,
@@ -14,9 +14,9 @@ import type {
 	VaultTotals,
 } from "../entity"
 
-export class ProxifyRepository {
+export class QuirkRepository {
 	constructor(
-		private readonly vaultClient: ProxifyVaultClientAdapter,
+		private readonly vaultClient: QuirkVaultClientAdapter,
 		private readonly safeClient?: SafeClientAdapter,
 	) {}
 

@@ -1,12 +1,12 @@
 /**
- * B2B API Server - NEW Proxify Architecture Implementation
+ * B2B API Server - NEW Quirk Architecture Implementation
  * 
  * Architecture:
- * 1. DTO Layer (@proxify/b2b-api-core) - API contracts with Zod validation
+ * 1. DTO Layer (@quirk/b2b-api-core) - API contracts with Zod validation
  * 2. Router Layer (this file) - ts-rest HTTP handlers
  * 3. Service Layer (service/) - Business logic orchestration
- * 4. UseCase Layer (@proxify/core) - Domain business rules
- * 5. Repository Layer (@proxify/sqlcgen) - Data access
+ * 4. UseCase Layer (@quirk/core) - Domain business rules
+ * 5. Repository Layer (@quirk/sqlcgen) - Data access
  */
 
 import "dotenv/config";
@@ -31,8 +31,8 @@ import {
 	ClientGrowthIndexService, // ✅ NEW: Client growth index calculation
 	ViemClientManager, // ✅ NEW: Blockchain client for minting tokens
 	RevenueService, // ✅ NEW: Revenue tracking service
-} from "@proxify/core";
-import { b2bContract } from "@proxify/b2b-api-core";
+} from "@quirk/core";
+import { b2bContract } from "@quirk/b2b-api-core";
 import { createExpressEndpoints } from "@ts-rest/express";
 
 import { ENV } from "./env";
@@ -45,6 +45,7 @@ import { DepositService } from "./service/deposit.service";
 import { WithdrawalService } from "./service/withdrawal.service";
 import { UserVaultService } from "./service/user-vault.service";
 import { PrivyAccountService } from "./service/privy-account.service";
+import { ExplorerService } from "./service/explorer.service";
 import { createMainRouter } from "./router";
 import { apiKeyAuth } from "./middleware/apiKeyAuth";
 import { privyAuth } from "./middleware/privyAuth";
@@ -157,11 +158,12 @@ async function main() {
 	const clientService = new ClientService(clientUseCase);
 	const defiProtocolService = new DeFiProtocolService(); // Adapters created per-request with correct chainId
 	const vaultService = new VaultService(vaultUseCase);
-	const userService = new UserService(userUseCase);
+	const userService = new UserService(userUseCase, clientUseCase); // ✅ Added clientUseCase for productId lookup
 	const depositService = new DepositService(depositUseCase);
 	const withdrawalService = new WithdrawalService(withdrawalUseCase);
 	const userVaultService = new UserVaultService(userVaultUseCase, clientGrowthIndexService);
 	const privyAccountService = new PrivyAccountService(privyAccountRepository);
+	const explorerService = new ExplorerService(clientUseCase, userUseCase, userVaultService);
 
 	logger.info("✅ Services initialized");
 
@@ -178,6 +180,7 @@ async function main() {
 		withdrawalService,
 		userVaultService,
 		privyAccountService,
+		explorerService,
 	});
 
 	logger.info("✅ Routers created");
@@ -236,7 +239,8 @@ async function main() {
 				(req.originalUrl === "/api/v1/clients" && req.method === "POST") || // Client registration
 				(req.originalUrl === "/api/v1/privy-accounts" && req.method === "POST") || // Privy account creation (first-time onboarding)
 				req.originalUrl.startsWith("/api/v1/defi/") || // Public DeFi metrics
-				req.originalUrl === "/api/v1/health" // Health check
+				req.originalUrl === "/api/v1/health" || // Health check
+				(/^\/api\/v1\/users\/[^/]+\/activate$/.test(req.originalUrl) && req.method === "POST") // User activation (onboarding completion)
 			) {
 				return next();
 			}
@@ -352,11 +356,11 @@ async function main() {
 		logger.info(`📡 Health check: http://localhost:${ENV.PORT}/health`);
 		logger.info(`📚 API Base: http://localhost:${ENV.PORT}/api/v1`);
 		logger.info("\n🏗️ Architecture:");
-		logger.info(`  ✅ DTO Layer: @proxify/b2b-api-core (Zod + ts-rest)`);
+		logger.info(`  ✅ DTO Layer: @quirk/b2b-api-core (Zod + ts-rest)`);
 		logger.info(`  ✅ Router Layer: ts-rest/express`);
 		logger.info(`  ✅ Service Layer: service/`);
-		logger.info(`  ✅ UseCase Layer: @proxify/core`);
-		logger.info(`  ✅ Repository Layer: @proxify/sqlcgen`);
+		logger.info(`  ✅ UseCase Layer: @quirk/core`);
+		logger.info(`  ✅ Repository Layer: @quirk/sqlcgen`);
 		logger.info("");
 	});
 

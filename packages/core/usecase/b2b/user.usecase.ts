@@ -8,7 +8,7 @@ import type { AuditRepository } from "../../repository/postgres/audit.repository
 import type { ClientRepository } from "../../repository/postgres/client.repository"
 import type { UserRepository } from "../../repository/postgres/end_user.repository"
 import type { VaultRepository } from "../../repository/postgres/vault.repository"
-import type { GetEndUserPortfolioRow, GetEndUserRow } from "@proxify/sqlcgen"
+import type { GetEndUserPortfolioRow, GetEndUserRow } from "@quirk/sqlcgen"
 
 /**
  * B2B User Service
@@ -55,30 +55,15 @@ export class B2BUserUseCase {
 			request.userId,
 			request.userType,
 			request.userWalletAddress,
+			request.status, // Pass status through (defaults to 'active' in repository)
 		)
 
-		// ✅ Create end_user_vault on registration (simplified - one vault per client)
-		// This creates a single vault entry for this user under this client
-		// The vault will be populated with deposits later (FLOW 4)
-		try {
-			// Check if vault already exists (in case of race condition)
-			const existingVault = await this.vaultRepository.getEndUserVaultByClient(user.id, clientId)
-
-			if (!existingVault) {
-				await this.vaultRepository.createEndUserVault({
-					endUserId: user.id,
-					clientId: clientId,
-					totalDeposited: "0",
-					weightedEntryIndex: "1000000000000000000", // Default: 1.0
-				})
-				console.log(`[User Creation] Created end-user vault for ${request.userId}`)
-			} else {
-				console.log(`[User Creation] End-user vault already exists for ${request.userId}`)
-			}
-		} catch (vaultError) {
-			console.error(`[User Creation] Failed to create vault for ${request.userId}:`, vaultError)
-			// Don't fail user creation if vault creation fails - they can deposit later
-		}
+		// ✅ Vault creation deferred to first deposit (environment-aware)
+		// With environment separation, users can have TWO vaults per client:
+		// - One for sandbox (mock tokens)
+		// - One for production (real USDC)
+		// Vaults are created lazily on first deposit in deposit.usecase.ts
+		console.log(`[User Creation] Vault will be created on first deposit for ${request.userId}`)
 
 		// ✅ Increment total_end_users count in client_organizations
 		try {
@@ -136,5 +121,58 @@ export class B2BUserUseCase {
 	async getActiveUserCount(clientId: string): Promise<number> {
 		const users = await this.userRepository.listByClient(clientId, 1000, 0)
 		return users.filter((u: any) => u.isActive).length
+	}
+
+	/**
+	 * Activate user account after completing onboarding
+	 * Updates status from 'pending_onboarding' to 'active'
+	 */
+	async activateUser(userId: string, clientId: string) {
+		// Verify user exists and belongs to the specified client
+		const user = await this.userRepository.getById(userId)
+
+		if (!user) {
+			throw new Error("User not found")
+		}
+
+		if (user.clientId !== clientId) {
+			throw new Error("User does not belong to this client")
+		}
+
+		// Check current status
+		if (user.status === "active") {
+			// Already active, return success
+			return user
+		}
+
+		if (user.status === "suspended") {
+			throw new Error("Cannot activate a suspended user")
+		}
+
+		// Update status to active
+		const updated = await this.userRepository.updateStatus(userId, "active")
+
+		if (!updated) {
+			throw new Error("Failed to activate user")
+		}
+
+		// Audit log
+		await this.auditRepository.create({
+			clientId: clientId,
+			userId: userId,
+			actorType: "end_user",
+			action: "user_activated",
+			resourceType: "end_user",
+			resourceId: userId,
+			description: `End-user account activated: ${user.userId}`,
+			metadata: {
+				previousStatus: user.status,
+				newStatus: "active",
+			},
+			ipAddress: null,
+			userAgent: null,
+		})
+
+		return updated
 	}
 }

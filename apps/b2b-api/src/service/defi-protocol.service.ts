@@ -3,8 +3,8 @@
  * Fetches real-time metrics from AAVE, Compound, Morpho using yield-engine
  */
 
-import { AaveAdapter, CompoundAdapter, MorphoAdapter, YieldOptimizer, MultiChainOptimizer } from '@proxify/yield-engine'
-import type { YieldOpportunity, ProtocolMetrics, RiskProfile, MultiChainOptimizationResult, RiskLevel } from '@proxify/yield-engine'
+import { AaveAdapter, CompoundAdapter, MorphoAdapter, YieldOptimizer, MultiChainOptimizer } from '@quirk/yield-engine'
+import type { YieldOpportunity, ProtocolMetrics, RiskProfile, MultiChainOptimizationResult, RiskLevel } from '@quirk/yield-engine'
 
 
 export interface ProtocolData {
@@ -233,6 +233,35 @@ export class DeFiProtocolService {
 		return results
 			.filter((result): result is PromiseFulfilledResult<ProtocolData> => result.status === 'fulfilled')
 			.map((result) => result.value)
+	}
+
+	/**
+	 * Get APYs summary (lightweight endpoint for client-side strategy calculation)
+	 * Returns only APY values for each protocol
+	 */
+	async getAPYsSummary(token: string, chainId: number): Promise<{
+		aave: string
+		compound: string
+		morpho: string
+		timestamp: string
+	}> {
+		const results = await Promise.allSettled([
+			this.fetchAAVEMetrics(token, chainId),
+			this.fetchCompoundMetrics(token, chainId),
+			this.fetchMorphoMetrics(token, chainId),
+		])
+
+		// Extract APYs, defaulting to "0" if protocol fetch failed
+		const aaveResult = results[0]
+		const compoundResult = results[1]
+		const morphoResult = results[2]
+
+		return {
+			aave: aaveResult.status === 'fulfilled' ? aaveResult.value.supplyAPY : '0',
+			compound: compoundResult.status === 'fulfilled' ? compoundResult.value.supplyAPY : '0',
+			morpho: morphoResult.status === 'fulfilled' ? morphoResult.value.supplyAPY : '0',
+			timestamp: new Date().toISOString(),
+		}
 	}
 
 	/**

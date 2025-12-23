@@ -36,6 +36,7 @@ import { useAuthFlowStore } from "@/hooks/useAuthFlow"
 import { useApiStore } from "@/store/apiStore"
 import { useDemoProductStore } from "@/store/demoProductStore"
 import { useDemoStore } from "@/store/demoStore"
+import { useEnvironmentStore } from "@/store/environmentStore"
 import { useOnboardingStore } from "@/store/onboardingStore"
 import { useUserStore } from "@/store/userStore"
 import { useVaultStore } from "@/store/vaultStore"
@@ -67,6 +68,7 @@ export function DashboardLayout() {
 		useApiStore.getState().clearHistory()
 		useVaultStore.getState().clearTransactions()
 		useAuthFlowStore.getState().clearAuthFlow()
+		useEnvironmentStore.getState().reset()
 
 		console.log("[DashboardLayout] ✅ All stores cleared")
 

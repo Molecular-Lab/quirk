@@ -5,10 +5,34 @@
 
 import type { initServer } from '@ts-rest/express'
 import type { DeFiProtocolService } from '../service/defi-protocol.service'
-import { defiProtocolContract } from '@proxify/b2b-api-core'
+import { defiProtocolContract } from '@quirk/b2b-api-core'
 
 export const createDeFiProtocolRouter = (s: ReturnType<typeof initServer>, defiService: DeFiProtocolService) => {
 	return s.router(defiProtocolContract, {
+		// Get APYs only (lightweight endpoint)
+		getAPYs: async ({ query }) => {
+			try {
+				const token = query.token
+				const chainId = parseInt(query.chainId, 10)
+
+				const summary = await defiService.getAPYsSummary(token, chainId)
+
+				return {
+					status: 200,
+					body: summary,
+				}
+			} catch (error) {
+				console.error('Error fetching APYs:', error)
+				return {
+					status: 500,
+					body: {
+						error: 'Failed to fetch APYs',
+						message: error instanceof Error ? error.message : 'Unknown error',
+					},
+				}
+			}
+		},
+
 		// Get all protocols
 		getAll: async ({ query }) => {
 			try {

@@ -1,5 +1,5 @@
 {
-	"name": "@proxify/eslint-config-base",
+	"name": "@quirk/eslint-config-base",
 	"main": "eslint.config.mjs",
 	"publishConfig": {
 		"access": "public"

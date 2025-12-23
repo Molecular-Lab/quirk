@@ -2,7 +2,7 @@
 export * from "../datagateway/privy-user.datagateway"
 export * from "../datagateway/privy-wallet.datagateway"
 
-// PostgreSQL B2B Database Repositories (Proxify Pattern with SQLC)
+// PostgreSQL B2B Database Repositories (Quirk Pattern with SQLC)
 // This is the CURRENT implementation - all repositories use SQLC-generated types
 export * from "./postgres"
 

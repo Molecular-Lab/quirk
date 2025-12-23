@@ -1,5 +1,5 @@
 /**
- * Environment Configuration for Proxify B2B Client
+ * Environment Configuration for Quirk B2B Client
  */
 
 import { z } from 'zod'

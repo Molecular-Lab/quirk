@@ -3,7 +3,7 @@
  * Transforms database rows to API DTOs
  */
 
-import type { GetEndUserRow, GetEndUserPortfolioRow } from "@proxify/sqlcgen";
+import type { GetEndUserRow, GetEndUserPortfolioRow } from "@quirk/sqlcgen";
 
 export function mapUserToDto(user: GetEndUserRow) {
 	return {
@@ -13,6 +13,7 @@ export function mapUserToDto(user: GetEndUserRow) {
 		email: undefined, // Not stored in database
 		walletAddress: user.userWalletAddress || undefined,
 		isActive: user.isActive ?? true,
+		status: user.status as "pending_onboarding" | "active" | "suspended" | undefined,
 		createdAt: user.createdAt.toISOString(),
 	};
 }

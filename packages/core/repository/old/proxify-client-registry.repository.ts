@@ -8,8 +8,8 @@ import type {
 	ClientRegistrationParams,
 	ClientRegistryRepositoryResult,
 	ClientStatus,
-	ProxifyClientRegistryClientAdapter,
-	ProxifyClientRegistryRepositoryDependencies,
+	QuirkClientRegistryClientAdapter,
+	QuirkClientRegistryRepositoryDependencies,
 	RiskTier,
 	SetClientRiskTiersParams,
 	SetTierActiveParams,
@@ -17,10 +17,10 @@ import type {
 	UpdateTierAllocationParams,
 } from "../entity"
 
-export class ProxifyClientRegistryRepository<TChainId = string> {
-	constructor(private readonly deps: ProxifyClientRegistryRepositoryDependencies<TChainId>) {}
+export class QuirkClientRegistryRepository<TChainId = string> {
+	constructor(private readonly deps: QuirkClientRegistryRepositoryDependencies<TChainId>) {}
 
-	private getClient(chainId: TChainId): ProxifyClientRegistryClientAdapter {
+	private getClient(chainId: TChainId): QuirkClientRegistryClientAdapter {
 		return this.deps.getClientRegistryClient(chainId)
 	}
 

@@ -288,8 +288,9 @@ export class RevenueService {
 	/**
 	 * Get revenue metrics summary for dashboard
 	 * Combines MRR, ARR, cumulative revenue, and earning balance
+	 * @param environment - Optional environment filter (sandbox/production) - TODO: Add filtering
 	 */
-	async getDashboardRevenueSummary(clientId: string): Promise<{
+	async getDashboardRevenueSummary(clientId: string, environment?: "sandbox" | "production"): Promise<{
 		monthlyRecurringRevenue: string
 		annualRunRate: string
 		totalClientRevenue: string
@@ -302,6 +303,8 @@ export class RevenueService {
 		lastCalculatedAt: string | null
 	}> {
 		try {
+			// TODO: Update queries to filter by environment when provided
+			console.log(`[RevenueService] getDashboardRevenueSummary - environment filter: ${environment || "all"}`)
 			const [revenue, revenueSummary] = await Promise.all([
 				this.getTotalRevenue(clientId),
 				this.deps.clientRepository.getRevenueSummary(clientId),

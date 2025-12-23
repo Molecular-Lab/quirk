@@ -1,6 +1,6 @@
 /**
  * B2B Client Organization Entity
- * Represents a product owner (client) registered on Proxify platform
+ * Represents a product owner (client) registered on Quirk platform
  */
 
 export interface ClientOrganization {

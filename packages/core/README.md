@@ -1,6 +1,6 @@
 # @proxify/core
 
-> Core business logic and domain models for Proxify embedded wallet infrastructure
+> Core business logic and domain models for Quirk embedded wallet infrastructure
 
 ## 📦 What's Inside
 

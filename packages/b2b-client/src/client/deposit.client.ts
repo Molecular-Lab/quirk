@@ -1,5 +1,5 @@
 /**
- * Proxify B2B Deposit Client
+ * Quirk B2B Deposit Client
  * Client for managing deposits (external and internal)
  */
 
@@ -11,7 +11,7 @@ import type {
 	PaginatedDeposits,
 	ClientBalance,
 	APIResponse,
-} from '@proxify/core'
+} from '@quirk/core'
 
 /**
  * Deposit Client
@@ -52,7 +52,7 @@ export class DepositClient {
 	}
 
 	/**
-	 * Get client's prepaid balance with Proxify
+	 * Get client's prepaid balance with Quirk
 	 */
 	async getClientBalance(): Promise<ClientBalance> {
 		const response = await this.axios.get<APIResponse<ClientBalance>>(

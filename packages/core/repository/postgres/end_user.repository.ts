@@ -1,5 +1,5 @@
 /**
- * End User Repository - Proxify Pattern
+ * End User Repository - Quirk Pattern
  * ✅ SQLC-generated queries from database/queries/end_user.sql
  */
 
@@ -14,6 +14,8 @@ import {
 	type ListEndUsersWithBalancesRow,
 	type UpdateEndUserArgs,
 	type UpdateEndUserRow,
+	type UpdateEndUserStatusArgs,
+	type UpdateEndUserStatusRow,
 	activateEndUser,
 	createEndUser,
 	deactivateEndUser,
@@ -27,8 +29,9 @@ import {
 	setFirstDeposit,
 	updateEndUser,
 	updateEndUserDepositTimestamp,
+	updateEndUserStatus,
 	updateEndUserWithdrawalTimestamp,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"
 import { Sql } from "postgres"
 
 export class UserRepository {
@@ -82,6 +85,10 @@ export class UserRepository {
 		await deactivateEndUser(this.sql, { id })
 	}
 
+	async updateStatus(id: string, status: string): Promise<UpdateEndUserStatusRow | null> {
+		return await updateEndUserStatus(this.sql, { id, status })
+	}
+
 	async delete(id: string): Promise<void> {
 		await deleteEndUser(this.sql, { id })
 	}
@@ -98,6 +105,7 @@ export class UserRepository {
 		userId: string,
 		userType: string,
 		userWalletAddress?: string,
+		status?: string,
 	): Promise<CreateEndUserRow> {
 		const existing = await this.getByClientAndUserId(clientId, userId)
 		if (existing) {
@@ -110,6 +118,7 @@ export class UserRepository {
 			userType,
 			userWalletAddress: userWalletAddress || null,
 			isActive: true,
+			status: status || "active", // Default to 'active' for backward compatibility
 		})
 
 		if (!created) {

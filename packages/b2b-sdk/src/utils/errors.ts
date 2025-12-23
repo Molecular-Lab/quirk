@@ -1,21 +1,21 @@
 /**
- * Custom error classes for Proxify SDK
+ * Custom error classes for Quirk SDK
  */
 
-export class ProxifyError extends Error {
+export class QuirkError extends Error {
 	public readonly statusCode?: number
 	public readonly details?: unknown
 
 	constructor(message: string, statusCode?: number, details?: unknown) {
 		super(message)
-		this.name = "ProxifyError"
+		this.name = "QuirkError"
 		this.statusCode = statusCode
 		this.details = details
-		Object.setPrototypeOf(this, ProxifyError.prototype)
+		Object.setPrototypeOf(this, QuirkError.prototype)
 	}
 }
 
-export class AuthenticationError extends ProxifyError {
+export class AuthenticationError extends QuirkError {
 	constructor(message = "Authentication failed", details?: unknown) {
 		super(message, 401, details)
 		this.name = "AuthenticationError"
@@ -23,7 +23,7 @@ export class AuthenticationError extends ProxifyError {
 	}
 }
 
-export class ValidationError extends ProxifyError {
+export class ValidationError extends QuirkError {
 	constructor(message = "Validation failed", details?: unknown) {
 		super(message, 400, details)
 		this.name = "ValidationError"
@@ -31,7 +31,7 @@ export class ValidationError extends ProxifyError {
 	}
 }
 
-export class NotFoundError extends ProxifyError {
+export class NotFoundError extends QuirkError {
 	constructor(message = "Resource not found", details?: unknown) {
 		super(message, 404, details)
 		this.name = "NotFoundError"
@@ -39,7 +39,7 @@ export class NotFoundError extends ProxifyError {
 	}
 }
 
-export class RateLimitError extends ProxifyError {
+export class RateLimitError extends QuirkError {
 	constructor(message = "Rate limit exceeded", details?: unknown) {
 		super(message, 429, details)
 		this.name = "RateLimitError"
@@ -47,7 +47,7 @@ export class RateLimitError extends ProxifyError {
 	}
 }
 
-export class ServerError extends ProxifyError {
+export class ServerError extends QuirkError {
 	constructor(message = "Internal server error", details?: unknown) {
 		super(message, 500, details)
 		this.name = "ServerError"
@@ -55,7 +55,7 @@ export class ServerError extends ProxifyError {
 	}
 }
 
-export class NetworkError extends ProxifyError {
+export class NetworkError extends QuirkError {
 	constructor(message = "Network error occurred", details?: unknown) {
 		super(message, undefined, details)
 		this.name = "NetworkError"
@@ -104,7 +104,7 @@ export function handleApiError(error: unknown): never {
 			case 504:
 				throw new ServerError(message, details)
 			default:
-				throw new ProxifyError(message, status, details)
+				throw new QuirkError(message, status, details)
 		}
 	}
 
@@ -115,5 +115,5 @@ export function handleApiError(error: unknown): never {
 	const errorMessage =
 		isApiErrorResponse(error) && typeof error.message === "string" ? error.message : "An unknown error occurred"
 
-	throw new ProxifyError(errorMessage)
+	throw new QuirkError(errorMessage)
 }

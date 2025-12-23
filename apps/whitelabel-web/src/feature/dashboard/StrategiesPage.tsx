@@ -1,145 +1,191 @@
-import { useState, useEffect } from "react"
-import axios from "axios"
-import { useAllDeFiProtocols } from "../../hooks/useDeFiProtocols"
-
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8888/api/v1"
+import { useState, useEffect, useMemo } from "react"
+import { useAPYCache } from "../../hooks/useAPYCache"
+import { useAPYCacheStore, type Allocation } from "@/store/apyCacheStore"
 
 interface ProtocolAllocation {
 	id: "aave" | "compound" | "morpho"
 	name: string
 	description: string
 	allocation: number
-	expectedAPY: string
-	tvl: string
 }
 
 interface RiskPackage {
 	id: number
 	name: string
-	riskLevel: "conservative" | "moderate" | "aggressive"
+	riskLevel: "conservative" | "moderate" | "aggressive" | "custom"
 	expectedAPY: string
 	description: string
 }
 
-const PACKAGES: RiskPackage[] = [
+interface RiskPackageWithCustom extends RiskPackage {
+	isCustom?: boolean
+}
+
+// Predefined strategy allocations - used for instant client-side calculation
+const STRATEGY_ALLOCATIONS: Record<string, { aave: number; compound: number; morpho: number }> = {
+	conservative: { aave: 60, compound: 30, morpho: 10 },
+	moderate: { aave: 40, compound: 35, morpho: 25 },
+	aggressive: { aave: 20, compound: 25, morpho: 55 },
+}
+
+const PACKAGES: RiskPackageWithCustom[] = [
 	{
 		id: 1,
 		name: "Conservative",
 		riskLevel: "conservative",
-		expectedAPY: "3-5%",
+		expectedAPY: "3-4%",
 		description: "Low risk, stable returns with established protocols",
 	},
 	{
 		id: 2,
 		name: "Moderate",
 		riskLevel: "moderate",
-		expectedAPY: "5-7%",
+		expectedAPY: "4-5%",
 		description: "Balanced risk-reward with diversified allocation",
 	},
 	{
 		id: 3,
 		name: "Aggressive",
 		riskLevel: "aggressive",
-		expectedAPY: "7-10%",
+		expectedAPY: "5-6%",
 		description: "Higher risk, maximum yield potential",
+	},
+	{
+		id: 4,
+		name: "Custom",
+		riskLevel: "custom",
+		expectedAPY: "You decide",
+		description: "Build your own allocation strategy",
+		isCustom: true,
 	},
 ]
 
+const PROTOCOL_INFO = {
+	aave: { name: "Aave V3", description: "Established lending protocol with high TVL" },
+	compound: { name: "Compound V3", description: "Battle-tested money market protocol" },
+	morpho: { name: "Morpho", description: "Next-gen yield optimizer" },
+}
+
 export function StrategiesPage() {
-	const [selectedPackage, setSelectedPackage] = useState<RiskPackage>(PACKAGES[0])
+	const [selectedPackage, setSelectedPackage] = useState<RiskPackageWithCustom>(PACKAGES[1]) // Default to Moderate
 	const [showTooltip, setShowTooltip] = useState<string | null>(null)
-	const [isOptimizing, setIsOptimizing] = useState(false)
 
-	// Fetch real DeFi protocol data
-	const { protocols, isLoading, errors } = useAllDeFiProtocols("USDC", 8453)
+	// Fetch APY data once on mount with 5-minute cache
+	const { apys, isLoading, error, cacheAgeSeconds, lastFetchTimestamp, refetch } = useAPYCache("USDC", 8453)
 
-	// Data freshness countdown (60 seconds until next refetch)
-	const [countdown, setCountdown] = useState(60)
+	// Get calculateExpectedAPY function from store
+	const calculateExpectedAPY = useAPYCacheStore((state) => state.calculateExpectedAPY)
+
+	// Check if data is loaded
+	const isDataFullyLoaded = useMemo(() => {
+		return !isLoading && apys !== null
+	}, [isLoading, apys])
+
+	// Data freshness countdown (5 minutes = 300 seconds until next refetch)
+	const REFRESH_INTERVAL = 300 // 5 minutes
+	const [countdown, setCountdown] = useState(REFRESH_INTERVAL)
 
 	useEffect(() => {
-		// Reset countdown to 60 when data is refetched
-		setCountdown(60)
+		// Calculate remaining time until next refresh
+		const remainingSeconds = REFRESH_INTERVAL - cacheAgeSeconds
+		setCountdown(Math.max(0, remainingSeconds))
 
 		// Start countdown timer
 		const timer = setInterval(() => {
 			setCountdown((prev) => {
 				if (prev <= 1) {
-					return 60 // Reset to 60 when it reaches 0 (data will refetch automatically)
+					return REFRESH_INTERVAL // Reset when it reaches 0 (data will refetch automatically)
 				}
 				return prev - 1
 			})
 		}, 1000)
 
 		return () => clearInterval(timer)
-	}, [protocols]) // Reset countdown when protocols data changes
+	}, [lastFetchTimestamp, cacheAgeSeconds])
 
-	// Protocol allocations (replaces strategies)
-	const [allocations, setAllocations] = useState<ProtocolAllocation[]>([
-		{
-			id: "aave",
-			name: "Aave V3",
-			description: "Established lending protocol with high TVL",
-			allocation: 50,
-			expectedAPY: "0.00",
-			tvl: "0",
-		},
-		{
-			id: "compound",
-			name: "Compound V3",
-			description: "Battle-tested money market protocol",
-			allocation: 30,
-			expectedAPY: "0.00",
-			tvl: "0",
-		},
-		{
-			id: "morpho",
-			name: "Morpho",
-			description: "Next-gen yield optimizer",
-			allocation: 20,
-			expectedAPY: "0.00",
-			tvl: "0",
-		},
-	])
+	// Protocol allocations state
+	const [allocations, setAllocations] = useState<ProtocolAllocation[]>([])
 
-	const handlePackageSelect = async (pkg: RiskPackage) => {
-		setSelectedPackage(pkg)
-		setIsOptimizing(true)
-
-		try {
-			// Call backend optimize endpoint
-			const response = await axios.post(`${API_BASE_URL}/defi/optimize`, {
-				riskProfile: { level: pkg.riskLevel },
-				token: "USDC",
-				chainId: 8453,
-			})
-
-			const { allocation } = response.data
-
-			// Map backend allocation to UI format
-			const newAllocations: ProtocolAllocation[] = allocation.map((alloc: any) => ({
-				id: alloc.protocol,
-				name: alloc.protocol === "aave" ? "Aave V3" : alloc.protocol === "compound" ? "Compound V3" : "Morpho",
-				description: alloc.rationale,
-				allocation: alloc.percentage,
-				expectedAPY: alloc.expectedAPY,
-				tvl: alloc.tvl,
-			}))
-
-			setAllocations(newAllocations)
-		} catch (error) {
-			console.error("Failed to optimize allocation:", error)
-			// Fallback to default allocations on error
-			alert("Failed to get optimized allocation. Using default strategy.")
-		} finally {
-			setIsOptimizing(false)
+	// Initialize allocations with Moderate strategy once data is loaded
+	useEffect(() => {
+		if (isDataFullyLoaded && allocations.length === 0) {
+			const moderateAllocs = STRATEGY_ALLOCATIONS.moderate
+			const initialAllocations: ProtocolAllocation[] = [
+				{
+					id: "aave",
+					name: PROTOCOL_INFO.aave.name,
+					description: PROTOCOL_INFO.aave.description,
+					allocation: moderateAllocs.aave,
+				},
+				{
+					id: "compound",
+					name: PROTOCOL_INFO.compound.name,
+					description: PROTOCOL_INFO.compound.description,
+					allocation: moderateAllocs.compound,
+				},
+				{
+					id: "morpho",
+					name: PROTOCOL_INFO.morpho.name,
+					description: PROTOCOL_INFO.morpho.description,
+					allocation: moderateAllocs.morpho,
+				},
+			]
+			setAllocations(initialAllocations)
 		}
+	}, [isDataFullyLoaded, allocations.length])
+
+	// Real-time Expected APY calculation from cached APYs
+	const expectedBlendedAPY = useMemo(() => {
+		if (!apys || allocations.length === 0) {
+			return "0.00"
+		}
+
+		// Convert allocations to the format expected by calculateExpectedAPY
+		const allocs: Allocation[] = allocations.map((a) => ({
+			protocol: a.id,
+			percentage: a.allocation,
+		}))
+
+		return calculateExpectedAPY(allocs)
+	}, [allocations, apys, calculateExpectedAPY])
+
+	// Handle package selection - INSTANT, no API call
+	const handlePackageSelect = (pkg: RiskPackageWithCustom) => {
+		setSelectedPackage(pkg)
+
+		// Custom mode - don't change allocations, let user adjust sliders
+		if (pkg.isCustom) {
+			return
+		}
+
+		// Get predefined allocations for this risk level
+		const strategyAllocs = STRATEGY_ALLOCATIONS[pkg.riskLevel]
+		if (!strategyAllocs) return
+
+		// Update allocations instantly (no API call!)
+		setAllocations((prev) =>
+			prev.map((a) => ({
+				...a,
+				allocation: strategyAllocs[a.id],
+			})),
+		)
 	}
 
 	const updateAllocation = (id: string, value: string) => {
 		const numValue = parseInt(value) ?? 0
-		const constrainedValue = Math.min(Math.max(0, numValue), 100)
 
-		setAllocations((prev) => prev.map((s) => (s.id === id ? { ...s, allocation: constrainedValue } : s)))
+		setAllocations((prev) => {
+			// Calculate sum of OTHER allocations (not the one being changed)
+			const otherAllocationsSum = prev.filter((a) => a.id !== id).reduce((sum, a) => sum + a.allocation, 0)
+
+			// Max allowed for this protocol = 100 - sum of others
+			const maxAllowed = 100 - otherAllocationsSum
+
+			// Constrain value between 0 and maxAllowed
+			const constrainedValue = Math.min(Math.max(0, numValue), maxAllowed)
+
+			return prev.map((s) => (s.id === id ? { ...s, allocation: constrainedValue } : s))
+		})
 	}
 
 	const totalAllocation = allocations.reduce((sum, s) => sum + s.allocation, 0)
@@ -152,6 +198,71 @@ export function StrategiesPage() {
 		alert("Configuration saved! (Mock implementation)")
 	}
 
+	// Show full-page loading skeleton until data is loaded
+	if (!isDataFullyLoaded) {
+		return (
+			<div className="min-h-screen bg-gray-50">
+				<div className="max-w-[1600px] mx-auto px-8 py-6">
+					<div className="grid grid-cols-1 lg:grid-cols-[1fr,420px] gap-6 h-[calc(100vh-48px)]">
+						{/* Left Column Skeleton */}
+						<div className="flex flex-col gap-6 overflow-hidden">
+							{/* Protocol Data Skeleton */}
+							<div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm animate-pulse">
+								<div className="h-6 bg-gray-200 rounded w-48 mb-6"></div>
+								<div className="grid grid-cols-3 gap-4">
+									{[1, 2, 3].map((i) => (
+										<div key={i} className="bg-gray-50 rounded-2xl p-6 border border-gray-200">
+											<div className="flex items-center gap-3 mb-4">
+												<div className="w-10 h-10 rounded-full bg-gray-200"></div>
+												<div className="flex-1">
+													<div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+													<div className="h-3 bg-gray-200 rounded w-16"></div>
+												</div>
+											</div>
+											<div className="space-y-2">
+												<div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
+												<div className="h-3 bg-gray-200 rounded w-full"></div>
+											</div>
+										</div>
+									))}
+								</div>
+							</div>
+
+							{/* Package Selection Skeleton */}
+							<div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm animate-pulse">
+								<div className="h-6 bg-gray-200 rounded w-48 mb-6"></div>
+								<div className="grid grid-cols-4 gap-4">
+									{[1, 2, 3, 4].map((i) => (
+										<div key={i} className="bg-gray-50 rounded-2xl p-6 border-2 border-gray-200">
+											<div className="h-6 bg-gray-200 rounded w-32 mb-3"></div>
+											<div className="h-4 bg-gray-200 rounded w-24 mb-3"></div>
+											<div className="h-3 bg-gray-200 rounded w-full"></div>
+										</div>
+									))}
+								</div>
+							</div>
+						</div>
+
+						{/* Right Column Skeleton */}
+						<div className="flex flex-col gap-3">
+							<div className="h-6 bg-gray-200 rounded w-40 mb-2 animate-pulse"></div>
+							{[1, 2, 3].map((i) => (
+								<div key={i} className="bg-white border border-gray-200 rounded-3xl p-6 animate-pulse">
+									<div className="h-4 bg-gray-200 rounded w-24 mb-8"></div>
+									<div className="h-16 bg-gray-200 rounded w-32"></div>
+								</div>
+							))}
+							<div className="bg-white border-2 border-gray-200 rounded-3xl p-6 animate-pulse">
+								<div className="h-4 bg-gray-200 rounded w-32 mb-6"></div>
+								<div className="h-16 bg-gray-200 rounded w-32"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		)
+	}
+
 	return (
 		<div className="min-h-screen bg-gray-50">
 			<div className="max-w-[1600px] mx-auto px-8 py-6">
@@ -162,69 +273,58 @@ export function StrategiesPage() {
 						{/* Protocol Data Section */}
 						<div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm">
 							<div className="flex items-center justify-between mb-6">
-								<h3 className="text-lg font-bold text-gray-900">Live Protocol Data</h3>
+								<h3 className="text-lg font-bold text-gray-900">Live Protocol APYs</h3>
 
 								{/* Data Freshness Indicator */}
 								<div className="flex items-center gap-3">
 									<div className="flex items-center gap-2">
 										<div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
 										<span className="text-xs text-gray-600">
-											Updates in <span className="font-semibold text-gray-900">{countdown}s</span>
+											Updates in{" "}
+											<span className="font-semibold text-gray-900">
+												{Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, "0")}
+											</span>
 										</span>
 									</div>
 									<div className="w-24 h-1.5 bg-gray-200 rounded-full overflow-hidden">
 										<div
 											className="h-full bg-blue-500 transition-all duration-1000 ease-linear"
-											style={{ width: `${(countdown / 60) * 100}%` }}
+											style={{ width: `${(countdown / REFRESH_INTERVAL) * 100}%` }}
 										/>
 									</div>
 								</div>
 							</div>
 
-							{isLoading ? (
-								<div className="grid grid-cols-3 gap-4">
-									{[1, 2, 3].map((i) => (
-										<div key={i} className="bg-gray-50 rounded-2xl p-6 border border-gray-200 animate-pulse">
-											<div className="h-4 bg-gray-200 rounded w-20 mb-3"></div>
-											<div className="h-8 bg-gray-200 rounded w-24 mb-2"></div>
-											<div className="h-4 bg-gray-200 rounded w-16"></div>
-										</div>
-									))}
-								</div>
-							) : errors.length > 0 ? (
+							{error ? (
 								<div className="bg-red-50 border border-red-200 rounded-2xl p-4">
-									<p className="text-red-700 text-sm">⚠ Some protocols failed to load</p>
+									<p className="text-red-700 text-sm">Failed to load protocol data</p>
+									<button onClick={refetch} className="text-red-600 underline text-sm mt-2">
+										Retry
+									</button>
 								</div>
 							) : (
 								<div className="grid grid-cols-3 gap-4">
-									{protocols.map((protocol) => {
-										const protocolName = protocol.protocol === "aave" ? "Aave V3" : protocol.protocol === "compound" ? "Compound V3" : "Morpho"
-										const tvlFormatted = `$${(parseFloat(protocol.tvl) / 1_000_000).toFixed(1)}M`
+									{(["aave", "compound", "morpho"] as const).map((protocol) => {
+										const info = PROTOCOL_INFO[protocol]
+										const apy = apys?.[protocol] || "0"
 
 										return (
-											<div key={protocol.protocol} className="bg-gray-50 rounded-2xl p-6 border border-gray-200 hover:border-gray-300 transition-all">
+											<div
+												key={protocol}
+												className="bg-gray-50 rounded-2xl p-6 border border-gray-200 hover:border-gray-300 transition-all"
+											>
 												<div className="flex items-center gap-3 mb-4">
 													<div className="w-10 h-10 rounded-full bg-white border border-gray-200 flex items-center justify-center text-lg font-bold text-gray-700">
-														{protocolName[0]}
+														{info.name[0]}
 													</div>
 													<div>
-														<h4 className="font-bold text-gray-900">{protocolName}</h4>
-														<span className="text-xs text-gray-500">{protocol.token}</span>
+														<h4 className="font-bold text-gray-900">{info.name}</h4>
+														<span className="text-xs text-gray-500">USDC</span>
 													</div>
 												</div>
-												<div className="space-y-2">
-													<div>
-														<p className="text-xs text-gray-500">Supply APY</p>
-														<p className="text-2xl font-bold text-green-600">{parseFloat(protocol.supplyAPY).toFixed(2)}%</p>
-													</div>
-													<div className="flex justify-between text-xs">
-														<span className="text-gray-500">TVL:</span>
-														<span className="font-semibold text-gray-900">{tvlFormatted}</span>
-													</div>
-													<div className="flex justify-between text-xs">
-														<span className="text-gray-500">Utilization:</span>
-														<span className="font-semibold text-gray-900">{parseFloat(protocol.utilization).toFixed(1)}%</span>
-													</div>
+												<div>
+													<p className="text-xs text-gray-500">Supply APY</p>
+													<p className="text-2xl font-bold text-green-600">{parseFloat(apy).toFixed(2)}%</p>
 												</div>
 											</div>
 										)
@@ -237,29 +337,27 @@ export function StrategiesPage() {
 						<div className="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm">
 							<h3 className="text-lg font-bold text-gray-900 mb-6">Choose Your Risk Profile</h3>
 
-							{isOptimizing && (
-								<div className="mb-4 bg-blue-50 border border-blue-200 rounded-2xl p-4">
-									<p className="text-blue-700 text-sm flex items-center gap-2">
-										<span className="animate-spin">⚙️</span> Optimizing allocation...
-									</p>
-								</div>
-							)}
-
-							<div className="grid grid-cols-3 gap-4 mb-6">
+							<div className="grid grid-cols-4 gap-4 mb-6">
 								{PACKAGES.map((pkg) => (
 									<button
 										key={pkg.id}
 										onClick={() => {
 											handlePackageSelect(pkg)
 										}}
-										className={`relative p-6 rounded-2xl text-left transition-all duration-200 ${
+										className={`relative p-5 rounded-2xl text-left transition-all duration-200 ${
 											selectedPackage.id === pkg.id
-												? "bg-gray-50 border-2 border-gray-900"
+												? pkg.isCustom
+													? "bg-green-50 border-2 border-green-600"
+													: "bg-gray-50 border-2 border-gray-900"
 												: "bg-white border-2 border-gray-200 hover:border-gray-300 hover:shadow-md"
 										}`}
 									>
 										{selectedPackage.id === pkg.id && (
-											<div className="absolute -top-2 -right-2 w-7 h-7 bg-gray-900 rounded-full flex items-center justify-center">
+											<div
+												className={`absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center ${
+													pkg.isCustom ? "bg-green-600" : "bg-gray-900"
+												}`}
+											>
 												<svg className="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
 													<path
 														fillRule="evenodd"
@@ -269,11 +367,14 @@ export function StrategiesPage() {
 												</svg>
 											</div>
 										)}
-										<div className="text-xl font-bold text-gray-900 mb-2">{pkg.name}</div>
-										<div className="text-sm text-gray-600 mb-3">
-											Expected APY: <span className="font-semibold text-gray-900">{pkg.expectedAPY}</span>
+										<div className="text-lg font-bold text-gray-900 mb-2">{pkg.name}</div>
+										<div className="text-sm text-gray-600 mb-2">
+											Expected:{" "}
+											<span className={`font-semibold ${pkg.isCustom ? "text-green-600" : "text-gray-900"}`}>
+												{pkg.expectedAPY}
+											</span>
 										</div>
-										<p className="text-xs text-gray-500">{pkg.description}</p>
+										<p className="text-xs text-gray-500 line-clamp-2">{pkg.description}</p>
 									</button>
 								))}
 							</div>
@@ -344,6 +445,24 @@ export function StrategiesPage() {
 							</div>
 						))}
 
+						{/* Expected Blended APY - Real-time calculation */}
+						<div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-3xl p-6">
+							<div className="flex items-center justify-between mb-4">
+								<span className="text-base text-blue-600 font-medium">Expected Blended APY</span>
+								<span className="text-xs text-blue-500 bg-blue-100 px-2 py-1 rounded-full">Live</span>
+							</div>
+							<div className="flex items-baseline gap-1">
+								<span
+									className="text-5xl font-bold text-blue-700"
+									style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}
+								>
+									{expectedBlendedAPY}
+								</span>
+								<span className="text-2xl text-blue-600">%</span>
+							</div>
+							<p className="text-xs text-blue-500 mt-3">Calculated from your allocation mix</p>
+						</div>
+
 						{/* Total Allocation - Minimal Style */}
 						<div
 							className={`bg-white border rounded-3xl p-6 ${
@@ -363,8 +482,7 @@ export function StrategiesPage() {
 							</div>
 							{totalAllocation !== 100 && (
 								<p className="text-xs text-red-600 mt-4">
-									Must equal 100% (currently {totalAllocation > 100 ? "over" : "under"} by{" "}
-									{Math.abs(100 - totalAllocation)}%)
+									Must equal 100% (currently {totalAllocation > 100 ? "over" : "under"} by {Math.abs(100 - totalAllocation)}%)
 								</p>
 							)}
 						</div>

@@ -31,4 +31,13 @@ export default defineConfig({
 		"@": path.resolve(__dirname, "./src"),
 		},
   	},
+	optimizeDeps: {
+		include: ["@privy-io/react-auth"],
+		force: true,
+	},
+	server: {
+		fs: {
+			strict: false,
+		},
+	},
 })

@@ -1,7 +1,10 @@
 {
-	"name": "@proxify/api-core",
-	"description": "Proxify API Core",
+	"name": "@quirk/api-core",
+	"description": "Quirk API Core",
 	"version": "0.0.0",
+	"type": "module",
+	"main": "./index.ts",
+	"types": "./index.ts",
 	"scripts": {
 		"lint": "pnpm dlx eslint . --report-unused-disable-directives --fix",
 		"unimported": "npx unimported"
@@ -16,8 +19,8 @@
 	},
 	"devDependencies": {
 		"@types/node-forge": "^1.3.11",
-		"@proxify/eslint-config-base": "workspace:*",
-		"@proxify/tsconfig": "workspace:*",
+		"@quirk/eslint-config-base": "workspace:*",
+		"@quirk/tsconfig": "workspace:*",
 		"typescript": "^5.8.3"
 	}
 }

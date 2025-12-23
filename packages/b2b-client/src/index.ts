@@ -1,8 +1,8 @@
 /**
- * @proxify/b2b-client
+ * @quirk/b2b-client
  *
- * B2B API Client package for Proxify deposit operations
- * Following Clean Architecture - all business logic and types are in @proxify/core
+ * B2B API Client package for Quirk deposit operations
+ * Following Clean Architecture - all business logic and types are in @quirk/core
  *
  * This package provides:
  * 1. Configured API client (singleton with axios)
@@ -14,9 +14,9 @@
  *
  * Usage:
  * ```typescript
- * import { ProxifyB2BClient } from '@proxify/b2b-client'
+ * import { QuirkB2BClient } from '@quirk/b2b-client'
  *
- * const client = new ProxifyB2BClient()
+ * const client = new QuirkB2BClient()
  *
  * // Register new client organization
  * const registration = await client.registration.register({
@@ -40,7 +40,7 @@
  * ```
  */
 
-// ===== Re-export types from @proxify/core =====
+// ===== Re-export types from @quirk/core =====
 export type {
 	// Deposit types
 	DepositRequest,
@@ -57,11 +57,11 @@ export type {
 	PaginatedDeposits,
 	APIResponse as CoreAPIResponse,
 	// SDK types (from core/sdk)
-	ProxifySDKConfig,
-} from '@proxify/core'
+	QuirkSDKConfig,
+} from '@quirk/core'
 
-// ===== Re-export SDK client from @proxify/core =====
-export { ProxifyClient, ProxifyError } from '@proxify/core'
+// ===== Re-export SDK client from @quirk/core =====
+export { QuirkClient, QuirkError } from '@quirk/core'
 
 // ===== Client Management Types =====
 export type {
@@ -98,7 +98,7 @@ export {
 } from './config/env'
 
 export {
-	type ProxifyClientConfig,
+	type QuirkClientConfig,
 	createClientConfig,
 	createAxiosInstance,
 	getAxiosInstance,
@@ -109,8 +109,8 @@ export {
 export { DepositClient } from './client/deposit.client'
 export { ClientRegistrationClient } from './client/registration.client'
 export { AnalyticsClient } from './client/analytics.client'
-export { ProxifyB2BClient } from './client/proxify.client'
+export { QuirkB2BClient } from './client/proxify.client'
 
 // ===== Default export (main client) =====
-import { ProxifyB2BClient } from './client/proxify.client'
-export default ProxifyB2BClient
+import { QuirkB2BClient } from './client/proxify.client'
+export default QuirkB2BClient

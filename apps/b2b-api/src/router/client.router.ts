@@ -4,7 +4,7 @@
  */
 
 import type { initServer } from "@ts-rest/express";
-import { b2bContract } from "@proxify/b2b-api-core";
+import { b2bContract } from "@quirk/b2b-api-core";
 import type { ClientService } from "../service/client.service";
 import { logger } from "../logger";
 import { randomUUID } from "crypto";
@@ -96,7 +96,8 @@ export const createClientRouter = (
 							websiteUrl: client.websiteUrl || null,
 							walletType: client.walletType, // ✅ From JOIN
 							privyOrganizationId: client.privyOrganizationId,
-							apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
+							sandboxApiKeyPrefix: client.sandboxApiKeyPrefix || null, // ✅ Sandbox API key prefix (pk_test_xxx)
+							productionApiKeyPrefix: client.productionApiKeyPrefix || null, // ✅ Production API key prefix (pk_live_xxx)
 							supportedCurrencies: client.supportedCurrencies || [],
 							bankAccounts: normalizeBankAccounts(client.bankAccounts),
 							isActive: client.isActive,
@@ -164,7 +165,8 @@ export const createClientRouter = (
 							websiteUrl: client.websiteUrl || null,
 							walletType: client.walletType, // ✅ From JOIN
 							privyOrganizationId: client.privyOrganizationId,
-							apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix
+							sandboxApiKeyPrefix: client.sandboxApiKeyPrefix || null, // ✅ Sandbox API key prefix (pk_test_xxx)
+							productionApiKeyPrefix: client.productionApiKeyPrefix || null, // ✅ Production API key prefix (pk_live_xxx)
 							supportedCurrencies: client.supportedCurrencies || [],
 							bankAccounts: normalizeBankAccounts(client.bankAccounts),
 							isActive: client.isActive,
@@ -206,7 +208,8 @@ export const createClientRouter = (
 					websiteUrl: client.websiteUrl || null,
 					walletType: client.walletType, // ✅ From JOIN (SQLC generates as walletType)
 					privyOrganizationId: client.privyOrganizationId, // ✅ From JOIN
-					apiKeyPrefix: client.apiKeyPrefix || null, // ✅ Show API key prefix for "Generated" status
+					sandboxApiKeyPrefix: (client as any).sandboxApiKeyPrefix || null, // ✅ Sandbox API key prefix (pk_test_xxx)
+					productionApiKeyPrefix: (client as any).productionApiKeyPrefix || null, // ✅ Production API key prefix (pk_live_xxx)
 					supportedCurrencies: client.supportedCurrencies || [],
 					// Normalize bankAccounts (may be JSON string from DB)
 					bankAccounts: normalizeBankAccounts(client.bankAccounts),
@@ -384,8 +387,6 @@ export const createClientRouter = (
 				logger.info("Client created successfully", {
 					clientId: client.id,
 					productId,
-					sandboxApiKeyReturned: !!client.sandbox_api_key,
-					productionApiKeyReturned: !!client.production_api_key,
 				});
 
 				// Normalize bankAccounts (DB may store JSON string)
@@ -409,8 +410,9 @@ export const createClientRouter = (
 						isSandbox: client.isSandbox || false,
 						createdAt: client.createdAt.toISOString(),
 						updatedAt: client.updatedAt.toISOString(),
-						sandboxApiKey: client.sandbox_api_key, // ✅ Sandbox API key (pk_test_xxx)
-						productionApiKey: client.production_api_key, // ✅ Production API key (pk_live_xxx)
+						// API keys are generated separately via the Generate Key button
+						sandboxApiKeyPrefix: client.sandboxApiKeyPrefix || null,
+						productionApiKeyPrefix: client.productionApiKeyPrefix || null,
 					},
 				};
 			} catch (error: any) {
@@ -1097,7 +1099,7 @@ export const createClientRouter = (
 		// REVENUE METRICS (Dashboard)
 		// ============================================
 
-		getRevenueMetrics: async ({ params, req }: { params: { productId: string }; req: any }) => {
+		getRevenueMetrics: async ({ params, query, req }: { params: { productId: string }; query: { environment?: "sandbox" | "production" }; req: any }) => {
 			try {
 				// Dashboard only: Validate Privy access
 				if (!validatePrivyAccess(req, params.productId)) {
@@ -1107,7 +1109,10 @@ export const createClientRouter = (
 					};
 				}
 
-				const metrics = await clientService.getRevenueMetrics(params.productId);
+				// ✅ Extract environment from query params
+				const environment = query?.environment as "sandbox" | "production" | undefined;
+
+				const metrics = await clientService.getRevenueMetrics(params.productId, environment);
 
 				return {
 					status: 200 as const,
@@ -1142,7 +1147,7 @@ export const createClientRouter = (
 		// END-USER METRICS (Dashboard)
 		// ============================================
 
-		getEndUserGrowthMetrics: async ({ params, req }: { params: { productId: string }; req: any }) => {
+		getEndUserGrowthMetrics: async ({ params, query, req }: { params: { productId: string }; query: { environment?: "sandbox" | "production" }; req: any }) => {
 			try {
 				// Dashboard only: Validate Privy access
 				if (!validatePrivyAccess(req, params.productId)) {
@@ -1152,7 +1157,10 @@ export const createClientRouter = (
 					};
 				}
 
-				const metrics = await clientService.getEndUserGrowthMetrics(params.productId);
+				// ✅ Extract environment from query params
+				const environment = query?.environment as "sandbox" | "production" | undefined;
+
+				const metrics = await clientService.getEndUserGrowthMetrics(params.productId, environment);
 
 				return {
 					status: 200 as const,
@@ -1180,7 +1188,7 @@ export const createClientRouter = (
 			}
 		},
 
-		getEndUserTransactions: async ({ params, query, req }: { params: { productId: string }; query: { page: number; limit: number }; req: any }) => {
+		getEndUserTransactions: async ({ params, query, req }: { params: { productId: string }; query: { page: number; limit: number; environment?: "sandbox" | "production" }; req: any }) => {
 			try {
 				// Dashboard only: Validate Privy access
 				if (!validatePrivyAccess(req, params.productId)) {
@@ -1190,8 +1198,8 @@ export const createClientRouter = (
 					};
 				}
 
-				const { page = 1, limit = 20 } = query;
-				const result = await clientService.getEndUserTransactions(params.productId, page, limit);
+				const { page = 1, limit = 20, environment } = query;
+				const result = await clientService.getEndUserTransactions(params.productId, page, limit, environment);
 
 				return {
 					status: 200 as const,
@@ -1230,7 +1238,7 @@ export const createClientRouter = (
 		// WALLET STAGES (Dashboard)
 		// ============================================
 
-		getWalletBalances: async ({ params, req }: { params: { productId: string }; req: any }) => {
+		getWalletBalances: async ({ params, query, req }: { params: { productId: string }; query: { environment?: "sandbox" | "production" }; req: any }) => {
 			try {
 				// Dashboard only: Validate Privy access
 				if (!validatePrivyAccess(req, params.productId)) {
@@ -1240,7 +1248,10 @@ export const createClientRouter = (
 					};
 				}
 
-				const balances = await clientService.getWalletBalances(params.productId);
+				// ✅ Extract environment from query params
+				const environment = query?.environment as "sandbox" | "production" | undefined;
+
+				const balances = await clientService.getWalletBalances(params.productId, environment);
 
 				return {
 					status: 200 as const,
@@ -1271,7 +1282,7 @@ export const createClientRouter = (
 		// DASHBOARD SUMMARY (All Metrics Combined)
 		// ============================================
 
-		getDashboardSummary: async ({ params, req }: { params: { productId: string }; req: any }) => {
+		getDashboardSummary: async ({ params, query, req }: { params: { productId: string }; query: { environment?: "sandbox" | "production" }; req: any }) => {
 			try {
 				// Dashboard only: Validate Privy access
 				if (!validatePrivyAccess(req, params.productId)) {
@@ -1281,7 +1292,11 @@ export const createClientRouter = (
 					};
 				}
 
-				const summary = await clientService.getDashboardSummary(params.productId);
+				// ✅ Extract environment from query params
+				const environment = query?.environment as "sandbox" | "production" | undefined;
+				logger.info("[Client Router] getDashboardSummary", { productId: params.productId, environment });
+
+				const summary = await clientService.getDashboardSummary(params.productId, environment);
 
 				return {
 					status: 200 as const,
@@ -1335,7 +1350,7 @@ export const createClientRouter = (
 		},
 
 		// Get aggregated dashboard summary across all products
-		getAggregateDashboardSummary: async ({ req }: { req: any }) => {
+		getAggregateDashboardSummary: async ({ query, req }: { query: { environment?: "sandbox" | "production" }; req: any }) => {
 			try {
 				// Extract Privy organization ID from authenticated session
 				const privySession = (req as any).privy;
@@ -1347,9 +1362,11 @@ export const createClientRouter = (
 				}
 
 				const privyOrganizationId = privySession.organizationId;
-				logger.info("[Client Router] Getting aggregated dashboard for Privy org", { privyOrganizationId });
+				// ✅ Extract environment from query params
+				const environment = query?.environment as "sandbox" | "production" | undefined;
+				logger.info("[Client Router] Getting aggregated dashboard for Privy org", { privyOrganizationId, environment });
 
-				const summary = await clientService.getAggregateDashboardSummary(privyOrganizationId);
+				const summary = await clientService.getAggregateDashboardSummary(privyOrganizationId, environment);
 
 				return {
 					status: 200 as const,

@@ -8,6 +8,7 @@ export interface CreateUserRequest {
 	userId: string
 	userType: string
 	userWalletAddress?: string
+	status?: string // Optional initial status (defaults to 'active')
 }
 
 export interface GetUserPortfolioRequest {

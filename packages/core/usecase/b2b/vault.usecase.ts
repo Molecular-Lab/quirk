@@ -11,7 +11,7 @@ import type {
 	GetClientVaultRow,
 	ListClientVaultsPendingStakeRow,
 	ListClientVaultsRow,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"
 
 /**
  * B2B Vault UseCase
@@ -24,18 +24,18 @@ export class B2BVaultUseCase {
 	) {}
 
 	/**
-	 * Get or create client vault for a specific chain/token
+	 * Get or create client vault for a specific chain/token (with environment support)
 	 * Returns existing vault or creates new one with index = 1.0e18
 	 */
-	async getOrCreateVault(request: CreateVaultRequest): Promise<GetClientVaultByTokenRow> {
-		// Check if vault exists
-		const existing = await this.vaultRepository.getClientVault(request.clientId, request.chain, request.tokenAddress)
+	async getOrCreateVault(request: CreateVaultRequest, environment: "sandbox" | "production" = "sandbox", custodialWalletAddress?: string): Promise<GetClientVaultByTokenRow> {
+		// Check if vault exists for this environment
+		const existing = await this.vaultRepository.getClientVault(request.clientId, request.chain, request.tokenAddress, environment)
 
 		if (existing) {
 			return existing
 		}
 
-		// Create new vault with initial index = 1.0e18
+		// Create new vault with initial index = 1.0e18 for this environment
 		const vault = await this.vaultRepository.createClientVault({
 			clientId: request.clientId,
 			chain: request.chain,
@@ -46,6 +46,8 @@ export class B2BVaultUseCase {
 			pendingDepositBalance: "0",
 			totalStakedBalance: "0",
 			cumulativeYield: "0",
+			environment,
+			custodialWalletAddress: custodialWalletAddress || null,
 		})
 
 		if (!vault) {
@@ -82,14 +84,15 @@ export class B2BVaultUseCase {
 	}
 
 	/**
-	 * Get vault by client, chain, and token
+	 * Get vault by client, chain, token, and environment
 	 */
 	async getVaultByToken(
 		clientId: string,
 		chain: string,
 		tokenAddress: string,
+		environment: "sandbox" | "production" = "sandbox",
 	): Promise<GetClientVaultByTokenRow | null> {
-		return await this.vaultRepository.getClientVault(clientId, chain, tokenAddress)
+		return await this.vaultRepository.getClientVault(clientId, chain, tokenAddress, environment)
 	}
 
 	/**
@@ -193,19 +196,20 @@ export class B2BVaultUseCase {
 	}
 
 	/**
-	 * Get or create end-user vault (SIMPLIFIED)
+	 * Get or create end-user vault (with environment support)
 	 * Called when user makes first deposit
 	 *
-	 * SIMPLIFIED ARCHITECTURE: ONE vault per user per client
-	 * - No chain/token fields
+	 * ENVIRONMENT-AWARE: One vault per user per client PER ENVIRONMENT
+	 * - Separate vaults for sandbox (mock tokens) and production (real USDC)
 	 * - Uses weightedEntryIndex for DCA tracking
 	 */
 	async getOrCreateEndUserVault(
 		endUserId: string,
 		clientId: string,
+		environment: "sandbox" | "production" = "sandbox",
 	): Promise<{ id: string; weightedEntryIndex: string; totalDeposited: string }> {
-		// Check if end-user vault exists
-		const existing = await this.vaultRepository.getEndUserVaultByClient(endUserId, clientId)
+		// Check if end-user vault exists for this environment
+		const existing = await this.vaultRepository.getEndUserVaultByClient(endUserId, clientId, environment)
 
 		if (existing) {
 			return {
@@ -215,12 +219,13 @@ export class B2BVaultUseCase {
 			}
 		}
 
-		// Create new end-user vault
+		// Create new end-user vault for this environment
 		const vault = await this.vaultRepository.createEndUserVault({
 			endUserId,
 			clientId,
 			totalDeposited: "0",
 			weightedEntryIndex: "0",
+			environment,
 		})
 
 		if (!vault) {

@@ -4,6 +4,7 @@ import { persist } from "zustand/middleware"
 import { listOrganizationsByPrivyId } from "@/api/b2bClientHelpers"
 
 import { useClientContextStore } from "./clientContextStore"
+import { useDemoStore } from "./demoStore"
 
 // Organization type from userStore
 export interface Organization {
@@ -168,8 +169,12 @@ export const useDemoProductStore = create<DemoProductState>()(
 					return
 				}
 
-				// Get API key from store
-				const apiKey = apiKeys[productId]
+				// Get current environment from demoStore
+				const environment = useDemoStore.getState().selectedEnvironment
+
+				// Get API key with environment awareness
+				const envKey = apiKeys[`${productId}_${environment}`]
+				const apiKey = envKey || apiKeys[productId]
 
 				console.log("[demoProductStore] Selecting product:", {
 					productId: product.productId,
@@ -203,6 +208,10 @@ export const useDemoProductStore = create<DemoProductState>()(
 					companyName: product.companyName,
 					businessType: product.businessType,
 				})
+
+				// ✅ FIX: Reset demoStore end-user state when switching products
+				// This ensures the old end-user from a different product doesn't persist
+				useDemoStore.getState().resetEndUser()
 
 				console.log("[demoProductStore] ✅ Product selected and synced to clientContextStore:", {
 					productId: product.productId,
@@ -244,16 +253,32 @@ export const useDemoProductStore = create<DemoProductState>()(
 				set(initialState)
 			},
 
-			// Computed: Get API key for selected product
+			// Computed: Get API key for selected product (considers current environment)
 			getSelectedApiKey: () => {
 				const { selectedProductId, apiKeys } = get()
 				if (!selectedProductId) return null
+
+				// Get current environment from demoStore
+				const environment = useDemoStore.getState().selectedEnvironment
+
+				// Try environment-specific key first
+				const envKey = apiKeys[`${selectedProductId}_${environment}`]
+				if (envKey) return envKey
+
 				return apiKeys[selectedProductId] || null
 			},
 
-			// Computed: Get API key for specific product
+			// Computed: Get API key for specific product (considers current environment)
 			getApiKey: (productId: string) => {
 				const { apiKeys } = get()
+				// Get current environment from demoStore
+				const environment = useDemoStore.getState().selectedEnvironment
+
+				// Try environment-specific key first
+				const envKey = apiKeys[`${productId}_${environment}`]
+				if (envKey) return envKey
+
+				// Fallback to non-environment key (backward compatibility)
 				return apiKeys[productId] || null
 			}, // Computed: Check if product is selected
 			hasSelectedProduct: () => {

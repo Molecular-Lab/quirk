@@ -26,10 +26,13 @@ const VaultUserSchema = z.object({
 });
 
 export const userVaultContract = c.router({
-	// Get user balance in vault
+	// Get user balance in vault (with environment support)
 	getBalance: {
 		method: "GET",
 		path: "/balances/:userId/vault/:vaultId",
+		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional().default("sandbox"),
+		}),
 		responses: {
 			200: z.object({
 				found: z.boolean(),
@@ -38,20 +41,21 @@ export const userVaultContract = c.router({
 			}),
 			500: z.object({ success: z.boolean(), error: z.string() }),
 		},
-		summary: "Get user balance in specific vault",
+		summary: "Get user balance in specific vault for given environment",
 	},
 
-	// List vault users
+	// List vault users (with environment support)
 	listVaultUsers: {
 		method: "GET",
 		path: "/balances/vault/:vaultId/users",
 		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional().default("sandbox"),
 			limit: z.string().optional(),
 			offset: z.string().optional(),
 		}),
 		responses: {
 			200: z.array(VaultUserSchema),
 		},
-		summary: "List all users in a vault with balances",
+		summary: "List all users in a vault with balances for given environment",
 	},
 });

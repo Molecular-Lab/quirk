@@ -1,6 +1,7 @@
 /**
  * Client Overview Tab
  * Shows Fund Stages (Idle & Earning Balance), Revenue Metrics (MRR, ARR), and Quick Stats
+ * ✅ Environment-aware: Filters data based on selected environment (sandbox/production)
  */
 
 import { useEffect, useState } from "react"
@@ -8,6 +9,7 @@ import { useEffect, useState } from "react"
 import { DollarSign, TrendingUp, Users, Wallet } from "lucide-react"
 
 import { b2bApiClient } from "@/api/b2bClient"
+import { useEnvironmentStore } from "@/store/environmentStore"
 
 interface ClientOverviewTabProps {
 	productId?: string
@@ -46,6 +48,9 @@ export default function ClientOverviewTab({ productId, mode }: ClientOverviewTab
 	const [dashboardData, setDashboardData] = useState<DashboardSummary | null>(null)
 	const [error, setError] = useState<string | null>(null)
 
+	// ✅ Get current environment from store - refetch when it changes
+	const { apiEnvironment } = useEnvironmentStore()
+
 	useEffect(() => {
 		async function fetchDashboardSummary() {
 			try {
@@ -55,15 +60,20 @@ export default function ClientOverviewTab({ productId, mode }: ClientOverviewTab
 				let response
 				if (mode === "aggregate") {
 					// Call aggregate endpoint (no productId needed)
-					response = await b2bApiClient.client.getAggregateDashboardSummary()
+					// ✅ Pass environment to filter data
+					response = await b2bApiClient.client.getAggregateDashboardSummary({
+						query: { environment: apiEnvironment },
+					})
 				} else {
 					// Call single product endpoint
 					if (!productId) {
 						setError("Product ID is required for single mode")
 						return
 					}
+					// ✅ Pass environment to filter data
 					response = await b2bApiClient.client.getDashboardSummary({
 						params: { productId },
+						query: { environment: apiEnvironment },
 					})
 				}
 
@@ -81,7 +91,7 @@ export default function ClientOverviewTab({ productId, mode }: ClientOverviewTab
 		}
 
 		fetchDashboardSummary()
-	}, [productId, mode])
+	}, [productId, mode, apiEnvironment]) // ✅ Refetch when environment changes
 
 	if (loading) {
 		return (

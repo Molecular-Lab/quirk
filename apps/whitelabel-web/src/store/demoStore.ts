@@ -29,6 +29,9 @@ export interface DemoState {
 	selectedPersona: PersonaType | null
 	personaData: (PersonaProfile & { clientUserId: string }) | null
 
+	// Environment selection (sandbox/production)
+	selectedEnvironment: "sandbox" | "production"
+
 	// End-user state (created via "Start Earning")
 	endUserId: string | null
 	endUserClientUserId: string | null // The demo_user_xxx ID
@@ -55,6 +58,9 @@ export interface DemoStore extends DemoState {
 	resetPersona: () => void
 	getPersonaUserId: () => string | null
 	hasPersona: () => boolean
+
+	// Environment management
+	setEnvironment: (environment: "sandbox" | "production") => void
 
 	// End-user setters
 	setEndUser: (data: { endUserId: string; endUserClientUserId: string }) => void
@@ -86,6 +92,7 @@ export interface DemoStore extends DemoState {
 const initialState: DemoState = {
 	selectedPersona: null,
 	personaData: null,
+	selectedEnvironment: "sandbox",
 	endUserId: null,
 	endUserClientUserId: null,
 	hasEarnAccount: false,
@@ -152,6 +159,16 @@ export const useDemoStore = create<DemoStore>()(
 			// Check if persona is selected
 			hasPersona: () => {
 				return !!get().selectedPersona
+			},
+
+			// ==========================================
+			// ENVIRONMENT MANAGEMENT
+			// ==========================================
+
+			// Set environment (sandbox/production)
+			setEnvironment: (environment) => {
+				console.log("[demoStore] Setting environment:", environment)
+				set({ selectedEnvironment: environment })
 			},
 
 			// ==========================================
@@ -235,6 +252,7 @@ export const useDemoStore = create<DemoStore>()(
 				({
 					selectedPersona: state.selectedPersona,
 					personaData: state.personaData,
+					selectedEnvironment: state.selectedEnvironment,
 					endUserId: state.endUserId,
 					endUserClientUserId: state.endUserClientUserId,
 					hasEarnAccount: state.hasEarnAccount,

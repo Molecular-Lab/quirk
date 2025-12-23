@@ -21,7 +21,7 @@ import type {
   CreateDepositRow,
   GetDepositRow,
   ListDepositsRow,
-} from '@proxify/sqlcgen';
+} from '@quirk/sqlcgen';
 
 export interface DepositUsecaseDeps {
   depositRepository: DepositRepository;

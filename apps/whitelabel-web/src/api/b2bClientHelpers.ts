@@ -395,6 +395,7 @@ export async function createFiatDeposit(data: {
 	currency: Currency
 	tokenSymbol?: string
 	clientReference?: string
+	environment?: "sandbox" | "production"
 }) {
 	const { status, body } = await b2bApiClient.deposit.createFiatDeposit({ body: data })
 
@@ -463,9 +464,12 @@ export async function getDepositByOrderId(orderId: string) {
 
 /**
  * List pending deposits
+ * @param environment - Optional environment filter (sandbox/production)
  */
-export async function listPendingDeposits() {
-	const { status, body } = await b2bApiClient.deposit.listPending({})
+export async function listPendingDeposits(environment?: "sandbox" | "production") {
+	const { status, body } = await b2bApiClient.deposit.listPending({
+		query: { environment },
+	})
 
 	if (status === 200) {
 		return body
@@ -492,6 +496,7 @@ export async function createUser(
 		clientUserId: string
 		email?: string
 		walletAddress?: string
+		status?: "pending_onboarding" | "active" | "suspended"
 	},
 ) {
 	const { status, body } = await b2bApiClient.user.getOrCreate({
@@ -509,9 +514,25 @@ export async function createUser(
 }
 
 /**
- * Get user balance
+ * Get user by client ID and client user ID
+ * Used to check if a user exists and their activation status
  */
-export async function getUserBalance(userId: string, params?: { chain?: string; token?: string }) {
+export async function getUserByClientUserId(clientId: string, clientUserId: string) {
+	const { status, body } = await b2bApiClient.user.getByClientUserId({
+		params: { clientId, clientUserId },
+	})
+
+	if (status === 200 && body.found && body.data) {
+		return body.data
+	}
+
+	return null
+}
+
+/**
+ * Get user balance (with environment support)
+ */
+export async function getUserBalance(userId: string, params?: { chain?: string; token?: string; environment?: "sandbox" | "production" }) {
 	const { status, body } = await b2bApiClient.user.getBalance({
 		params: { userId },
 		query: params ?? {},
@@ -537,6 +558,30 @@ export async function getUserVaults(userId: string) {
 	}
 
 	throw new Error("Failed to get vaults")
+}
+
+/**
+ * Activate user account after completing onboarding (public endpoint)
+ */
+export async function activateUser(userId: string, productId: string) {
+	const { status, body } = await b2bApiClient.user.activate({
+		params: { userId },
+		body: { productId },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	if (status === 404) {
+		throw new Error("User not found")
+	}
+
+	if (status === 400) {
+		throw new Error(body.error || "Failed to activate user")
+	}
+
+	throw new Error("Failed to activate user")
 }
 
 // ============================================
@@ -595,6 +640,7 @@ export async function createWithdrawal(data: {
 	withdrawal_method?: "crypto" | "fiat_to_client" | "fiat_to_end_user"
 	destination_address?: string
 	destination_currency?: Currency
+	environment?: "sandbox" | "production" // ✅ Environment parameter for multi-environment support
 	end_user_bank_account?: {
 		currency: Currency
 		bank_name: string
@@ -612,6 +658,69 @@ export async function createWithdrawal(data: {
 	}
 
 	throw new Error("Failed to create withdrawal")
+}
+
+/**
+ * List pending withdrawals (for operations dashboard)
+ * @param environment - Optional environment filter (sandbox/production)
+ */
+export async function listPendingWithdrawals(environment?: "sandbox" | "production") {
+	const { status, body } = await b2bApiClient.withdrawal.listPending({
+		query: { environment },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	return { withdrawals: [] }
+}
+
+/**
+ * Complete withdrawal (mark as processed)
+ */
+export async function completeWithdrawal(withdrawalId: string, transactionHash: string) {
+	const { status, body } = await b2bApiClient.withdrawal.complete({
+		params: { id: withdrawalId },
+		body: { transactionHash },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to complete withdrawal")
+}
+
+/**
+ * Batch complete withdrawals
+ */
+export async function batchCompleteWithdrawals(withdrawalIds: string[], destinationCurrency: string) {
+	// Process withdrawals sequentially for now
+	const results = []
+	for (const id of withdrawalIds) {
+		try {
+			// Generate mock transaction hash for demo
+			const txHash = `0x${Math.random().toString(16).slice(2)}${Date.now().toString(16)}`
+			const result = await completeWithdrawal(id, txHash)
+			results.push({ id, success: true, data: result })
+		} catch (error) {
+			results.push({ id, success: false, error: error instanceof Error ? error.message : "Unknown error" })
+		}
+	}
+
+	const successCount = results.filter((r) => r.success).length
+	const totalAmount = results
+		.filter((r) => r.success)
+		.reduce((sum, r) => sum + parseFloat((r.data as any)?.requestedAmount || "0"), 0)
+
+	return {
+		completedWithdrawals: results.filter((r) => r.success),
+		failedWithdrawals: results.filter((r) => !r.success),
+		totalProcessed: successCount,
+		totalAmount: totalAmount.toFixed(2),
+		destinationCurrency,
+	}
 }
 
 // ============================================
@@ -647,4 +756,121 @@ export async function updateFeeConfig(productId: string, clientRevenueSharePerce
 	}
 
 	throw new Error("Failed to update fee configuration")
+}
+
+// ============================================
+// DASHBOARD SUMMARY ENDPOINTS (Environment-aware)
+// ============================================
+
+/**
+ * Get complete dashboard summary for a product
+ * @param productId - The product ID to get summary for
+ * @param environment - Optional environment filter (sandbox/production)
+ */
+export async function getDashboardSummary(productId: string, environment?: "sandbox" | "production") {
+	const { status, body } = await b2bApiClient.client.getDashboardSummary({
+		params: { productId },
+		query: { environment },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get dashboard summary")
+}
+
+/**
+ * Get aggregated dashboard summary across all products
+ * @param environment - Optional environment filter (sandbox/production)
+ */
+export async function getAggregateDashboardSummary(environment?: "sandbox" | "production") {
+	const { status, body } = await b2bApiClient.client.getAggregateDashboardSummary({
+		query: { environment },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get aggregate dashboard summary")
+}
+
+/**
+ * Get revenue metrics for a product
+ * @param productId - The product ID to get metrics for
+ * @param environment - Optional environment filter (sandbox/production)
+ */
+export async function getRevenueMetrics(productId: string, environment?: "sandbox" | "production") {
+	const { status, body } = await b2bApiClient.client.getRevenueMetrics({
+		params: { productId },
+		query: { environment },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get revenue metrics")
+}
+
+/**
+ * Get end-user growth metrics for a product
+ * @param productId - The product ID to get metrics for
+ * @param environment - Optional environment filter (sandbox/production)
+ */
+export async function getEndUserGrowthMetrics(productId: string, environment?: "sandbox" | "production") {
+	const { status, body } = await b2bApiClient.client.getEndUserGrowthMetrics({
+		params: { productId },
+		query: { environment },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get end-user growth metrics")
+}
+
+/**
+ * Get recent end-user transactions with pagination
+ * @param productId - The product ID to get transactions for
+ * @param page - Page number (default: 1)
+ * @param limit - Results per page (default: 20)
+ * @param environment - Optional environment filter (sandbox/production)
+ */
+export async function getEndUserTransactions(
+	productId: string,
+	page = 1,
+	limit = 20,
+	environment?: "sandbox" | "production",
+) {
+	const { status, body } = await b2bApiClient.client.getEndUserTransactions({
+		params: { productId },
+		query: { page, limit, environment },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get end-user transactions")
+}
+
+/**
+ * Get wallet balances for a product
+ * @param productId - The product ID to get balances for
+ * @param environment - Optional environment filter (sandbox/production)
+ */
+export async function getWalletBalances(productId: string, environment?: "sandbox" | "production") {
+	const { status, body } = await b2bApiClient.client.getWalletBalances({
+		params: { productId },
+		query: { environment },
+	})
+
+	if (status === 200) {
+		return body
+	}
+
+	throw new Error("Failed to get wallet balances")
 }

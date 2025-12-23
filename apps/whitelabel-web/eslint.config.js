@@ -4,7 +4,7 @@ import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import baseConfig from '@proxify/eslint-config-base'
+import baseConfig from '@quirk/eslint-config-base'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)

@@ -300,7 +300,7 @@ export const PROXIFY_CONTROLLER_ABI = [
 					{ internalType: "uint256", name: "gasFeeShare", type: "uint256" },
 					{ internalType: "uint256", name: "netAmount", type: "uint256" },
 				],
-				internalType: "struct IProxify.WithdrawalExecution[]",
+				internalType: "struct IQuirk.WithdrawalExecution[]",
 				name: "executions",
 				type: "tuple[]",
 			},
@@ -347,7 +347,7 @@ export const PROXIFY_CONTROLLER_ABI = [
 	{
 		inputs: [],
 		name: "clientRegistry",
-		outputs: [{ internalType: "contract IProxifyClientRegistry", name: "", type: "address" }],
+		outputs: [{ internalType: "contract IQuirkClientRegistry", name: "", type: "address" }],
 		stateMutability: "view",
 		type: "function",
 	},
@@ -484,7 +484,7 @@ export const PROXIFY_CONTROLLER_ABI = [
 	{
 		inputs: [],
 		name: "proxify",
-		outputs: [{ internalType: "contract IProxify", name: "", type: "address" }],
+		outputs: [{ internalType: "contract IQuirk", name: "", type: "address" }],
 		stateMutability: "view",
 		type: "function",
 	},
@@ -609,4 +609,4 @@ export const PROXIFY_CONTROLLER_ABI = [
 	},
 ]
 
-export type ProxifyControllerABI = typeof PROXIFY_CONTROLLER_ABI
+export type QuirkControllerABI = typeof PROXIFY_CONTROLLER_ABI

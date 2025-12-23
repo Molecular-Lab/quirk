@@ -4,7 +4,7 @@
  */
 
 import type { Sql } from "postgres"
-import { VError } from "verror"
+import VError from "verror"
 import {
 	createRevenueDistribution,
 	getRevenueDistributionById,
@@ -34,7 +34,7 @@ import {
 	type GetVaultIndexHistoryRow,
 	type GetVaultIndexAtTimestampRow,
 	type CalculateRollingAPYRow,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"
 
 export interface CreateRevenueDistributionParams {
 	withdrawalTransactionId: string | null

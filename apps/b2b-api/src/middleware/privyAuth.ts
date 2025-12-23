@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import type { B2BClientUseCase, PrivyAccountRepository } from "@proxify/core";
+import type { B2BClientUseCase, PrivyAccountRepository } from "@quirk/core";
 import { logger } from "../logger";
 
 /**

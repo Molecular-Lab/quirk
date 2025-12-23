@@ -43,10 +43,21 @@ interface ClientRegistrationResponse {
 // ========================================
 // IMPORTANT: Each organization has its own API key!
 // When switching orgs, we must load the correct key for that org.
+// API keys are stored per-environment: { "productId_sandbox": "pk_test_...", "productId_production": "pk_live_..." }
+
+/**
+ * Detect environment from API key prefix
+ */
+const detectEnvironmentFromApiKey = (apiKey: string): "sandbox" | "production" => {
+	if (apiKey.startsWith("pk_test_")) return "sandbox"
+	if (apiKey.startsWith("pk_live_")) return "production"
+	// Default to sandbox for unknown prefixes
+	return "sandbox"
+}
 
 /**
  * Save API key for specific organization
- * Stores in a map: { productId: apiKey }
+ * Stores in a map with environment suffix: { "productId_sandbox": apiKey, "productId_production": apiKey }
  * Also syncs to userStore and clientContextStore
  */
 const saveApiKeyForOrg = (
@@ -54,10 +65,16 @@ const saveApiKeyForOrg = (
 	apiKey: string,
 	orgData?: { id: string; companyName: string; businessType: string },
 ) => {
+	// Detect environment from API key prefix
+	const environment = detectEnvironmentFromApiKey(apiKey)
+	const storageKey = `${productId}_${environment}`
+
 	// Get all stored keys
 	const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") || "{}")
 
-	// Add/update key for this org
+	// Add/update key for this org with environment suffix
+	allKeys[storageKey] = apiKey
+	// Also store without suffix for backward compatibility
 	allKeys[productId] = apiKey
 	localStorage.setItem("b2b:api_keys", JSON.stringify(allKeys))
 
@@ -65,7 +82,7 @@ const saveApiKeyForOrg = (
 	localStorage.setItem("b2b:api_key", apiKey)
 
 	// eslint-disable-next-line no-console
-	console.log(`[API Keys] ✅ Saved for ${productId}:`, apiKey.substring(0, 12) + "...")
+	console.log(`[API Keys] ✅ Saved for ${storageKey}:`, apiKey.substring(0, 12) + "...")
 	// eslint-disable-next-line no-console
 	console.log("[API Keys] 📦 All stored keys:", Object.keys(allKeys))
 
@@ -94,10 +111,19 @@ const saveApiKeyForOrg = (
 }
 
 /**
- * Load API key for specific organization
+ * Load API key for specific organization and environment
+ * Falls back to non-environment-specific key for backward compatibility
  */
-const loadApiKeyForOrg = (productId: string): string | null => {
+const loadApiKeyForOrg = (productId: string, environment?: "sandbox" | "production"): string | null => {
 	const allKeys = JSON.parse(localStorage.getItem("b2b:api_keys") ?? "{}") as Record<string, string>
+
+	// If environment specified, try environment-specific key first
+	if (environment) {
+		const envKey = allKeys[`${productId}_${environment}`]
+		if (envKey) return envKey
+	}
+
+	// Fallback to non-environment key (backward compatibility)
 	return allKeys[productId] ?? null
 }
 
@@ -300,7 +326,7 @@ const API_FLOWS: APIEndpoint[] = [
 		method: "POST",
 		endpoint: "/api/v1/clients/product/{productId}/bank-accounts",
 		description:
-			"🏦 Configure CLIENT's bank accounts for receiving OFF-RAMP funds (withdrawals only). When end-users withdraw, Proxify converts USDC → fiat → sends to YOUR bank accounts. Required for Method 2 & 3 withdrawals. Note: Deposits use Proxify's fixed bank accounts, not these!",
+			"🏦 Configure CLIENT's bank accounts for receiving OFF-RAMP funds (withdrawals only). When end-users withdraw, Quirk converts USDC → fiat → sends to YOUR bank accounts. Required for Method 2 & 3 withdrawals. Note: Deposits use Quirk's fixed bank accounts, not these!",
 		params: [
 			{
 				name: "productId",
@@ -626,7 +652,7 @@ const API_FLOWS: APIEndpoint[] = [
 		method: "POST",
 		endpoint: "/api/v1/deposits/fiat",
 		description:
-			"🏦 Start a fiat deposit. Returns PROXIFY's bank account (fixed per currency: THB → Kasikorn Bank, SGD → DBS, etc.). End-user transfers to Proxify's account → Proxify mints shares. Note: Client's bank accounts (Configure Settlement Banking) are for OFF-RAMP withdrawals only!",
+			"🏦 Start a fiat deposit. Returns PROXIFY's bank account (fixed per currency: THB → Kasikorn Bank, SGD → DBS, etc.). End-user transfers to Quirk's account → Quirk mints shares. Note: Client's bank accounts (Configure Settlement Banking) are for OFF-RAMP withdrawals only!",
 		params: [
 			{ name: "api_key", type: "string", required: true, description: "Client API key" },
 			{ name: "user_id", type: "string", required: true, description: "End user ID", default: "grab_driver_12345" },
@@ -638,10 +664,10 @@ const API_FLOWS: APIEndpoint[] = [
 				name: "payment_method",
 				type: "select",
 				required: false,
-				description: "On-ramp provider (defaults to Proxify gateway)",
+				description: "On-ramp provider (defaults to Quirk gateway)",
 				default: "proxify_gateway",
 				options: [
-					{ value: "proxify_gateway", label: "Proxify Gateway (Internal on-ramp)" },
+					{ value: "proxify_gateway", label: "Quirk Gateway (Internal on-ramp)" },
 					{ value: "circle", label: "Circle USDC (Banking partnership)" },
 					{ value: "coinbase", label: "Coinbase (Banking partnership)" },
 					{ value: "bridge", label: "Bridge Protocol" },
@@ -675,7 +701,7 @@ const API_FLOWS: APIEndpoint[] = [
 				name: "orderId",
 				type: "string",
 				required: true,
-				description: "Proxify order ID from deposit initiation (DEP-xxx)",
+				description: "Quirk order ID from deposit initiation (DEP-xxx)",
 				default: "DEP-1764017059747-cfsvljs65",
 			},
 			{

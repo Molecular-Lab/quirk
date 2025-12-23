@@ -73,7 +73,7 @@ const WithdrawalResponseSchema = z.object({
 	feeBreakdown: z
 		.object({
 			totalYield: z.string(), // Total yield earned since deposit
-			platformFee: z.string(), // Fee taken by Proxify platform
+			platformFee: z.string(), // Fee taken by Quirk platform
 			clientFee: z.string(), // Fee taken by client
 			userNetYield: z.string(), // Net yield received by user
 			feesDeducted: z.boolean(), // Whether fees were deducted or deferred
@@ -145,6 +145,21 @@ export const withdrawalContract = c.router({
 		summary: "Mark withdrawal as failed and restore shares",
 	},
 
+	// List pending withdrawals (Operations Dashboard)
+	listPending: {
+		method: "GET",
+		path: "/withdrawals/pending",
+		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional().describe("Filter by environment"),
+		}),
+		responses: {
+			200: z.object({
+				withdrawals: z.array(WithdrawalResponseSchema),
+			}),
+		},
+		summary: "List pending withdrawals for Operations Dashboard",
+	},
+
 	// List withdrawals by client
 	listByClient: {
 		method: "GET",
@@ -153,6 +168,7 @@ export const withdrawalContract = c.router({
 			limit: z.string().optional(),
 			offset: z.string().optional(),
 			status: z.enum(["PENDING", "QUEUED", "COMPLETED", "FAILED"]).optional(),
+			environment: z.enum(["sandbox", "production"]).optional().describe("Filter by environment"),
 		}),
 		responses: {
 			200: z.array(WithdrawalResponseSchema),

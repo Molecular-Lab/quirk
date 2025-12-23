@@ -3,7 +3,7 @@
  * Transforms database rows to API DTOs
  */
 
-import type { GetWithdrawalByOrderIDRow, CreateWithdrawalRow } from "@proxify/sqlcgen";
+import type { GetWithdrawalByOrderIDRow, CreateWithdrawalRow } from "@quirk/sqlcgen";
 
 export function mapWithdrawalToDto(
 	withdrawal: GetWithdrawalByOrderIDRow | CreateWithdrawalRow,

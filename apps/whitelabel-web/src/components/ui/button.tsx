@@ -19,11 +19,15 @@ const buttonVariants = cva(
 				blue: "bg-blue-600 text-white hover:bg-blue-700 shadow-sm",
 				purple: "bg-purple-600 text-white hover:bg-purple-700 shadow-sm",
 				green: "bg-green-600 text-white hover:bg-green-700 shadow-sm",
+				// Onboarding flow variants
+				onboarding: "bg-gray-900 text-white hover:bg-gray-800 rounded-2xl font-semibold shadow-lg",
+				"onboarding-secondary": "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 rounded-2xl font-medium",
 			},
 			size: {
 				default: "h-10 px-4 py-2",
 				sm: "h-9 rounded-md px-3",
 				lg: "h-11 rounded-md px-8",
+				xl: "h-14 px-6 text-base rounded-2xl",
 				icon: "h-10 w-10",
 			},
 		},

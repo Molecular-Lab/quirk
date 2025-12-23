@@ -5,7 +5,7 @@ import { Bot, Send, User, X } from "lucide-react"
 
 import { useFloatingConcierge } from "../../contexts/FloatingConciergeContext"
 
-const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8002"
+const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8000"
 
 interface ChatMessage {
 	role: "user" | "assistant"
@@ -128,7 +128,7 @@ export function FloatingConcierge() {
 							</div>
 							<div>
 								<h3 className="text-white font-bold text-lg">Yield Advisor</h3>
-								<p className="text-white/80 text-xs">Powered by Proxify Agent</p>
+								<p className="text-white/80 text-xs">Powered by Quirk Agent</p>
 							</div>
 						</div>
 						<button

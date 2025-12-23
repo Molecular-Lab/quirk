@@ -2,16 +2,20 @@
  * User Service - orchestrates B2B user operations
  */
 
-import type { B2BUserUseCase } from "@proxify/core";
+import type { B2BUserUseCase, B2BClientUseCase } from "@quirk/core";
 
 export class UserService {
-	constructor(private userUseCase: B2BUserUseCase) {}
+	constructor(
+		private userUseCase: B2BUserUseCase,
+		private clientUseCase?: B2BClientUseCase // Optional for backward compatibility
+	) {}
 
 	async getOrCreateUser(request: {
 		clientId: string;
 		userId: string;
 		userType: "custodial" | "non-custodial";
 		userWalletAddress?: string;
+		status?: string; // Optional initial status (defaults to 'active')
 	}) {
 		return await this.userUseCase.getOrCreateUser(request);
 	}
@@ -30,5 +34,28 @@ export class UserService {
 			limit || 50,
 			offset || 0
 		);
+	}
+
+	async activateUser(userId: string, clientId: string) {
+		return await this.userUseCase.activateUser(userId, clientId);
+	}
+
+	/**
+	 * Activate user by productId (public endpoint for onboarding)
+	 * Looks up clientId from productId, then activates the user
+	 */
+	async activateUserByProductId(userId: string, productId: string) {
+		if (!this.clientUseCase) {
+			throw new Error("Client use case not available");
+		}
+
+		// Look up client by productId
+		const client = await this.clientUseCase.getClientByProductId(productId);
+		if (!client) {
+			throw new Error(`Client not found for product: ${productId}`);
+		}
+
+		// Activate user with the resolved clientId
+		return await this.userUseCase.activateUser(userId, client.id);
 	}
 }

@@ -3,14 +3,14 @@
  * Business logic layer - maps between API DTOs and UseCase layer
  */
 
-import type { B2BClientUseCase } from "@proxify/core";
+import type { B2BClientUseCase } from "@quirk/core";
 import type {
 	CreateClientRequest,
 	AddFundsRequest,
 	ReserveFundsRequest,
 	ReleaseFundsRequest,
 	DeductReservedRequest,
-} from "@proxify/core/dto/b2b";
+} from "@quirk/core/dto/b2b";
 
 export class ClientService {
 	constructor(private readonly clientUseCase: B2BClientUseCase) {}
@@ -174,30 +174,30 @@ export class ClientService {
 	 * Get revenue metrics for dashboard
 	 * Returns MRR, ARR, cumulative revenue, and fee configuration
 	 */
-	async getRevenueMetrics(productId: string) {
-		return await this.clientUseCase.getRevenueMetrics(productId);
+	async getRevenueMetrics(productId: string, environment?: "sandbox" | "production") {
+		return await this.clientUseCase.getRevenueMetrics(productId, environment);
 	}
 
 	/**
 	 * Get end-user growth metrics
 	 * Returns total users, new users, active users, deposits/withdrawals
 	 */
-	async getEndUserGrowthMetrics(productId: string) {
-		return await this.clientUseCase.getEndUserGrowthMetrics(productId);
+	async getEndUserGrowthMetrics(productId: string, environment?: "sandbox" | "production") {
+		return await this.clientUseCase.getEndUserGrowthMetrics(productId, environment);
 	}
 
 	/**
 	 * Get recent end-user transactions with pagination
 	 */
-	async getEndUserTransactions(productId: string, page: number, limit: number) {
-		return await this.clientUseCase.getEndUserTransactions(productId, page, limit);
+	async getEndUserTransactions(productId: string, page: number, limit: number, environment?: "sandbox" | "production") {
+		return await this.clientUseCase.getEndUserTransactions(productId, page, limit, environment);
 	}
 
 	/**
 	 * Get wallet balances (idle & earning)
 	 */
-	async getWalletBalances(productId: string) {
-		return await this.clientUseCase.getWalletBalances(productId);
+	async getWalletBalances(productId: string, environment?: "sandbox" | "production") {
+		return await this.clientUseCase.getWalletBalances(productId, environment);
 	}
 
 	/**
@@ -212,11 +212,11 @@ export class ClientService {
 	 * Get complete dashboard summary
 	 * Combines balances, revenue, end-users, and recent transactions
 	 */
-	async getDashboardSummary(productId: string) {
-		return await this.clientUseCase.getDashboardSummary(productId);
+	async getDashboardSummary(productId: string, environment?: "sandbox" | "production") {
+		return await this.clientUseCase.getDashboardSummary(productId, environment);
 	}
 
-	async getAggregateDashboardSummary(privyOrganizationId: string) {
-		return await this.clientUseCase.getAggregateDashboardSummary(privyOrganizationId);
+	async getAggregateDashboardSummary(privyOrganizationId: string, environment?: "sandbox" | "production") {
+		return await this.clientUseCase.getAggregateDashboardSummary(privyOrganizationId, environment);
 	}
 }

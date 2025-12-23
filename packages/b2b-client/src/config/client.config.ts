@@ -1,5 +1,5 @@
 /**
- * Proxify B2B Client Configuration
+ * Quirk B2B Client Configuration
  * Singleton instance for API client
  */
 
@@ -9,7 +9,7 @@ import { ENV, getBaseURL } from './env'
 /**
  * SDK Configuration
  */
-export interface ProxifyClientConfig {
+export interface QuirkClientConfig {
 	apiKey: string
 	productId: string
 	baseURL: string
@@ -17,11 +17,11 @@ export interface ProxifyClientConfig {
 }
 
 /**
- * Create Proxify client configuration
+ * Create Quirk client configuration
  */
 export function createClientConfig(
-	overrides?: Partial<ProxifyClientConfig>
-): ProxifyClientConfig {
+	overrides?: Partial<QuirkClientConfig>
+): QuirkClientConfig {
 	return {
 		apiKey: ENV.PROXIFY_API_KEY,
 		productId: ENV.PROXIFY_PRODUCT_ID,
@@ -35,7 +35,7 @@ export function createClientConfig(
  * Create configured axios instance
  */
 export function createAxiosInstance(
-	config: ProxifyClientConfig
+	config: QuirkClientConfig
 ): AxiosInstance {
 	const instance = axios.create({
 		baseURL: config.baseURL,
@@ -52,7 +52,7 @@ export function createAxiosInstance(
 		(req) => {
 			// Log request in development
 			if (ENV.PROXIFY_ENVIRONMENT === 'development') {
-				console.log(`[Proxify] ${req.method?.toUpperCase()} ${req.url}`)
+				console.log(`[Quirk] ${req.method?.toUpperCase()} ${req.url}`)
 			}
 			return req
 		},
@@ -67,7 +67,7 @@ export function createAxiosInstance(
 			// Log response in development
 			if (ENV.PROXIFY_ENVIRONMENT === 'development') {
 				console.log(
-					`[Proxify] Response: ${response.status} ${response.statusText}`
+					`[Quirk] Response: ${response.status} ${response.statusText}`
 				)
 			}
 			return response
@@ -78,11 +78,11 @@ export function createAxiosInstance(
 				const status = error.response.status
 				const message = error.response.data?.error?.message || error.message
 
-				console.error(`[Proxify] API Error (${status}): ${message}`)
+				console.error(`[Quirk] API Error (${status}): ${message}`)
 			} else if (error.request) {
-				console.error('[Proxify] Network error - no response from server')
+				console.error('[Quirk] Network error - no response from server')
 			} else {
-				console.error('[Proxify] Request error:', error.message)
+				console.error('[Quirk] Request error:', error.message)
 			}
 
 			return Promise.reject(error)

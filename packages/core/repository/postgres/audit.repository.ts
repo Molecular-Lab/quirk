@@ -1,5 +1,5 @@
 /**
- * Audit Repository - Proxify Pattern
+ * Audit Repository - Quirk Pattern
  * ✅ SQLC-generated queries from database/queries/audit.sql
  */
 
@@ -35,7 +35,7 @@ import {
 	type GetActionFrequencyRow,
 	type GetUserActivityRow,
 	type GetResourceActivityRow,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"
 import { Sql } from "postgres"
 
 export class AuditRepository {

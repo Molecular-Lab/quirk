@@ -1,8 +1,8 @@
 {
-	"name": "@proxify/eslint-config-custom-react",
+	"name": "@quirk/eslint-config-custom-react",
 	"main": "eslint.config.mjs",
 	"dependencies": {
-		"@proxify/eslint-config-base": "workspace:*",
+		"@quirk/eslint-config-base": "workspace:*",
 		"eslint-plugin-react": "^7.37.5",
 		"eslint-plugin-react-hooks": "^5.2.0",
 		"eslint-plugin-react-refresh": "^0.4.20",

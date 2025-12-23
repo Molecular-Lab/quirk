@@ -3,12 +3,12 @@
  * Business logic layer for vault operations
  */
 
-import type { B2BVaultUseCase } from "@proxify/core";
+import type { B2BVaultUseCase } from "@quirk/core";
 import type {
 	CreateVaultRequest,
 	UpdateIndexRequest,
 	MarkFundsAsStakedRequest,
-} from "@proxify/core/dto/b2b";
+} from "@quirk/core/dto/b2b";
 
 export class VaultService {
 	constructor(private readonly vaultUseCase: B2BVaultUseCase) {}

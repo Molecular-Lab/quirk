@@ -4,7 +4,7 @@
  *
  * @usage
  * ```typescript
- * import { NETWORK_CONFIG } from '@proxify/core/constants'
+ * import { NETWORK_CONFIG } from '@quirk/core/constants'
  *
  * // Access network config
  * const chainId = NETWORK_CONFIG.eth_mainnet.chainId

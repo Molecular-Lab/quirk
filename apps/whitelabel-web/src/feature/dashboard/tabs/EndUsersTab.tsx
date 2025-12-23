@@ -1,6 +1,7 @@
 /**
  * End-Users Tab
  * Shows user growth metrics and live transaction feed
+ * ✅ Environment-aware: Filters data based on selected environment (sandbox/production)
  */
 
 import { useEffect, useState } from "react"
@@ -10,6 +11,7 @@ import { ArrowDown, ArrowUp, TrendingUp, UserPlus, Users } from "lucide-react"
 import { b2bApiClient } from "@/api/b2bClient"
 import { ProductSwitcher } from "@/components/ProductSwitcher"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { useEnvironmentStore } from "@/store/environmentStore"
 import { useUserStore } from "@/store/userStore"
 
 interface EndUsersTabProps {
@@ -43,6 +45,9 @@ export default function EndUsersTab({ productId: initialProductId }: EndUsersTab
 	// Use activeProductId from store, fallback to initialProductId or first org
 	const productId = activeProductId || initialProductId || organizations[0]?.productId
 
+	// ✅ Get current environment from store - refetch when it changes
+	const { apiEnvironment } = useEnvironmentStore()
+
 	const [loading, setLoading] = useState(true)
 	const [growthMetrics, setGrowthMetrics] = useState<GrowthMetrics | null>(null)
 	const [transactions, setTransactions] = useState<Transaction[]>([])
@@ -68,11 +73,15 @@ export default function EndUsersTab({ productId: initialProductId }: EndUsersTab
 				setError(null)
 
 				// Fetch growth metrics and transactions in parallel
+				// ✅ Pass environment to filter data
 				const [metricsResponse, transactionsResponse] = await Promise.all([
-					b2bApiClient.client.getEndUserGrowthMetrics({ params: { productId } }),
+					b2bApiClient.client.getEndUserGrowthMetrics({
+						params: { productId },
+						query: { environment: apiEnvironment },
+					}),
 					b2bApiClient.client.getEndUserTransactions({
 						params: { productId },
-						query: { page: currentPage, limit: pageSize },
+						query: { page: currentPage, limit: pageSize, environment: apiEnvironment },
 					}),
 				])
 
@@ -93,7 +102,7 @@ export default function EndUsersTab({ productId: initialProductId }: EndUsersTab
 		}
 
 		fetchData()
-	}, [productId, currentPage])
+	}, [productId, currentPage, apiEnvironment]) // ✅ Refetch when environment changes
 
 	// Show aggregate mode message when no productId
 	if (!productId) {

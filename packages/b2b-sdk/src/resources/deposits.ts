@@ -138,7 +138,7 @@ export class DepositResource {
 	 * List deposits for specific client
 	 */
 	async listByClient(clientId: string, params?: PaginationParams & { status?: DepositStatus }): Promise<Deposit[]> {
-		const queryString = params ? this.http.buildQueryString(params) : ""
+		const queryString = params ? this.http.buildQueryString(params as Record<string, unknown>) : ""
 		return this.http.get<Deposit[]>(`/api/v1/deposits/client/${clientId}${queryString}`)
 	}
 
@@ -147,7 +147,7 @@ export class DepositResource {
 	 * List deposits for specific user
 	 */
 	async listByUser(userId: string, params?: PaginationParams): Promise<Deposit[]> {
-		const queryString = params ? this.http.buildQueryString(params) : ""
+		const queryString = params ? this.http.buildQueryString(params as Record<string, unknown>) : ""
 		return this.http.get<Deposit[]>(`/api/v1/deposits/user/${userId}${queryString}`)
 	}
 

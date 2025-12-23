@@ -1,5 +1,5 @@
 /**
- * Withdrawal Repository - Proxify Pattern
+ * Withdrawal Repository - Quirk Pattern
  * ✅ SQLC-generated queries from database/queries/withdrawal.sql
  */
 
@@ -29,6 +29,9 @@ import {
 	startUnstaking,
 	completeWithdrawalQueue,
 	failWithdrawalQueue,
+	// Environment-filtered Queries
+	listPendingWithdrawalsByEnvironment,
+	listPendingWithdrawalsByClientAndEnvironment,
 	// Analytics
 	getAggregatedUnstakingPlan,
 	getWithdrawalStats,
@@ -50,7 +53,9 @@ import {
 	type ListWithdrawalQueueByVaultRow,
 	type GetAggregatedUnstakingPlanRow,
 	type GetWithdrawalStatsRow,
-} from "@proxify/sqlcgen"
+	type ListPendingWithdrawalsByEnvironmentRow,
+	type ListPendingWithdrawalsByClientAndEnvironmentRow,
+} from "@quirk/sqlcgen"
 import { Sql } from "postgres"
 
 export class WithdrawalRepository {
@@ -161,5 +166,17 @@ export class WithdrawalRepository {
 
 	async getStats(clientId: string, startDate: Date, endDate: Date): Promise<GetWithdrawalStatsRow | null> {
 		return await getWithdrawalStats(this.sql, { clientId, startDate, endDate })
+	}
+
+	// Environment-filtered Methods
+	async listPendingByEnvironment(environment: string): Promise<ListPendingWithdrawalsByEnvironmentRow[]> {
+		return await listPendingWithdrawalsByEnvironment(this.sql, { environment })
+	}
+
+	async listPendingByClientAndEnvironment(
+		clientId: string,
+		environment: string,
+	): Promise<ListPendingWithdrawalsByClientAndEnvironmentRow[]> {
+		return await listPendingWithdrawalsByClientAndEnvironment(this.sql, { clientId, environment })
 	}
 }

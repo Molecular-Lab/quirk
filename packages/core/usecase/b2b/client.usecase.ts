@@ -21,8 +21,14 @@ import type {
 	GetClientStatsRow,
 	GetAllClientsByPrivyOrgIdRow,
 	GetClientByProductIdRow,
-	GetClientByAPIKeyHashRow
-} from "@proxify/sqlcgen"
+	GetClientBySandboxAPIKeyPrefixRow,
+	GetClientByProductionAPIKeyPrefixRow,
+} from "@quirk/sqlcgen"
+
+// Combined type for environment-aware API key validation result
+type ValidatedClient = (GetClientBySandboxAPIKeyPrefixRow | GetClientByProductionAPIKeyPrefixRow) & {
+	environment: 'sandbox' | 'production'
+}
 
 /**
  * B2B Client UseCase
@@ -80,17 +86,24 @@ export class B2BClientUseCase {
 
 	/**
 	 * Validate API key
+	 * @returns Client data with environment info (sandbox/production), or null if invalid
 	 */
-	async validateApiKey(apiKey: string): Promise<GetClientByAPIKeyHashRow | null> {
+	async validateApiKey(apiKey: string): Promise<ValidatedClient | null> {
 		return await this.clientRepository.validateApiKey(apiKey)
 	}
 
 	/**
-	 * Regenerate API key for an existing client
+	 * Regenerate API key for an existing client (environment-specific)
 	 * ⚠️ Returns new API key (shown only once!)
 	 * ⚠️ Invalidates old API key immediately
+	 *
+	 * @param productId - The product ID
+	 * @param environment - 'sandbox' or 'production' (defaults to sandbox if not specified)
 	 */
-	async regenerateApiKey(productId: string): Promise<{ client: GetClientRow; api_key: string }> {
+	async regenerateApiKey(
+		productId: string,
+		environment: 'sandbox' | 'production' = 'sandbox'
+	): Promise<{ client: GetClientRow; api_key: string; environment: 'sandbox' | 'production' }> {
 		// Get existing client
 		const client = await this.clientRepository.getByProductId(productId)
 
@@ -98,15 +111,20 @@ export class B2BClientUseCase {
 			throw new Error(`Client not found with productId: ${productId}`)
 		}
 
-		// Generate new API key
-		const apiKey = generateApiKey(client.isSandbox ?? false)
+		// Generate new API key for the specified environment
+		const isSandbox = environment === 'sandbox'
+		const apiKey = generateApiKey(isSandbox)
 		const apiKeyHash = await hashApiKey(apiKey)
 		const apiKeyPrefix = extractPrefix(apiKey)
 
-		console.log(`[Client UseCase] Regenerating API key for client: ${client.id}, prefix: ${apiKeyPrefix}`)
+		console.log(`[Client UseCase] Regenerating ${environment} API key for client: ${client.id}, prefix: ${apiKeyPrefix}`)
 
 		// Update in database (old key is immediately invalidated)
-		await this.clientRepository.updateApiKey(client.id, apiKeyHash, apiKeyPrefix)
+		if (isSandbox) {
+			await this.clientRepository.regenerateSandboxKey(client.id, apiKeyHash, apiKeyPrefix)
+		} else {
+			await this.clientRepository.regenerateProductionKey(client.id, apiKeyHash, apiKeyPrefix)
+		}
 
 		// Audit log
 		await this.auditRepository.create({
@@ -116,10 +134,10 @@ export class B2BClientUseCase {
 			action: "api_key_regenerated",
 			resourceType: "client",
 			resourceId: client.id,
-			description: `API key regenerated for product ${productId}`,
+			description: `${environment.toUpperCase()} API key regenerated for product ${productId}`,
 			metadata: {
 				productId,
-				oldPrefix: client.apiKeyPrefix,
+				environment,
 				newPrefix: apiKeyPrefix,
 			},
 			ipAddress: null,
@@ -136,17 +154,16 @@ export class B2BClientUseCase {
 		return {
 			client: updatedClient,
 			api_key: apiKey, // ← Shown only once!
+			environment,
 		}
 	}
 
 	/**
 	 * Create new client
-	 * Auto-generates BOTH sandbox and production API keys during registration
+	 * NOTE: API keys are NOT auto-generated - user must explicitly click "Generate Key" button
 	 */
 	async createClient(request: CreateClientRequest): Promise<
 		GetClientByProductIdRow & {
-			sandbox_api_key?: string
-			production_api_key?: string
 			vaults: { id: string; chain: string; tokenSymbol: string; tokenAddress: string }[]
 		}
 	> {
@@ -156,21 +173,6 @@ export class B2BClientUseCase {
 		if (existing) {
 			throw new Error(`Product ID '${request.productId}' already exists`)
 		}
-
-		// ✅ Auto-generate BOTH sandbox and production API keys during registration
-		const sandboxApiKey = generateApiKey(true) // pk_test_xxx
-		const productionApiKey = generateApiKey(false) // pk_live_xxx
-
-		const sandboxApiKeyHash = await hashApiKey(sandboxApiKey)
-		const productionApiKeyHash = await hashApiKey(productionApiKey)
-
-		const sandboxApiKeyPrefix = extractPrefix(sandboxApiKey)
-		const productionApiKeyPrefix = extractPrefix(productionApiKey)
-
-		console.log(`[Client Creation] Creating client with BOTH API keys:`, {
-			sandboxPrefix: sandboxApiKeyPrefix,
-			productionPrefix: productionApiKeyPrefix,
-		})
 
 		// Step 1: Get or create Privy account (idempotent)
 		const privyAccount = await this.privyAccountRepository.getOrCreate({
@@ -196,14 +198,7 @@ export class B2BClientUseCase {
 			throw new Error("Failed to create client")
 		}
 
-		// ✅ Store BOTH sandbox and production API keys using dedicated query
-		await this.clientRepository.storeEnvironmentAPIKeys(
-			client.id,
-			sandboxApiKeyHash,
-			sandboxApiKeyPrefix,
-			productionApiKeyHash,
-			productionApiKeyPrefix,
-		)
+		// NOTE: API keys are NOT stored here - user must click "Generate Key" button
 
 		// Initialize balance
 		await this.clientRepository.createBalance({
@@ -224,8 +219,6 @@ export class B2BClientUseCase {
 			description: `Client created: ${request.companyName}`,
 			metadata: {
 				productId: request.productId,
-				sandboxApiKeyPrefix: sandboxApiKeyPrefix, // Log sandbox API key prefix
-				productionApiKeyPrefix: productionApiKeyPrefix, // Log production API key prefix
 				customerTier: request.customerTier,
 			},
 			ipAddress: null,
@@ -270,73 +263,84 @@ export class B2BClientUseCase {
 		// All supported chains
 		const ALL_CHAINS = ["8453", "1", "137", "10", "42161"] // Base, Ethereum, Polygon, Optimism, Arbitrum
 
-		const createdVaults: { id: string; chain: string; tokenSymbol: string; tokenAddress: string }[] = []
+		const createdVaults: { id: string; chain: string; tokenSymbol: string; tokenAddress: string; environment: string }[] = []
 
-		// Create USDC vaults across ALL chains if requested
-		if (vaultsToCreate === "usdc" || vaultsToCreate === "both") {
-			for (const chain of ALL_CHAINS) {
-				const usdcVault = await this.getOrCreateVault({
-					clientId: client.id,
-					chain,
-					tokenAddress: TOKEN_ADDRESSES[chain].USDC,
-					tokenSymbol: "USDC",
-				})
-				createdVaults.push({
-					id: usdcVault.id,
-					chain,
-					tokenSymbol: "USDC",
-					tokenAddress: TOKEN_ADDRESSES[chain].USDC,
-				})
+		// ✅ Create vaults for BOTH environments (sandbox and production)
+		const environments: ("sandbox" | "production")[] = ["sandbox", "production"]
+
+		for (const environment of environments) {
+			// Create USDC vaults across ALL chains if requested
+			if (vaultsToCreate === "usdc" || vaultsToCreate === "both") {
+				for (const chain of ALL_CHAINS) {
+					const usdcVault = await this.getOrCreateVault({
+						clientId: client.id,
+						chain,
+						tokenAddress: TOKEN_ADDRESSES[chain].USDC,
+						tokenSymbol: "USDC",
+						environment,
+						custodialWalletAddress: request.privyWalletAddress,
+					})
+					createdVaults.push({
+						id: usdcVault.id,
+						chain,
+						tokenSymbol: "USDC",
+						tokenAddress: TOKEN_ADDRESSES[chain].USDC,
+						environment,
+					})
+				}
+			}
+
+			// Create USDT vaults across ALL chains if requested
+			if (vaultsToCreate === "usdt" || vaultsToCreate === "both") {
+				for (const chain of ALL_CHAINS) {
+					const usdtVault = await this.getOrCreateVault({
+						clientId: client.id,
+						chain,
+						tokenAddress: TOKEN_ADDRESSES[chain].USDT,
+						tokenSymbol: "USDT",
+						environment,
+						custodialWalletAddress: request.privyWalletAddress,
+					})
+					createdVaults.push({
+						id: usdtVault.id,
+						chain,
+						tokenSymbol: "USDT",
+						tokenAddress: TOKEN_ADDRESSES[chain].USDT,
+						environment,
+					})
+				}
 			}
 		}
 
-		// Create USDT vaults across ALL chains if requested
-		if (vaultsToCreate === "usdt" || vaultsToCreate === "both") {
-			for (const chain of ALL_CHAINS) {
-				const usdtVault = await this.getOrCreateVault({
-					clientId: client.id,
-					chain,
-					tokenAddress: TOKEN_ADDRESSES[chain].USDT,
-					tokenSymbol: "USDT",
-				})
-				createdVaults.push({
-					id: usdtVault.id,
-					chain,
-					tokenSymbol: "USDT",
-					tokenAddress: TOKEN_ADDRESSES[chain].USDT,
-				})
-			}
-		}
-
-		// Step 4: Return combined data (client + Privy info from JOIN + created vaults + BOTH API keys)
+		// Step 4: Return combined data (client + Privy info from JOIN + created vaults)
 		const result = await this.clientRepository.getByProductId(request.productId)
 		if (!result) {
 			throw new Error("Failed to retrieve created client")
 		}
 
-		// Return WITH BOTH API keys (shown only once!)
+		// Return without API keys - user must click "Generate Key" button to create them
 		return {
 			...result,
 			vaults: createdVaults,
-			sandbox_api_key: sandboxApiKey, // ✅ Include sandbox API key (shown only once during registration)
-			production_api_key: productionApiKey, // ✅ Include production API key (shown only once during registration)
-		} as typeof result & { sandbox_api_key: string; production_api_key: string; vaults: typeof createdVaults }
+		} as typeof result & { vaults: typeof createdVaults }
 	}
 
 	/**
-	 * Get or create vault for client (idempotent)
+	 * Get or create vault for client (idempotent, environment-aware)
 	 */
 	private async getOrCreateVault(params: {
 		clientId: string
 		chain: string
 		tokenAddress: string
 		tokenSymbol: string
+		environment: "sandbox" | "production"
+		custodialWalletAddress?: string
 	}) {
-		// Check if vault already exists
-		let vault = await this.vaultRepository.getClientVault(params.clientId, params.chain, params.tokenAddress)
+		// Check if vault already exists for this environment
+		let vault = await this.vaultRepository.getClientVault(params.clientId, params.chain, params.tokenAddress, params.environment)
 
 		if (!vault) {
-			// Create new vault with index = 1.0e18
+			// Create new vault with index = 1.0e18 for this environment
 			vault = await this.vaultRepository.createClientVault({
 				clientId: params.clientId,
 				chain: params.chain,
@@ -347,6 +351,8 @@ export class B2BClientUseCase {
 				pendingDepositBalance: "0",
 				totalStakedBalance: "0",
 				cumulativeYield: "0",
+				environment: params.environment,
+				custodialWalletAddress: params.custodialWalletAddress || null,
 			})
 
 			if (!vault) {
@@ -543,12 +549,14 @@ export class B2BClientUseCase {
 			throw new Error(`Client not found for product ID: ${productId}`)
 		}
 
-		// 2. Get or create vault for chain + token
+		// 2. Get or create vault for chain + token (defaulting to sandbox for now)
+		// TODO: Add environment parameter to configureStrategies API in Phase 5
 		const vault = await this.getOrCreateVault({
 			clientId: client.id,
 			chain: data.chain,
 			tokenAddress: data.tokenAddress,
 			tokenSymbol: data.tokenSymbol || "UNKNOWN",
+			environment: "sandbox", // Default to sandbox environment
 		})
 
 		// 3. Update vault strategies as JSONB (atomic update)
@@ -838,27 +846,31 @@ export class B2BClientUseCase {
 	/**
 	 * Get revenue metrics for dashboard
 	 * Returns MRR, ARR, cumulative revenue, and fee configuration
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getRevenueMetrics(productId: string) {
+	async getRevenueMetrics(productId: string, environment?: "sandbox" | "production") {
 		const client = await this.getClientByProductId(productId)
 		if (!client) {
 			throw new Error(`Client not found for product ID: ${productId}`)
 		}
 
-		return await this.revenueService.getDashboardRevenueSummary(client.id)
+		// TODO: Pass environment to revenueService.getDashboardRevenueSummary
+		// For now, the revenue service aggregates all environments
+		return await this.revenueService.getDashboardRevenueSummary(client.id, environment)
 	}
 
 	/**
 	 * Get end-user growth metrics
 	 * Returns total users, new users, active users, deposits/withdrawals
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getEndUserGrowthMetrics(productId: string) {
+	async getEndUserGrowthMetrics(productId: string, environment?: "sandbox" | "production") {
 		const client = await this.getClientByProductId(productId)
 		if (!client) {
 			throw new Error(`Client not found for product ID: ${productId}`)
 		}
 
-		const metrics = await this.clientRepository.getEndUserGrowthMetrics(client.id)
+		const metrics = await this.clientRepository.getEndUserGrowthMetrics(client.id, environment)
 		if (!metrics) {
 			// Return empty metrics if client has no data yet
 			return {
@@ -886,15 +898,16 @@ export class B2BClientUseCase {
 
 	/**
 	 * Get recent end-user transactions with pagination
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getEndUserTransactions(productId: string, page: number, limit: number) {
+	async getEndUserTransactions(productId: string, page: number, limit: number, environment?: "sandbox" | "production") {
 		const client = await this.getClientByProductId(productId)
 		if (!client) {
 			throw new Error(`Client not found for product ID: ${productId}`)
 		}
 
 		const offset = (page - 1) * limit
-		const transactions = await this.clientRepository.getRecentEndUserTransactions(client.id, limit, offset)
+		const transactions = await this.clientRepository.getRecentEndUserTransactions(client.id, limit, offset, environment)
 
 		// Count total transactions for pagination
 		// TODO: Add count query to repository
@@ -908,14 +921,15 @@ export class B2BClientUseCase {
 
 	/**
 	 * Get wallet balances (idle & earning)
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getWalletBalances(productId: string) {
+	async getWalletBalances(productId: string, environment?: "sandbox" | "production") {
 		const client = await this.getClientByProductId(productId)
 		if (!client) {
 			throw new Error(`Client not found for product ID: ${productId}`)
 		}
 
-		const balances = await this.clientRepository.getTotalBalances(client.id)
+		const balances = await this.clientRepository.getTotalBalances(client.id, environment)
 		if (!balances) {
 			// Return empty balances if client has no vaults yet
 			return {
@@ -941,19 +955,20 @@ export class B2BClientUseCase {
 	/**
 	 * Get complete dashboard summary
 	 * Combines balances, revenue, end-users, and recent transactions
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getDashboardSummary(productId: string) {
+	async getDashboardSummary(productId: string, environment?: "sandbox" | "production") {
 		const client = await this.getClientByProductId(productId)
 		if (!client) {
 			throw new Error(`Client not found for product ID: ${productId}`)
 		}
 
-		// Fetch all metrics in parallel
+		// Fetch all metrics in parallel with environment filter
 		const [balances, revenue, endUsers, recentTransactions] = await Promise.all([
-			this.getWalletBalances(productId),
-			this.getRevenueMetrics(productId),
-			this.getEndUserGrowthMetrics(productId),
-			this.getEndUserTransactions(productId, 1, 10),
+			this.getWalletBalances(productId, environment),
+			this.getRevenueMetrics(productId, environment),
+			this.getEndUserGrowthMetrics(productId, environment),
+			this.getEndUserTransactions(productId, 1, 10, environment),
 		])
 
 		return {
@@ -987,10 +1002,11 @@ export class B2BClientUseCase {
 	/**
 	 * Get aggregated dashboard summary across ALL products for a Privy user
 	 * Aggregates data from all client organizations (products) belonging to the user
+	 * @param environment - Optional environment filter (sandbox/production)
 	 */
-	async getAggregateDashboardSummary(privyOrganizationId: string) {
-		// Fetch aggregated data from single SQL query
-		const aggregatedData = await this.clientRepository.getAggregatedDashboardSummary(privyOrganizationId)
+	async getAggregateDashboardSummary(privyOrganizationId: string, environment?: "sandbox" | "production") {
+		// Fetch aggregated data from single SQL query with environment filter
+		const aggregatedData = await this.clientRepository.getAggregatedDashboardSummary(privyOrganizationId, environment)
 
 		if (!aggregatedData) {
 			throw new Error(`No organizations found for Privy ID: ${privyOrganizationId}`)

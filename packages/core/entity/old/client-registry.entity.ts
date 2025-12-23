@@ -57,7 +57,7 @@ export const clientStatusSchema = z.object({
 })
 export type ClientStatus = z.infer<typeof clientStatusSchema>
 
-// Risk Tier types for Proxify
+// Risk Tier types for Quirk
 export const riskTierSchema = z.object({
 	tierId: z.string(), // bytes32 as hex string
 	name: z.string(),

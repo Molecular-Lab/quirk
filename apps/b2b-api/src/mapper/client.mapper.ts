@@ -3,7 +3,7 @@
  * Transforms database rows to API DTOs
  */
 
-import type { BankAccount } from "@proxify/core/entity/database/client.entity";
+import type { BankAccount } from "@quirk/core/entity/database/client.entity";
 
 interface ClientRow {
 	id: string;

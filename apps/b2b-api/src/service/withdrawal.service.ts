@@ -2,7 +2,7 @@
  * Withdrawal Service - orchestrates B2B withdrawal operations
  */
 
-import type { B2BWithdrawalUseCase } from "@proxify/core";
+import type { B2BWithdrawalUseCase } from "@quirk/core";
 
 export class WithdrawalService {
 	constructor(private withdrawalUseCase: B2BWithdrawalUseCase) {}
@@ -43,5 +43,16 @@ export class WithdrawalService {
 
 	async getWithdrawalStats(clientId: string, startDate: Date, endDate: Date) {
 		return await this.withdrawalUseCase.getWithdrawalStats(clientId, startDate, endDate);
+	}
+
+	async listPendingWithdrawals(environment?: "sandbox" | "production") {
+		return await this.withdrawalUseCase.listPendingWithdrawalsByEnvironment(environment || "sandbox");
+	}
+
+	async listPendingWithdrawalsByClient(clientId: string, environment?: "sandbox" | "production") {
+		if (environment) {
+			return await this.withdrawalUseCase.listPendingWithdrawalsByClientAndEnvironment(clientId, environment);
+		}
+		return await this.withdrawalUseCase.listWithdrawalsByClient(clientId);
 	}
 }

@@ -1,5 +1,5 @@
 {
-    "name": "@proxify/b2b-api-service",
+    "name": "@quirk/b2b-api-service",
     "version": "1.0.0",
     "private": true,
     "type": "module",
@@ -10,21 +10,22 @@
         "type-check": "tsc --noEmit"
     },
     "dependencies": {
-        "@proxify/b2b-api-core": "workspace:*",
-        "@proxify/core": "workspace:*",
-        "@proxify/sqlcgen": "workspace:*",
-        "@proxify/yield-engine": "workspace:*",
+        "@quirk/b2b-api-core": "workspace:*",
+        "@quirk/core": "workspace:*",
+        "@quirk/sqlcgen": "workspace:*",
+        "@quirk/yield-engine": "workspace:*",
         "@ts-rest/express": "catalog:",
         "dotenv": "^16.4.7",
         "express": "^4.21.2",
         "postgres": "catalog:",
+        "verror": "^1.10.1",
         "winston": "^3.17.0",
         "zod": "catalog:"
     },
     "devDependencies": {
+        "@quirk/tsconfig": "workspace:*",
         "@types/express": "^5.0.0",
         "@types/node": "^22.10.2",
-        "@proxify/tsconfig": "workspace:*",
         "tsx": "catalog:",
         "typescript": "catalog:"
     }

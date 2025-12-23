@@ -1,5 +1,5 @@
 /**
- * Vault Repository - Proxify Pattern
+ * Vault Repository - Quirk Pattern
  *
  * ✅ Wraps SQLC-generated queries
  * ✅ BigNumber for precision
@@ -52,7 +52,7 @@ import {
 	type CreateEndUserVaultRow,
 	type GetClientSummaryRow,
 	type ListTopUsersByDepositRow,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"
 import BigNumber from "bignumber.js"
 import { Sql } from "postgres"
 

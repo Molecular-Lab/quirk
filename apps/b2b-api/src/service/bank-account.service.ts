@@ -1,6 +1,6 @@
 /**
  * Bank Account Service
- * Maps currencies to Proxify's bank accounts for deposit instructions
+ * Maps currencies to Quirk's bank accounts for deposit instructions
  */
 
 export interface BankAccount {
@@ -24,7 +24,7 @@ export class BankAccountService {
 			currency: "SGD",
 			bankName: "DBS Bank (Singapore)",
 			accountNumber: "123-456789-0",
-			accountName: "Proxify Pte. Ltd.",
+			accountName: "Quirk Pte. Ltd.",
 			swiftCode: "DBSSSGSG",
 			bankCode: "7171",
 			branchCode: "001",
@@ -35,7 +35,7 @@ export class BankAccountService {
 			currency: "USD",
 			bankName: "Citibank N.A. (Singapore Branch)",
 			accountNumber: "9876543210",
-			accountName: "Proxify Pte. Ltd.",
+			accountName: "Quirk Pte. Ltd.",
 			swiftCode: "CITISGSG",
 			routingNumber: "021000089",
 			instructions: "Wire transfer from your USD business account. Include reference ID in wire instructions. Processing time: 1-2 business days.",
@@ -45,7 +45,7 @@ export class BankAccountService {
 			currency: "EUR",
 			bankName: "Wise (TransferWise Europe SA)",
 			accountNumber: "BE12 3456 7890 1234",
-			accountName: "Proxify Pte. Ltd.",
+			accountName: "Quirk Pte. Ltd.",
 			swiftCode: "TRWIBEB1XXX",
 			iban: "BE12 3456 7890 1234",
 			instructions: "SEPA transfer from your EUR business account. Include reference ID in transfer notes. Processing time: Same-day (SEPA) or 1-2 days (SWIFT).",
@@ -55,7 +55,7 @@ export class BankAccountService {
 			currency: "THB",
 			bankName: "Kasikorn Bank (K-Bank)",
 			accountNumber: "123-4-56789-0",
-			accountName: "Proxify (Thailand) Co., Ltd.",
+			accountName: "Quirk (Thailand) Co., Ltd.",
 			swiftCode: "KASITHBK",
 			bankCode: "004",
 			branchCode: "0001",
@@ -67,7 +67,7 @@ export class BankAccountService {
 			currency: "TWD",
 			bankName: "Cathay United Bank",
 			accountNumber: "123-45-678901-2",
-			accountName: "Proxify Taiwan Ltd.",
+			accountName: "Quirk Taiwan Ltd.",
 			swiftCode: "UBOBTWTPXXX",
 			bankCode: "013",
 			branchCode: "0001",
@@ -78,7 +78,7 @@ export class BankAccountService {
 			currency: "KRW",
 			bankName: "Shinhan Bank",
 			accountNumber: "110-123-456789",
-			accountName: "Proxify Korea Inc.",
+			accountName: "Quirk Korea Inc.",
 			swiftCode: "SHBKKRSE",
 			bankCode: "088",
 			branchCode: "001",

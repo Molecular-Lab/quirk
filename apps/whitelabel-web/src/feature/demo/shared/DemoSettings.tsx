@@ -27,7 +27,7 @@ export function DemoSettings() {
 		productName: string
 	}>({ open: false, productName: "" })
 
-	const { selectedPersona, personaData, setPersona } = useDemoStore()
+	const { selectedPersona, personaData, setPersona, selectedEnvironment, setEnvironment } = useDemoStore()
 	const { selectedProduct, selectedProductId, visualizationType, availableProducts, selectProduct } = useDemoProductStore()
 
 	const personas = getAllPersonas()
@@ -158,6 +158,59 @@ export function DemoSettings() {
 							</div>
 						</div>
 					)}
+
+					{/* Environment Selector */}
+					<div>
+						<label className="block text-sm font-medium text-gray-700 mb-2">Environment</label>
+						<Select value={selectedEnvironment} onValueChange={(value) => {
+							const newEnv = value as "sandbox" | "production"
+							setEnvironment(newEnv)
+
+							// Re-sync API key for new environment
+							if (selectedProductId) {
+								const { apiKeys } = useDemoProductStore.getState()
+								const envKey = apiKeys[`${selectedProductId}_${newEnv}`] || apiKeys[selectedProductId]
+
+								if (envKey) {
+									// Re-select product to sync new API key to clientContextStore
+									selectProduct(selectedProductId)
+								}
+							}
+						}}>
+							<SelectTrigger>
+								<SelectValue />
+							</SelectTrigger>
+							<SelectContent>
+								<SelectItem value="sandbox">
+									<div className="flex items-center gap-2">
+										<span className="inline-flex h-2 w-2 rounded-full bg-green-500"></span>
+										<span>Sandbox (Mock Tokens)</span>
+									</div>
+								</SelectItem>
+								<SelectItem value="production">
+									<div className="flex items-center gap-2">
+										<span className="inline-flex h-2 w-2 rounded-full bg-orange-500"></span>
+										<span>Production (Real USDC)</span>
+									</div>
+								</SelectItem>
+							</SelectContent>
+						</Select>
+						{selectedEnvironment === "production" ? (
+							<div className="mt-2 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+								<p className="text-xs font-semibold text-orange-900 mb-1">⚠️ Production Mode</p>
+								<p className="text-xs text-orange-800">
+									You are using REAL USDC on the production network. All deposits and withdrawals will use actual funds.
+								</p>
+							</div>
+						) : (
+							<div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
+								<p className="text-xs font-semibold text-green-900 mb-1">✓ Sandbox Mode</p>
+								<p className="text-xs text-green-800">
+									Using mock tokens for testing. No real money involved.
+								</p>
+							</div>
+						)}
+					</div>
 
 					{/* Persona Selector */}
 					<div>

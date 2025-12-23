@@ -1,7 +1,7 @@
 import type { BatchWithdrawParams, ClaimClientRevenueParams, ClaimRevenueParams, ControllerWithdrawParams } from ".."
 import type { Address } from "viem"
 
-export interface ProxifyControllerReadAdapter {
+export interface QuirkControllerReadAdapter {
 	DEFAULT_ADMIN_ROLE(): Promise<string>
 	GUARDIAN_ROLE(): Promise<string>
 	ORACLE_ROLE(): Promise<string>
@@ -27,7 +27,7 @@ export interface ProxifyControllerReadAdapter {
 	getProtocolRevenueBalance(token: Address): Promise<bigint>
 }
 
-export interface ProxifyControllerWriteAdapter {
+export interface QuirkControllerWriteAdapter {
 	// Admin (multisig) actions
 	addSupportedToken(token: Address, senderAddress: Address): Promise<void>
 	removeSupportedToken(token: Address, senderAddress: Address): Promise<void>
@@ -61,11 +61,11 @@ export interface ProxifyControllerWriteAdapter {
 	emergencyPause(): Promise<void>
 }
 
-export interface ProxifyControllerClientAdapter {
-	read: ProxifyControllerReadAdapter
-	write: ProxifyControllerWriteAdapter
+export interface QuirkControllerClientAdapter {
+	read: QuirkControllerReadAdapter
+	write: QuirkControllerWriteAdapter
 }
 
-export interface ProxifyControllerRepositoryDependencies<TChainId> {
-	getControllerClient(chainId: TChainId): ProxifyControllerClientAdapter
+export interface QuirkControllerRepositoryDependencies<TChainId> {
+	getControllerClient(chainId: TChainId): QuirkControllerClientAdapter
 }

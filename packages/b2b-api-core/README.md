@@ -1,6 +1,6 @@
 # B2B API Core Package
 
-Type-safe API client and contracts for Proxify B2B services.
+Type-safe API client and contracts for Quirk B2B services.
 
 ## Features
 

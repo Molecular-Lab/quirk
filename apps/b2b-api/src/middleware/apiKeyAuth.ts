@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import type { B2BClientUseCase } from "@proxify/core";
+import type { B2BClientUseCase } from "@quirk/core";
 import { logger } from "../logger";
 
 /**
@@ -12,7 +12,7 @@ import { logger } from "../logger";
  * - Constant-time comparison via bcrypt
  * - Prefix-based fast lookup (O(1)) before expensive bcrypt (O(n))
  * - Checks client.isActive status
- * - Environment separation (prod_pk vs test_pk)
+ * - Environment separation (pk_live vs pk_test)
  * 
  * Usage:
  * ```typescript
@@ -43,7 +43,8 @@ export function apiKeyAuth(clientUseCase: B2BClientUseCase) {
 			}
 
 			// Validate API key format (basic check before expensive bcrypt)
-			const apiKeyRegex = /^(prod|test)_pk_[a-f0-9]{32}$/;
+			// Format: pk_{live|test}_{32 hex chars} (Stripe-style)
+			const apiKeyRegex = /^pk_(live|test)_[a-f0-9]{32}$/;
 			if (!apiKeyRegex.test(apiKey)) {
 				logger.warn("[API Key Auth] Invalid API key format", {
 					path: req.path,
@@ -53,7 +54,7 @@ export function apiKeyAuth(clientUseCase: B2BClientUseCase) {
 				return res.status(401).json({
 					success: false,
 					error: "Invalid API key format",
-					hint: "API key must be in format: {env}_pk_{32_hex_chars}",
+					hint: "API key must be in format: pk_{live|test}_{32_hex_chars}",
 				});
 			}
 

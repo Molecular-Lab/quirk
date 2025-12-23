@@ -1,5 +1,5 @@
 {
-	"name": "@proxify/whitelabel-web",
+	"name": "@quirk/whitelabel-web",
 	"private": true,
 	"version": "0.0.0",
 	"type": "module",
@@ -17,8 +17,8 @@
 		"@dnd-kit/utilities": "^3.2.2",
 		"@hookform/resolvers": "^5.2.2",
 		"@privy-io/react-auth": "^3.8.1",
-		"@proxify/b2b-api-core": "workspace:*",
-		"@proxify/core": "workspace:*",
+		"@quirk/b2b-api-core": "workspace:*",
+		"@quirk/core": "workspace:*",
 		"@radix-ui/react-accordion": "^1.2.12",
 		"@radix-ui/react-alert-dialog": "^1.1.15",
 		"@radix-ui/react-avatar": "^1.1.11",

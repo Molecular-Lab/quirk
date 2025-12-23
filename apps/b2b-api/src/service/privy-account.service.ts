@@ -3,8 +3,8 @@
  * Business logic layer - maps between API DTOs and Repository layer
  */
 
-import type { PrivyAccountRepository } from "@proxify/core/repository/privy-account.repository";
-import type { CreatePrivyAccountInput } from "@proxify/core/entity/privy-account.entity";
+import type { PrivyAccountRepository } from "@quirk/core/repository/privy-account.repository";
+import type { CreatePrivyAccountInput } from "@quirk/core/entity/privy-account.entity";
 
 export class PrivyAccountService {
 	constructor(private readonly privyAccountRepository: PrivyAccountRepository) {}

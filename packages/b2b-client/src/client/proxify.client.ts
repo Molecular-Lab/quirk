@@ -1,5 +1,5 @@
 /**
- * Proxify B2B API Client
+ * Quirk B2B API Client
  * Main client class that aggregates all API clients
  */
 
@@ -10,12 +10,12 @@ import { ClientRegistrationClient } from './registration.client'
 import { AnalyticsClient } from './analytics.client'
 
 /**
- * Main Proxify B2B Client
+ * Main Quirk B2B Client
  * Aggregates all B2B API functionality
  *
  * @example
  * ```typescript
- * const client = new ProxifyB2BClient()
+ * const client = new QuirkB2BClient()
  *
  * // Register new client
  * await client.registration.register({ ... })
@@ -27,7 +27,7 @@ import { AnalyticsClient } from './analytics.client'
  * await client.analytics.getDashboardStats('product-id')
  * ```
  */
-export class ProxifyB2BClient {
+export class QuirkB2BClient {
 	private axiosInstance: AxiosInstance
 
 	// API Clients

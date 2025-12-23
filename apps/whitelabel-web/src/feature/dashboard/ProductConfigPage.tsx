@@ -1,8 +1,20 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
 
-import { Bot, Copy, Eye, EyeOff, Loader2, RefreshCw, Rocket, Save, Scale, Settings, Settings2, Shield } from "lucide-react"
+import {
+	Bot,
+	Copy,
+	Eye,
+	EyeOff,
+	Loader2,
+	RefreshCw,
+	Rocket,
+	Save,
+	Scale,
+	Settings,
+	Settings2,
+	Shield,
+} from "lucide-react"
 import { toast } from "sonner"
-import axios from "axios"
 
 import {
 	configureBankAccounts,
@@ -16,20 +28,21 @@ import {
 	updateProductStrategiesCustomization,
 	updateSupportedCurrencies,
 } from "@/api/b2bClientHelpers"
+import { AllocationDonutChart } from "@/components/charts/AllocationDonutChart"
 import { ProductSwitcher } from "@/components/ProductSwitcher"
+import { AllocationSlider } from "@/components/strategy/AllocationSlider"
+import { RiskProfileCard } from "@/components/strategy/RiskProfileCard"
+import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
+import { useFloatingConcierge } from "@/contexts/FloatingConciergeContext"
 import type { StrategyConfig } from "@/feature/dashboard/ProductStrategyConfig"
+import { useAPYCache } from "@/hooks/useAPYCache"
+import { useMockUSDCBalance } from "@/hooks/useMockUSDCBalance"
 import { useUserStore } from "@/store/userStore"
 import { Currency } from "@/types"
-import { AllocationDonutChart } from "@/components/charts/AllocationDonutChart"
-import { RiskProfileCard } from "@/components/strategy/RiskProfileCard"
-import { AllocationSlider } from "@/components/strategy/AllocationSlider"
-import { useFloatingConcierge } from "@/contexts/FloatingConciergeContext"
-import { useMockUSDCBalance } from "@/hooks/useMockUSDCBalance"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8888/api/v1"
 const CUSTODIAL_WALLET_ADDRESS = import.meta.env.VITE_CUSTODIAL_WALLET_ADDRESS
 
 const currencies = [
@@ -98,9 +111,23 @@ const RISK_PROFILES: RiskProfile[] = [
 
 const DEFAULT_ALLOCATIONS: ProtocolAllocation[] = [
 	{ id: "aave", name: "Aave V3", allocation: 50, expectedAPY: "0.00", tvl: "0", color: PROTOCOL_COLORS.aave },
-	{ id: "compound", name: "Compound V3", allocation: 30, expectedAPY: "0.00", tvl: "0", color: PROTOCOL_COLORS.compound },
+	{
+		id: "compound",
+		name: "Compound V3",
+		allocation: 30,
+		expectedAPY: "0.00",
+		tvl: "0",
+		color: PROTOCOL_COLORS.compound,
+	},
 	{ id: "morpho", name: "Morpho", allocation: 20, expectedAPY: "0.00", tvl: "0", color: PROTOCOL_COLORS.morpho },
 ]
+
+// Predefined strategy allocations - used for instant client-side calculation
+const STRATEGY_ALLOCATIONS: Record<string, { aave: number; compound: number; morpho: number }> = {
+	conservative: { aave: 60, compound: 30, morpho: 10 },
+	moderate: { aave: 40, compound: 35, morpho: 25 },
+	aggressive: { aave: 20, compound: 25, morpho: 55 },
+}
 
 export function ProductConfigPage() {
 	const { activeProductId, organizations, isOrganizationsLoaded } = useUserStore()
@@ -139,12 +166,15 @@ export function ProductConfigPage() {
 	// API Key State
 	const [showApiKey, setShowApiKey] = useState(false)
 	const [generatedApiKey, setGeneratedApiKey] = useState("")
+	const [apiKeyEnvironment, setApiKeyEnvironment] = useState<"sandbox" | "production">("sandbox")
+	const [sandboxApiKey, setSandboxApiKey] = useState<string>("")
+	const [productionApiKey, setProductionApiKey] = useState<string>("")
 
 	// Fee Configuration State
 	const [feeConfig, setFeeConfig] = useState({
 		clientRevenueSharePercent: "15.00", // Default 15%
-		platformFeePercent: "7.50", // Platform fee (read-only)
-		enduserFeePercent: "77.50", // Calculated: 100 - client - platform
+		platformFeePercent: "10.00", // Platform fee (read-only)
+		enduserFeePercent: "75.00", // Calculated: 100 - client - platform
 	})
 
 	// Investment Strategy State (from ProductStrategyConfig)
@@ -154,17 +184,25 @@ export function ProductConfigPage() {
 	// Risk Profile & Allocation State
 	const [selectedProfile, setSelectedProfile] = useState<RiskProfile>(RISK_PROFILES[0])
 	const [allocations, setAllocations] = useState<ProtocolAllocation[]>(DEFAULT_ALLOCATIONS)
-	const [isOptimizing, setIsOptimizing] = useState(false)
 	const [bestChain, setBestChain] = useState<{ chainId: number; chainName: string } | null>(null)
 
 	const { data: balance, isLoading: balanceLoading } = useMockUSDCBalance(CUSTODIAL_WALLET_ADDRESS)
 	const { openWithContext } = useFloatingConcierge()
 
-	// Calculate blended APY
-	const blendedAPY = allocations.reduce((sum, alloc) => {
-		const apy = parseFloat(alloc.expectedAPY) || 0
-		return sum + (apy * alloc.allocation) / 100
-	}, 0).toFixed(2)
+	// Fetch APY data once on mount with 5-minute cache
+	const { apys } = useAPYCache("USDC", 8453)
+
+	// Calculate blended APY from cached APYs (instant, no API call)
+	const blendedAPY = useMemo(() => {
+		if (!apys) return "0.00"
+
+		let total = 0
+		for (const alloc of allocations) {
+			const apy = parseFloat(apys[alloc.id] || "0")
+			total += (apy * alloc.allocation) / 100
+		}
+		return total.toFixed(2)
+	}, [allocations, apys])
 
 	const totalAllocation = allocations.reduce((sum, a) => sum + a.allocation, 0)
 	const isValidAllocation = totalAllocation === 100
@@ -265,7 +303,11 @@ export function ProductConfigPage() {
 						// Update supported currencies if available
 						if (product.supportedCurrencies && Array.isArray(product.supportedCurrencies)) {
 							console.log("[ProductConfigPage] ✅ Setting supportedCurrencies:", product.supportedCurrencies)
-							setSelectedCurrencies(product.supportedCurrencies as Currency[])
+							setSelectedCurrencies(
+								(product.supportedCurrencies as string[])
+									.filter((c: string) => Object.values(Currency).includes(c as Currency))
+									.map((c: string) => c as Currency),
+							)
 						} else {
 							console.log("[ProductConfigPage] ⚠️ No supportedCurrencies in product data")
 						}
@@ -319,7 +361,7 @@ export function ProductConfigPage() {
 
 				if (feeData) {
 					const clientPercent = parseFloat(feeData.clientRevenueSharePercent || "15.00")
-					const platformPercent = parseFloat(feeData.platformFeePercent || "7.50")
+					const platformPercent = parseFloat(feeData.platformFeePercent || "10.00")
 					const enduserPercent = 100 - clientPercent - platformPercent
 
 					const calculatedFeeConfig = {
@@ -333,23 +375,95 @@ export function ProductConfigPage() {
 					console.log("[ProductConfigPage] ⚠️ No feeData found, using defaults")
 				}
 
-				// Update investment strategies - FIX: Load from API
-				const strategies = (strategiesData as any)?.data?.strategies
-				console.log("[ProductConfigPage] 🔍 Extracted strategies from .data.strategies:", strategies)
+				// Update investment strategies - FIX: Load from API and set allocations
+				// Note: getEffectiveProductStrategies returns { strategies, source } directly (not wrapped in .data)
+				const strategies = (strategiesData as any)?.strategies
+				console.log("[ProductConfigPage] 🔍 Extracted strategies:", strategies)
 
-				if (strategies) {
+				if (strategies?.lending) {
 					console.log("[ProductConfigPage] ✅ Setting investmentStrategy:", strategies)
 					setInvestmentStrategy(strategies)
+
+					// Set allocations from saved strategy
+					const savedAllocations: ProtocolAllocation[] = [
+						{
+							id: "aave",
+							name: "Aave V3",
+							allocation: strategies.lending.aave || 0,
+							expectedAPY: "0.00",
+							tvl: "0",
+							color: PROTOCOL_COLORS.aave,
+						},
+						{
+							id: "compound",
+							name: "Compound V3",
+							allocation: strategies.lending.compound || 0,
+							expectedAPY: "0.00",
+							tvl: "0",
+							color: PROTOCOL_COLORS.compound,
+						},
+						{
+							id: "morpho",
+							name: "Morpho",
+							allocation: strategies.lending.morpho || 0,
+							expectedAPY: "0.00",
+							tvl: "0",
+							color: PROTOCOL_COLORS.morpho,
+						},
+					]
+					setAllocations(savedAllocations)
+					console.log("[ProductConfigPage] ✅ Set allocations from saved strategy:", savedAllocations)
+
+					// Detect which profile matches the saved allocations
+					const aave = strategies.lending.aave || 0
+					const compound = strategies.lending.compound || 0
+					const morpho = strategies.lending.morpho || 0
+
+					let matchedProfile = RISK_PROFILES.find((p) => p.id === "custom") // Default to custom
+
+					for (const [profileId, allocs] of Object.entries(STRATEGY_ALLOCATIONS)) {
+						if (allocs.aave === aave && allocs.compound === compound && allocs.morpho === morpho) {
+							matchedProfile = RISK_PROFILES.find((p) => p.id === profileId) || matchedProfile
+							break
+						}
+					}
+
+					if (matchedProfile) {
+						setSelectedProfile(matchedProfile)
+						console.log("[ProductConfigPage] ✅ Detected profile:", matchedProfile.id)
+					}
+
+					// Set best chain (default to Base)
+					setBestChain({ chainId: 8453, chainName: "Base" })
 				} else {
-					console.log("[ProductConfigPage] ⚠️ No strategies found in response")
+					console.log("[ProductConfigPage] ⚠️ No strategies found, using Conservative default")
+					// Only set default if no saved strategy exists
+					const defaultProfile = RISK_PROFILES[0] // Conservative
+					setSelectedProfile(defaultProfile)
+					const defaultAllocs = STRATEGY_ALLOCATIONS.conservative
+					setAllocations([
+						{ ...DEFAULT_ALLOCATIONS[0], allocation: defaultAllocs.aave },
+						{ ...DEFAULT_ALLOCATIONS[1], allocation: defaultAllocs.compound },
+						{ ...DEFAULT_ALLOCATIONS[2], allocation: defaultAllocs.morpho },
+					])
+					setBestChain({ chainId: 8453, chainName: "Base" })
 				}
 
-				// Update API key from API response (apiKeyPrefix from database)
+				// Update API keys from API response (environment-specific)
 				// productData structure: { found: boolean, data: {...}, message: string }
-				const apiKeyPrefix = (productData as any)?.data?.apiKeyPrefix || null
-				setGeneratedApiKey(apiKeyPrefix ?? "")
+				const sandboxKey = (productData as any)?.data?.sandboxApiKeyPrefix || ""
+				const productionKey = (productData as any)?.data?.productionApiKeyPrefix || ""
 
-				console.log("[ProductConfigPage] Loaded API key prefix from database:", apiKeyPrefix ? "✓ Generated" : "✗ Not generated")
+				setSandboxApiKey(sandboxKey)
+				setProductionApiKey(productionKey)
+
+				// Set displayed key based on current environment
+				setGeneratedApiKey(apiKeyEnvironment === "sandbox" ? sandboxKey : productionKey)
+
+				console.log("[ProductConfigPage] Loaded API keys from database:", {
+					sandbox: sandboxKey ? "✓ Generated" : "✗ Not generated",
+					production: productionKey ? "✓ Generated" : "✗ Not generated",
+				})
 			} catch (error) {
 				console.error("[ProductConfigPage] Error loading product config:", error)
 				toast.error("Failed to load product configuration")
@@ -361,13 +475,33 @@ export function ProductConfigPage() {
 		void loadProductConfig()
 	}, [activeProductId, organizations, isOrganizationsLoaded])
 
-	// Auto-fetch optimization on mount for default profile
+	// Update displayed API key when environment changes
 	useEffect(() => {
-		handleProfileSelect(RISK_PROFILES[0])
-	}, [])
+		setGeneratedApiKey(apiKeyEnvironment === "sandbox" ? sandboxApiKey : productionApiKey)
+	}, [apiKeyEnvironment, sandboxApiKey, productionApiKey])
 
-	// Handle risk profile selection
-	const handleProfileSelect = async (profile: RiskProfile) => {
+	// Convert allocations to investmentStrategy format whenever allocations change
+	useEffect(() => {
+		if (allocations.length > 0) {
+			const strategy: StrategyConfig = {
+				lending: {
+					aave: allocations.find((a) => a.id === "aave")?.allocation || 0,
+					compound: allocations.find((a) => a.id === "compound")?.allocation || 0,
+					morpho: allocations.find((a) => a.id === "morpho")?.allocation || 0,
+				},
+				lp: {},
+				staking: {},
+			}
+			setInvestmentStrategy(strategy)
+			console.log("[ProductConfigPage] Investment strategy updated from allocations:", strategy)
+		}
+	}, [allocations])
+
+	// Note: Profile initialization is handled in loadProductConfig() above
+	// It loads saved strategy from API, or defaults to Conservative if none exists
+
+	// Handle risk profile selection - INSTANT, no API call
+	const handleProfileSelect = (profile: RiskProfile) => {
 		setSelectedProfile(profile)
 
 		if (profile.id === "custom") {
@@ -381,43 +515,36 @@ export function ProductConfigPage() {
 			return
 		}
 
-		// Fetch optimized allocation from multi-chain API
-		setIsOptimizing(true)
-		try {
-			const response = await axios.post(`${API_BASE_URL}/defi/optimize-multi`, {
-				token: "USDC",
-				riskLevel: profile.id,
-				positionSizeUSD: 10000, // Default position size
-				holdPeriodDays: 30,
-			})
+		// Get predefined allocations for this risk level (instant, no API call!)
+		const strategyAllocs = STRATEGY_ALLOCATIONS[profile.id]
+		if (!strategyAllocs) return
 
-			const { allocation, bestChain: recommendedChain } = response.data
+		// Default to Base chain for now
+		setBestChain({ chainId: 8453, chainName: "Base" })
 
-			// Update best chain
-			setBestChain(recommendedChain)
-
-			const newAllocations: ProtocolAllocation[] = allocation.map((alloc: any) => ({
-				id: alloc.protocol,
-				name: alloc.protocol === "aave" ? "Aave V3" : alloc.protocol === "compound" ? "Compound V3" : "Morpho",
-				allocation: alloc.percentage,
-				expectedAPY: alloc.expectedAPY,
-				tvl: alloc.tvl,
-				color: PROTOCOL_COLORS[alloc.protocol],
-			}))
-
-			setAllocations(newAllocations)
-		} catch (error) {
-			console.error("Failed to optimize allocation:", error)
-		} finally {
-			setIsOptimizing(false)
-		}
+		// Update allocations with predefined percentages
+		setAllocations((prev) =>
+			prev.map((alloc) => ({
+				...alloc,
+				allocation: strategyAllocs[alloc.id],
+			})),
+		)
 	}
 
-	// Handle custom allocation change
+	// Handle custom allocation change with smart limit
 	const handleAllocationChange = (id: string, value: number) => {
-		setAllocations((prev) =>
-			prev.map((a) => (a.id === id ? { ...a, allocation: value } : a))
-		)
+		setAllocations((prev) => {
+			// Calculate sum of OTHER allocations (not the one being changed)
+			const otherAllocationsSum = prev.filter((a) => a.id !== id).reduce((sum, a) => sum + a.allocation, 0)
+
+			// Max allowed for this protocol = 100 - sum of others
+			const maxAllowed = 100 - otherAllocationsSum
+
+			// Constrain value between 0 and maxAllowed
+			const constrainedValue = Math.min(Math.max(0, value), maxAllowed)
+
+			return prev.map((a) => (a.id === id ? { ...a, allocation: constrainedValue } : a))
+		})
 	}
 
 	// Open AI concierge with context
@@ -462,12 +589,17 @@ Help them understand or refine their strategy.`
 				setGeneratedApiKey(newKey)
 
 				// ✅ Save to demoProductStore for demos
-				const { setApiKey } = await import("@/store/demoProductStore").then(m => m.useDemoProductStore.getState())
+				const { setApiKey } = await import("@/store/demoProductStore").then((m) => m.useDemoProductStore.getState())
 				setApiKey(activeProductId, newKey)
 
-				console.log("[ProductConfigPage] ✅ New API Key generated:", newKey.substring(0, 12) + "...")
+				console.log(
+					`[ProductConfigPage] ✅ New ${apiKeyEnvironment} API Key generated:`,
+					newKey.substring(0, 12) + "...",
+				)
 				console.log("[ProductConfigPage] ✅ API Key saved to demoProductStore")
-				toast.success("New API key generated! Please copy it now - you won't be able to see the full key again.")
+				toast.success(
+					`New ${apiKeyEnvironment} API key generated! Please copy it now - you won't be able to see the full key again.`,
+				)
 			} else {
 				toast.error("Failed to regenerate API key")
 			}
@@ -758,7 +890,7 @@ Help them understand or refine their strategy.`
 											expectedAPY={profile.expectedAPY}
 											description={profile.description}
 											isSelected={selectedProfile.id === profile.id}
-											isLoading={isOptimizing && selectedProfile.id === profile.id}
+											isLoading={false}
 											onClick={() => handleProfileSelect(profile)}
 										/>
 									))}
@@ -777,7 +909,9 @@ Help them understand or refine their strategy.`
 									)}
 								</div>
 
-								<div className={`flex ${selectedProfile.id === "custom" ? "flex-col md:flex-row" : "flex-col"} items-center gap-6`}>
+								<div
+									className={`flex ${selectedProfile.id === "custom" ? "flex-col md:flex-row" : "flex-col"} items-center gap-6`}
+								>
 									{/* Donut Chart - centered when not custom */}
 									<div className={selectedProfile.id === "custom" ? "" : "w-full flex justify-center"}>
 										<AllocationDonutChart
@@ -791,9 +925,7 @@ Help them understand or refine their strategy.`
 									{/* Custom Sliders (only for custom profile) */}
 									{selectedProfile.id === "custom" && (
 										<div className="flex-1 w-full space-y-4">
-											<p className="text-sm text-gray-600 mb-4">
-												Adjust the allocation percentages (must total 100%)
-											</p>
+											<p className="text-sm text-gray-600 mb-4">Adjust the allocation percentages (must total 100%)</p>
 											{allocations.map((alloc) => (
 												<AllocationSlider
 													key={alloc.id}
@@ -806,8 +938,11 @@ Help them understand or refine their strategy.`
 											))}
 
 											{/* Total indicator */}
-											<div className={`text-sm font-medium pt-2 border-t ${isValidAllocation ? "text-emerald-600" : "text-red-600"
-												}`}>
+											<div
+												className={`text-sm font-medium pt-2 border-t ${
+													isValidAllocation ? "text-emerald-600" : "text-red-600"
+												}`}
+											>
 												Total: {totalAllocation}%
 												{!isValidAllocation && (
 													<span className="text-xs ml-2">
@@ -841,57 +976,107 @@ Help them understand or refine their strategy.`
 							</div>
 
 							<div className="space-y-4">
+								{/* Environment Selector */}
 								<div>
-									<label className="block text-xs font-medium text-gray-700 mb-2">API Key</label>
+									<label className="block text-xs font-medium text-gray-700 mb-2">Environment</label>
+									<div className="grid grid-cols-2 gap-2">
+										<button
+											onClick={() => {
+												setApiKeyEnvironment("sandbox")
+											}}
+											className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+												apiKeyEnvironment === "sandbox"
+													? "bg-blue-500 text-white shadow-sm"
+													: "bg-gray-100 text-gray-700 hover:bg-gray-200"
+											}`}
+										>
+											Sandbox (Test)
+										</button>
+										<button
+											onClick={() => {
+												setApiKeyEnvironment("production")
+											}}
+											className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+												apiKeyEnvironment === "production"
+													? "bg-green-600 text-white shadow-sm"
+													: "bg-gray-100 text-gray-700 hover:bg-gray-200"
+											}`}
+										>
+											Production (Live)
+										</button>
+									</div>
+								</div>
+
+								{/* API Key Input */}
+								<div>
+									<label className="block text-xs font-medium text-gray-700 mb-2">
+										{apiKeyEnvironment === "sandbox" ? "Sandbox API Key" : "Production API Key"}
+									</label>
 									<div className="relative">
 										<Input
-											type={showApiKey ? "text" : "password"}
-											value={generatedApiKey}
+											type={showApiKey || !generatedApiKey ? "text" : "password"}
+											value={generatedApiKey || ""}
 											readOnly
-											className="pr-20 bg-gray-50 font-mono"
+											placeholder={generatedApiKey ? "" : "No API key generated yet"}
+											className="pr-20 bg-gray-50 font-mono text-sm"
 										/>
-										<div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-											<button
-												onClick={() => {
-													setShowApiKey(!showApiKey)
-												}}
-												className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-												title={showApiKey ? "Hide" : "Show"}
-											>
-												{showApiKey ? (
-													<EyeOff className="w-4 h-4 text-gray-600" />
-												) : (
-													<Eye className="w-4 h-4 text-gray-600" />
-												)}
-											</button>
-											<button
-												onClick={handleCopyApiKey}
-												className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-												title="Copy"
-											>
-												<Copy className="w-4 h-4 text-gray-600" />
-											</button>
-										</div>
+										{generatedApiKey && (
+											<div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+												<button
+													onClick={() => {
+														setShowApiKey(!showApiKey)
+													}}
+													className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+													title={showApiKey ? "Hide" : "Show"}
+												>
+													{showApiKey ? (
+														<EyeOff className="w-4 h-4 text-gray-600" />
+													) : (
+														<Eye className="w-4 h-4 text-gray-600" />
+													)}
+												</button>
+												<button
+													onClick={handleCopyApiKey}
+													className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+													title="Copy"
+												>
+													<Copy className="w-4 h-4 text-gray-600" />
+												</button>
+											</div>
+										)}
 									</div>
+									{!generatedApiKey && (
+										<p className="text-xs text-gray-500 mt-1.5">
+											Click "Generate Key" below to create your {apiKeyEnvironment} API key
+										</p>
+									)}
 								</div>
 
+								{/* Generate/Regenerate Button */}
 								<button
 									onClick={handleRegenerateApiKey}
-									className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-50 border border-red-200 text-red-700 rounded-xl font-medium hover:bg-red-100 transition-colors"
+									className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${
+										generatedApiKey
+											? "bg-red-50 border border-red-200 text-red-700 hover:bg-red-100"
+											: "bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
+									} rounded-xl font-medium transition-colors`}
 								>
 									<RefreshCw className="w-4 h-4" />
-									Regenerate Key
+									{generatedApiKey ? "Regenerate Key" : "Generate Key"}
 								</button>
 
-								<div className="bg-warning-light border border-warning/20 rounded-lg p-3">
-									<div className="flex items-start gap-2">
-										<span className="text-warning text-sm">⚠️</span>
-										<p className="text-xs text-gray-950">
-											<strong>Warning:</strong> Regenerating will invalidate the current key. Update all integrations
-											immediately.
-										</p>
+								{/* Warning Message */}
+								{generatedApiKey && (
+									<div className="bg-warning-light border border-warning/20 rounded-lg p-3">
+										<div className="flex items-start gap-2">
+											<span className="text-warning text-sm">⚠️</span>
+											<p className="text-xs text-gray-950">
+												<strong>Warning:</strong> Regenerating will invalidate the current key. Update all integrations
+												immediately.
+											</p>
+										</div>
 									</div>
-								</div>
+								)}
 							</div>
 						</div>
 
@@ -1012,7 +1197,9 @@ Help them understand or refine their strategy.`
 							<label className="flex items-start gap-3 p-4 bg-gray-50 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-100 transition-colors">
 								<Checkbox
 									checked={applyStrategyToAll}
-									onCheckedChange={(checked) => setApplyStrategyToAll(checked === true)}
+									onCheckedChange={(checked) => {
+										setApplyStrategyToAll(checked === true)
+									}}
 									disabled={isSaving}
 									className="mt-0.5"
 								/>
@@ -1028,27 +1215,27 @@ Help them understand or refine their strategy.`
 						)}
 
 						{/* Save Button */}
-						<button
+						<Button
 							onClick={handleSaveConfig}
 							disabled={isSaving}
-							className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white px-6 py-4 rounded-lg font-medium hover:bg-blue-600 shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+							className="w-full flex items-center justify-center gap-2 bg-blue-500 text-white px-6 py-4 rounded-lg font-medium hover:bg-blue-600 shadow-sm transition-all !cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
 						>
 							{isSaving ? (
 								<>
-									<Loader2 className="w-5 h-5 animate-spin" />
+									<Loader2 className="w-5 h-5 animate-spin cursor-pointer" />
 									{applyStrategyToAll
 										? `Saving & Applying to All ${organizations.length} Products...`
 										: "Saving Configuration..."}
 								</>
 							) : (
 								<>
-									<Save className="w-5 h-5" />
+									<Save className="w-5 h-5 cursor-pointer" />
 									{applyStrategyToAll
 										? `Save & Apply to All ${organizations.length} Products`
 										: "Save Product Configuration"}
 								</>
 							)}
-						</button>
+						</Button>
 					</div>
 				</div>
 
@@ -1064,6 +1251,7 @@ Help them understand or refine their strategy.`
 					<div className="space-y-6">
 						{selectedCurrencies.map((currency) => {
 							const currencyInfo = currencies.find((c) => c.value === currency)
+							// Provide default empty values if bankData doesn't exist for this currency
 							const bankData = bankAccounts[currency] || {
 								accountNumber: "",
 								accountName: "",

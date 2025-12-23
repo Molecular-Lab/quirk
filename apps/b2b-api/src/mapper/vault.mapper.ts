@@ -3,8 +3,8 @@
  * Maps between database entities and API DTOs
  */
 
-import type { GetClientVaultRow, GetClientVaultByTokenRow, ListClientVaultsRow } from "@proxify/sqlcgen";
-import type { VaultDto } from "@proxify/b2b-api-core";
+import type { GetClientVaultRow, GetClientVaultByTokenRow, ListClientVaultsRow } from "@quirk/sqlcgen";
+import type { VaultDto } from "@quirk/b2b-api-core";
 
 /**
  * Map database vault row to API VaultDto

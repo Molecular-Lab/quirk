@@ -11,7 +11,7 @@ const MOCK_RESPONSES: Record<number, ChatMessage> = {
 		id: "0",
 		role: "assistant",
 		content:
-			"👋 Hello! I'm Proxify AI Assistant. I'll help you design the perfect DeFi strategy for your business. Let's start with understanding your goals. What type of business are you running?",
+			"👋 Hello! I'm Quirk AI Assistant. I'll help you design the perfect DeFi strategy for your business. Let's start with understanding your goals. What type of business are you running?",
 		timestamp: new Date(),
 	},
 	1: {
@@ -110,7 +110,7 @@ export default function ChatBot({ onAnalysisComplete }: ChatBotProps) {
 					AI
 				</div>
 				<div>
-					<h3 className="font-semibold text-gray-900">Proxify AI Assistant</h3>
+					<h3 className="font-semibold text-gray-900">Quirk AI Assistant</h3>
 					<p className="text-sm text-gray-500">Strategy Analysis & Recommendations</p>
 				</div>
 				<div className="ml-auto flex items-center gap-2">

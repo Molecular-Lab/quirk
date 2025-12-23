@@ -1,12 +1,12 @@
 import { z } from "zod"
 
-export const ProxifyAccessControl = z.enum([
+export const QuirkAccessControl = z.enum([
 	"DEFAULT_ADMIN_ROLE", // 0x000
 	"ORACLE_ROLE", // 0x68e79a7bf1e0bc45d0a330c573bc367f9cf464fd326078812f301165fbda4ef1 => 0x41649a1F8B2499e2F7884184D062639CEF9d0601
 	"GUARDIAN_ROLE", // 0x55435dd261a4b9b3364963f7738a7a662ad9c84396d64be3365284bb7f0a5041 => 0x86e81062195FF1Ec890Af8d9A175C138D9E44D38
 	"ADMIN_MULTISIG", // 0x2aD3c10a33D671c2d15104aFCE18D9AFb6b4950C
 ])
-export type ProxifyAccessControlType = z.infer<typeof ProxifyAccessControl>
+export type QuirkAccessControlType = z.infer<typeof QuirkAccessControl>
 
 export const ROLE_HASHES = {
 	DEFAULT_ADMIN_ROLE: "0x0000000000000000000000000000000000000000000000000000000000000000",

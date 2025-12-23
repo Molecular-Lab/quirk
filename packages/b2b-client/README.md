@@ -1,8 +1,8 @@
 # @proxify/b2b-client
 
-**Official B2B API Client for Proxify Deposit Operations**
+**Official B2B API Client for Quirk Deposit Operations**
 
-This package provides a type-safe client for integrating Proxify's B2B deposit functionality into your platform (YouTube, E-commerce, Gaming, etc.). It supports **two on-ramp types**:
+This package provides a type-safe client for integrating Quirk's B2B deposit functionality into your platform (YouTube, E-commerce, Gaming, etc.). It supports **two on-ramp types**:
 
 1. **External Payment** (Apple Pay/Transak) - Users pay NEW money
 2. **Internal Transfer** - Users transfer EXISTING balance in your system
@@ -36,9 +36,9 @@ PROXIFY_ENVIRONMENT=development # production | staging | development
 ### 2. Initialize Client
 
 ```typescript
-import { ProxifyB2BClient } from '@proxify/b2b-client'
+import { QuirkB2BClient } from '@proxify/b2b-client'
 
-const client = new ProxifyB2BClient()
+const client = new QuirkB2BClient()
 ```
 
 ### 3. Create Deposit (External Payment)
@@ -80,14 +80,14 @@ console.log('Transfer complete:', deposit.data.orderId)
 
 ## 📖 API Reference
 
-### `ProxifyB2BClient`
+### `QuirkB2BClient`
 
 Main client class.
 
 #### Constructor
 
 ```typescript
-const client = new ProxifyB2BClient(axiosInstance?: AxiosInstance)
+const client = new QuirkB2BClient(axiosInstance?: AxiosInstance)
 ```
 
 Uses singleton axios instance from environment config by default.
@@ -173,7 +173,7 @@ deposits.data.forEach(deposit => {
 
 #### `getClientBalance()`
 
-Get client's prepaid balance with Proxify (for internal transfers).
+Get client's prepaid balance with Quirk (for internal transfers).
 
 **Returns:** `Promise<ClientBalance>`
 
@@ -194,9 +194,9 @@ console.log(`Total: $${balance.total}`)
 ### YouTube Creator Dashboard
 
 ```typescript
-import { ProxifyB2BClient } from '@proxify/b2b-client'
+import { QuirkB2BClient } from '@proxify/b2b-client'
 
-const client = new ProxifyB2BClient()
+const client = new QuirkB2BClient()
 
 // Creator transfers $5k from YouTube balance to earn 7.3% APY
 const deposit = await client.deposits.create({
@@ -265,7 +265,7 @@ This package follows **Clean Architecture** principles:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `PROXIFY_API_KEY` | ✅ | Your Proxify API key |
+| `PROXIFY_API_KEY` | ✅ | Your Quirk API key |
 | `PROXIFY_PRODUCT_ID` | ✅ | Your product ID |
 | `PROXIFY_ENVIRONMENT` | ❌ | `production` \| `staging` \| `development` (default: `development`) |
 | `PROXIFY_BASE_URL` | ❌ | Custom API URL (overrides environment) |
@@ -295,4 +295,4 @@ pnpm test
 
 ## 📝 License
 
-MIT © Proxify Finance
+MIT © Quirk Finance

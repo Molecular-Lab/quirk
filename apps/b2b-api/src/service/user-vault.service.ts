@@ -1,11 +1,11 @@
 /**
  * UserVault Service - Business logic for user vault operations
  *
- * SIMPLIFIED ARCHITECTURE: ONE vault per user per client
+ * ENVIRONMENT-AWARE: One vault per user per client PER ENVIRONMENT
  */
 
-import type { B2BUserVaultUseCase } from "@proxify/core/usecase/b2b/user-vault.usecase";
-import type { ClientGrowthIndexService } from "@proxify/core/service/client-growth-index.service";
+import type { B2BUserVaultUseCase } from "@quirk/core/usecase/b2b/user-vault.usecase";
+import type { ClientGrowthIndexService } from "@quirk/core/service/client-growth-index.service";
 import { logger } from "../logger";
 
 export class UserVaultService {
@@ -15,40 +15,40 @@ export class UserVaultService {
 	) {}
 
 	/**
-	 * Get user balance (simplified - single vault per client)
+	 * Get user balance (with environment support)
 	 */
-	async getUserBalance(userId: string, clientId: string) {
+	async getUserBalance(userId: string, clientId: string, environment: "sandbox" | "production" = "sandbox") {
 		try {
-			const balance = await this.userVaultUseCase.getUserBalance(userId, clientId);
+			const balance = await this.userVaultUseCase.getUserBalance(userId, clientId, environment);
 			return balance;
 		} catch (error) {
-			logger.error("Failed to get user balance", { error, userId, clientId });
+			logger.error("Failed to get user balance", { error, userId, clientId, environment });
 			throw error;
 		}
 	}
 
 	/**
-	 * Get user's portfolio (single vault)
+	 * Get user's portfolio (with environment support)
 	 */
-	async getUserPortfolio(userId: string, clientId: string) {
+	async getUserPortfolio(userId: string, clientId: string, environment: "sandbox" | "production" = "sandbox") {
 		try {
-			const portfolio = await this.userVaultUseCase.getUserPortfolio(userId, clientId);
+			const portfolio = await this.userVaultUseCase.getUserPortfolio(userId, clientId, environment);
 			return portfolio;
 		} catch (error) {
-			logger.error("Failed to get user portfolio", { error, userId, clientId });
+			logger.error("Failed to get user portfolio", { error, userId, clientId, environment });
 			throw error;
 		}
 	}
 
 	/**
-	 * List all users in client's vault
+	 * List all users in client's vault (for specific environment)
 	 */
-	async listVaultUsers(clientId: string, limit: number = 100, offset: number = 0) {
+	async listVaultUsers(clientId: string, environment: "sandbox" | "production" = "sandbox", limit: number = 100, offset: number = 0) {
 		try {
-			const users = await this.userVaultUseCase.listVaultUsers(clientId, limit, offset);
+			const users = await this.userVaultUseCase.listVaultUsers(clientId, environment, limit, offset);
 			return users;
 		} catch (error) {
-			logger.error("Failed to list vault users", { error, clientId });
+			logger.error("Failed to list vault users", { error, clientId, environment });
 			throw error;
 		}
 	}

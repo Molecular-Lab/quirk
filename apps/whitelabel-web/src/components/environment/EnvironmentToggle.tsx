@@ -74,7 +74,7 @@ export function EnvironmentToggle() {
 					<div className="flex-1">
 						<p className="text-sm font-semibold text-red-900">Production Mode Active</p>
 						<p className="text-xs text-red-700 mt-1">
-							You are using LIVE API keys. All transactions will use real funds on Ethereum Mainnet.
+							You are using LIVE API keys. All transactions will use real funds on the production network.
 						</p>
 					</div>
 				</div>
@@ -92,7 +92,7 @@ export function EnvironmentToggle() {
 							<p>You are about to enable <strong>Production Mode</strong>. This will:</p>
 							<ul className="list-disc list-inside space-y-1 text-sm">
 								<li>Use <strong>live API keys</strong> (pk_live_xxx)</li>
-								<li>Process transactions on <strong>Ethereum Mainnet</strong></li>
+								<li>Process transactions on the <strong>production network</strong></li>
 								<li>Use <strong>real USDC</strong> and incur real gas fees</li>
 								<li>Affect <strong>real user funds</strong></li>
 							</ul>

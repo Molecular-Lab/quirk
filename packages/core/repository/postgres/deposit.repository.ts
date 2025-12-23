@@ -1,5 +1,5 @@
 /**
- * Deposit Repository - Proxify Pattern
+ * Deposit Repository - Quirk Pattern
  * ✅ SQLC-generated queries from database/queries/deposit.sql
  */
 
@@ -26,6 +26,9 @@ import {
 	// Operations Dashboard Queries
 	listAllPendingDeposits,
 	listPendingDepositsByClient,
+	// Environment-filtered Queries
+	listAllPendingDepositsByEnvironment,
+	listPendingDepositsByClientAndEnvironment,
 	// Deposit Queue Queries
 	getDepositQueueItem,
 	listPendingDepositQueue,
@@ -45,6 +48,8 @@ import {
 	type ListExpiredDepositsRow,
 	type ListAllPendingDepositsRow,
 	type ListPendingDepositsByClientRow,
+	type ListAllPendingDepositsByEnvironmentRow,
+	type ListPendingDepositsByClientAndEnvironmentRow,
 	type CreateDepositArgs,
 	type CreateDepositRow,
 	type CompleteDepositByOrderIDRow,
@@ -54,7 +59,7 @@ import {
 	type CreateDepositQueueItemArgs,
 	type CreateDepositQueueItemRow,
 	type GetDepositStatsRow,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"
 import { Sql } from "postgres"
 
 export class DepositRepository {
@@ -139,6 +144,18 @@ export class DepositRepository {
 
 	async listPendingByClient(clientId: string): Promise<ListPendingDepositsByClientRow[]> {
 		return await listPendingDepositsByClient(this.sql, { clientId })
+	}
+
+	// Environment-filtered Methods
+	async listAllPendingByEnvironment(environment: string): Promise<ListAllPendingDepositsByEnvironmentRow[]> {
+		return await listAllPendingDepositsByEnvironment(this.sql, { environment })
+	}
+
+	async listPendingByClientAndEnvironment(
+		clientId: string,
+		environment: string,
+	): Promise<ListPendingDepositsByClientAndEnvironmentRow[]> {
+		return await listPendingDepositsByClientAndEnvironment(this.sql, { clientId, environment })
 	}
 
 	async completeByOrderId(

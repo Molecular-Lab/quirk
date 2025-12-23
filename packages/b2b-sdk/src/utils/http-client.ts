@@ -78,9 +78,16 @@ export class HttpClient {
 	}
 
 	/**
+	 * Get the base URL of the client
+	 */
+	get baseURL(): string | undefined {
+		return this.client.defaults.baseURL
+	}
+
+	/**
 	 * Build query string from params object
 	 */
-	buildQueryString(params: Record<string, unknown>): string {
+	buildQueryString(params: Record<string, unknown> | object): string {
 		const query = new URLSearchParams()
 
 		Object.entries(params).forEach(([key, value]) => {

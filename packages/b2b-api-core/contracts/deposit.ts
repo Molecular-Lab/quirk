@@ -51,10 +51,11 @@ const CreateFiatDepositSchema = z.object({
 	currency: z.enum(["SGD", "USD", "EUR", "THB", "TWD", "KRW"]).describe("Fiat currency - determines which bank account to show"),
 	tokenSymbol: z.string().default("USDC").describe("Target token (USDC, USDT, etc.)"),
 	clientReference: z.string().optional().describe("Client's internal reference ID"),
+	environment: z.enum(["sandbox", "production"]).optional().describe("Environment for this deposit (default: sandbox)"),
 });
 
 const FiatDepositResponseSchema = z.object({
-	orderId: z.string().describe("Proxify order ID for tracking"),
+	orderId: z.string().describe("Quirk order ID for tracking"),
 	status: z.enum(["pending"]),
 
 	// Bank transfer payment instructions (currency-specific)
@@ -116,7 +117,7 @@ const InitiateCryptoDepositSchema = z.object({
 });
 
 const InitiateCryptoDepositResponseSchema = z.object({
-	orderId: z.string().describe("Proxify order ID for tracking"),
+	orderId: z.string().describe("Quirk order ID for tracking"),
 	status: z.enum(["pending"]),
 
 	// Transfer instructions
@@ -341,6 +342,9 @@ export const depositContract = c.router({
 	listPending: {
 		method: "GET",
 		path: "/deposits/pending",
+		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional().describe("Filter by environment"),
+		}),
 		responses: {
 			200: z.object({
 				deposits: z.array(DepositResponseSchema),

@@ -2,7 +2,7 @@
  * Deposit Service - orchestrates B2B deposit operations
  */
 
-import type { B2BDepositUseCase } from "@proxify/core";
+import type { B2BDepositUseCase } from "@quirk/core";
 
 export class DepositService {
 	constructor(private depositUseCase: B2BDepositUseCase) {}
@@ -25,6 +25,7 @@ export class DepositService {
 		onRampProvider?: string;
 		qrCode?: string;
 		expiresAt?: Date;
+		environment?: "sandbox" | "production";
 	}) {
 		return await this.depositUseCase.createDeposit(request);
 	}
@@ -59,16 +60,16 @@ export class DepositService {
 		return await this.depositUseCase.listDepositsByUser(clientId, userId, limit || 50);
 	}
 
-	async listAllPendingDeposits() {
-		return await this.depositUseCase.listAllPendingDeposits();
+	async listAllPendingDeposits(environment?: "sandbox" | "production") {
+		return await this.depositUseCase.listAllPendingDeposits(environment);
 	}
 
 	async getDepositStats(clientId: string, startDate?: Date, endDate?: Date) {
 		return await this.depositUseCase.getDepositStats(clientId, startDate, endDate);
 	}
 
-	async listPendingDeposits(clientId: string) {
-		return await this.depositUseCase.listPendingDeposits(clientId);
+	async listPendingDeposits(clientId: string, environment?: "sandbox" | "production") {
+		return await this.depositUseCase.listPendingDeposits(clientId, environment);
 	}
 
 	async mintTokensToCustodial(

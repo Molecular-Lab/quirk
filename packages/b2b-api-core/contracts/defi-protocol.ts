@@ -78,6 +78,26 @@ export const defiProtocolContract = c.router({
 		summary: 'Get Morpho protocol metrics',
 	},
 
+	// Get APYs only (lightweight endpoint for client-side strategy calculation)
+	getAPYs: {
+		method: 'GET',
+		path: '/defi/apys',
+		query: z.object({
+			token: z.string().default('USDC'),
+			chainId: z.coerce.string().default('8453'),
+		}),
+		responses: {
+			200: z.object({
+				aave: z.string(),
+				compound: z.string(),
+				morpho: z.string(),
+				timestamp: z.string(),
+			}),
+			500: ErrorResponseDto,
+		},
+		summary: 'Get APY rates for all protocols (lightweight)',
+	},
+
 	// Optimize allocation based on risk profile (single chain)
 	optimize: {
 		method: 'POST',

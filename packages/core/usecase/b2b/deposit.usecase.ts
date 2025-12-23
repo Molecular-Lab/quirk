@@ -17,7 +17,7 @@ import type {
 	UserRepository,
 	VaultRepository,
 } from "../../repository"
-import type { CreateDepositArgs, CreateDepositRow, GetDepositByOrderIDRow } from "@proxify/sqlcgen"
+import type { CreateDepositArgs, CreateDepositRow, GetDepositByOrderIDRow } from "@quirk/sqlcgen"
 
 /**
  * B2B Deposit Service
@@ -160,8 +160,11 @@ export class B2BDepositUseCase {
 			throw new Error(`Deposit is already ${deposit.status}`)
 		}
 
+		// Get environment from deposit (was set during creation)
+		const environment: "sandbox" | "production" = (deposit.environment as "sandbox" | "production") || "sandbox"
+
 		// Step 0: Get client vault to retrieve custodial wallet address
-		const clientVault = await this.vaultRepository.getClientVault(deposit.clientId, request.chain, request.tokenAddress)
+		const clientVault = await this.vaultRepository.getClientVault(deposit.clientId, request.chain, request.tokenAddress, environment)
 
 		if (!clientVault) {
 			throw new Error(`Client vault not found for ${request.chain}/${request.tokenAddress}`)
@@ -218,14 +221,31 @@ export class B2BDepositUseCase {
 			growthIndexDecimal: clientGrowthIndex.dividedBy("1e18").toString(),
 		})
 
-		// Step 3: Get end_user record
-		const endUser = await this.userRepository.getById(deposit.userId)
+		// Step 3: Get end_user record (with fallback lookup)
+		console.log("[Deposit] Looking up end user:", {
+			userId: deposit.userId,
+			clientId: deposit.clientId,
+		})
+
+		let endUser = await this.userRepository.getById(deposit.userId)
 		if (!endUser) {
-			throw new Error("End user not found")
+			// Fallback: try looking up by client + user_id (client-provided ID)
+			console.log("[Deposit] User not found by ID, trying clientId+userId lookup")
+			endUser = await this.userRepository.getByClientAndUserId(deposit.clientId, deposit.userId)
 		}
 
-		// Step 4: Get or create end_user_vault (simplified - no chain/token, just clientId)
-		const userVault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, deposit.clientId)
+		if (!endUser) {
+			console.error("[Deposit] End user not found after fallback lookup:", {
+				userId: deposit.userId,
+				clientId: deposit.clientId,
+			})
+			throw new Error(`End user not found: ${deposit.userId} for client ${deposit.clientId}`)
+		}
+
+		console.log("[Deposit] Found end user:", { id: endUser.id, userId: endUser.userId })
+
+		// Step 4: Get or create end_user_vault (with environment support)
+		const userVault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, deposit.clientId, environment)
 
 		const depositAmount = new BigNumber(request.cryptoAmount)
 
@@ -239,6 +259,7 @@ export class B2BDepositUseCase {
 				clientId: deposit.clientId,
 				totalDeposited: depositAmount.toString(),
 				weightedEntryIndex: clientGrowthIndex.toString(),
+				environment,
 			})
 
 			if (!newVault) {
@@ -461,11 +482,17 @@ export class B2BDepositUseCase {
 	 * List pending deposits with summary by currency
 	 * Used for automated banking flow demo
 	 */
-	async listAllPendingDeposits(): Promise<any[]> {
+	async listAllPendingDeposits(environment?: "sandbox" | "production"): Promise<any[]> {
+		if (environment) {
+			return await this.depositRepository.listAllPendingByEnvironment(environment)
+		}
 		return await this.depositRepository.listAllPending()
 	}
 
-	async listPendingDeposits(clientId: string): Promise<{
+	async listPendingDeposits(
+		clientId: string,
+		environment?: "sandbox" | "production",
+	): Promise<{
 		deposits: any[]
 		summary: {
 			currency: string
@@ -473,7 +500,10 @@ export class B2BDepositUseCase {
 			totalAmount: string
 		}[]
 	}> {
-		const deposits = await this.depositRepository.listPending(clientId)
+		// Use environment-filtered query if environment is provided
+		const deposits = environment
+			? await this.depositRepository.listPendingByClientAndEnvironment(clientId, environment)
+			: await this.depositRepository.listPending(clientId)
 
 		// Group by currency and calculate totals
 		const summaryMap = new Map<string, { count: number; totalAmount: BigNumber }>()

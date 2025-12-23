@@ -21,7 +21,7 @@ export const withdrawParamsSchema = z.object({
 })
 export type WithdrawParams = z.infer<typeof withdrawParamsSchema>
 
-// Tier-specific withdrawal for Proxify
+// Tier-specific withdrawal for Quirk
 export const tierWithdrawalSchema = z.object({
 	tierId: z.string(), // bytes32 as hex string
 	reductionAmount: z.bigint(), // Amount to reduce from this tier
@@ -37,7 +37,7 @@ export const withdrawFromTiersParamsSchema = z.object({
 })
 export type WithdrawFromTiersParams = z.infer<typeof withdrawFromTiersParamsSchema>
 
-// Batch withdrawal execution for Proxify
+// Batch withdrawal execution for Quirk
 export const withdrawalExecutionSchema = z.object({
 	clientId: z.string(),
 	userId: z.string(),

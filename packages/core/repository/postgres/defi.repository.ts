@@ -1,5 +1,5 @@
 /**
- * DeFi Protocol Repository - Proxify Pattern
+ * DeFi Protocol Repository - Quirk Pattern
  * ✅ SQLC-generated queries from database/queries/defi.sql
  */
 
@@ -79,7 +79,7 @@ import {
 	type GetAllocationSummaryRow,
 	type GetCategoryAllocationBreakdownRow,
 	type GetProtocolPerformanceRow,
-} from "@proxify/sqlcgen"
+} from "@quirk/sqlcgen"
 import { Sql } from "postgres"
 
 export class DefiRepository {

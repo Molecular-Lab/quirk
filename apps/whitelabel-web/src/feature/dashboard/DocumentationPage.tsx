@@ -67,9 +67,9 @@ const codeExamples = [
 	{
 		title: "Create Wallet",
 		language: "TypeScript",
-		code: `import { ProxifyClient } from '@proxify/sdk';
+		code: `import { QuirkClient } from '@quirk/sdk';
 
-const client = new ProxifyClient({
+const client = new QuirkClient({
   apiKey: 'your_api_key_here'
 });
 
@@ -129,7 +129,7 @@ export function DocumentationPage() {
 					<div className="bg-white rounded-lg p-4">
 						<div className="text-blue-600 font-bold text-lg mb-2">2</div>
 						<h4 className="font-semibold text-gray-900 mb-1">Install SDK</h4>
-						<p className="text-sm text-gray-600">npm install @proxify/sdk</p>
+						<p className="text-sm text-gray-600">npm install @quirk/sdk</p>
 					</div>
 					<div className="bg-white rounded-lg p-4">
 						<div className="text-blue-600 font-bold text-lg mb-2">3</div>
@@ -216,7 +216,7 @@ export function DocumentationPage() {
 						>
 							<div>
 								<p className="font-medium text-gray-900">JavaScript / TypeScript</p>
-								<p className="text-sm text-gray-600">npm install @proxify/sdk</p>
+								<p className="text-sm text-gray-600">npm install @quirk/sdk</p>
 							</div>
 							<ExternalLink className="w-4 h-4 text-gray-400" />
 						</a>

@@ -13,6 +13,7 @@ const CreateUserSchema = z.object({
 	clientUserId: z.string(),
 	email: z.string().optional(),
 	walletAddress: z.string().optional(),
+	status: z.enum(['pending_onboarding', 'active', 'suspended']).optional(), // Optional initial status (defaults to 'active')
 });
 
 const UserResponseSchema = z.object({
@@ -22,6 +23,7 @@ const UserResponseSchema = z.object({
 	email: z.string().optional(),
 	walletAddress: z.string().optional(),
 	isActive: z.boolean(),
+	status: z.enum(['pending_onboarding', 'active', 'suspended']).optional(),
 	createdAt: z.string(),
 });
 
@@ -117,6 +119,7 @@ export const userContract = c.router({
 		query: z.object({
 			chain: z.string().optional(),
 			token: z.string().optional(),
+			environment: z.enum(["sandbox", "production"]).optional(),
 		}),
 		responses: {
 			200: z.object({
@@ -161,5 +164,27 @@ export const userContract = c.router({
 			500: z.object({ success: z.boolean(), error: z.string() }),
 		},
 		summary: "List all vaults for a user across chains/tokens",
+	},
+
+	// Activate user account after onboarding
+	activate: {
+		method: "POST",
+		path: "/users/:userId/activate",
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				message: z.string(),
+				user: UserResponseSchema.extend({
+					status: z.enum(['pending_onboarding', 'active', 'suspended']),
+				}),
+			}),
+			400: z.object({ error: z.string() }),
+			404: z.object({ error: z.string() }),
+			500: z.object({ error: z.string() }),
+		},
+		body: z.object({
+			productId: z.string(), // Product ID to look up client (public endpoint for onboarding)
+		}),
+		summary: "Activate user account after completing onboarding (public endpoint)",
 	},
 });

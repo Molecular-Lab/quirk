@@ -9,8 +9,8 @@ import type {
 	ControllerRoleSummary,
 	ControllerTokenStatus,
 	ControllerWithdrawParams,
-	ProxifyControllerClientAdapter,
-	ProxifyControllerRepositoryDependencies,
+	QuirkControllerClientAdapter,
+	QuirkControllerRepositoryDependencies,
 	InitializeTierParams,
 	BatchInitializeTiersParams,
 	AssignProtocolToTierParams,
@@ -24,10 +24,10 @@ import type {
 	StakingParams,
 } from "../entity"
 
-export class ProxifyControllerRepository<TChainId = string> {
-	constructor(private readonly deps: ProxifyControllerRepositoryDependencies<TChainId>) {}
+export class QuirkControllerRepository<TChainId = string> {
+	constructor(private readonly deps: QuirkControllerRepositoryDependencies<TChainId>) {}
 
-	private getClient(chainId: TChainId): ProxifyControllerClientAdapter {
+	private getClient(chainId: TChainId): QuirkControllerClientAdapter {
 		return this.deps.getControllerClient(chainId)
 	}
 
@@ -61,7 +61,7 @@ export class ProxifyControllerRepository<TChainId = string> {
 		return { isPaused }
 	}
 
-	async getProxifyAddress(chainId: TChainId): Promise<Address> {
+	async getQuirkAddress(chainId: TChainId): Promise<Address> {
 		const client = this.getClient(chainId)
 		return client.read.proxify()
 	}

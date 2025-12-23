@@ -158,7 +158,9 @@ export const ClientDto = z.object({
 	customerTier: z.string().nullable().optional(),
 	walletType: z.string(),
 	privyOrganizationId: z.string(),
-	apiKeyPrefix: z.string().nullable().optional(), // First 8-12 chars of API key (e.g., "test_pk_abc123...")
+	apiKeyPrefix: z.string().nullable().optional(), // Deprecated - use sandboxApiKeyPrefix/productionApiKeyPrefix
+	sandboxApiKeyPrefix: z.string().nullable().optional(), // Sandbox API key prefix (pk_test_xxx)
+	productionApiKeyPrefix: z.string().nullable().optional(), // Production API key prefix (pk_live_xxx)
 	isActive: z.boolean(),
 	isSandbox: z.boolean().optional(),
 	supportedCurrencies: z.array(z.string()).nullable().optional(),

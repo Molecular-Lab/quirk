@@ -1,5 +1,5 @@
 {
-  "name": "@proxify/mock-token-client",
+  "name": "@quirk/mock-token-client",
   "version": "1.0.0",
   "private": false,
   "type": "module",

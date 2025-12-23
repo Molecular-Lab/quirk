@@ -35,7 +35,7 @@ export interface WithdrawalResponse {
 	// Fee breakdown (if withdrawal processed)
 	feeBreakdown?: {
 		totalYield: string // Total yield earned since deposit
-		platformFee: string // Fee taken by Proxify platform
+		platformFee: string // Fee taken by Quirk platform
 		clientFee: string // Fee taken by client
 		userNetYield: string // Net yield received by user
 		feesDeducted: boolean // Whether fees were deducted or deferred

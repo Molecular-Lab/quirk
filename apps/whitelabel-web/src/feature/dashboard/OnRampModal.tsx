@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { ArrowDown, Check, ExternalLink } from "lucide-react"
 
 import { batchCompleteDeposits } from "@/api/b2bClientHelpers"
@@ -46,6 +46,9 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 	const [step, setStep] = useState<"select" | "summary" | "processing" | "success" | "error">("select")
 	const [errorMessage, setErrorMessage] = useState("")
 
+	// Query client for cache invalidation
+	const queryClient = useQueryClient()
+
 	// Get environment from store
 	const { apiEnvironment, getConfig } = useEnvironmentStore()
 	const networkConfig = getConfig()
@@ -75,6 +78,10 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 		onSuccess: (data) => {
 			console.log("[OnRampModal] Mutation success:", data)
 			console.log("[OnRampModal] ✅ Deposit completed - Balance will update automatically")
+
+			// Invalidate balance cache to refresh after deposit completes
+			queryClient.invalidateQueries({ queryKey: ["userBalance"] })
+			console.log("[OnRampModal] ✅ Balance cache invalidated")
 
 			// Show success after brief delay
 			setTimeout(() => {
@@ -236,9 +243,7 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 							{/* Environment Indicator */}
 							<div
 								className={`rounded-xl p-3 border-2 ${
-									isSandbox
-										? "bg-yellow-50 border-yellow-300"
-										: "bg-red-50 border-red-300"
+									isSandbox ? "bg-yellow-50 border-yellow-300" : "bg-red-50 border-red-300"
 								}`}
 							>
 								<div className="flex items-center justify-between">
@@ -247,14 +252,12 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 											{isSandbox ? "🧪 Sandbox Mode" : "⚠️ Production Mode"}
 										</span>
 									</div>
-									<span className="text-xs font-medium">
-										{networkConfig.name}
-									</span>
+									<span className="text-xs font-medium">{networkConfig.name}</span>
 								</div>
 								<p className="text-xs mt-1" style={{ color: isSandbox ? "#92400e" : "#7f1d1d" }}>
 									{isSandbox
-										? "Using testnet - No real funds will be transferred"
-										: "Using mainnet - Real USDC will be transferred"}
+										? "Using sandbox - Mock tokens only, no real funds"
+										: "Using production - Real USDC will be transferred"}
 								</p>
 							</div>
 

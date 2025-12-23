@@ -125,7 +125,7 @@ const EXCHANGE_RATES = {
 
 ### Bank Account Configuration
 
-**Proxify's Bank Accounts (for demo):**
+**Quirk's Bank Accounts (for demo):**
 ```typescript
 const PROXIFY_BANK_ACCOUNTS = {
   USD: {

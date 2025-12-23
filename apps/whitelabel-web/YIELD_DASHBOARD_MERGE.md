@@ -420,7 +420,7 @@ import { YieldDashboard } from "./feature/dashboard/YieldDashboard"
 
 - **Owen** - Product requirements, design review
 - **AI Assistant** - Implementation, documentation
-- **Proxify Team** - Backend API support
+- **Quirk Team** - Backend API support
 
 ---
 

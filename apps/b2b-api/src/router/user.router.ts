@@ -3,7 +3,7 @@
  */
 
 import type { initServer } from "@ts-rest/express";
-import { b2bContract } from "@proxify/b2b-api-core";
+import { b2bContract } from "@quirk/b2b-api-core";
 import type { UserService } from "../service/user.service";
 import type { UserVaultService } from "../service/user-vault.service";
 import { mapUserToDto, mapUsersToDto, mapUserPortfolioToDto } from "../mapper/user.mapper";
@@ -33,6 +33,7 @@ export const createUserRouter = (
 					userId: body.clientUserId,
 					userType: "custodial", // ✅ B2B escrow - we manage custodial wallets
 					userWalletAddress: body.walletAddress,
+					status: body.status, // ✅ Optional initial status (defaults to 'active')
 				});
 
 				// ✅ Fetch user's vault to return in response (simplified: single vault)
@@ -276,7 +277,9 @@ export const createUserRouter = (
 				}
 
 				// ✅ FIX: Use getUserBalance instead of getUserPortfolio for correct calculation
-				const userBalance = await userVaultService.getUserBalance(params.userId, clientId);
+				// ✅ FIX: Pass environment from query params (defaults to sandbox)
+				const environment = (query?.environment as "sandbox" | "production") || "sandbox";
+				const userBalance = await userVaultService.getUserBalance(params.userId, clientId, environment);
 
 				if (!userBalance) {
 					return {
@@ -447,6 +450,42 @@ export const createUserRouter = (
 				return {
 					status: 500 as const,
 					body: { error: "Failed to list vaults", success: false },
+				};
+			}
+		},
+
+		// POST /users/:userId/activate - Activate user account (PUBLIC endpoint for onboarding)
+		activate: async ({ params, body }) => {
+			try {
+				logger.info("[User Router] Activating user (public endpoint)", {
+					userId: params.userId,
+					productId: body.productId,
+				});
+
+				// ✅ PUBLIC ENDPOINT: No auth required
+				// Look up client by productId to get clientId
+				const activated = await userService.activateUserByProductId(params.userId, body.productId);
+
+				return {
+					status: 200 as const,
+					body: {
+						success: true,
+						message: "User account activated successfully",
+						user: {
+							...mapUserToDto(activated),
+							status: activated.status as "pending_onboarding" | "active" | "suspended",
+						},
+					},
+				};
+			} catch (error: any) {
+				logger.error("Failed to activate user", { error, userId: params.userId, productId: body.productId });
+
+				const errorStatus = error.message.includes("not found") ? 404 as const :
+							   error.message.includes("suspended") || error.message.includes("not belong") ? 400 as const : 500 as const;
+
+				return {
+					status: errorStatus,
+					body: { error: error.message || "Failed to activate user" },
 				};
 			}
 		},

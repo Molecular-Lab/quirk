@@ -7,7 +7,7 @@
 
 ## Executive Summary
 
-This document provides comprehensive guidance for integrating AAVE V3 into the Proxify yield optimization engine. It covers contract addresses, ABIs, key methods for fetching supply APY, user positions, and practical implementation examples using viem and TypeScript.
+This document provides comprehensive guidance for integrating AAVE V3 into the Quirk yield optimization engine. It covers contract addresses, ABIs, key methods for fetching supply APY, user positions, and practical implementation examples using viem and TypeScript.
 
 ---
 

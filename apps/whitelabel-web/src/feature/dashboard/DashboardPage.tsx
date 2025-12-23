@@ -5,22 +5,35 @@
 
 import { useState } from "react"
 
+import { EnvironmentSelector } from "@/components/EnvironmentSelector"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useUserStore } from "@/store/userStore"
 
 import ClientOverviewTab from "./tabs/ClientOverviewTab"
 import EndUsersTab from "./tabs/EndUsersTab"
-import PortfolioTab from "./tabs/PortfolioTab"
 
 export default function DashboardPage() {
 	const [activeTab, setActiveTab] = useState("overview")
-	const { organizations, activeProductId } = useUserStore()
+	const { organizations, activeProductId, isOrganizationsLoaded } = useUserStore()
 
 	// Use first product as default for end-users tab if no active product
 	const selectedProductId = activeProductId || organizations[0]?.productId
 
-	// Aggregate mode: Show data across ALL products
-	if (!organizations || organizations.length === 0) {
+	// Loading state: Show while organizations are being fetched
+	if (!isOrganizationsLoaded) {
+		return (
+			<div className="min-h-full bg-white flex items-center justify-center">
+				<div className="text-center">
+					<div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4" />
+					<h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Dashboard...</h2>
+					<p className="text-gray-500">Fetching your organizations</p>
+				</div>
+			</div>
+		)
+	}
+
+	// Empty state: Show only after loading is complete and no organizations exist
+	if (organizations.length === 0) {
 		return (
 			<div className="min-h-full bg-white flex items-center justify-center">
 				<div className="text-center">
@@ -42,6 +55,8 @@ export default function DashboardPage() {
 							All Products • {organizations.length} {organizations.length === 1 ? "Product" : "Products"}
 						</p>
 					</div>
+					{/* ✅ Environment Selector - switch between sandbox/production */}
+					<EnvironmentSelector />
 				</div>
 
 				{/* Tabs */}
@@ -49,7 +64,6 @@ export default function DashboardPage() {
 					<TabsList className="mb-6">
 						<TabsTrigger value="overview">Client Overview</TabsTrigger>
 						<TabsTrigger value="end-users">End-Users Activity</TabsTrigger>
-						<TabsTrigger value="portfolio">Portfolio & Strategies</TabsTrigger>
 					</TabsList>
 
 					<TabsContent value="overview" className="mt-0">
@@ -58,10 +72,6 @@ export default function DashboardPage() {
 
 					<TabsContent value="end-users" className="mt-0">
 						<EndUsersTab mode="single" productId={selectedProductId} />
-					</TabsContent>
-
-					<TabsContent value="portfolio" className="mt-0">
-						<PortfolioTab />
 					</TabsContent>
 				</Tabs>
 			</div>

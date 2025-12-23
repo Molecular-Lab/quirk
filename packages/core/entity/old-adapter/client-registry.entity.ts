@@ -1,7 +1,7 @@
 import type { RiskTier } from "../old/client-registry.entity"
 import type { Address } from "viem"
 
-export interface ProxifyClientRegistryReadAdapter {
+export interface QuirkClientRegistryReadAdapter {
 	DEFAULT_ADMIN_ROLE(): Promise<string>
 	ORACLE_ROLE(): Promise<string>
 	getRoleAdmin(role: string): Promise<string>
@@ -26,7 +26,7 @@ export interface ProxifyClientRegistryReadAdapter {
 	validateTierAllocations(tiers: RiskTier[]): Promise<boolean>
 }
 
-export interface ProxifyClientRegistryWriteAdapter {
+export interface QuirkClientRegistryWriteAdapter {
 	// Oracle actions
 	registerClient(
 		clientId: string,
@@ -56,11 +56,11 @@ export interface ProxifyClientRegistryWriteAdapter {
 	setTierActive(clientId: string, tierId: string, isActive: boolean, senderAddress: Address): Promise<void>
 }
 
-export interface ProxifyClientRegistryClientAdapter {
-	read: ProxifyClientRegistryReadAdapter
-	write: ProxifyClientRegistryWriteAdapter
+export interface QuirkClientRegistryClientAdapter {
+	read: QuirkClientRegistryReadAdapter
+	write: QuirkClientRegistryWriteAdapter
 }
 
-export interface ProxifyClientRegistryRepositoryDependencies<TChainId> {
-	getClientRegistryClient(chainId: TChainId): ProxifyClientRegistryClientAdapter
+export interface QuirkClientRegistryRepositoryDependencies<TChainId> {
+	getClientRegistryClient(chainId: TChainId): QuirkClientRegistryClientAdapter
 }

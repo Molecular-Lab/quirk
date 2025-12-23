@@ -4,7 +4,7 @@
  */
 
 import type { initServer } from "@ts-rest/express";
-import { b2bContract } from "@proxify/b2b-api-core";
+import { b2bContract } from "@quirk/b2b-api-core";
 import type { PrivyAccountService } from "../service/privy-account.service";
 import { logger } from "../logger";
 

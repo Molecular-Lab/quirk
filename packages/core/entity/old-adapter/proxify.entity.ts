@@ -4,7 +4,7 @@ import { AccountSnapshot, UserAccountSummary } from "../old/account.entity"
 import { TierIndexInfo } from "../old/tier.entity"
 import { VaultIndexInfo } from "../old/vault.entity"
 
-export interface ProxifyVaultClientAdapter {
+export interface QuirkVaultClientAdapter {
 	// Contract addresses
 	controller(): Promise<Address>
 	clientRegistry(): Promise<Address>

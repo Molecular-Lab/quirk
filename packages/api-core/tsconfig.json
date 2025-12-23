@@ -1,4 +1,4 @@
 {
-	"extends": "@proxify/tsconfig/node.json",
+	"extends": "@quirk/tsconfig/node.json",
 	"exclude": ["node_modules", "dist", "**/*.config.ts", "**/*.config.mjs", "**/*.config.js"]
 }

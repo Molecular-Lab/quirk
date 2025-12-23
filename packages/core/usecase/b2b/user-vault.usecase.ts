@@ -15,7 +15,7 @@ import { ClientGrowthIndexService } from "../../service/client-growth-index.serv
 
 import type { UserBalanceResponse, UserPortfolioResponse } from "../../dto/b2b"
 import type { AuditRepository, UserRepository, VaultRepository } from "../../repository"
-import type { GetEndUserVaultByClientRow } from "@proxify/sqlcgen"
+import type { GetEndUserVaultByClientRow } from "@quirk/sqlcgen"
 
 export class B2BUserVaultUseCase {
 	constructor(
@@ -26,21 +26,45 @@ export class B2BUserVaultUseCase {
 	) {}
 
 	/**
-	 * Get user's balance (SIMPLIFIED)
+	 * Get user's balance (with environment support)
 	 * Returns balance with index-based yield calculation
 	 */
-	async getUserBalance(userId: string, clientId: string): Promise<UserBalanceResponse | null> {
-		// Get end_user record
-		const endUser = await this.userRepository.getByClientAndUserId(clientId, userId)
+	async getUserBalance(userId: string, clientId: string, environment: "sandbox" | "production" = "sandbox"): Promise<UserBalanceResponse | null> {
+		// Get end_user record - try by UUID first, then by client_user_id
+		let endUser = await this.userRepository.getById(userId)
+
+		// If not found by UUID, try by client_user_id
+		if (!endUser) {
+			endUser = await this.userRepository.getByClientAndUserId(clientId, userId)
+		}
+
 		if (!endUser) {
 			return null
 		}
 
-		// Get vault (simplified - one vault per user per client)
-		const vault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, clientId)
-
-		if (!vault) {
+		// Verify user belongs to this client
+		if (endUser.clientId !== clientId) {
 			return null
+		}
+
+		// Get vault for specific environment
+		const vault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, clientId, environment)
+
+		// ✅ Return zero balance for users with no deposits yet (user exists but no vault)
+		if (!vault) {
+			return {
+				userId,
+				clientId,
+				environment,
+				totalDeposited: "0",
+				totalWithdrawn: "0",
+				effectiveBalance: "0",
+				yieldEarned: "0",
+				weightedEntryIndex: "1.0",
+				isActive: endUser.status === "active",
+				lastDepositAt: null,
+				lastWithdrawalAt: null,
+			}
 		}
 
 		// Get current client growth index
@@ -64,14 +88,14 @@ export class B2BUserVaultUseCase {
 			userAgent: null,
 		})
 
-		return this.mapToBalanceResponse(vault, userId, clientId, clientGrowthIndex)
+		return this.mapToBalanceResponse(vault, userId, clientId, clientGrowthIndex, environment)
 	}
 
 	/**
-	 * Get user's portfolio (simplified - single vault per client)
+	 * Get user's portfolio (single vault per client per environment)
 	 */
-	async getUserPortfolio(userId: string, clientId: string): Promise<UserPortfolioResponse | null> {
-		const balance = await this.getUserBalance(userId, clientId)
+	async getUserPortfolio(userId: string, clientId: string, environment: "sandbox" | "production" = "sandbox"): Promise<UserPortfolioResponse | null> {
+		const balance = await this.getUserBalance(userId, clientId, environment)
 
 		if (!balance) {
 			return {
@@ -95,9 +119,9 @@ export class B2BUserVaultUseCase {
 	}
 
 	/**
-	 * List all users with balances for a client (admin view)
+	 * List all users with balances for a client (admin view, per environment)
 	 */
-	async listVaultUsers(clientId: string, limit = 100, offset = 0): Promise<UserBalanceResponse[]> {
+	async listVaultUsers(clientId: string, environment: "sandbox" | "production" = "sandbox", limit = 100, offset = 0): Promise<UserBalanceResponse[]> {
 		// Get all end users with balances
 		const users = await this.userRepository.listByClient(clientId, limit, offset)
 
@@ -107,9 +131,9 @@ export class B2BUserVaultUseCase {
 		const results: UserBalanceResponse[] = []
 
 		for (const user of users) {
-			const vault = await this.vaultRepository.getEndUserVaultByClient(user.id, clientId)
+			const vault = await this.vaultRepository.getEndUserVaultByClient(user.id, clientId, environment)
 			if (vault) {
-				results.push(this.mapToBalanceResponse(vault, user.userId, clientId, clientGrowthIndex))
+				results.push(this.mapToBalanceResponse(vault, user.userId, clientId, clientGrowthIndex, environment))
 			}
 		}
 
@@ -158,6 +182,7 @@ export class B2BUserVaultUseCase {
 		userId: string,
 		clientId: string,
 		clientGrowthIndex: string,
+		environment?: "sandbox" | "production",
 	): UserBalanceResponse {
 		const effectiveBalance = this.calculateEffectiveBalance(
 			vault.totalDeposited,
@@ -169,6 +194,7 @@ export class B2BUserVaultUseCase {
 		return {
 			userId,
 			clientId,
+			environment,
 			totalDeposited: vault.totalDeposited,
 			totalWithdrawn: vault.totalWithdrawn,
 			effectiveBalance,

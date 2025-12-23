@@ -1,5 +1,5 @@
 /**
- * Proxify B2B SDK Type Definitions
+ * Quirk B2B SDK Type Definitions
  * Version 1.1.0 - Network Configuration Update
  */
 
