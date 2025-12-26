@@ -874,3 +874,4 @@ export async function getWalletBalances(productId: string, environment?: "sandbo
 
 	throw new Error("Failed to get wallet balances")
 }
+

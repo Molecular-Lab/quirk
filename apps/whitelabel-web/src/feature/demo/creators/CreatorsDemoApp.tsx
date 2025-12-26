@@ -1,14 +1,19 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 
+import { usePrivy } from "@privy-io/react-auth"
+import { useNavigate } from "@tanstack/react-router"
 import { Home, Loader2, RefreshCw, TrendingUp, Wallet } from "lucide-react"
 
-import { createFiatDeposit, createUser, getUserBalance, getUserByClientUserId, createWithdrawal } from "@/api/b2bClientHelpers"
+import { createFiatDeposit, createUser, createWithdrawal, getUserBalance, getUserByClientUserId } from "@/api/b2bClientHelpers"
+import { generateDemoClientUserId } from "@/feature/demo/personas"
 import { LandingNavbar } from "@/feature/landing/LandingNavbar"
 import { useClientContextStore } from "@/store/clientContextStore"
-import { useDemoStore } from "@/store/demoStore"
+import { useDemoProductStore } from "@/store/demoProductStore"
+import { useDemoStore, useHydrated } from "@/store/demoStore"
 
 import { DemoSettings } from "../shared/DemoSettings"
 import { DepositModal } from "../shared/DepositModal"
+import { PersonaSelector } from "../shared/PersonaSelector"
 
 import { creatorsCards, creatorsMockBalances } from "./creators-data"
 
@@ -24,6 +29,10 @@ interface UserBalance {
 }
 
 export function CreatorsDemoApp() {
+	// CRITICAL: Check if Zustand has finished hydrating from localStorage
+	const hasHydrated = useHydrated()
+
+	const navigate = useNavigate()
 	const [currentCardIndex, setCurrentCardIndex] = useState(0)
 	const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
 	const [touchStart, setTouchStart] = useState(0)
@@ -34,27 +43,111 @@ export function CreatorsDemoApp() {
 	const [isLoadingBalance, setIsLoadingBalance] = useState(false)
 	const [balanceError, setBalanceError] = useState<string | null>(null)
 
+	// Get Privy user for database sync
+	const { user } = usePrivy()
+	const privyUserId = user?.id
+
 	// Get client context (productId, clientId, apiKey)
 	const { productId, clientId, hasApiKey } = useClientContextStore()
+
+	// Get selected product info
+	const { selectedProductId } = useDemoProductStore()
 
 	// Get demo-specific state from demoStore
 	const {
 		hasEarnAccount,
 		isCreatingAccount,
+		isRestoringFromDb,
 		endUserId,
+		endUserClientUserId, // ✅ Get client user ID for API calls
 		error,
 		selectedEnvironment,
+		selectedPersona,
 		setIsCreatingAccount,
 		setEndUser,
 		setError,
 		setIsDepositing,
 		addDeposit,
-		getPersonaUserId,
+
+		hasPersonaForType,
+		activateEarnAccount, // Call after confirming user is active in database
 	} = useDemoStore()
+
+	// Show PersonaSelector only if missing required context
+	// This avoids duplicate persona selection when coming from DemoSelectorPage
+	const [showPersonaSelector, setShowPersonaSelector] = useState(() => {
+		// Check if we have valid persona for this demo type
+		const hasValidPersona = hasPersonaForType("creators")
+		const hasValidContext = !!selectedProductId && !!privyUserId
+
+		// Only show PersonaSelector if missing required context
+		return !hasValidPersona || !hasValidContext
+	})
+
+	// Re-check showPersonaSelector after Zustand hydrates
+	// This handles the case where user returns from onboarding with hasEarnAccount: true
+	useEffect(() => {
+		const hasValidPersona = hasPersonaForType("creators")
+
+		// If we have valid persona, account, and context - hide the PersonaSelector
+		if (hasValidPersona && hasEarnAccount && privyUserId && selectedProductId) {
+			console.log("[CreatorsDemoApp] Valid state after hydration, hiding PersonaSelector")
+			setShowPersonaSelector(false)
+		}
+	}, [hasEarnAccount, privyUserId, selectedProductId, hasPersonaForType])
+
+	// Check database for user activation status on mount
+	// This fixes the issue where localStorage state may be stale after onboarding
+	useEffect(() => {
+		// CRITICAL: Wait for Zustand to hydrate from localStorage
+		if (!hasHydrated) {
+			console.log("[CreatorsDemoApp] ⏳ Waiting for Zustand hydration...")
+			return // Exit early, will re-run when hasHydrated becomes true
+		}
+
+		console.log("[CreatorsDemoApp] ✅ Zustand hydrated, proceeding with initialization...")
+
+		async function checkUserActivationStatus() {
+			// Need clientId and endUserClientUserId to check status
+			if (!endUserClientUserId || !clientId) {
+				console.log("[CreatorsDemoApp] Skipping status check - missing clientId or endUserClientUserId")
+				return
+			}
+
+			try {
+				console.log("[CreatorsDemoApp] Checking user activation status:", {
+					clientId,
+					endUserClientUserId,
+				})
+
+				const user = await getUserByClientUserId(clientId, endUserClientUserId)
+
+				if (user?.status === "active") {
+					console.log("[CreatorsDemoApp] User is ACTIVE in database - syncing local state")
+
+					// Ensure local state matches database state
+					if (!hasEarnAccount) {
+						activateEarnAccount()
+					}
+
+					// Hide PersonaSelector since user is already activated
+					setShowPersonaSelector(false)
+				} else {
+					console.log("[CreatorsDemoApp] User status:", user?.status || "not found")
+				}
+			} catch (error) {
+				console.error("[CreatorsDemoApp] Failed to check user status:", error)
+				// Don't block UI on error - just log and continue
+			}
+		}
+
+		void checkUserActivationStatus()
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [hasHydrated, endUserClientUserId, clientId])
 
 	// Function to fetch balance
 	const fetchBalance = async () => {
-		if (!endUserId || !hasEarnAccount) {
+		if (!endUserClientUserId || !hasEarnAccount) {
 			setRealBalance(null)
 			return
 		}
@@ -63,14 +156,19 @@ export function CreatorsDemoApp() {
 		setBalanceError(null)
 
 		try {
-			console.log("[CreatorsDemoApp] Fetching real balance for user:", endUserId, "environment:", selectedEnvironment)
-			const response = await getUserBalance(endUserId, { environment: selectedEnvironment })
+			console.log(
+				"[CreatorsDemoApp] Fetching real balance for user:",
+				endUserClientUserId,
+				"environment:",
+				selectedEnvironment,
+			)
+			const response = await getUserBalance(endUserClientUserId, { environment: selectedEnvironment }) // ✅ Use client user ID
 
 			if (response.found && response.data) {
 				console.log("[CreatorsDemoApp] Real balance fetched:", response.data)
 				setRealBalance(response.data)
 			} else {
-				console.warn("[CreatorsDemoApp] Balance not found for user:", endUserId)
+				console.warn("[CreatorsDemoApp] Balance not found for user:", endUserClientUserId)
 				setBalanceError("Balance not found")
 			}
 		} catch (err) {
@@ -81,44 +179,23 @@ export function CreatorsDemoApp() {
 		}
 	}
 
-	// Fetch real balance when endUserId exists or environment changes
+	// Fetch real balance when endUserClientUserId exists or environment changes
 	useEffect(() => {
 		fetchBalance()
-	}, [endUserId, hasEarnAccount, selectedEnvironment])
+	}, [endUserClientUserId, hasEarnAccount, selectedEnvironment]) // ✅ Watch client user ID
 
-	// Check for existing user on mount (sync local state with backend)
-	useEffect(() => {
-		const checkExistingUser = async () => {
-			// Skip if already have an account loaded or no clientId
-			if (hasEarnAccount || !clientId) return
+	// NOTE: Database restore logic REMOVED (Dec 2024)
+	// DemoSelectorPage now handles user creation via handleStartDemo()
+	// Restoring from database was causing state bleeding when switching personas
+	// The correct flow is:
+	// 1. User selects persona in DemoSelectorPage
+	// 2. DemoSelectorPage calls getOrCreateDemoUser() and sets state
+	// 3. User navigates to demo app with state already set
+	// 4. Demo app trusts the demoStore state
 
-			// Get persona's deterministic userId
-			const personaUserId = getPersonaUserId()
-			if (!personaUserId) return
-
-			try {
-				console.log("[CreatorsDemoApp] Checking for existing user:", personaUserId)
-				const user = await getUserByClientUserId(clientId, personaUserId)
-				if (user) {
-					// User exists in backend - sync to local state
-					setEndUser({
-						endUserId: user.id,
-						endUserClientUserId: personaUserId,
-					})
-					console.log("[CreatorsDemoApp] Found existing user:", user.id)
-				}
-			} catch (err) {
-				// Non-blocking - user can still create new account
-				console.warn("[CreatorsDemoApp] Failed to check for existing user:", err)
-			}
-		}
-
-		checkExistingUser()
-	}, [clientId, hasEarnAccount, selectedEnvironment, getPersonaUserId, setEndUser])
-
-	// Use real balance if available, otherwise use mock
-	const earnBalance = realBalance ? parseFloat(realBalance.balance) : creatorsMockBalances.earnBalance
-	const yieldEarned = realBalance ? parseFloat(realBalance.yield_earned) : creatorsMockBalances.accruedInterest
+	// Use real balance if available, otherwise show $0 (not mock data)
+	const earnBalance = realBalance ? parseFloat(realBalance.balance) : 0
+	const yieldEarned = realBalance ? parseFloat(realBalance.yield_earned) : 0
 	const apy = realBalance ? parseFloat(realBalance.apy) : 0
 
 	// Mock creator revenue balance (from config) - keep this as mock for now
@@ -151,11 +228,19 @@ export function CreatorsDemoApp() {
 	const isSavingsCard = currentCard.id === "savings"
 
 	const handleStartEarning = async () => {
+		console.log("[CreatorsDemoApp] 🚀 handleStartEarning() called:", {
+			endUserId,
+			endUserClientUserId, // This is the Static Key
+			selectedPersona,
+			hasEarnAccount,
+			selectedEnvironment,
+		})
+
 		setIsCreatingAccount(true)
 		setError(null)
 
 		try {
-			// Check if we have client context
+			// Validate context
 			if (!productId) {
 				throw new Error("No product ID configured. Please set up via Demo Settings.")
 			}
@@ -164,46 +249,91 @@ export function CreatorsDemoApp() {
 				throw new Error("No API key configured. Please set up via Demo Settings.")
 			}
 
-			// Get persona's client user ID (product-scoped) or generate random
-			const personaUserId = getPersonaUserId()
-			const demoUserId = personaUserId || `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+			if (!privyUserId) {
+				throw new Error("Please sign in to create an account.")
+			}
 
-			console.log("[DemoClientApp] Creating end-user account:", {
-				productId,
-				clientUserId: demoUserId,
-				isPersona: !!personaUserId,
-			})
+			if (!selectedPersona) {
+				throw new Error("No persona selected. Please select a persona first.")
+			}
 
-			// Call the API to create end-user account with pending_onboarding status
-			const response = await createUser(productId, {
-				clientUserId: demoUserId,
-				email: "demo@example.com", // Optional demo email
-				status: "pending_onboarding", // ✅ User needs to complete onboarding first
-			})
+			if (!clientId) {
+				throw new Error("No client ID found. Please check product configuration.")
+			}
 
-			console.log("[DemoClientApp] End-user created successfully:", response)
+			// Use the Static Key format: {privy_id}:{type}:{persona}
+			const demoUserId = generateDemoClientUserId(privyUserId, "creators", selectedPersona)
 
-			// Store the end user ID in demoStore
-			if (response && typeof response === "object" && "id" in response && "clientId" in response) {
-				setEndUser({
-					endUserId: response.id,
-					endUserClientUserId: demoUserId,
+			// ✅ STEP 1: Check if user exists with this Static Key
+			console.log("[CreatorsDemoApp] 🔄 Checking for existing user with Static Key:", demoUserId)
+			let user = await getUserByClientUserId(clientId, demoUserId)
+
+			// ✅ STEP 2: Create user ONLY if doesn't exist
+			if (!user) {
+				console.log("[CreatorsDemoApp] 🆕 User not found, creating new user with Static Key...")
+
+				const createResponse = await createUser(productId, {
+					clientUserId: demoUserId, // Use Static Key as clientUserId
+					email: "demo@example.com",
+					status: "pending_onboarding",
 				})
 
-				// ✅ Redirect to onboarding flow (include productId for fetching strategies)
-				window.location.href = `/onboarding/${demoUserId}?userId=${response.id}&clientId=${response.clientId}&productId=${productId}&returnPath=/demo`
+				console.log("[CreatorsDemoApp] ✅ New user created:", createResponse)
+
+				// Fetch the created user to get full details
+				user = await getUserByClientUserId(clientId, demoUserId)
+
+				if (!user) {
+					throw new Error("Failed to verify user creation")
+				}
 			} else {
-				throw new Error("Invalid response from API")
+				console.log("[CreatorsDemoApp] ✅ Existing user found:", {
+					userId: user.id,
+					status: user.status,
+					clientUserId: user.clientUserId,
+				})
+			}
+
+			// ✅ STEP 3: Sync demoStore with backend user ID
+			if (!endUserId || endUserId !== user.id) {
+				console.log("[CreatorsDemoApp] 🔄 Syncing endUserId to demoStore...")
+				setEndUser({
+					endUserId: user.id,
+					endUserClientUserId: user.clientUserId,
+				})
+			}
+
+			// ✅ STEP 4: Handle based on user status
+			if (user.status === "pending_onboarding") {
+				// User needs to complete onboarding
+				console.log("[CreatorsDemoApp] ➡️ User needs onboarding, redirecting...")
+				navigate({
+					to: "/onboarding/$clientUserId",
+					params: { clientUserId: demoUserId },
+					search: {
+						userId: user.id,
+						clientId: clientId,
+						productId: productId,
+						returnPath: "/demo/creators",
+					},
+				})
+			} else if (user.status === "active") {
+				// User already completed onboarding
+				console.log("[CreatorsDemoApp] ✅ User is already active, activating earn account...")
+				activateEarnAccount()
+				setIsCreatingAccount(false) // Hide loading state, show balance
+			} else {
+				throw new Error(`Invalid user status: ${user.status}`)
 			}
 		} catch (err) {
-			console.error("[DemoClientApp] Failed to create end-user:", err)
-			setError(err instanceof Error ? err.message : "Failed to create account. Please try again.")
+			console.error("[CreatorsDemoApp] ❌ Failed to handle user:", err)
+			setError(err instanceof Error ? err.message : "Failed to start earning. Please try again.")
 			setIsCreatingAccount(false)
 		}
 	}
 
 	const handleDeposit = async (amount: number) => {
-		if (!endUserId) {
+		if (!endUserId || !endUserClientUserId) {
 			throw new Error("No end-user account found. Please create an account first.")
 		}
 
@@ -212,7 +342,7 @@ export function CreatorsDemoApp() {
 
 		try {
 			console.log("[DemoClientApp] Creating deposit order:", {
-				userId: endUserId,
+				userId: endUserClientUserId, // ✅ Use client user ID
 				amount: amount.toString(),
 				currency: "USD",
 				tokenSymbol: "USDC",
@@ -220,7 +350,7 @@ export function CreatorsDemoApp() {
 
 			// Call the API to create deposit order
 			const response = await createFiatDeposit({
-				userId: endUserId,
+				userId: endUserClientUserId, // ✅ Use client user ID for API calls
 				amount: amount.toString(),
 				currency: "USD",
 				tokenSymbol: "USDC",
@@ -288,14 +418,14 @@ export function CreatorsDemoApp() {
 
 		try {
 			console.log("[CreatorsDemoApp] Creating withdrawal:", {
-				userId: endUserId,
+				userId: endUserClientUserId, // ✅ Use client user ID
 				amount: amount.toString(),
 				environment: selectedEnvironment,
 			})
 
 			// Call the API to create withdrawal
 			const response = await createWithdrawal({
-				userId: endUserId,
+				userId: endUserClientUserId, // ✅ Use client user ID for API calls
 				amount: amount.toString(),
 				withdrawal_method: "fiat_to_end_user",
 				destination_currency: "USD",
@@ -317,6 +447,38 @@ export function CreatorsDemoApp() {
 		} finally {
 			setIsDepositing(false)
 		}
+	}
+
+	// Show loading state while Zustand is hydrating (prevents reading empty state)
+	if (!hasHydrated) {
+		return (
+			<div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-white flex items-center justify-center">
+				<div className="text-center">
+					<Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-accent" />
+					<p className="text-gray-600">Loading demo...</p>
+				</div>
+			</div>
+		)
+	}
+
+	// Always show PersonaSelector when:
+	// 1. showPersonaSelector state is true (default on mount)
+	// 2. User not authenticated (required for demo to work)
+	// 3. No product selected (required for API calls)
+	const shouldShowPersonaSelector = showPersonaSelector || !privyUserId || !selectedProductId
+
+	if (shouldShowPersonaSelector) {
+		return (
+			<>
+				<LandingNavbar />
+				<PersonaSelector
+					visualizationType="creators"
+					onDemoStarted={() => {
+						setShowPersonaSelector(false)
+					}}
+				/>
+			</>
+		)
 	}
 
 	return (
@@ -405,11 +567,15 @@ export function CreatorsDemoApp() {
 									)}
 								</div>
 								<h2 className="text-6xl font-bold text-gray-950 mb-3">
-									{hasEarnAccount
-										? isLoadingBalance
-											? <Loader2 className="h-12 w-12 animate-spin text-gray-400 mx-auto" />
-											: `$${earnBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-										: "$0.00"}
+									{hasEarnAccount ? (
+										isLoadingBalance ? (
+											<Loader2 className="h-12 w-12 animate-spin text-gray-400 mx-auto" />
+										) : (
+											`$${earnBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+										)
+									) : (
+										"$0.00"
+									)}
 								</h2>
 								{hasEarnAccount && !isLoadingBalance && (
 									<div className="flex items-center gap-2">
@@ -420,14 +586,10 @@ export function CreatorsDemoApp() {
 												maximumFractionDigits: 2,
 											})}
 										</span>
-										<span className="text-gray-500 text-sm">
-											Yield Earned {apy > 0 && `(${apy.toFixed(2)}% APY)`}
-										</span>
+										<span className="text-gray-500 text-sm">Yield Earned {apy > 0 && `(${apy.toFixed(2)}% APY)`}</span>
 									</div>
 								)}
-								{balanceError && (
-									<p className="text-sm text-red-500 mt-2">⚠️ {balanceError}</p>
-								)}
+								{balanceError && <p className="text-sm text-red-500 mt-2">⚠️ {balanceError}</p>}
 							</div>
 						</>
 					)}
@@ -455,10 +617,14 @@ export function CreatorsDemoApp() {
 							{/* Start Earning Button - Before Account Created */}
 							<button
 								onClick={handleStartEarning}
-								disabled={isCreatingAccount}
+								disabled={isCreatingAccount || isRestoringFromDb}
 								className="w-full bg-gray-950 hover:bg-gray-800 text-white py-5 rounded-2xl font-semibold text-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
 							>
-								{isCreatingAccount ? "Creating Account..." : "Start Earning"}
+								{isRestoringFromDb
+									? "Checking existing account..."
+									: isCreatingAccount
+										? "Creating Account..."
+										: "Start Earning"}
 							</button>
 							{error && (
 								<div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-xl">

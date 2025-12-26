@@ -195,9 +195,10 @@ INSERT INTO end_users (
   user_type,
   user_wallet_address,
   is_active,
-  status
+  status,
+  environment
 ) VALUES (
-  $1, $2, $3, $4, $5, $6
+  $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING id, client_id, user_id, user_type, user_wallet_address, is_active, first_deposit_at, last_deposit_at, last_withdrawal_at, created_at, updated_at, status, environment`;
 
@@ -208,6 +209,7 @@ export interface CreateEndUserArgs {
     userWalletAddress: string | null;
     isActive: boolean;
     status: string;
+    environment: string;
 }
 
 export interface CreateEndUserRow {
@@ -227,7 +229,7 @@ export interface CreateEndUserRow {
 }
 
 export async function createEndUser(sql: Sql, args: CreateEndUserArgs): Promise<CreateEndUserRow | null> {
-    const rows = await sql.unsafe(createEndUserQuery, [args.clientId, args.userId, args.userType, args.userWalletAddress, args.isActive, args.status]).values();
+    const rows = await sql.unsafe(createEndUserQuery, [args.clientId, args.userId, args.userType, args.userWalletAddress, args.isActive, args.status, args.environment]).values();
     if (rows.length !== 1) {
         return null;
     }

@@ -14,6 +14,7 @@
 	"dependencies": {
 		"@privy-io/node": "^0.4.1",
 		"@quirk/sqlcgen": "workspace:*",
+		"@quirk/yield-engine": "workspace:*",
 		"@ts-rest/core": "catalog:",
 		"@types/bcrypt": "^6.0.0",
 		"axios": "catalog:",

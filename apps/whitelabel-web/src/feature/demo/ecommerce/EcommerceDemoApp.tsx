@@ -1,11 +1,19 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 
+import { usePrivy } from "@privy-io/react-auth"
 import { Home, Loader2, RefreshCw, TrendingUp, Wallet } from "lucide-react"
 
-import { createFiatDeposit, createUser, getUserBalance, getUserByClientUserId, createWithdrawal } from "@/api/b2bClientHelpers"
+import {
+	createFiatDeposit,
+	createUser,
+	createWithdrawal,
+	getUserBalance,
+	getUserByClientUserId,
+} from "@/api/b2bClientHelpers"
 import { LandingNavbar } from "@/feature/landing/LandingNavbar"
 import { useClientContextStore } from "@/store/clientContextStore"
-import { useDemoStore } from "@/store/demoStore"
+import { useDemoProductStore } from "@/store/demoProductStore"
+import { useDemoStore, useHydrated } from "@/store/demoStore"
 
 import { DemoSettings } from "../shared/DemoSettings"
 import { DepositModal } from "../shared/DepositModal"
@@ -24,6 +32,9 @@ interface UserBalance {
 }
 
 export function EcommerceDemoApp() {
+	// CRITICAL: Check if Zustand has finished hydrating from localStorage
+	const hasHydrated = useHydrated()
+
 	const [currentCardIndex, setCurrentCardIndex] = useState(0)
 	const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
 	const [touchStart, setTouchStart] = useState(0)
@@ -34,14 +45,22 @@ export function EcommerceDemoApp() {
 	const [isLoadingBalance, setIsLoadingBalance] = useState(false)
 	const [balanceError, setBalanceError] = useState<string | null>(null)
 
+	// Get Privy user for logging
+	const { user } = usePrivy()
+	const privyUserId = user?.id
+
 	// Get client context (productId, clientId, apiKey)
 	const { productId, clientId, hasApiKey } = useClientContextStore()
+
+	// Get selected product info
+	const { selectedProductId } = useDemoProductStore()
 
 	// Get demo-specific state from demoStore
 	const {
 		hasEarnAccount,
 		isCreatingAccount,
 		endUserId,
+		endUserClientUserId,
 		error,
 		selectedEnvironment,
 		setIsCreatingAccount,
@@ -51,11 +70,12 @@ export function EcommerceDemoApp() {
 		addDeposit,
 		getPersonaUserId,
 		selectedPersona,
+		selectedVisualizationType,
 	} = useDemoStore()
 
 	// Function to fetch balance
 	const fetchBalance = async () => {
-		if (!endUserId || !hasEarnAccount) {
+		if (!endUserClientUserId || !hasEarnAccount) {
 			setRealBalance(null)
 			return
 		}
@@ -64,14 +84,14 @@ export function EcommerceDemoApp() {
 		setBalanceError(null)
 
 		try {
-			console.log("[EcommerceDemoApp] Fetching real balance for user:", endUserId, "environment:", selectedEnvironment)
-			const response = await getUserBalance(endUserId, { environment: selectedEnvironment })
+			console.log("[EcommerceDemoApp] Fetching real balance for user:", endUserClientUserId, "environment:", selectedEnvironment)
+			const response = await getUserBalance(endUserClientUserId, { environment: selectedEnvironment })
 
 			if (response.found && response.data) {
 				console.log("[EcommerceDemoApp] Real balance fetched:", response.data)
 				setRealBalance(response.data)
 			} else {
-				console.warn("[EcommerceDemoApp] Balance not found for user:", endUserId)
+				console.warn("[EcommerceDemoApp] Balance not found for user:", endUserClientUserId)
 				setBalanceError("Balance not found")
 			}
 		} catch (err) {
@@ -82,16 +102,60 @@ export function EcommerceDemoApp() {
 		}
 	}
 
-	// Fetch real balance when endUserId exists or environment changes
+	// Fetch real balance when endUserClientUserId exists or environment changes
 	useEffect(() => {
 		fetchBalance()
-	}, [endUserId, hasEarnAccount, selectedEnvironment])
+	}, [endUserClientUserId, hasEarnAccount, selectedEnvironment])
 
 	// Check for existing user on mount (sync local state with backend)
 	useEffect(() => {
+		// CRITICAL: Wait for Zustand to hydrate from localStorage
+		if (!hasHydrated) {
+			console.log("[EcommerceDemoApp] ⏳ Waiting for Zustand hydration...")
+			return // Exit early, will re-run when hasHydrated becomes true
+		}
+
+		console.log("[EcommerceDemoApp] ✅ Zustand hydrated, proceeding with initialization...")
+
 		const checkExistingUser = async () => {
-			// Skip if already have an account loaded or no clientId
+			// Skip if already activated or no clientId
 			if (hasEarnAccount || !clientId) return
+
+			// CRITICAL FIX: If we have endUserId but no persona, restore persona from endUserClientUserId
+			// This handles the case where persona state was lost but user data persisted
+			if (endUserId && endUserClientUserId && !selectedPersona) {
+				console.log("[EcommerceDemoApp] 🔧 Detected endUserId without persona - restoring from clientUserId:", {
+					endUserId,
+					endUserClientUserId,
+					selectedPersona,
+				})
+
+				// Extract persona from Static Key format: {privyId}:{platform}:{persona}
+				const parts = endUserClientUserId.split(":")
+				if (parts.length === 3) {
+					const [privyId, platform, persona] = parts
+					console.log("[EcommerceDemoApp] 🔧 Restoring persona:", { privyId, platform, persona })
+
+					// Restore persona state
+					const { setPersona } = useDemoStore.getState()
+					setPersona(privyId, persona as any, platform as any)
+
+					console.log("[EcommerceDemoApp] ✅ Persona restored from Static Key")
+				}
+
+				// Check if user is already active in backend
+				try {
+					const user = await getUserByClientUserId(clientId, endUserClientUserId)
+					if (user?.status === "active") {
+						console.log("[EcommerceDemoApp] ✅ User is already active, activating account")
+						useDemoStore.getState().activateEarnAccount()
+					}
+				} catch (err) {
+					console.warn("[EcommerceDemoApp] Failed to check user status:", err)
+				}
+
+				return
+			}
 
 			// Get persona's deterministic userId
 			const personaUserId = getPersonaUserId()
@@ -107,6 +171,12 @@ export function EcommerceDemoApp() {
 						endUserClientUserId: personaUserId,
 					})
 					console.log("[EcommerceDemoApp] Found existing user:", user.id)
+
+					// If user is active, activate the account
+					if (user.status === "active") {
+						console.log("[EcommerceDemoApp] User is active, activating account")
+						useDemoStore.getState().activateEarnAccount()
+					}
 				}
 			} catch (err) {
 				// Non-blocking - user can still create new account
@@ -115,7 +185,17 @@ export function EcommerceDemoApp() {
 		}
 
 		checkExistingUser()
-	}, [clientId, hasEarnAccount, selectedEnvironment, getPersonaUserId, setEndUser])
+	}, [
+		hasHydrated, // ✅ Add to dependency array
+		clientId,
+		hasEarnAccount,
+		selectedEnvironment,
+		endUserId,
+		endUserClientUserId,
+		selectedPersona,
+		getPersonaUserId,
+		setEndUser,
+	])
 
 	// Get persona-specific mock data
 	const personaMockData = getPersonaMockData(selectedPersona)
@@ -157,11 +237,19 @@ export function EcommerceDemoApp() {
 	const isSavingsCard = currentCard.id === "savings"
 
 	const handleStartEarning = async () => {
+		console.log("[EcommerceDemoApp] 🚀 handleStartEarning() called:", {
+			endUserId,
+			endUserClientUserId, // This is the Static Key
+			selectedPersona,
+			hasEarnAccount,
+			selectedEnvironment,
+		})
+
 		setIsCreatingAccount(true)
 		setError(null)
 
 		try {
-			// Check if we have client context
+			// Validate context
 			if (!productId) {
 				throw new Error("No product ID configured. Please set up via Demo Settings.")
 			}
@@ -170,40 +258,69 @@ export function EcommerceDemoApp() {
 				throw new Error("No API key configured. Please set up via Demo Settings.")
 			}
 
-			// Get persona's client user ID (product-scoped) or generate random
-			const personaUserId = getPersonaUserId()
-			const demoUserId = personaUserId || `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+			if (!endUserClientUserId) {
+				throw new Error("No end-user client user ID set. Please select a persona.")
+			}
 
-			console.log("[DemoClientApp] Creating end-user account:", {
-				productId,
-				clientUserId: demoUserId,
-				isPersona: !!personaUserId,
-			})
+			if (!clientId) {
+				throw new Error("No client ID found. Please check product configuration.")
+			}
 
-			// Call the API to create end-user account with pending_onboarding status
-			const response = await createUser(productId, {
-				clientUserId: demoUserId,
-				email: "demo@example.com", // Optional demo email
-				status: "pending_onboarding", // ✅ User needs to complete onboarding first
-			})
+			// ✅ STEP 1: Check if user exists with this Static Key
+			console.log("[EcommerceDemoApp] 🔄 Checking for existing user with Static Key:", endUserClientUserId)
+			let user = await getUserByClientUserId(clientId, endUserClientUserId)
 
-			console.log("[DemoClientApp] End-user created successfully:", response)
+			// ✅ STEP 2: Create user ONLY if doesn't exist
+			if (!user) {
+				console.log("[EcommerceDemoApp] 🆕 User not found, creating new user with Static Key...")
 
-			// Store the end user ID in demoStore
-			if (response && typeof response === "object" && "id" in response && "clientId" in response) {
-				setEndUser({
-					endUserId: response.id,
-					endUserClientUserId: demoUserId,
+				const createResponse = await createUser(productId, {
+					clientUserId: endUserClientUserId, // Use Static Key as clientUserId
+					email: "demo@example.com",
+					status: "pending_onboarding",
 				})
 
-				// ✅ Redirect to onboarding flow (include productId for fetching strategies)
-				window.location.href = `/onboarding/${demoUserId}?userId=${response.id}&clientId=${response.clientId}&productId=${productId}&returnPath=/demo`
+				console.log("[EcommerceDemoApp] ✅ New user created:", createResponse)
+
+				// Fetch the created user to get full details
+				user = await getUserByClientUserId(clientId, endUserClientUserId)
+
+				if (!user) {
+					throw new Error("Failed to verify user creation")
+				}
 			} else {
-				throw new Error("Invalid response from API")
+				console.log("[EcommerceDemoApp] ✅ Existing user found:", {
+					userId: user.id,
+					status: user.status,
+					clientUserId: user.clientUserId,
+				})
+			}
+
+			// ✅ STEP 3: Sync demoStore with backend user ID
+			if (!endUserId || endUserId !== user.id) {
+				console.log("[EcommerceDemoApp] 🔄 Syncing endUserId to demoStore...")
+				setEndUser({
+					endUserId: user.id,
+					endUserClientUserId: user.clientUserId,
+				})
+			}
+
+			// ✅ STEP 4: Handle based on user status
+			if (user.status === "pending_onboarding") {
+				// User needs to complete onboarding
+				console.log("[EcommerceDemoApp] ➡️ User needs onboarding, redirecting...")
+				window.location.href = `/onboarding/${endUserClientUserId}?userId=${user.id}&clientId=${clientId}&productId=${productId}&returnPath=/demo/ecommerce`
+			} else if (user.status === "active") {
+				// User already completed onboarding
+				console.log("[EcommerceDemoApp] ✅ User is already active, activating earn account...")
+				useDemoStore.getState().activateEarnAccount()
+				setIsCreatingAccount(false) // Hide loading state, show balance
+			} else {
+				throw new Error(`Invalid user status: ${user.status}`)
 			}
 		} catch (err) {
-			console.error("[DemoClientApp] Failed to create end-user:", err)
-			setError(err instanceof Error ? err.message : "Failed to create account. Please try again.")
+			console.error("[EcommerceDemoApp] ❌ Failed to handle user:", err)
+			setError(err instanceof Error ? err.message : "Failed to start earning. Please try again.")
 			setIsCreatingAccount(false)
 		}
 	}
@@ -325,6 +442,18 @@ export function EcommerceDemoApp() {
 		}
 	}
 
+	// Show loading state while Zustand is hydrating (prevents reading empty state)
+	if (!hasHydrated) {
+		return (
+			<div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-white flex items-center justify-center">
+				<div className="text-center">
+					<Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-accent" />
+					<p className="text-gray-600">Loading demo...</p>
+				</div>
+			</div>
+		)
+	}
+
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-gray-25 via-white to-white">
 			{/* Navbar */}
@@ -411,11 +540,15 @@ export function EcommerceDemoApp() {
 									)}
 								</div>
 								<h2 className="text-6xl font-bold text-gray-950 mb-3">
-									{hasEarnAccount
-										? isLoadingBalance
-											? <Loader2 className="h-12 w-12 animate-spin text-gray-400 mx-auto" />
-											: `$${earnBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-										: "$0.00"}
+									{hasEarnAccount ? (
+										isLoadingBalance ? (
+											<Loader2 className="h-12 w-12 animate-spin text-gray-400 mx-auto" />
+										) : (
+											`$${earnBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+										)
+									) : (
+										"$0.00"
+									)}
 								</h2>
 								{hasEarnAccount && !isLoadingBalance && (
 									<div className="flex items-center gap-2">
@@ -426,14 +559,10 @@ export function EcommerceDemoApp() {
 												maximumFractionDigits: 2,
 											})}
 										</span>
-										<span className="text-gray-500 text-sm">
-											Yield Earned {apy > 0 && `(${apy.toFixed(2)}% APY)`}
-										</span>
+										<span className="text-gray-500 text-sm">Yield Earned {apy > 0 && `(${apy.toFixed(2)}% APY)`}</span>
 									</div>
 								)}
-								{balanceError && (
-									<p className="text-sm text-red-500 mt-2">⚠️ {balanceError}</p>
-								)}
+								{balanceError && <p className="text-sm text-red-500 mt-2">⚠️ {balanceError}</p>}
 							</div>
 						</>
 					)}

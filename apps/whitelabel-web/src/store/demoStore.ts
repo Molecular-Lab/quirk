@@ -6,11 +6,14 @@
  * - demoProductStore: Product selection within demo
  * - clientContextStore: Shared API context (synced from demoProductStore)
  *
- * This store only handles:
+ * This store handles:
  * - End-user account state (simulating app user)
  * - Demo persona selection (Bob/Alice)
  * - Deposit flow state
  * - UI state for demo interactions
+ *
+ * Static Key Format: {privyUserId}:{platform}:{persona}
+ * Each persona gets a separate end_user with separate balance.
  */
 
 import { create } from "zustand"
@@ -20,13 +23,15 @@ import { useClientContextStore } from "./clientContextStore"
 import {
 	type PersonaType,
 	type PersonaProfile,
-	generatePersonaUserId,
+	type VisualizationType,
+	generateDemoClientUserId,
 	getPersonaProfile,
 } from "@/feature/demo/personas"
 
 export interface DemoState {
-	// Persona selection (Bob/Alice)
+	// Persona selection (Bob/Alice) - scoped by visualization type
 	selectedPersona: PersonaType | null
+	selectedVisualizationType: VisualizationType | null // Track which demo type the persona was selected for
 	personaData: (PersonaProfile & { clientUserId: string }) | null
 
 	// Environment selection (sandbox/production)
@@ -34,7 +39,7 @@ export interface DemoState {
 
 	// End-user state (created via "Start Earning")
 	endUserId: string | null
-	endUserClientUserId: string | null // The demo_user_xxx ID
+	endUserClientUserId: string | null // The static key: {privyUserId}:{platform}:{persona}
 	hasEarnAccount: boolean
 
 	// UI state
@@ -50,14 +55,18 @@ export interface DemoState {
 		status: "pending" | "completed" | "failed"
 		createdAt: string
 	}[]
+
+	// Hydration tracking (for preventing race conditions)
+	_hasHydrated: boolean
 }
 
 export interface DemoStore extends DemoState {
 	// Persona management
-	setPersona: (persona: PersonaType, productName: string, visualizationType: string) => void
+	setPersona: (privyUserId: string, persona: PersonaType, visualizationType: VisualizationType) => void
 	resetPersona: () => void
 	getPersonaUserId: () => string | null
 	hasPersona: () => boolean
+	hasPersonaForType: (visualizationType: VisualizationType) => boolean // Check if persona is selected for a specific demo type
 
 	// Environment management
 	setEnvironment: (environment: "sandbox" | "production") => void
@@ -65,6 +74,7 @@ export interface DemoStore extends DemoState {
 	// End-user setters
 	setEndUser: (data: { endUserId: string; endUserClientUserId: string }) => void
 	setHasEarnAccount: (hasAccount: boolean) => void
+	activateEarnAccount: () => void // Call after onboarding completes
 
 	// UI state setters
 	setIsCreatingAccount: (isCreating: boolean) => void
@@ -91,18 +101,21 @@ export interface DemoStore extends DemoState {
 
 const initialState: DemoState = {
 	selectedPersona: null,
+	selectedVisualizationType: null,
 	personaData: null,
 	selectedEnvironment: "sandbox",
 	endUserId: null,
 	endUserClientUserId: null,
 	hasEarnAccount: false,
+	// UI state
 	isCreatingAccount: false,
 	isDepositing: false,
 	error: null,
 	deposits: [],
+	_hasHydrated: false,
 }
 
-export const useDemoStore = create<DemoStore>()(
+const store = create<DemoStore>()(
 	persist(
 		(set, get) => ({
 			...initialState,
@@ -111,37 +124,67 @@ export const useDemoStore = create<DemoStore>()(
 			// PERSONA MANAGEMENT
 			// ==========================================
 
-			// Set persona and generate product-scoped user ID
-			setPersona: (persona, productName, visualizationType) => {
+			/**
+			 * Set persona and generate Static Key clientUserId
+			 * Format: {privyUserId}:{visualizationType}:{persona}
+			 *
+			 * IMPORTANT: This resets all end-user state to ensure clean state
+			 * when switching personas or platforms.
+			 */
+			setPersona: (privyUserId, persona, visualizationType) => {
+				const currentState = get()
 				const profile = getPersonaProfile(persona)
-				const clientUserId = generatePersonaUserId(persona, productName, visualizationType)
+				// Generate Static Key: {privyUserId}:{platform}:{persona}
+				const clientUserId = generateDemoClientUserId(privyUserId, visualizationType, persona)
 
-				console.log("[demoStore] Setting persona:", {
+				console.log("[demoStore] ✅ setPersona() called:", {
+					privyUserId,
 					persona,
-					productName,
 					visualizationType,
 					clientUserId,
+					previousPersona: currentState.selectedPersona,
+					previousVisualizationType: currentState.selectedVisualizationType,
+					previousEndUserId: currentState.endUserId,
+					previousHasEarnAccount: currentState.hasEarnAccount,
 				})
 
 				set({
 					selectedPersona: persona,
+					selectedVisualizationType: visualizationType,
 					personaData: {
 						...profile,
 						clientUserId,
 					},
-					// Reset end-user state when changing persona
+					// CRITICAL: Reset ALL end-user state when changing persona
+					// This fixes the stale endUserId bug
 					endUserId: null,
 					endUserClientUserId: null,
 					hasEarnAccount: false,
 					deposits: [],
+					error: null,
+				})
+
+				console.log("[demoStore] ✅ setPersona() state updated:", {
+					newPersona: persona,
+					newVisualizationType: visualizationType,
+					newClientUserId: clientUserId,
+					endUserStateReset: true,
 				})
 			},
 
 			// Reset persona selection
 			resetPersona: () => {
-				console.log("[demoStore] Resetting persona")
+				const currentState = get()
+				console.log("[demoStore] ✅ resetPersona() called:", {
+					previousPersona: currentState.selectedPersona,
+					previousVisualizationType: currentState.selectedVisualizationType,
+					previousEndUserId: currentState.endUserId,
+					previousHasEarnAccount: currentState.hasEarnAccount,
+				})
+
 				set({
 					selectedPersona: null,
+					selectedVisualizationType: null,
 					personaData: null,
 					// Also reset end-user state
 					endUserId: null,
@@ -149,6 +192,8 @@ export const useDemoStore = create<DemoStore>()(
 					hasEarnAccount: false,
 					deposits: [],
 				})
+
+				console.log("[demoStore] ✅ resetPersona() - all state cleared")
 			},
 
 			// Get persona's client user ID
@@ -156,9 +201,24 @@ export const useDemoStore = create<DemoStore>()(
 				return get().personaData?.clientUserId || null
 			},
 
-			// Check if persona is selected
+			// Check if persona is selected (any type)
 			hasPersona: () => {
 				return !!get().selectedPersona
+			},
+
+			// Check if persona is selected for a specific visualization type
+			hasPersonaForType: (visualizationType: VisualizationType) => {
+				const { selectedPersona, selectedVisualizationType } = get()
+				const result = !!selectedPersona && selectedVisualizationType === visualizationType
+
+				console.log("[demoStore] 🔍 hasPersonaForType() check:", {
+					requestedType: visualizationType,
+					selectedPersona,
+					selectedVisualizationType,
+					matches: result,
+				})
+
+				return result
 			},
 
 			// ==========================================
@@ -175,40 +235,70 @@ export const useDemoStore = create<DemoStore>()(
 			// END-USER MANAGEMENT
 			// ==========================================
 
-			// Set end-user after "Start Earning"
+			// Set end-user data (does NOT automatically activate earn account)
+			// Call setHasEarnAccount(true) or activateEarnAccount() after onboarding
 			setEndUser: (data) => {
-				console.log("[demoStore] Setting end-user:", {
+				const currentState = get()
+				console.log("[demoStore] ✅ setEndUser() called:", {
 					endUserId: data.endUserId,
 					clientUserId: data.endUserClientUserId,
+					previousEndUserId: currentState.endUserId,
+					previousClientUserId: currentState.endUserClientUserId,
+					hasEarnAccount: currentState.hasEarnAccount,
 				})
 
 				set({
 					endUserId: data.endUserId,
 					endUserClientUserId: data.endUserClientUserId,
-					hasEarnAccount: true,
+					// Don't auto-set hasEarnAccount - it should be set separately after onboarding
 					isCreatingAccount: false,
 					error: null,
+				})
+
+				console.log("[demoStore] ✅ setEndUser() state updated:", {
+					newEndUserId: data.endUserId,
+					newClientUserId: data.endUserClientUserId,
 				})
 			},
 
 			setHasEarnAccount: (hasAccount) => {
+				console.log("[demoStore] ✅ setHasEarnAccount():", hasAccount)
 				set({ hasEarnAccount: hasAccount })
 			},
 
+			// Activate earn account after onboarding completes
+			activateEarnAccount: () => {
+				const currentState = get()
+				console.log("[demoStore] ✅ activateEarnAccount() called:", {
+					previousHasEarnAccount: currentState.hasEarnAccount,
+					endUserId: currentState.endUserId,
+					endUserClientUserId: currentState.endUserClientUserId,
+				})
+				set({ hasEarnAccount: true })
+				console.log("[demoStore] ✅ activateEarnAccount() - hasEarnAccount set to true")
+			},
+
 			setIsCreatingAccount: (isCreating) => {
+				console.log("[demoStore] ✅ setIsCreatingAccount():", isCreating)
 				set({ isCreatingAccount: isCreating })
 			},
 
 			setIsDepositing: (isDepositing) => {
+				console.log("[demoStore] ✅ setIsDepositing():", isDepositing)
 				set({ isDepositing: isDepositing })
 			},
 
 			setError: (error) => {
+				console.log("[demoStore] ⚠️ setError():", error)
 				set({ error })
 			},
 
 			addDeposit: (deposit) => {
 				const deposits = get().deposits
+				console.log("[demoStore] ✅ addDeposit():", {
+					deposit,
+					previousDepositCount: deposits.length,
+				})
 				set({
 					deposits: [deposit, ...deposits],
 				})
@@ -248,68 +338,145 @@ export const useDemoStore = create<DemoStore>()(
 		}),
 		{
 			name: "proxify-demo-state",
+			version: 5, // Bumped to use Static Key format and remove DB sync
 			partialize: (state) =>
 				({
 					selectedPersona: state.selectedPersona,
+					selectedVisualizationType: state.selectedVisualizationType,
 					personaData: state.personaData,
 					selectedEnvironment: state.selectedEnvironment,
 					endUserId: state.endUserId,
 					endUserClientUserId: state.endUserClientUserId,
 					hasEarnAccount: state.hasEarnAccount,
 					deposits: state.deposits,
+					// DO NOT persist _hasHydrated (should reset to false on every page load)
 				}) as Partial<DemoStore>,
+			migrate: (persistedState, version) => {
+				// Version 5: Static Key format + removed DB sync
+				// Reset state to force clean demo flow with new Static Key format
+				if (!version || version < 5) {
+					console.log("[demoStore] Migrating from version", version, "to 5 - Static Key format")
+					return {
+						...persistedState,
+						selectedPersona: null,
+						selectedVisualizationType: null,
+						personaData: null,
+						endUserId: null,
+						endUserClientUserId: null,
+						hasEarnAccount: false,
+						deposits: [],
+					} as Partial<DemoStore>
+				}
+				return persistedState as Partial<DemoStore>
+			},
+			// Mark hydration complete when Zustand finishes loading from localStorage
+			onRehydrateStorage: () => {
+				console.log("[demoStore] 🔄 Rehydration started...")
+				return (state, error) => {
+					if (error) {
+						console.error("[demoStore] ❌ Rehydration failed:", error)
+					} else {
+						console.log("[demoStore] ✅ Rehydration complete, setting _hasHydrated = true")
+						if (state) {
+							state._hasHydrated = true
+						}
+					}
+				}
+			},
 		},
 	),
 )
 
+// Export the store
+export const useDemoStore = store
+
+// Subscribe to hydration completion
+// This ensures _hasHydrated is set even if onRehydrateStorage doesn't fire
+if (typeof window !== 'undefined') {
+	// Wait for next tick to ensure persist middleware is initialized
+	setTimeout(() => {
+		const unsubscribe = store.subscribe(
+			(state) => state._hasHydrated,
+			(hasHydrated) => {
+				if (!hasHydrated) {
+					console.log('[demoStore] 🔧 Manually setting _hasHydrated = true')
+					store.setState({ _hasHydrated: true })
+					unsubscribe()
+				}
+			}
+		)
+		// Give it 100ms, then force hydration complete if not already set
+		setTimeout(() => {
+			if (!store.getState()._hasHydrated) {
+				console.log('[demoStore] ⚡ Force-setting _hasHydrated = true after timeout')
+				store.setState({ _hasHydrated: true })
+			}
+		}, 100)
+	}, 0)
+}
+
 /**
- * Usage Example (Updated for demoProductStore + clientContextStore architecture):
+ * Hook to check if Zustand has finished hydrating from localStorage
  *
- * // 1. Client context is now managed by demoProductStore + clientContextStore
- * // Demo components should NOT interact with demoStore for client context
+ * Usage in components:
+ *   const hasHydrated = useHydrated()
  *
- * // 2. Start Earning - Create end-user account
- * const { setIsCreatingAccount, setEndUser, setError } = useDemoStore()
- * const { productId } = useClientContext()  // Get from clientContextStore
+ *   if (!hasHydrated) {
+ *     return <LoadingSpinner />  // Wait for hydration
+ *   }
  *
- * const handleStartEarning = async () => {
- *   setIsCreatingAccount(true)
- *   setError(null)
+ * This prevents race conditions where components try to read state
+ * before Zustand has finished loading from localStorage.
+ */
+export const useHydrated = () => {
+	const hasHydrated = useDemoStore((state) => state._hasHydrated)
+	return hasHydrated
+}
+
+/**
+ * Demo Flow with Static Keys
  *
- *   const demoUserId = `demo_user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+ * Static Key Format: {privyUserId}:{platform}:{persona}
+ * Example: did:privy:abc123:gig-workers:bob
  *
- *   const response = await createUser(productId, {
- *     clientUserId: demoUserId,
- *     email: 'demo@example.com',
+ * Flow:
+ * 1. User selects Platform (ecommerce/creators/gig-workers)
+ *    → demoProductStore.selectVisualization(platform)
+ *
+ * 2. User selects Product (to get API key for that platform)
+ *    → demoProductStore.selectProduct(productId)
+ *    → clientContextStore synced automatically
+ *
+ * 3. User selects Persona (Bob/Alice)
+ *    → Generate Static Key: {privyId}:{platform}:{persona}
+ *    → Call: createUser(clientId, { clientUserId: staticKey })
+ *    → Returns: { id: endUserId, ... }
+ *    → demoStore.setPersona(privyId, persona, platform)
+ *    → demoStore.setEndUser({ endUserId, endUserClientUserId: staticKey })
+ *    → demoStore.activateEarnAccount()
+ *    → Navigate to /demo/{platform}
+ *
+ * Usage Example:
+ *
+ * const handleSelectPersona = async (persona: PersonaType) => {
+ *   const { productId } = useClientContext()
+ *   const { setPersona, setEndUser, activateEarnAccount } = useDemoStore()
+ *
+ *   // Generate Static Key
+ *   const clientUserId = generateDemoClientUserId(privyUserId, visualizationType, persona)
+ *
+ *   // Create/Get end-user with Static Key
+ *   const result = await createUser(productId, {
+ *     clientUserId,
+ *     status: 'pending_onboarding',
  *   })
  *
- *   setEndUser({
- *     endUserId: response.id,
- *     endUserClientUserId: demoUserId,
- *   })
- * }
+ *   // Update stores in correct order
+ *   setPersona(privyUserId, persona, visualizationType)
+ *   setEndUser({ endUserId: result.id, endUserClientUserId: clientUserId })
+ *   activateEarnAccount()
  *
- * // 3. Deposit - Create deposit order
- * const { endUserId, setIsDepositing, addDeposit } = useDemoStore()
- *
- * const handleDeposit = async (amount: number) => {
- *   setIsDepositing(true)
- *
- *   const response = await createFiatDeposit({
- *     userId: endUserId,
- *     amount: amount.toString(),
- *     currency: 'USD',
- *     tokenSymbol: 'USDC',
- *   })
- *
- *   addDeposit({
- *     orderId: response.orderId,
- *     amount: amount.toString(),
- *     currency: 'USD',
- *     status: 'pending',
- *     createdAt: new Date().toISOString(),
- *   })
- *
- *   setIsDepositing(false)
+ *   // Navigate to demo
+ *   navigate({ to: `/demo/${visualizationType}` })
  * }
  */

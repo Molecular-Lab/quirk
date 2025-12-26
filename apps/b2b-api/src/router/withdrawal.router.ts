@@ -17,7 +17,7 @@ export function createWithdrawalRouter(
 		create: async ({ body, req }) => {
 			try {
 				// ✅ Extract clientId from authenticated request (set by API key middleware)
-				const clientId = (req as any).client?.id;
+				const clientId = (req as any).apiKeyClient?.id;
 				if (!clientId) {
 					logger.error("Client ID missing from authenticated request");
 					return {
@@ -192,7 +192,7 @@ export function createWithdrawalRouter(
 		listPending: async ({ query, req }) => {
 			try {
 				// Dual auth: Support both SDK (API key) and Dashboard (Privy)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				// ✅ Extract environment from query params
@@ -289,7 +289,7 @@ export function createWithdrawalRouter(
 		listByClient: async ({ params, query, req }) => {
 			try {
 				// ✅ Dual Auth: Check for both API key (SDK) and Privy (Dashboard)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				// Validate access
@@ -394,7 +394,7 @@ export function createWithdrawalRouter(
 		getStats: async ({ params, req }) => {
 			try {
 				// ✅ Dual Auth: Check for both API key (SDK) and Privy (Dashboard)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				// Validate access

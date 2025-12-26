@@ -31,9 +31,10 @@ INSERT INTO end_users (
   user_type,
   user_wallet_address,
   is_active,
-  status
+  status,
+  environment
 ) VALUES (
-  $1, $2, $3, $4, $5, $6
+  $1, $2, $3, $4, $5, $6, $7
 )
 RETURNING *;
 

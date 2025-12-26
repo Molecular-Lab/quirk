@@ -21,16 +21,16 @@ import {
 	DepositRepository,
 	WithdrawalRepository,
 	AuditRepository,
-	RevenueRepository, // ✅ NEW: Revenue distribution tracking
+	RevenueRepository, // ✅ Revenue distribution tracking
 	B2BClientUseCase,
 	B2BVaultUseCase,
 	B2BUserUseCase,
 	B2BDepositUseCase,
 	B2BWithdrawalUseCase,
 	B2BUserVaultUseCase,
-	ClientGrowthIndexService, // ✅ NEW: Client growth index calculation
-	ViemClientManager, // ✅ NEW: Blockchain client for minting tokens
-	RevenueService, // ✅ NEW: Revenue tracking service
+	ClientGrowthIndexService, // ✅ Client growth index calculation
+	ViemClientManager, // ✅ Blockchain client for minting tokens
+	RevenueService, // ✅ Revenue tracking service
 } from "@quirk/core";
 import { b2bContract } from "@quirk/b2b-api-core";
 import { createExpressEndpoints } from "@ts-rest/express";
@@ -70,22 +70,22 @@ async function main() {
 		process.exit(1);
 	}
 
-	// Initialize ViemClientManager for blockchain interactions
-	const deployerPrivateKey = ENV.DEPLOYER_PRIVATE_KEY || ENV.PRIVATE_KEY;
-	if (!deployerPrivateKey) {
-		logger.error("❌ DEPLOYER_PRIVATE_KEY not set in environment");
-		logger.error("   Please set DEPLOYER_PRIVATE_KEY in .env file");
+	// Initialize ViemClientManager for blockchain interactions (sandbox minting)
+	const sandboxOracleKey = ENV.SANDBOX_ORACLE_PRIVATE_KEY || ENV.DEPLOYER_PRIVATE_KEY || ENV.PRIVATE_KEY;
+	if (!sandboxOracleKey) {
+		logger.error("❌ SANDBOX_ORACLE_PRIVATE_KEY not set in environment");
+		logger.error("   Please set SANDBOX_ORACLE_PRIVATE_KEY in .env file (contract owner key for minting)");
 		process.exit(1);
 	}
 
-	if (!deployerPrivateKey.startsWith("0x")) {
-		logger.error("❌ DEPLOYER_PRIVATE_KEY must start with 0x");
+	if (!sandboxOracleKey.startsWith("0x")) {
+		logger.error("❌ SANDBOX_ORACLE_PRIVATE_KEY must start with 0x");
 		process.exit(1);
 	}
 
 	try {
-		ViemClientManager.init(deployerPrivateKey as `0x${string}`);
-		logger.info("✅ ViemClientManager initialized for blockchain operations");
+		ViemClientManager.init(sandboxOracleKey as `0x${string}`);
+		logger.info("✅ ViemClientManager initialized for sandbox blockchain operations");
 	} catch (error: any) {
 		logger.error("❌ Failed to initialize ViemClientManager", { error: error.message });
 		process.exit(1);

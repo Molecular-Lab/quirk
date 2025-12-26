@@ -91,7 +91,7 @@ export class B2BWithdrawalUseCase {
 		})
 
 		// ✅ STEP 2: Get end_user_vault for this environment (with row lock)
-		const userVault = await this.vaultRepository.getEndUserVaultByClientForUpdate(endUser.id, clientId, withdrawalEnvironment)
+		const userVault = await this.vaultRepository.getEndUserVaultByClientForUpdate(endUser.userId, clientId, withdrawalEnvironment)
 		if (!userVault) {
 			throw new Error(`User has no vault for client ${clientId} in ${withdrawalEnvironment} environment`)
 		}

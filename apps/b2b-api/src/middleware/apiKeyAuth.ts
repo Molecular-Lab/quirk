@@ -17,9 +17,9 @@ import { logger } from "../logger";
  * Usage:
  * ```typescript
  * import { apiKeyAuth } from './middleware/apiKeyAuth';
- * 
+ *
  * router.post('/api/v1/users', apiKeyAuth(clientUseCase), async (req, res) => {
- *   const client = req.client; // Authenticated client
+ *   const client = req.apiKeyClient; // Authenticated client
  *   // ...
  * });
  * ```
@@ -95,8 +95,9 @@ export function apiKeyAuth(clientUseCase: B2BClientUseCase) {
 			});
 
 			// Attach client to request for downstream use
+			// ⚠️ Use 'apiKeyClient' instead of 'client' to avoid collision with Node.js req.client (socket)
 			// @ts-ignore - Extending Request type
-			req.client = client;
+			req.apiKeyClient = client;
 
 			next();
 		} catch (error) {
@@ -116,11 +117,14 @@ export function apiKeyAuth(clientUseCase: B2BClientUseCase) {
 /**
  * TypeScript type extension for Request object
  * Add this to your global types or import where needed
+ *
+ * ⚠️ NOTE: We use 'apiKeyClient' instead of 'client' to avoid collision
+ * with Node.js req.client (the underlying socket from http.IncomingMessage)
  */
 declare global {
 	namespace Express {
 		interface Request {
-			client?: {
+			apiKeyClient?: {
 				id: string;
 				productId: string;
 				companyName: string;

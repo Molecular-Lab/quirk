@@ -6,6 +6,7 @@
 import { AuditRepository, ClientRepository, PrivyAccountRepository, VaultRepository } from "../../repository"
 import { RevenueService } from "../../service"
 import { extractPrefix, generateApiKey, hashApiKey } from "../../utils/apiKey"
+import { YieldAggregator } from "@quirk/yield-engine"
 
 import type {
 	AddFundsRequest,
@@ -964,15 +965,48 @@ export class B2BClientUseCase {
 		}
 
 		// Fetch all metrics in parallel with environment filter
-		const [balances, revenue, endUsers, recentTransactions] = await Promise.all([
+		const [balances, revenue, endUsers, recentTransactions, vaults] = await Promise.all([
 			this.getWalletBalances(productId, environment),
 			this.getRevenueMetrics(productId, environment),
 			this.getEndUserGrowthMetrics(productId, environment),
 			this.getEndUserTransactions(productId, 1, 10, environment),
+			this.vaultRepository.listClientVaults(client.id),
 		])
+
+		// Calculate weighted average APY from vaults
+		// Formula: Sum(staked_balance * apy) / Sum(staked_balance)
+		let avgAPY = "0.00"
+		const environmentVaults = environment
+			? vaults.filter((v) => v.environment === environment)
+			: vaults
+
+		if (environmentVaults.length > 0) {
+			let totalStaked = 0
+			let weightedAPYSum = 0
+
+			for (const vault of environmentVaults) {
+				const stakedBalance = parseFloat(vault.totalStakedBalance || "0")
+				const apy = parseFloat(vault.apy_7d || "0")
+
+				if (stakedBalance > 0) {
+					totalStaked += stakedBalance
+					weightedAPYSum += stakedBalance * apy
+				}
+			}
+
+			if (totalStaked > 0) {
+				avgAPY = (weightedAPYSum / totalStaked).toFixed(2)
+			}
+		}
+
+		// Fallback: Calculate expected APY from configured strategies when no staked balance
+		if (avgAPY === "0.00") {
+			avgAPY = await this.calculateExpectedAPY(client, environmentVaults)
+		}
 
 		return {
 			companyName: client.companyName,
+			avgAPY,
 			balances: {
 				totalIdleBalance: balances.totalIdleBalance,
 				totalEarningBalance: balances.totalEarningBalance,
@@ -1006,16 +1040,62 @@ export class B2BClientUseCase {
 	 */
 	async getAggregateDashboardSummary(privyOrganizationId: string, environment?: "sandbox" | "production") {
 		// Fetch aggregated data from single SQL query with environment filter
-		const aggregatedData = await this.clientRepository.getAggregatedDashboardSummary(privyOrganizationId, environment)
+		const [aggregatedData, allClients] = await Promise.all([
+			this.clientRepository.getAggregatedDashboardSummary(privyOrganizationId, environment),
+			this.clientRepository.getAllClientsByPrivyOrgId(privyOrganizationId),
+		])
 
 		if (!aggregatedData) {
 			throw new Error(`No organizations found for Privy ID: ${privyOrganizationId}`)
+		}
+
+		// Calculate weighted average APY across all clients' vaults
+		let avgAPY = "0.00"
+
+		if (allClients.length > 0) {
+			// Fetch all vaults for all clients
+			const allVaultsPromises = allClients.map((client) => this.vaultRepository.listClientVaults(client.id))
+			const allVaultsArrays = await Promise.all(allVaultsPromises)
+			const allVaults = allVaultsArrays.flat()
+
+			// Filter by environment if specified
+			const environmentVaults = environment ? allVaults.filter((v) => v.environment === environment) : allVaults
+
+			let totalStaked = 0
+			let weightedAPYSum = 0
+
+			for (const vault of environmentVaults) {
+				const stakedBalance = parseFloat(vault.totalStakedBalance || "0")
+				const apy = parseFloat(vault.apy_7d || "0")
+
+				if (stakedBalance > 0) {
+					totalStaked += stakedBalance
+					weightedAPYSum += stakedBalance * apy
+				}
+			}
+
+			if (totalStaked > 0) {
+				avgAPY = (weightedAPYSum / totalStaked).toFixed(2)
+			}
+
+			// Fallback: Calculate expected APY from first client with configured strategies
+			if (avgAPY === "0.00" && allClients.length > 0) {
+				for (const client of allClients) {
+					const clientVaults = environmentVaults.filter((v) => v.clientId === client.id)
+					const expectedAPY = await this.calculateExpectedAPY(client as any, clientVaults)
+					if (expectedAPY !== "0.00") {
+						avgAPY = expectedAPY
+						break
+					}
+				}
+			}
 		}
 
 		// Map database columns to response format
 		return {
 			productId: "aggregate", // Special identifier for aggregate mode
 			companyName: aggregatedData.companyName || "All Products",
+			avgAPY,
 			balances: {
 				totalIdleBalance: aggregatedData.totalIdleBalance?.toString() || "0",
 				totalEarningBalance: aggregatedData.totalEarningBalance?.toString() || "0",
@@ -1038,6 +1118,95 @@ export class B2BClientUseCase {
 				totalDeposited: aggregatedData.totalDeposited?.toString() || "0",
 				totalWithdrawn: aggregatedData.totalWithdrawn?.toString() || "0",
 			},
+		}
+	}
+
+	/**
+	 * Calculate expected APY from configured strategies when no funds are staked
+	 * Uses real-time protocol APYs from YieldAggregator
+	 * @private
+	 */
+	private async calculateExpectedAPY(
+		client: GetClientByProductIdRow,
+		vaults: any[],
+	): Promise<string> {
+		try {
+			// 1. Get strategies from client_organizations.strategies_customization or strategies_preferences
+			const strategies = client.strategiesCustomization || client.strategiesPreferences
+
+			// Parse strategies if it's a string (JSONB from DB)
+			let parsedStrategies: any[] = []
+			if (strategies) {
+				try {
+					parsedStrategies = typeof strategies === "string" ? JSON.parse(strategies) : strategies
+				} catch {
+					parsedStrategies = []
+				}
+			}
+
+			// If no org-level strategies, check vault strategies
+			if (!parsedStrategies || !Array.isArray(parsedStrategies) || parsedStrategies.length === 0) {
+				for (const vault of vaults) {
+					if (vault.strategies) {
+						let vaultStrategies = vault.strategies
+						if (typeof vaultStrategies === "string") {
+							try {
+								vaultStrategies = JSON.parse(vaultStrategies)
+							} catch {
+								continue
+							}
+						}
+						if (Array.isArray(vaultStrategies) && vaultStrategies.length > 0) {
+							parsedStrategies = vaultStrategies
+							break
+						}
+					}
+				}
+			}
+
+			if (!parsedStrategies || parsedStrategies.length === 0) {
+				return "0.00"
+			}
+
+			// 2. Fetch real protocol APYs from YieldAggregator
+			const aggregator = new YieldAggregator()
+			const chainId = 8453 // Base mainnet (default)
+			const token = "USDC"
+
+			const opportunities = await aggregator.fetchAllOpportunities(token, chainId)
+
+			// 3. Map protocol APYs
+			const protocolAPYs: Record<string, number> = {}
+			for (const opp of opportunities.opportunities) {
+				protocolAPYs[opp.protocol.toLowerCase()] = parseFloat(opp.supplyAPY)
+			}
+
+			// 4. Calculate weighted average from strategy allocations
+			let weightedAPY = 0
+			let totalAllocation = 0
+
+			for (const strategy of parsedStrategies) {
+				const protocol = (strategy.protocol || "").toLowerCase()
+				const allocation = strategy.percentage || strategy.allocation || 0
+				const apy = protocolAPYs[protocol] || 0
+
+				if (allocation > 0 && apy > 0) {
+					weightedAPY += (allocation / 100) * apy
+					totalAllocation += allocation
+				}
+			}
+
+			console.log("[B2BClientUseCase] Calculated expected APY from strategies:", {
+				strategies: parsedStrategies.map((s) => `${s.protocol}: ${s.percentage || s.allocation}%`),
+				protocolAPYs,
+				weightedAPY: weightedAPY.toFixed(2),
+				totalAllocation,
+			})
+
+			return totalAllocation > 0 ? weightedAPY.toFixed(2) : "0.00"
+		} catch (error) {
+			console.error("[B2BClientUseCase] Error calculating expected APY:", error)
+			return "0.00"
 		}
 	}
 }

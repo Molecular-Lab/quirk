@@ -373,7 +373,7 @@ seed-test-client: ## Create a test client organization
 		) VALUES ( \
 			'privy_test_org_001', \
 			'0x0000000000000000000000000000000000000001', \
-			'custodial' \
+			'MANAGED' \
 		) \
 		ON CONFLICT (privy_organization_id) DO UPDATE SET \
 			privy_wallet_address = EXCLUDED.privy_wallet_address, \
@@ -469,7 +469,7 @@ clean: ## Clean build artifacts and node_modules
 	@find . -name ".turbo" -type d -prune -exec rm -rf {} +
 	@echo "$(COLOR_GREEN)✅ Cleaned!$(COLOR_RESET)"
 
-clean-all: clean docker-clean ## Clean everything (artifacts + Docker)
+clean-all: docker-clean ## Clean everything (artifacts + Docker)
 	@echo "$(COLOR_GREEN)✅ Everything cleaned!$(COLOR_RESET)"
 
 ##@ Testing & Validation

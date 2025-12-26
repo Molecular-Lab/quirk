@@ -5,7 +5,7 @@
 import type { initServer } from "@ts-rest/express";
 import { randomBytes } from "crypto";
 import { b2bContract } from "@quirk/b2b-api-core";
-import { getMockUSDCAddress } from "@quirk/core/constants";
+import { getMockUSDCAddress, NETWORK_CONFIG } from "@quirk/core/constants";
 import type { DepositService } from "../service/deposit.service";
 import type { ClientService } from "../service/client.service";
 import { mapDepositToDto, mapDepositsToDto } from "../mapper/deposit.mapper";
@@ -29,7 +29,7 @@ export function createDepositRouter(
 				logger.info("Creating fiat deposit", { body });
 
 				// ✅ Extract clientId from authenticated request
-				const clientId = (req as any).client?.id;
+				const clientId = (req as any).apiKeyClient?.id;
 				if (!clientId) {
 					logger.error("Client ID missing from authenticated request");
 					return {
@@ -175,7 +175,7 @@ export function createDepositRouter(
 		mockConfirmFiatDeposit: async ({ params, body, req }) => {
 			try {
 				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				logger.info("Mock payment confirmation", {
@@ -324,7 +324,7 @@ export function createDepositRouter(
 		batchCompleteDeposits: async ({ body, req }) => {
 			try {
 				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				// For Privy session: Use first product as default client
@@ -359,6 +359,7 @@ export function createDepositRouter(
 				}> = [];
 
 				let totalUSDC = 0;
+				let batchEnvironment: "sandbox" | "production" = "sandbox"; // Track environment for batch
 
 				// Process each order
 				for (const orderId of body.orderIds) {
@@ -415,6 +416,16 @@ export function createDepositRouter(
 					// 3. Verify deposit is pending
 					if (deposit.status !== "pending") {
 						logger.warn(`Deposit ${orderId} is already ${deposit.status}`);
+						continue;
+					}
+
+					// 3.5. Track environment (first deposit sets the batch environment)
+					const depositEnvironment = (deposit.environment as "sandbox" | "production") || "sandbox";
+					if (completedOrders.length === 0) {
+						batchEnvironment = depositEnvironment;
+						logger.info(`[Batch Complete] Environment: ${batchEnvironment}`);
+					} else if (depositEnvironment !== batchEnvironment) {
+						logger.warn(`Deposit ${orderId} has different environment (${depositEnvironment}) than batch (${batchEnvironment}), skipping`);
 						continue;
 					}
 
@@ -479,6 +490,7 @@ export function createDepositRouter(
 					return {
 						status: 400 as const,
 						body: {
+							success: false,
 							error: "Client custodial wallet not configured",
 						},
 					};
@@ -519,68 +531,172 @@ export function createDepositRouter(
 
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-				// 8. Execute USDC transfer to custodial wallet (RampToCustodial)
+				// 8. Execute token operation based on environment
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-				logger.info("🏦 RAMP TO CUSTODIAL - Minting MockUSDC (USDQ)");
-				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-				// Execute the actual mint transaction using DepositService
-				const chainId = String(ENV.CHAIN_ID); // Ethereum Sepolia (11155111) for deposits
-				const mockUSDCAddress = getMockUSDCAddress(ENV.CHAIN_ID as 11155111); // Get address from constants
 
-				logger.info(`📤 Transferring ${totalUSDC.toFixed(2)} USDC`);
-				logger.info(`📍 To: ${custodialWallet}`);
-				logger.info(`🔗 Chain: Sepolia Testnet (Chain ID: ${chainId})`);
-				logger.info(`💰 Token: MockUSDC (USDQ) - ${mockUSDCAddress}`);
-				logger.info(`📦 Orders processed: ${completedOrders.length}`);
-				logger.info(`🔐 Client ID: ${clientId}`);
+				let txHash: string | undefined;
+				let amountProcessed: string | undefined;
+				let oracleBalanceAfter: string | undefined;
 
-				let mintResult;
-				try {
-					mintResult = await depositService.mintTokensToCustodial(
-						chainId,
-						mockUSDCAddress,
-						custodialWallet,
-						totalUSDC.toFixed(2)
-					);
-				} catch (error) {
-					logger.error("❌ Mint to custodial failed:", {
-						error: error instanceof Error ? error.message : String(error),
-						chainId,
-						tokenAddress: mockUSDCAddress,
-						custodialWallet,
-						amount: totalUSDC.toFixed(2),
-					});
+				if (batchEnvironment === "production") {
+					// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+					// PRODUCTION: Transfer real USDC from oracle wallet
+					// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+					logger.info("🏦 PRODUCTION: Transfer USDC from Oracle");
 					logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-					return {
-						status: 500 as const,
-						body: {
-							error: "Failed to mint USDC to custodial wallet",
-							details: error instanceof Error ? error.message : "Unknown error - check server logs",
-						},
-					};
+
+					const mainnetChainId = "1"; // Ethereum Mainnet
+					const mainnetUSDCAddress = NETWORK_CONFIG.eth_mainnet.token.usdc.address;
+					const mainnetOracleKey = ENV.MAINNET_ORACLE_PRIVATE_KEY;
+
+					if (!mainnetOracleKey) {
+						logger.error("❌ MAINNET_ORACLE_PRIVATE_KEY not configured");
+						return {
+							status: 500 as const,
+							body: {
+								success: false,
+								error: "Production oracle not configured",
+								details: "MAINNET_ORACLE_PRIVATE_KEY environment variable is required for production deposits",
+							},
+						};
+					}
+
+					logger.info(`📤 Transferring ${totalUSDC.toFixed(2)} USDC (PRODUCTION)`);
+					logger.info(`📍 To: ${custodialWallet}`);
+					logger.info(`🔗 Chain: Ethereum Mainnet (Chain ID: ${mainnetChainId})`);
+					logger.info(`💰 Token: USDC - ${mainnetUSDCAddress}`);
+					logger.info(`📦 Orders processed: ${completedOrders.length}`);
+
+					const transferResult = await depositService.transferFromOracle(
+						mainnetChainId,
+						mainnetUSDCAddress,
+						custodialWallet,
+						totalUSDC.toFixed(2),
+						mainnetOracleKey,
+						ENV.MAINNET_RPC_URL,
+					);
+
+					if (!transferResult.success) {
+						logger.error("❌ Transfer from oracle failed:", transferResult.error);
+						logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+						// Handle insufficient balance case
+						if (transferResult.status === "insufficient_balance") {
+							return {
+								status: 400 as const,
+								body: {
+									success: false,
+									status: "insufficient_balance",
+									error: transferResult.error,
+									oracleBalance: transferResult.oracleBalance,
+									requiredAmount: transferResult.requiredAmount,
+									custodialWallet,
+								},
+							};
+						}
+
+						return {
+							status: 500 as const,
+							body: {
+								success: false,
+								error: "Failed to transfer USDC from oracle",
+								details: transferResult.error || "Unknown error - check server logs",
+							},
+						};
+					}
+
+					txHash = transferResult.txHash;
+					amountProcessed = transferResult.amountTransferred;
+					oracleBalanceAfter = transferResult.oracleBalanceAfter;
+
+					logger.info("✅ Transfer successful!");
+					logger.info(`   Transaction: ${txHash}`);
+					logger.info(`   Amount: ${amountProcessed} USDC`);
+					logger.info(`   Oracle Balance After: ${oracleBalanceAfter} USDC`);
+
+				} else {
+					// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+					// SANDBOX: Mint MockUSDC on testnet
+					// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+					logger.info("🏦 SANDBOX: Minting MockUSDC (USDQ)");
+					logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+					const chainId = String(ENV.CHAIN_ID); // Ethereum Sepolia (11155111)
+					const mockUSDCAddress = getMockUSDCAddress(ENV.CHAIN_ID as 11155111);
+
+					logger.info(`📤 Minting ${totalUSDC.toFixed(2)} USDC (SANDBOX)`);
+					logger.info(`📍 To: ${custodialWallet}`);
+					logger.info(`🔗 Chain: Sepolia Testnet (Chain ID: ${chainId})`);
+					logger.info(`💰 Token: MockUSDC (USDQ) - ${mockUSDCAddress}`);
+					logger.info(`📦 Orders processed: ${completedOrders.length}`);
+
+					let mintResult;
+					try {
+						mintResult = await depositService.mintTokensToCustodial(
+							chainId,
+							mockUSDCAddress,
+							custodialWallet,
+							totalUSDC.toFixed(2)
+						);
+					} catch (error) {
+						logger.error("❌ Mint to custodial failed:", {
+							error: error instanceof Error ? error.message : String(error),
+							chainId,
+							tokenAddress: mockUSDCAddress,
+							custodialWallet,
+							amount: totalUSDC.toFixed(2),
+						});
+						logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+						return {
+							status: 500 as const,
+							body: {
+								success: false,
+								error: "Failed to mint USDC to custodial wallet",
+								details: error instanceof Error ? error.message : "Unknown error - check server logs",
+							},
+						};
+					}
+
+					txHash = mintResult.txHash;
+					amountProcessed = mintResult.amountMinted;
+
+					logger.info("✅ Mint successful!");
+					logger.info(`   Transaction: ${txHash}`);
+					logger.info(`   Amount: ${amountProcessed} USDC`);
 				}
 
-				logger.info("✅ Mint successful!");
-				logger.info(`   Transaction: ${mintResult.txHash}`);
-				logger.info(`   Block: ${mintResult.blockNumber}`);
-				logger.info(`   Amount: ${mintResult.amountMinted} USDC`);
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
 				// Add transfer txHash to all completed orders
 				const completedOrdersWithTxHash = completedOrders.map(order => ({
 					...order,
-					transferTxHash: mintResult.txHash,
+					transferTxHash: txHash,
 				}));
+
+				// Build response with environment-specific details
+				const responseBody: any = {
+					success: true,
+					status: "completed",
+					environment: batchEnvironment,
+					completedOrders: completedOrdersWithTxHash,
+					totalUSDC: totalUSDC.toFixed(2),
+					custodialWallet,
+					transferTxHash: txHash,
+				};
+
+				// Add oracle balance info for production
+				if (batchEnvironment === "production" && oracleBalanceAfter) {
+					responseBody.oracleBalanceAfter = oracleBalanceAfter;
+				}
+
+				// Add helpful note
+				responseBody.mockNote = batchEnvironment === "production"
+					? `✅ ${completedOrders.length} deposits completed. ${totalUSDC.toFixed(2)} USDC transferred from oracle. TX: ${txHash}`
+					: `✅ ${completedOrders.length} deposits completed. ${totalUSDC.toFixed(2)} USDC minted (SANDBOX). TX: ${txHash}`;
 
 				return {
 					status: 200 as const,
-					body: {
-						success: true,
-						completedOrders: completedOrdersWithTxHash,
-						totalUSDC: totalUSDC.toFixed(2),
-						custodialWallet,
-						mockNote: `✅ ${completedOrders.length} deposits completed. ${totalUSDC.toFixed(2)} USDC minted to custodial wallet. TX: ${mintResult.txHash}`,
-					},
+					body: responseBody,
 				};
 			} catch (error) {
 				logger.error("Failed to batch complete deposits", {
@@ -590,6 +706,7 @@ export function createDepositRouter(
 				return {
 					status: 400 as const,
 					body: {
+						success: false,
 						error: "Failed to complete deposits",
 						details: error instanceof Error ? error.message : String(error),
 					},
@@ -644,7 +761,7 @@ export function createDepositRouter(
 				logger.info("Initiating crypto deposit", { body });
 
 				// ✅ Extract clientId from authenticated request
-				const clientId = (req as any).client?.id;
+				const clientId = (req as any).apiKeyClient?.id;
 				if (!clientId) {
 					logger.error("Client ID missing from authenticated request");
 					return {
@@ -740,7 +857,7 @@ export function createDepositRouter(
 		listPending: async ({ query, req }) => {
 			try {
 				// Dual auth: Support both SDK (API key) and Dashboard (Privy)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				// ✅ Extract environment from query params
@@ -929,7 +1046,7 @@ export function createDepositRouter(
 		getByOrderId: async ({ params, req }) => {
 			try {
 				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				const deposit = await depositService.getDepositByOrderId(params.orderId);

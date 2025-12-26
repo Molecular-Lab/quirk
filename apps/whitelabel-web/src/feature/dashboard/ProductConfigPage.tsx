@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import {
 	Bot,
@@ -588,7 +588,7 @@ Help them understand or refine their strategy.`
 				// Update local state with full key (shown temporarily - user must copy)
 				setGeneratedApiKey(newKey)
 
-				// ✅ Save to demoProductStore for demos
+				// ✅ Save to demoProductStore (Zustand with persistence) for demos
 				const { setApiKey } = await import("@/store/demoProductStore").then((m) => m.useDemoProductStore.getState())
 				setApiKey(activeProductId, newKey)
 
@@ -596,7 +596,7 @@ Help them understand or refine their strategy.`
 					`[ProductConfigPage] ✅ New ${apiKeyEnvironment} API Key generated:`,
 					newKey.substring(0, 12) + "...",
 				)
-				console.log("[ProductConfigPage] ✅ API Key saved to demoProductStore")
+				console.log("[ProductConfigPage] ✅ API Key saved to demoProductStore (persisted via Zustand)")
 				toast.success(
 					`New ${apiKeyEnvironment} API key generated! Please copy it now - you won't be able to see the full key again.`,
 				)
@@ -891,7 +891,9 @@ Help them understand or refine their strategy.`
 											description={profile.description}
 											isSelected={selectedProfile.id === profile.id}
 											isLoading={false}
-											onClick={() => handleProfileSelect(profile)}
+											onClick={() => {
+												handleProfileSelect(profile)
+											}}
 										/>
 									))}
 								</div>

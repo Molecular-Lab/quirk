@@ -106,6 +106,7 @@ export class UserRepository {
 		userType: string,
 		userWalletAddress?: string,
 		status?: string,
+		environment?: "sandbox" | "production",
 	): Promise<CreateEndUserRow> {
 		const existing = await this.getByClientAndUserId(clientId, userId)
 		if (existing) {
@@ -119,6 +120,7 @@ export class UserRepository {
 			userWalletAddress: userWalletAddress || null,
 			isActive: true,
 			status: status || "active", // Default to 'active' for backward compatibility
+			environment: environment || "sandbox",
 		})
 
 		if (!created) {

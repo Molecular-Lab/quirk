@@ -11,6 +11,7 @@ import { toast } from "sonner"
 
 import { activateUser, getUserByClientUserId } from "@/api/b2bClientHelpers"
 import { useClientContextStore } from "@/store/clientContextStore"
+import { useDemoStore } from "@/store/demoStore"
 import { Button } from "@/components/ui/button"
 
 import { OnboardingStepper } from "./components/OnboardingStepper"
@@ -34,6 +35,9 @@ export function EndUserOnboardingPage() {
 
 	// Get productId from store as fallback
 	const storedProductId = useClientContextStore((state) => state.productId)
+
+	// Get activateEarnAccount to sync demoStore after successful activation
+	const activateEarnAccount = useDemoStore((state) => state.activateEarnAccount)
 
 	// Get userId, clientId, and productId from URL params (passed from demo apps)
 	const userId = (search as any)?.userId
@@ -95,6 +99,11 @@ export function EndUserOnboardingPage() {
 		setIsActivating(true)
 		try {
 			await activateUser(userId, productId)
+
+			// Sync demoStore state BEFORE navigating back to demo app
+			// This ensures the demo app shows the Earn UI with balance, not PersonaSelector
+			activateEarnAccount()
+			console.log("[EndUserOnboardingPage] Called activateEarnAccount() - hasEarnAccount is now true")
 
 			toast.success("Account activated successfully! Welcome aboard!")
 

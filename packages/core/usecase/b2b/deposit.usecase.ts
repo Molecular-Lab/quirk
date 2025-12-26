@@ -7,7 +7,7 @@ import BigNumber from "bignumber.js"
 
 import { type MockTokenChainId, MockUSDCClient } from "../../blockchain"
 import { ClientGrowthIndexService } from "../../service/client-growth-index.service"
-import { TokenTransferService } from "../../service/token-transfer.service"
+import { TokenTransferService, type TransferResult } from "../../service/token-transfer.service"
 
 import type { CompleteDepositRequest, CreateDepositRequest } from "../../dto/b2b"
 import type {
@@ -227,7 +227,20 @@ export class B2BDepositUseCase {
 			clientId: deposit.clientId,
 		})
 
-		let endUser = await this.userRepository.getById(deposit.userId)
+		let endUser = null
+
+		// Check if userId looks like a UUID (simple check)
+		const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(deposit.userId)
+
+		if (isUuid) {
+			try {
+				endUser = await this.userRepository.getById(deposit.userId)
+			} catch (error) {
+				// UUID lookup failed, will try clientUserId lookup
+				console.log("[Deposit] UUID lookup failed, trying clientUserId lookup")
+			}
+		}
+
 		if (!endUser) {
 			// Fallback: try looking up by client + user_id (client-provided ID)
 			console.log("[Deposit] User not found by ID, trying clientId+userId lookup")
@@ -245,7 +258,7 @@ export class B2BDepositUseCase {
 		console.log("[Deposit] Found end user:", { id: endUser.id, userId: endUser.userId })
 
 		// Step 4: Get or create end_user_vault (with environment support)
-		const userVault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, deposit.clientId, environment)
+		const userVault = await this.vaultRepository.getEndUserVaultByClient(endUser.userId, deposit.clientId, environment)
 
 		const depositAmount = new BigNumber(request.cryptoAmount)
 
@@ -255,7 +268,7 @@ export class B2BDepositUseCase {
 			console.log("[Deposit] Creating new end-user vault (vault missing - should have been created on registration)")
 
 			const newVault = await this.vaultRepository.createEndUserVault({
-				endUserId: endUser.id,
+				endUserId: endUser.userId,
 				clientId: deposit.clientId,
 				totalDeposited: depositAmount.toString(),
 				weightedEntryIndex: clientGrowthIndex.toString(),
@@ -411,6 +424,67 @@ export class B2BDepositUseCase {
 			blockNumber: result.blockNumber?.toString(),
 			amount: result.amountMinted,
 		})
+
+		return result
+	}
+
+	/**
+	 * Transfer USDC from oracle wallet to custodial wallet (for mainnet/production)
+	 *
+	 * Flow:
+	 * 1. Check oracle wallet balance FIRST
+	 * 2. If insufficient → return error with balance details
+	 * 3. If sufficient → execute ERC20 transfer
+	 *
+	 * @param chainId - Chain ID (Mainnet: 1, Sepolia: 11155111)
+	 * @param tokenAddress - USDC token contract address
+	 * @param custodialWallet - Destination custodial wallet address
+	 * @param amount - Amount to transfer (in USDC, e.g., "1000.50")
+	 * @param privateKey - Oracle wallet private key
+	 * @param rpcUrl - Optional custom RPC URL
+	 * @returns Transfer result with status and balance info
+	 */
+	async transferFromOracle(
+		chainId: string,
+		tokenAddress: string,
+		custodialWallet: string,
+		amount: string,
+		privateKey: string,
+		rpcUrl?: string,
+	): Promise<TransferResult> {
+		console.log("[Deposit] Transferring USDC from oracle to custodial wallet:", {
+			chainId,
+			tokenAddress,
+			custodialWallet,
+			amount,
+		})
+
+		const result = await this.tokenTransferService.transferFromOracle({
+			chainId,
+			tokenAddress,
+			custodialWallet,
+			amount,
+			privateKey,
+			rpcUrl,
+		})
+
+		if (!result.success) {
+			if (result.status === "insufficient_balance") {
+				console.error("[Deposit] ❌ Insufficient oracle balance:", {
+					required: result.requiredAmount,
+					available: result.oracleBalance,
+				})
+			} else {
+				console.error("[Deposit] ❌ Transfer failed:", result.error)
+			}
+		} else {
+			console.log("[Deposit] ✅ USDC transferred:", {
+				txHash: result.txHash,
+				blockNumber: result.blockNumber?.toString(),
+				amount: result.amountTransferred,
+				oracleBalanceAfter: result.oracleBalanceAfter,
+			})
+		}
 
 		return result
 	}

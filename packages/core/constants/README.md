@@ -17,7 +17,7 @@ import { getMockUSDCAddress, MOCK_USDC_ADDRESS } from '@proxify/core/constants'
 
 // Get address for specific chain
 const sepoliaAddress = getMockUSDCAddress(11155111) // Sepolia
-// Returns: '0x1d02848c34ed2155613dd5cd26ce20a601b9a489'
+// Returns: '0x2DA55f4c1eCEB0cEeB93ee598e852Bf24Abb8FcE'
 
 // Or use the default address (Sepolia)
 const defaultAddress = MOCK_USDC_ADDRESS
@@ -48,14 +48,14 @@ Mock USDC token addresses for testing purposes.
 
 | Chain | Chain ID | Address |
 |-------|----------|---------|
-| Sepolia | 11155111 | `0x1d02848c34ed2155613dd5cd26ce20a601b9a489` |
+| Sepolia | 11155111 | `0x2DA55f4c1eCEB0cEeB93ee598e852Bf24Abb8FcE` |
 
 **Add more chains:**
 
 ```typescript
-// In addresses.ts
+// In networks.ts
 export const MOCK_USDC_ADDRESSES: Partial<Record<SupportedChainId, `0x${string}`>> = {
-  11155111: '0x1d02848c34ed2155613dd5cd26ce20a601b9a489', // Sepolia
+  11155111: '0x2DA55f4c1eCEB0cEeB93ee598e852Bf24Abb8FcE', // Sepolia
   84532: '0x...', // Base Sepolia (add when deployed)
 }
 ```

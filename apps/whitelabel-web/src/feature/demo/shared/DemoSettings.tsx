@@ -1,5 +1,6 @@
 import { useState } from "react"
 
+import { usePrivy } from "@privy-io/react-auth"
 import { Settings, RefreshCw } from "lucide-react"
 
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -11,6 +12,7 @@ import { useDemoProductStore } from "@/store/demoProductStore"
 import { getAllPersonas, type PersonaType } from "@/feature/demo/personas"
 
 export function DemoSettings() {
+	const { user } = usePrivy()
 	const [isOpen, setIsOpen] = useState(false)
 	const [productConfirmDialog, setProductConfirmDialog] = useState<{
 		open: boolean
@@ -46,11 +48,22 @@ export function DemoSettings() {
 	const confirmProductChange = () => {
 		const { productId: newProductId } = productConfirmDialog
 
+		console.log("[DemoSettings] 🚀 confirmProductChange() called:", {
+			newProductId,
+			previousProductId: selectedProductId,
+		})
+
 		// Check if API key exists in store (should be loaded from localStorage already)
 		const apiKey = useDemoProductStore.getState().getApiKey(newProductId)
 
+		console.log("[DemoSettings] 📋 API key check:", {
+			hasApiKey: !!apiKey,
+			apiKeyPrefix: apiKey ? apiKey.substring(0, 12) + "..." : "NOT_SET",
+		})
+
 		if (!apiKey) {
 			const product = availableProducts.find((p) => p.productId === newProductId)
+			console.error("[DemoSettings] ❌ API key not found for product:", newProductId)
 			setProductConfirmDialog({ open: false, productId: "", productName: "" })
 			setApiKeyErrorDialog({
 				open: true,
@@ -59,11 +72,21 @@ export function DemoSettings() {
 			return
 		}
 
-		// Select product
+		// CRITICAL FIX: Reset demo state before switching product
+		console.log("[DemoSettings] 🔄 Calling resetDemo() before product switch...")
+		const { resetDemo } = useDemoStore.getState()
+		resetDemo()
+
+		// Select new product
+		console.log("[DemoSettings] 🔄 Calling selectProduct()...")
 		selectProduct(newProductId)
 
-		// Reload demo to apply changes
-		window.location.reload()
+		// CRITICAL FIX: Delay reload for localStorage persistence
+		console.log("[DemoSettings] ⏱️ Waiting 500ms for localStorage persistence...")
+		setTimeout(() => {
+			console.log("[DemoSettings] 🔄 Reloading page to apply product change...")
+			window.location.reload()
+		}, 500)
 	}
 
 	const handlePersonaChange = (newPersona: PersonaType) => {
@@ -78,17 +101,41 @@ export function DemoSettings() {
 
 	const confirmPersonaChange = () => {
 		const { persona: newPersona } = personaConfirmDialog
-		if (!newPersona) return
+		console.log("[DemoSettings] 🚀 confirmPersonaChange() called:", {
+			newPersona,
+			previousPersona: selectedPersona,
+			visualizationType,
+			userId: user?.id,
+		})
 
-		// Get product info for generating persona user ID
-		const productName = selectedProduct?.companyName || "demo"
+		if (!newPersona || !user?.id) {
+			console.error("[DemoSettings] ❌ Missing required data:", {
+				hasPersona: !!newPersona,
+				hasUserId: !!user?.id,
+			})
+			return
+		}
+
+		// Get visualization type for generating Static Key
 		const visualizationTypeValue = visualizationType || "ecommerce"
 
-		// Update persona in store
-		setPersona(newPersona, productName, visualizationTypeValue)
+		// CRITICAL FIX: Reset ALL demo state before switching persona
+		// This clears endUserId, hasEarnAccount, deposits, etc.
+		console.log("[DemoSettings] 🔄 Calling resetDemo() before persona switch...")
+		const { resetDemo } = useDemoStore.getState()
+		resetDemo()
 
-		// Reload demo to apply changes
-		window.location.reload()
+		// Now set new persona (will have clean slate)
+		console.log("[DemoSettings] 🔄 Calling setPersona() with new persona...")
+		setPersona(user.id, newPersona, visualizationTypeValue)
+
+		// CRITICAL FIX: Delay reload to ensure Zustand persists to localStorage
+		// Without this, localStorage hydrates OLD state on reload
+		console.log("[DemoSettings] ⏱️ Waiting 500ms for localStorage persistence...")
+		setTimeout(() => {
+			console.log("[DemoSettings] 🔄 Reloading page to apply persona change...")
+			window.location.reload()
+		}, 500)
 	}
 
 	return (

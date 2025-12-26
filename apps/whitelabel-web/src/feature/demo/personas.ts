@@ -6,6 +6,7 @@
  */
 
 export type PersonaType = "bob" | "alice"
+export type VisualizationType = "ecommerce" | "creators" | "gig-workers"
 
 export interface PersonaProfile {
 	id: PersonaType
@@ -42,48 +43,61 @@ export const DEMO_PERSONAS: Record<PersonaType, PersonaProfile> = {
 }
 
 /**
- * Generate product-scoped persona ID
- * Format: {persona}_{productName}_{visualizationType}
+ * Generate Static Key for demo end-user identification
+ * Format: {privyUserId}:{visualizationType}:{persona}
  *
  * Examples:
- * - bob_shopify_ecommerce
- * - alice_fastwork_creators
+ * - did:privy:abc123:gig-workers:bob
+ * - did:privy:xyz789:ecommerce:alice
  *
+ * This Static Key is used directly as `clientUserId` when calling the API.
+ * Each combination of (privyUser, platform, persona) gets a unique end_user.
+ *
+ * @param privyUserId - Privy user ID (e.g., "did:privy:abc123")
+ * @param visualizationType - Demo platform type (ecommerce/creators/gig-workers)
  * @param persona - Persona type (bob/alice)
- * @param productName - Product name (e.g., "Shopify", "Fastwork")
- * @param visualizationType - Demo type (ecommerce/creators/gig-workers)
  */
-export function generatePersonaUserId(
+export function generateDemoClientUserId(
+	privyUserId: string,
+	visualizationType: VisualizationType,
 	persona: PersonaType,
-	productName: string,
-	visualizationType: string,
 ): string {
-	// Normalize product name to lowercase and replace spaces
-	const normalizedProduct = productName.toLowerCase().replace(/\s+/g, "_")
-	return `${persona}_${normalizedProduct}_${visualizationType}`
+	return `${privyUserId}:${visualizationType}:${persona}`
 }
 
 /**
- * Parse persona user ID back to components
+ * Parse demo client_user_id back to components
+ * Format: {privyUserId}:{visualizationType}:{persona}
  *
- * @param userId - Product-scoped user ID
+ * @param clientUserId - Demo client user ID
  * @returns Parsed components or null if invalid format
  */
-export function parsePersonaUserId(userId: string): {
+export function parseDemoClientUserId(clientUserId: string): {
+	privyUserId: string
+	visualizationType: VisualizationType
 	persona: PersonaType
-	productName: string
-	visualizationType: string
 } | null {
-	const parts = userId.split("_")
-	if (parts.length < 3) return null
+	// Split by last two colons to handle privyUserId containing colons
+	const lastColonIdx = clientUserId.lastIndexOf(":")
+	if (lastColonIdx === -1) return null
 
-	const persona = parts[0] as PersonaType
+	const persona = clientUserId.slice(lastColonIdx + 1) as PersonaType
+	const remaining = clientUserId.slice(0, lastColonIdx)
+
+	const secondLastColonIdx = remaining.lastIndexOf(":")
+	if (secondLastColonIdx === -1) return null
+
+	const visualizationType = remaining.slice(secondLastColonIdx + 1) as VisualizationType
+	const privyUserId = remaining.slice(0, secondLastColonIdx)
+
+	// Validate persona and visualizationType
 	if (!DEMO_PERSONAS[persona]) return null
+	if (!["ecommerce", "creators", "gig-workers"].includes(visualizationType)) return null
 
 	return {
+		privyUserId,
+		visualizationType,
 		persona,
-		productName: parts.slice(1, -1).join("_"),
-		visualizationType: parts[parts.length - 1],
 	}
 }
 

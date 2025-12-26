@@ -597,7 +597,7 @@ export async function reduceStakedBalance(sql: Sql, args: ReduceStakedBalanceArg
 
 export const getEndUserVaultQuery = `-- name: GetEndUserVault :one
 
-SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at FROM end_user_vaults
+SELECT id, end_user_id_old_uuid, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at, end_user_id FROM end_user_vaults
 WHERE id = $1 LIMIT 1`;
 
 export interface GetEndUserVaultArgs {
@@ -606,7 +606,7 @@ export interface GetEndUserVaultArgs {
 
 export interface GetEndUserVaultRow {
     id: string;
-    endUserId: string;
+    endUserIdOldUuid: string;
     clientId: string;
     totalDeposited: string;
     totalWithdrawn: string;
@@ -617,6 +617,7 @@ export interface GetEndUserVaultRow {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    endUserId: string;
 }
 
 export async function getEndUserVault(sql: Sql, args: GetEndUserVaultArgs): Promise<GetEndUserVaultRow | null> {
@@ -627,7 +628,7 @@ export async function getEndUserVault(sql: Sql, args: GetEndUserVaultArgs): Prom
     const row = rows[0];
     return {
         id: row[0],
-        endUserId: row[1],
+        endUserIdOldUuid: row[1],
         clientId: row[2],
         totalDeposited: row[3],
         totalWithdrawn: row[4],
@@ -637,12 +638,13 @@ export async function getEndUserVault(sql: Sql, args: GetEndUserVaultArgs): Prom
         environment: row[8],
         isActive: row[9],
         createdAt: row[10],
-        updatedAt: row[11]
+        updatedAt: row[11],
+        endUserId: row[12]
     };
 }
 
 export const getEndUserVaultByClientQuery = `-- name: GetEndUserVaultByClient :one
-SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at FROM end_user_vaults
+SELECT id, end_user_id_old_uuid, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at, end_user_id FROM end_user_vaults
 WHERE end_user_id = $1
   AND client_id = $2
   AND environment = $3
@@ -656,7 +658,7 @@ export interface GetEndUserVaultByClientArgs {
 
 export interface GetEndUserVaultByClientRow {
     id: string;
-    endUserId: string;
+    endUserIdOldUuid: string;
     clientId: string;
     totalDeposited: string;
     totalWithdrawn: string;
@@ -667,6 +669,7 @@ export interface GetEndUserVaultByClientRow {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    endUserId: string;
 }
 
 export async function getEndUserVaultByClient(sql: Sql, args: GetEndUserVaultByClientArgs): Promise<GetEndUserVaultByClientRow | null> {
@@ -677,7 +680,7 @@ export async function getEndUserVaultByClient(sql: Sql, args: GetEndUserVaultByC
     const row = rows[0];
     return {
         id: row[0],
-        endUserId: row[1],
+        endUserIdOldUuid: row[1],
         clientId: row[2],
         totalDeposited: row[3],
         totalWithdrawn: row[4],
@@ -687,12 +690,13 @@ export async function getEndUserVaultByClient(sql: Sql, args: GetEndUserVaultByC
         environment: row[8],
         isActive: row[9],
         createdAt: row[10],
-        updatedAt: row[11]
+        updatedAt: row[11],
+        endUserId: row[12]
     };
 }
 
 export const getEndUserVaultByClientForUpdateQuery = `-- name: GetEndUserVaultByClientForUpdate :one
-SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at FROM end_user_vaults
+SELECT id, end_user_id_old_uuid, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at, end_user_id FROM end_user_vaults
 WHERE end_user_id = $1
   AND client_id = $2
   AND environment = $3
@@ -707,7 +711,7 @@ export interface GetEndUserVaultByClientForUpdateArgs {
 
 export interface GetEndUserVaultByClientForUpdateRow {
     id: string;
-    endUserId: string;
+    endUserIdOldUuid: string;
     clientId: string;
     totalDeposited: string;
     totalWithdrawn: string;
@@ -718,6 +722,7 @@ export interface GetEndUserVaultByClientForUpdateRow {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    endUserId: string;
 }
 
 export async function getEndUserVaultByClientForUpdate(sql: Sql, args: GetEndUserVaultByClientForUpdateArgs): Promise<GetEndUserVaultByClientForUpdateRow | null> {
@@ -728,7 +733,7 @@ export async function getEndUserVaultByClientForUpdate(sql: Sql, args: GetEndUse
     const row = rows[0];
     return {
         id: row[0],
-        endUserId: row[1],
+        endUserIdOldUuid: row[1],
         clientId: row[2],
         totalDeposited: row[3],
         totalWithdrawn: row[4],
@@ -738,12 +743,13 @@ export async function getEndUserVaultByClientForUpdate(sql: Sql, args: GetEndUse
         environment: row[8],
         isActive: row[9],
         createdAt: row[10],
-        updatedAt: row[11]
+        updatedAt: row[11],
+        endUserId: row[12]
     };
 }
 
 export const listEndUserVaultsQuery = `-- name: ListEndUserVaults :many
-SELECT id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at FROM end_user_vaults
+SELECT id, end_user_id_old_uuid, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at, end_user_id FROM end_user_vaults
 WHERE end_user_id = $1
 ORDER BY created_at DESC`;
 
@@ -753,7 +759,7 @@ export interface ListEndUserVaultsArgs {
 
 export interface ListEndUserVaultsRow {
     id: string;
-    endUserId: string;
+    endUserIdOldUuid: string;
     clientId: string;
     totalDeposited: string;
     totalWithdrawn: string;
@@ -764,12 +770,13 @@ export interface ListEndUserVaultsRow {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    endUserId: string;
 }
 
 export async function listEndUserVaults(sql: Sql, args: ListEndUserVaultsArgs): Promise<ListEndUserVaultsRow[]> {
     return (await sql.unsafe(listEndUserVaultsQuery, [args.endUserId]).values()).map(row => ({
         id: row[0],
-        endUserId: row[1],
+        endUserIdOldUuid: row[1],
         clientId: row[2],
         totalDeposited: row[3],
         totalWithdrawn: row[4],
@@ -779,7 +786,8 @@ export async function listEndUserVaults(sql: Sql, args: ListEndUserVaultsArgs): 
         environment: row[8],
         isActive: row[9],
         createdAt: row[10],
-        updatedAt: row[11]
+        updatedAt: row[11],
+        endUserId: row[12]
     }));
 }
 
@@ -793,7 +801,7 @@ INSERT INTO end_user_vaults (
 ) VALUES (
   $1, $2, $3, $4, $5
 )
-RETURNING id, end_user_id, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at`;
+RETURNING id, end_user_id_old_uuid, client_id, total_deposited, total_withdrawn, weighted_entry_index, last_deposit_at, last_withdrawal_at, environment, is_active, created_at, updated_at, end_user_id`;
 
 export interface CreateEndUserVaultArgs {
     endUserId: string;
@@ -805,7 +813,7 @@ export interface CreateEndUserVaultArgs {
 
 export interface CreateEndUserVaultRow {
     id: string;
-    endUserId: string;
+    endUserIdOldUuid: string;
     clientId: string;
     totalDeposited: string;
     totalWithdrawn: string;
@@ -816,6 +824,7 @@ export interface CreateEndUserVaultRow {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    endUserId: string;
 }
 
 export async function createEndUserVault(sql: Sql, args: CreateEndUserVaultArgs): Promise<CreateEndUserVaultRow | null> {
@@ -826,7 +835,7 @@ export async function createEndUserVault(sql: Sql, args: CreateEndUserVaultArgs)
     const row = rows[0];
     return {
         id: row[0],
-        endUserId: row[1],
+        endUserIdOldUuid: row[1],
         clientId: row[2],
         totalDeposited: row[3],
         totalWithdrawn: row[4],
@@ -836,7 +845,8 @@ export async function createEndUserVault(sql: Sql, args: CreateEndUserVaultArgs)
         environment: row[8],
         isActive: row[9],
         createdAt: row[10],
-        updatedAt: row[11]
+        updatedAt: row[11],
+        endUserId: row[12]
     };
 }
 

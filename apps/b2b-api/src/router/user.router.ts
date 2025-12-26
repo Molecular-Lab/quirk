@@ -19,7 +19,7 @@ export const createUserRouter = (
 		getOrCreate: async ({ body, req }) => {
 			try {
 				// ✅ SDK ONLY: Extract clientId from authenticated request (API key middleware)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				if (!apiKeyClient) {
 					logger.error("[User Router] Client ID missing from authenticated request");
 					return {
@@ -102,7 +102,7 @@ export const createUserRouter = (
 		getByClientUserId: async ({ params, req }) => {
 			try {
 				// ✅ Dual Auth: Check for both API key (SDK) and Privy (Dashboard)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				// Validate access
@@ -165,7 +165,7 @@ export const createUserRouter = (
 		listByClient: async ({ params, query, req }) => {
 			try {
 				// ✅ Dual Auth: Check for both API key (SDK) and Privy (Dashboard)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				// Validate access
@@ -250,7 +250,7 @@ export const createUserRouter = (
 		getBalance: async ({ params, query, req }) => {
 			try {
 				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				logger.info("Getting user balance", {
@@ -366,7 +366,7 @@ export const createUserRouter = (
 		listVaults: async ({ params, req }) => {
 			try {
 				// ✅ Dual auth: Support both SDK (API key) and Dashboard (Privy)
-				const apiKeyClient = (req as any).client;
+				const apiKeyClient = (req as any).apiKeyClient;
 				const privySession = (req as any).privy;
 
 				logger.info("Listing user vaults", {

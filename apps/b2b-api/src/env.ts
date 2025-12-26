@@ -14,8 +14,12 @@ const envSchema = z.object({
 	PORT: z.string().default("8888"),
 	DATABASE_URL: z.string(),
 	LOG_LEVEL: z.enum(["error", "warn", "info", "debug"]).default("info"),
-	DEPLOYER_PRIVATE_KEY: z.string().optional(),
-	PRIVATE_KEY: z.string().optional(),
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// PRIVY CREDENTIALS (for MPC wallet custody)
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	PRIVY_APP_ID: z.string().optional(),
+	PRIVY_APP_SECRET: z.string().optional(),
 
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	// DEPOSIT NETWORK (for Mock USDC minting & deposits)
@@ -42,6 +46,21 @@ const envSchema = z.object({
 	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 	ORACLE_SANDBOX: z.string().optional(), // Sandbox/testnet oracle custodial address
 	ORACLE_PROD: z.string().optional(),    // Production/mainnet oracle custodial address
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// ORACLE PRIVATE KEYS (for token operations)
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Sandbox: Private key for MockUSDC contract owner (minting on Sepolia)
+	SANDBOX_ORACLE_PRIVATE_KEY: z.string().optional(),
+	SEPOLIA_USDC_TOKEN_ADDRESS: z.string().optional(),
+	// Production: Private key for oracle wallet holding real USDC (transfers on Mainnet)
+	MAINNET_ORACLE_PRIVATE_KEY: z.string().optional(),
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// LEGACY ALIASES (for backwards compatibility)
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	DEPLOYER_PRIVATE_KEY: z.string().optional(),
+	PRIVATE_KEY: z.string().optional(),
 });
 
 const parsedEnv = envSchema.safeParse(process.env);

@@ -129,7 +129,23 @@ export class B2BUserUseCase {
 	 */
 	async activateUser(userId: string, clientId: string) {
 		// Verify user exists and belongs to the specified client
-		const user = await this.userRepository.getById(userId)
+		let user = null
+
+		// Check if userId looks like a UUID (simple check)
+		const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId)
+
+		if (isUuid) {
+			try {
+				user = await this.userRepository.getById(userId)
+			} catch {
+				// UUID lookup failed, will try clientUserId lookup
+			}
+		}
+
+		// Fallback: try looking up by client + user_id
+		if (!user) {
+			user = await this.userRepository.getByClientAndUserId(clientId, userId)
+		}
 
 		if (!user) {
 			throw new Error("User not found")
@@ -149,21 +165,21 @@ export class B2BUserUseCase {
 			throw new Error("Cannot activate a suspended user")
 		}
 
-		// Update status to active
-		const updated = await this.userRepository.updateStatus(userId, "active")
+		// Update status to active (use user.id which is the actual UUID)
+		const updated = await this.userRepository.updateStatus(user.id, "active")
 
 		if (!updated) {
 			throw new Error("Failed to activate user")
 		}
 
-		// Audit log
+		// Audit log (use user.id for resourceId, user.userId for readable user identifier)
 		await this.auditRepository.create({
 			clientId: clientId,
-			userId: userId,
+			userId: user.userId, // Use the client-provided user ID
 			actorType: "end_user",
 			action: "user_activated",
 			resourceType: "end_user",
-			resourceId: userId,
+			resourceId: user.id, // Use actual UUID for resource tracking
 			description: `End-user account activated: ${user.userId}`,
 			metadata: {
 				previousStatus: user.status,

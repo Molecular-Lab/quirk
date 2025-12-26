@@ -19,6 +19,7 @@ interface ClientOverviewTabProps {
 interface DashboardSummary {
 	productId: string
 	companyName: string
+	avgAPY?: string
 	balances: {
 		totalIdleBalance: string
 		totalEarningBalance: string
@@ -126,8 +127,8 @@ export default function ClientOverviewTab({ productId, mode }: ClientOverviewTab
 	// Calculate total balance
 	const totalBalance = parseFloat(balances.totalIdleBalance) + parseFloat(balances.totalEarningBalance)
 
-	// Calculate average APY (mock for now - should come from vault data)
-	const avgAPY = 8.5
+	// Get average APY from API response (defaults to 0% if not configured)
+	const avgAPY = parseFloat(dashboardData.avgAPY || "0")
 
 	return (
 		<div className="space-y-6">

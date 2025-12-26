@@ -134,21 +134,21 @@ export const NETWORK_CONFIG = {
 				isNative: false,
 			},
 			usdc: {
-				address: "0x1d02848c34ed2155613dd5cd26ce20a601b9a489", // Existing Mock USDC
+				address: "0x2DA55f4c1eCEB0cEeB93ee598e852Bf24Abb8FcE", // USDQ Mock Token (Sepolia)
 				symbol: "USDC",
 				decimals: 6,
 				type: TOKEN_TYPE.MOCK,
 				isNative: false,
 			},
 			usdt: {
-				address: "0x1d02848c34ed2155613dd5cd26ce20a601b9a489", // Same as Mock USDC for now
+				address: "0x2DA55f4c1eCEB0cEeB93ee598e852Bf24Abb8FcE", // Same as Mock USDC for now
 				symbol: "USDT",
 				decimals: 6,
 				type: TOKEN_TYPE.MOCK,
 				isNative: false,
 			},
 			mock_usdc: {
-				address: "0x1d02848c34ed2155613dd5cd26ce20a601b9a489",
+				address: "0x2DA55f4c1eCEB0cEeB93ee598e852Bf24Abb8FcE",
 				symbol: "MOCK_USDC",
 				decimals: 6,
 				type: TOKEN_TYPE.MOCK,

@@ -286,7 +286,16 @@ export const depositContract = c.router({
 				custodialWallet: z.string(),
 				mockNote: z.string(),
 			}),
-			400: ErrorResponseSchema,
+			400: z.object({
+				success: z.boolean().default(false),
+				error: z.string(),
+				details: z.string().optional(),
+			}),
+			500: z.object({
+				success: z.boolean().default(false),
+				error: z.string(),
+				details: z.string().optional(),
+			}),
 		},
 		body: z.object({
 			orderIds: z.array(z.string()).describe("Array of order IDs to complete"),
