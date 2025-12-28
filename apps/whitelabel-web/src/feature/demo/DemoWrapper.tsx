@@ -34,7 +34,7 @@ export function DemoWrapper({ visualizationType }: DemoWrapperProps) {
 	// Load organizations from userStore
 	useEffect(() => {
 		if (organizations.length === 0) {
-			loadOrganizations()
+			void loadOrganizations()
 		}
 	}, [organizations.length, loadOrganizations])
 
@@ -67,12 +67,28 @@ export function DemoWrapper({ visualizationType }: DemoWrapperProps) {
 		if (selectedProductId && selectedProduct) {
 			// Check if clientContextStore has the selected product's context
 			if (!hasContext() || clientProductId !== selectedProductId) {
-				console.warn("[DemoWrapper] Client context not synced, please select product again")
+				console.warn("[DemoWrapper] Client context not synced, attempting to sync now...")
 				console.log("[DemoWrapper] Expected productId:", selectedProductId, "Got:", clientProductId)
 				console.log("[DemoWrapper] Has API key:", !!clientApiKey)
 
-				// Redirect back to selector to reselect
-				navigate({ to: "/demo" })
+				// IMPORTANT: Instead of redirecting, try to sync the context from demoProductStore
+				// This handles the case where user returns from onboarding and stores haven't synced yet
+				const { selectedProduct: currentProduct, apiKeys } = useDemoProductStore.getState()
+				if (currentProduct?.productId === selectedProductId) {
+					console.log("[DemoWrapper] 🔄 Re-syncing context from demoProductStore...")
+					const { setClientContext } = useClientContextStore.getState()
+					setClientContext({
+						clientId: currentProduct.id,
+						productId: currentProduct.productId,
+						apiKey: apiKeys[currentProduct.productId] || "",
+						companyName: currentProduct.companyName,
+						businessType: currentProduct.businessType,
+					})
+					console.log("[DemoWrapper] ✅ Context re-synced successfully")
+				} else {
+					console.warn("[DemoWrapper] ❌ Cannot sync context - redirecting to /demo")
+					navigate({ to: "/demo" })
+				}
 			} else {
 				console.log("[DemoWrapper] ✅ Client context verified:", {
 					productId: clientProductId,
@@ -84,12 +100,29 @@ export function DemoWrapper({ visualizationType }: DemoWrapperProps) {
 	}, [selectedProductId, selectedProduct, hasContext, clientProductId, clientApiKey, navigate])
 
 	// Redirect to selector if no product selected
+	// ⚠️ Only redirect after products are loaded AND we're sure no product is being selected
+	// Add a delay to avoid race conditions during navigation from ProductSelector/DemoSelectorPage
 	useEffect(() => {
-		if (availableProducts.length > 0 && !selectedProductId) {
-			console.warn("[DemoWrapper] No product selected, redirecting to selector")
-			navigate({ to: "/demo" })
+		// Don't redirect immediately - give time for state to propagate from other components
+		// This is critical because:
+		// 1. DemoSelectorPage calls selectProduct() then navigate()
+		// 2. DemoWrapper mounts while state is still propagating
+		// 3. Without delay, we'd redirect before selectedProductId is set
+		const timeoutId = setTimeout(() => {
+			// Only redirect if:
+			// - We have products loaded (not initial state)
+			// - Still no product selected after reasonable delay
+			// - We have a visualization type set (means user tried to navigate to demo)
+			if (availableProducts.length > 0 && !selectedProductId && visualizationType) {
+				console.warn("[DemoWrapper] No product selected after timeout, redirecting to selector")
+				navigate({ to: "/demo" })
+			}
+		}, 200) // 200ms delay - enough for state updates to propagate
+
+		return () => {
+			clearTimeout(timeoutId)
 		}
-	}, [availableProducts, selectedProductId, navigate])
+	}, [availableProducts, selectedProductId, visualizationType, navigate])
 
 	// Render appropriate demo component
 	const renderDemo = () => {

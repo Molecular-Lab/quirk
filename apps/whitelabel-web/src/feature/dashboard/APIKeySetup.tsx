@@ -4,11 +4,13 @@ import { Copy, Eye, EyeOff, Key, RefreshCw } from "lucide-react"
 
 import { regenerateApiKey } from "@/api/b2bClientHelpers"
 import { useClientContextStore } from "@/store/clientContextStore"
+import { useEnvironmentStore } from "@/store/environmentStore"
 import { useUserStore } from "@/store/userStore"
 
 export function APIKeySetup() {
 	const { activeProductId, setApiKey, getActiveOrganization } = useUserStore()
 	const { setClientContext } = useClientContextStore()
+	const { apiEnvironment } = useEnvironmentStore()
 	const [isGenerating, setIsGenerating] = useState(false)
 	const [showKey, setShowKey] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -40,9 +42,10 @@ export function APIKeySetup() {
 		setError(null)
 
 		try {
-			console.log("[APIKeySetup] Generating API key for:", activeProductId)
+			console.log("[APIKeySetup] Generating API key for:", activeProductId, "in", apiEnvironment, "mode")
 
-			const response = await regenerateApiKey(activeProductId)
+			// ✅ Pass environment parameter to regenerate correct API key
+			const response = await regenerateApiKey(activeProductId, apiEnvironment)
 
 			console.log("[APIKeySetup] API key generated:", response)
 

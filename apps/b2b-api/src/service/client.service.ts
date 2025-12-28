@@ -41,8 +41,8 @@ export class ClientService {
 	 * ⚠️ Returns new API key (shown only once!)
 	 * ⚠️ Invalidates old API key immediately
 	 */
-	async regenerateApiKey(productId: string) {
-		return await this.clientUseCase.regenerateApiKey(productId);
+	async regenerateApiKey(productId: string, environment: "sandbox" | "production" = "sandbox") {
+		return await this.clientUseCase.regenerateApiKey(productId, environment);
 	}
 
 	/**

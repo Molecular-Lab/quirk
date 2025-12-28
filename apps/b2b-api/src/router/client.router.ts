@@ -240,7 +240,7 @@ export const createClientRouter = (
 		},
 
 		// POST /clients/product/:productId/regenerate-api-key (Dashboard only)
-		regenerateApiKey: async ({ params, req }: { params: { productId: string }; req: any }) => {
+		regenerateApiKey: async ({ params, query, req }: { params: { productId: string }; query: { environment?: "sandbox" | "production" }; req: any }) => {
 			try {
 				// ✅ Dashboard only: Validate Privy access
 				if (!validatePrivyAccess(req, params.productId)) {
@@ -253,13 +253,20 @@ export const createClientRouter = (
 					};
 				}
 
-				logger.info("Regenerating API key for product", { productId: params.productId });
+				// ✅ Extract environment from query params (defaults to sandbox)
+				const environment = query?.environment || "sandbox";
 
-				const result = await clientService.regenerateApiKey(params.productId);
+				logger.info("Regenerating API key for product", {
+					productId: params.productId,
+					environment
+				});
 
-				logger.info("API key regenerated successfully", { 
+				const result = await clientService.regenerateApiKey(params.productId, environment);
+
+				logger.info("API key regenerated successfully", {
 					productId: params.productId,
 					clientId: result.client.id,
+					environment: result.environment,
 					newPrefix: result.api_key.substring(0, 8),
 				});
 
@@ -273,10 +280,11 @@ export const createClientRouter = (
 					},
 				};
 			} catch (error: any) {
-				logger.error("Error regenerating API key", { 
-					error: error.message, 
+				logger.error("Error regenerating API key", {
+					error: error.message,
 					params,
-					stack: error.stack 
+					query,
+					stack: error.stack
 				});
 				return {
 					status: 400 as const,

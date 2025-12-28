@@ -33,4 +33,4 @@ ALTER TABLE end_user_vaults DROP COLUMN end_user_id_static_backup;
 -- Step 6: Restore documentation
 COMMENT ON COLUMN end_user_vaults.end_user_id IS NULL;
 
-RAISE NOTICE '✅ Rollback 000006 completed - reverted to UUID foreign key';
+-- ✅ Rollback 000006 completed - reverted to UUID foreign key

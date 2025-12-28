@@ -63,6 +63,13 @@ export interface DemoState {
 export interface DemoStore extends DemoState {
 	// Persona management
 	setPersona: (privyUserId: string, persona: PersonaType, visualizationType: VisualizationType) => void
+	setPersonaWithUser: (
+		privyUserId: string,
+		persona: PersonaType,
+		visualizationType: VisualizationType,
+		endUserId: string,
+		endUserClientUserId: string,
+	) => void // Atomic operation: set persona AND user data together
 	resetPersona: () => void
 	getPersonaUserId: () => string | null
 	hasPersona: () => boolean
@@ -170,6 +177,44 @@ const store = create<DemoStore>()(
 					newClientUserId: clientUserId,
 					endUserStateReset: true,
 				})
+			},
+
+			/**
+			 * ATOMIC operation: Set persona AND end-user data together
+			 * This prevents race conditions where setPersona() clears endUserId
+			 * before setEndUser() can set it, causing localStorage to persist null values.
+			 */
+			setPersonaWithUser: (privyUserId, persona, visualizationType, endUserId, endUserClientUserId) => {
+				const currentState = get()
+				const profile = getPersonaProfile(persona)
+				const staticKeyClientUserId = generateDemoClientUserId(privyUserId, visualizationType, persona)
+
+				console.log("[demoStore] ✅ setPersonaWithUser() called (ATOMIC):", {
+					privyUserId,
+					persona,
+					visualizationType,
+					endUserId,
+					endUserClientUserId,
+					staticKeyClientUserId,
+					previousPersona: currentState.selectedPersona,
+				})
+
+				// Single atomic update - Zustand persist only writes to localStorage ONCE
+				set({
+					selectedPersona: persona,
+					selectedVisualizationType: visualizationType,
+					personaData: {
+						...profile,
+						clientUserId: staticKeyClientUserId,
+					},
+					endUserId,
+					endUserClientUserId,
+					hasEarnAccount: false, // User needs to complete onboarding
+					deposits: [],
+					error: null,
+				})
+
+				console.log("[demoStore] ✅ setPersonaWithUser() state updated atomically")
 			},
 
 			// Reset persona selection

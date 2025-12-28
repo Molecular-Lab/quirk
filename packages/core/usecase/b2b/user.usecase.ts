@@ -58,12 +58,13 @@ export class B2BUserUseCase {
 			request.status, // Pass status through (defaults to 'active' in repository)
 		)
 
-		// ✅ Vault creation deferred to first deposit (environment-aware)
+		// ✅ Vault creation happens during user activation (after onboarding)
+		// Sandbox vault is created when activateUser() is called
+		// Production vault is created lazily on first production deposit
 		// With environment separation, users can have TWO vaults per client:
-		// - One for sandbox (mock tokens)
-		// - One for production (real USDC)
-		// Vaults are created lazily on first deposit in deposit.usecase.ts
-		console.log(`[User Creation] Vault will be created on first deposit for ${request.userId}`)
+		// - One for sandbox (created on activation)
+		// - One for production (created on first production deposit)
+		console.log(`[User Creation] Sandbox vault will be created when user completes onboarding`)
 
 		// ✅ Increment total_end_users count in client_organizations
 		try {
@@ -170,6 +171,31 @@ export class B2BUserUseCase {
 
 		if (!updated) {
 			throw new Error("Failed to activate user")
+		}
+
+		// ✅ Create vault for sandbox environment on activation
+		// This ensures users have a vault ready when they return from onboarding
+		// Default to sandbox environment for demo purposes
+		const existingVault = await this.vaultRepository.getEndUserVaultByClient(user.id, clientId, "sandbox")
+
+		if (!existingVault) {
+			console.log(`[User Activation] Creating sandbox vault for user ${user.userId}`)
+
+			// Get client growth index for initial entry index
+			const clientVaults = await this.vaultRepository.listClientVaults(clientId)
+			const defaultEntryIndex = "1000000000000000000" // 1e18 - default if no client vaults exist
+
+			await this.vaultRepository.createEndUserVault({
+				endUserId: user.id,
+				clientId: clientId,
+				totalDeposited: "0",
+				weightedEntryIndex: defaultEntryIndex,
+				environment: "sandbox",
+			})
+
+			console.log(`[User Activation] ✅ Sandbox vault created for user ${user.userId}`)
+		} else {
+			console.log(`[User Activation] Sandbox vault already exists for user ${user.userId}`)
 		}
 
 		// Audit log (use user.id for resourceId, user.userId for readable user identifier)

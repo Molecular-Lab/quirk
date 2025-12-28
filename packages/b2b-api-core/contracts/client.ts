@@ -81,6 +81,9 @@ export const clientContract = c.router({
 	regenerateApiKey: {
 		method: "POST",
 		path: "/clients/product/:productId/regenerate-api-key",
+		query: z.object({
+			environment: z.enum(["sandbox", "production"]).optional().default("sandbox"),
+		}),
 		responses: {
 			200: z.object({
 				success: z.boolean(),

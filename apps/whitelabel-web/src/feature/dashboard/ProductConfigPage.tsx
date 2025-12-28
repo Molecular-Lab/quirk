@@ -581,7 +581,8 @@ Help them understand or refine their strategy.`
 		if (!activeProductId) return
 
 		try {
-			const response = await regenerateApiKey(activeProductId)
+			// ✅ Pass environment parameter to regenerate correct API key
+			const response = await regenerateApiKey(activeProductId, apiKeyEnvironment)
 			const newKey = (response as any)?.apiKey || (response as any)?.api_key
 
 			if (newKey) {

@@ -22,6 +22,7 @@ import {
 	updateVaultYield,
 } from "@/api/b2bClientHelpers"
 import { useClientContextStore } from "@/store/clientContextStore"
+import { useEnvironmentStore } from "@/store/environmentStore"
 import { type Organization, useUserStore } from "@/store/userStore"
 
 // Type for client registration response
@@ -1067,6 +1068,9 @@ export function APITestingPage() {
 		walletType,
 	} = useUserStore()
 
+	// Get current API environment (sandbox vs production)
+	const { apiEnvironment } = useEnvironmentStore()
+
 	// Load saved API key on mount
 	useEffect(() => {
 		const apiKey = loadApiKey()
@@ -1293,10 +1297,10 @@ export function APITestingPage() {
 					}
 
 					// eslint-disable-next-line no-console
-					console.log("[API Test] Regenerating API key for organization:", activeProductId)
+					console.log("[API Test] Regenerating API key for organization:", activeProductId, "in", apiEnvironment, "mode")
 
-					// Call backend API to regenerate API key
-					data = await regenerateApiKey(activeProductId)
+					// Call backend API to regenerate API key with current environment
+					data = await regenerateApiKey(activeProductId, apiEnvironment)
 
 					// eslint-disable-next-line no-console
 					console.log("[API Test] ✅ API Key regenerated from backend:", data)

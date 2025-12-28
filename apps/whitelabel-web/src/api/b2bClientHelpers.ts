@@ -150,9 +150,10 @@ export async function getClientProfile(id: string) {
 /**
  * Regenerate API key
  */
-export async function regenerateApiKey(productId: string) {
+export async function regenerateApiKey(productId: string, environment: "sandbox" | "production" = "sandbox") {
 	const { status, body } = await b2bApiClient.client.regenerateApiKey({
 		params: { productId },
+		query: { environment },
 		body: {},
 	})
 

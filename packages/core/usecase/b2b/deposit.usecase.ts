@@ -258,7 +258,7 @@ export class B2BDepositUseCase {
 		console.log("[Deposit] Found end user:", { id: endUser.id, userId: endUser.userId })
 
 		// Step 4: Get or create end_user_vault (with environment support)
-		const userVault = await this.vaultRepository.getEndUserVaultByClient(endUser.userId, deposit.clientId, environment)
+		const userVault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, deposit.clientId, environment)
 
 		const depositAmount = new BigNumber(request.cryptoAmount)
 
@@ -268,7 +268,7 @@ export class B2BDepositUseCase {
 			console.log("[Deposit] Creating new end-user vault (vault missing - should have been created on registration)")
 
 			const newVault = await this.vaultRepository.createEndUserVault({
-				endUserId: endUser.userId,
+				endUserId: endUser.id,
 				clientId: deposit.clientId,
 				totalDeposited: depositAmount.toString(),
 				weightedEntryIndex: clientGrowthIndex.toString(),

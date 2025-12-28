@@ -1,5 +1,6 @@
 import { useState } from "react"
 
+import { useNavigate } from "@tanstack/react-router"
 import { usePrivy } from "@privy-io/react-auth"
 import { Settings, RefreshCw } from "lucide-react"
 
@@ -12,6 +13,7 @@ import { useDemoProductStore } from "@/store/demoProductStore"
 import { getAllPersonas, type PersonaType } from "@/feature/demo/personas"
 
 export function DemoSettings() {
+	const navigate = useNavigate()
 	const { user } = usePrivy()
 	const [isOpen, setIsOpen] = useState(false)
 	const [productConfirmDialog, setProductConfirmDialog] = useState<{
@@ -108,34 +110,19 @@ export function DemoSettings() {
 			userId: user?.id,
 		})
 
-		if (!newPersona || !user?.id) {
-			console.error("[DemoSettings] ❌ Missing required data:", {
-				hasPersona: !!newPersona,
-				hasUserId: !!user?.id,
-			})
-			return
-		}
-
-		// Get visualization type for generating Static Key
-		const visualizationTypeValue = visualizationType || "ecommerce"
-
 		// CRITICAL FIX: Reset ALL demo state before switching persona
 		// This clears endUserId, hasEarnAccount, deposits, etc.
 		console.log("[DemoSettings] 🔄 Calling resetDemo() before persona switch...")
 		const { resetDemo } = useDemoStore.getState()
 		resetDemo()
 
-		// Now set new persona (will have clean slate)
-		console.log("[DemoSettings] 🔄 Calling setPersona() with new persona...")
-		setPersona(user.id, newPersona, visualizationTypeValue)
+		// Close dialogs immediately
+		setPersonaConfirmDialog({ open: false, persona: null, personaName: "" })
+		setIsOpen(false)
 
-		// CRITICAL FIX: Delay reload to ensure Zustand persists to localStorage
-		// Without this, localStorage hydrates OLD state on reload
-		console.log("[DemoSettings] ⏱️ Waiting 500ms for localStorage persistence...")
-		setTimeout(() => {
-			console.log("[DemoSettings] 🔄 Reloading page to apply persona change...")
-			window.location.reload()
-		}, 500)
+		// Navigate to /demo for persona reselection
+		console.log("[DemoSettings] 🔀 Navigating to /demo for persona reselection")
+		navigate({ to: "/demo" })
 	}
 
 	return (

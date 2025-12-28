@@ -228,7 +228,9 @@ export function OnRampModal({ isOpen, onClose, selectedOrderIds, orders, onCompl
 										</SelectContent>
 									</Select>
 								</div>
-								<p className="text-sm text-gray-500 mt-3">On Ethereum network</p>
+								<p className="text-sm text-gray-500 mt-3">
+									{isSandbox ? "Sandbox Mode (Testnet)" : "Production Mode (Mainnet)"}
+								</p>
 							</div>
 
 							{/* Continue Button */}

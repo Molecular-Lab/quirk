@@ -68,7 +68,7 @@ export class B2BUserVaultUseCase {
 		console.log("[getUserBalance] ✅ End user found:", { endUserId: endUser.id, userId: endUser.userId, clientId: endUser.clientId })
 
 		// Get vault for specific environment
-		const vault = await this.vaultRepository.getEndUserVaultByClient(endUser.userId, clientId, environment)
+		const vault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, clientId, environment)
 		console.log("[getUserBalance] Vault query result:", { found: !!vault, vaultId: vault?.id, environment })
 
 		// ✅ Return zero balance for users with no deposits yet (user exists but no vault)
@@ -152,7 +152,7 @@ export class B2BUserVaultUseCase {
 		const results: UserBalanceResponse[] = []
 
 		for (const user of users) {
-			const vault = await this.vaultRepository.getEndUserVaultByClient(user.userId, clientId, environment)
+			const vault = await this.vaultRepository.getEndUserVaultByClient(user.id, clientId, environment)
 			if (vault) {
 				results.push(this.mapToBalanceResponse(vault, user.userId, clientId, clientGrowthIndex, environment))
 			}

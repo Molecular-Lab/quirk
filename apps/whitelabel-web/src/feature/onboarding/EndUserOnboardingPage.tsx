@@ -100,10 +100,55 @@ export function EndUserOnboardingPage() {
 		try {
 			await activateUser(userId, productId)
 
+			// CRITICAL: Ensure endUser state is set before activating
+			// This fixes the bug where activateEarnAccount() is called with null endUserId
+			const { setEndUser } = useDemoStore.getState()
+			console.log("[EndUserOnboardingPage] Setting endUser state before activation:", { userId, clientUserId })
+			setEndUser({
+				endUserId: userId,
+				endUserClientUserId: clientUserId,
+			})
+
 			// Sync demoStore state BEFORE navigating back to demo app
 			// This ensures the demo app shows the Earn UI with balance, not PersonaSelector
 			activateEarnAccount()
 			console.log("[EndUserOnboardingPage] Called activateEarnAccount() - hasEarnAccount is now true")
+
+			// DEBUG: Log full demoStore state before navigation
+			const fullState = useDemoStore.getState()
+			console.log("[EndUserOnboardingPage] 🔍 Full demoStore state before navigation:", {
+				selectedPersona: fullState.selectedPersona,
+				selectedVisualizationType: fullState.selectedVisualizationType,
+				endUserId: fullState.endUserId,
+				endUserClientUserId: fullState.endUserClientUserId,
+				hasEarnAccount: fullState.hasEarnAccount,
+				personaClientUserId: fullState.personaData?.clientUserId,
+			})
+
+			// DEBUG: Check what's in localStorage
+			const localStorageData = localStorage.getItem('proxify-demo-state')
+			console.log("[EndUserOnboardingPage] 🔍 localStorage data:", localStorageData)
+
+			// CRITICAL FIX: Manually flush critical state to localStorage
+			// This ensures the next route hydration will load the correct state
+			// Without this, there's a race condition where navigation happens before Zustand persist writes to localStorage
+			const currentState = useDemoStore.getState()
+			const stateToFlush = {
+				selectedPersona: currentState.selectedPersona,
+				selectedVisualizationType: currentState.selectedVisualizationType,
+				endUserId: currentState.endUserId,
+				endUserClientUserId: currentState.endUserClientUserId,
+				hasEarnAccount: currentState.hasEarnAccount,
+				personaData: currentState.personaData,
+				_hasHydrated: true,
+			}
+
+			console.log("[EndUserOnboardingPage] 💾 Manually flushing state to localStorage:", stateToFlush)
+			localStorage.setItem('proxify-demo-state', JSON.stringify({ state: stateToFlush, version: 5 }))
+
+			// Verify it was written
+			const verified = localStorage.getItem('proxify-demo-state')
+			console.log("[EndUserOnboardingPage] ✅ localStorage verified:", verified ? JSON.parse(verified) : null)
 
 			toast.success("Account activated successfully! Welcome aboard!")
 
