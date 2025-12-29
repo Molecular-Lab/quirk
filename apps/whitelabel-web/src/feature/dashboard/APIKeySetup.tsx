@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 
 import { Copy, Eye, EyeOff, Key, RefreshCw } from "lucide-react"
 
@@ -77,6 +77,18 @@ export function APIKeySetup() {
 					})
 				}
 
+				// ✅ Save to demoProductStore (for demo wizard)
+				// Include environment suffix so wizard can find the key
+				const { setApiKey: setDemoApiKey } = await import("@/store/demoProductStore").then((m) =>
+					m.useDemoProductStore.getState(),
+				)
+				const storageKey = apiEnvironment === "sandbox" ? `${activeProductId}_sandbox` : activeProductId
+				setDemoApiKey(storageKey, newApiKey)
+
+				console.log("[APIKeySetup] ✅ API key saved to demoProductStore for wizard:", {
+					storageKey,
+					environment: apiEnvironment,
+				})
 				console.log("[APIKeySetup] ✅ API key saved to multi-org storage:", {
 					productId: activeProductId,
 					apiKeyPrefix: newApiKey.substring(0, 12) + "...",

@@ -1248,6 +1248,21 @@ export async function expireDeposit(sql: Sql, args: ExpireDepositArgs): Promise<
     await sql.unsafe(expireDepositQuery, [args.id]);
 }
 
+export const updateTransactionHashQuery = `-- name: UpdateTransactionHash :exec
+UPDATE deposit_transactions
+SET transaction_hash = $2,
+    updated_at = now()
+WHERE order_id = $1`;
+
+export interface UpdateTransactionHashArgs {
+    orderId: string;
+    transactionHash: string | null;
+}
+
+export async function updateTransactionHash(sql: Sql, args: UpdateTransactionHashArgs): Promise<void> {
+    await sql.unsafe(updateTransactionHashQuery, [args.orderId, args.transactionHash]);
+}
+
 export const getDepositQueueItemQuery = `-- name: GetDepositQueueItem :one
 
 SELECT id, client_vault_id, deposit_transaction_id, amount, status, batched_at, staked_at, created_at FROM deposit_batch_queue

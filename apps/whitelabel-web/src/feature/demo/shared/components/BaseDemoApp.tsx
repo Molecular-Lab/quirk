@@ -23,8 +23,7 @@ import { DemoSettings } from "../DemoSettings"
 import { DepositModal } from "../DepositModal"
 import { useDemoBalance } from "../hooks/useDemoBalance"
 
-import { PersonaSelectionModal } from "./PersonaSelectionModal"
-import { ProductSelectionModal } from "./ProductSelectionModal"
+import { SetupWizardModal } from "./SetupWizardModal"
 
 import type { PlatformConfig } from "../config/platform-config.types"
 
@@ -41,10 +40,6 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 	const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
 	const [touchStart, setTouchStart] = useState(0)
 	const [touchEnd, setTouchEnd] = useState(0)
-
-	// 2-Step Modal State (Product → Persona)
-	const [showProductModal, setShowProductModal] = useState(false)
-	const [showPersonaModal, setShowPersonaModal] = useState(false)
 
 	// Get Privy user for logging
 	const { user } = usePrivy()
@@ -70,8 +65,10 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 		setIsDepositing,
 		addDeposit,
 		selectedPersona,
-
 		personaData,
+		setupWizardOpen,
+		openSetupWizard,
+		closeSetupWizard,
 	} = useDemoStore()
 
 	// Use custom hook for balance fetching
@@ -110,39 +107,54 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 		checkUserActivationStatus()
 	}, [hasHydrated, clientId, hasEarnAccount, endUserId, endUserClientUserId, config.platformName])
 
-	// NEW ARCHITECTURE: Show modals if product or persona not selected
-	// No navigation - everything happens on the same route
+	// NEW ARCHITECTURE: Show wizard if setup incomplete
 	useEffect(() => {
 		// Wait for hydration
 		if (!hasHydrated) {
-			console.log(`[${config.platformName} Demo] ⏳ Waiting for hydration before checking product/persona`)
+			console.log(`[${config.platformName} Demo] ⏳ Waiting for hydration before checking setup`)
 			return
 		}
 
-		console.log(`[${config.platformName} Demo] ✅ Hydration complete, checking product/persona...`, {
-			hasProduct: hasSelectedProduct(),
-			selectedPersona,
-			endUserClientUserId,
-		})
+		// Check if wizard should be shown
+		const shouldShowWizard = () => {
+			// Missing environment selection
+			if (!selectedEnvironment) {
+				console.log(`[${config.platformName} Demo] 🌍 No environment selected`)
+				return true
+			}
 
-		// STEP 1: Check if product is selected
-		if (!hasSelectedProduct()) {
-			console.log(`[${config.platformName} Demo] 📦 No product selected, showing product modal`)
-			setShowProductModal(true)
-			return
+			// Missing product selection
+			if (!hasSelectedProduct()) {
+				console.log(`[${config.platformName} Demo] 📦 No product selected`)
+				return true
+			}
+
+			// Missing persona selection
+			const hasClientUserId = endUserClientUserId || personaData?.clientUserId
+			if (!selectedPersona && !hasClientUserId) {
+				console.log(`[${config.platformName} Demo] 👤 No persona selected`)
+				return true
+			}
+
+			return false
 		}
 
-		// STEP 2: Check if persona is selected
-		const hasClientUserId = endUserClientUserId || personaData?.clientUserId
-		if (!selectedPersona && !hasClientUserId) {
-			console.log(`[${config.platformName} Demo] 👤 No persona selected, showing persona modal`)
-			setShowPersonaModal(true)
-			return
+		if (shouldShowWizard()) {
+			console.log(`[${config.platformName} Demo] 🧙 Opening setup wizard`)
+			openSetupWizard()
+		} else {
+			console.log(`[${config.platformName} Demo] ✅ Setup complete, showing demo UI`)
 		}
-
-		// Both selected - show demo UI
-		console.log(`[${config.platformName} Demo] ✅ Product and persona selected, showing demo UI`)
-	}, [hasHydrated, hasSelectedProduct, selectedPersona, endUserClientUserId, personaData, config.platformName])
+	}, [
+		hasHydrated,
+		selectedEnvironment,
+		hasSelectedProduct,
+		selectedPersona,
+		endUserClientUserId,
+		personaData,
+		config.platformName,
+		openSetupWizard,
+	])
 
 	// Get platform mock data
 	const mockData = useMemo(() => {
@@ -408,54 +420,36 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 		}
 	}
 
-	// Modal Handlers
-	const handleProductSelected = () => {
-		console.log(`[${config.platformName} Demo] ✅ Product selected, closing product modal`)
-		setShowProductModal(false)
-
-		// Check if persona is already selected
-		const hasClientUserId = endUserClientUserId || personaData?.clientUserId
-		if (!selectedPersona && !hasClientUserId) {
-			console.log(`[${config.platformName} Demo] 👤 Opening persona modal`)
-			setShowPersonaModal(true)
-		}
-	}
-
-	const handlePersonaSelected = () => {
-		console.log(`[${config.platformName} Demo] ✅ Persona selected, closing persona modal`)
-		setShowPersonaModal(false)
-	}
-
-	const handleStartOnboarding = (userId: string, clientUserId: string) => {
-		console.log(`[${config.platformName} Demo] ➡️ Starting onboarding`, { userId, clientUserId })
-
-		// Close modal before navigating
-		setShowPersonaModal(false)
-
-		// Navigate to onboarding
-		navigate({
-			to: "/onboarding/$clientUserId",
-			params: { clientUserId },
-			search: {
-				userId,
-				clientId: clientId || "",
-				productId: productId || "",
-				returnPath: config.returnPath,
-			},
-		})
+	// Wizard Handler
+	const handleWizardComplete = () => {
+		console.log(`[${config.platformName} Demo] ✅ Wizard completed`)
+		closeSetupWizard()
 	}
 
 	// Show loading state while Zustand is hydrating (prevents reading empty state)
 	if (!hasHydrated) {
+		console.log(`[${config.platformName} Demo] ⏳ Waiting for hydration...`, {
+			hasHydrated,
+			timestamp: new Date().toISOString(),
+		})
+
 		return (
 			<div className="min-h-screen bg-gradient-to-b from-gray-50 via-white to-white flex items-center justify-center">
 				<div className="text-center">
 					<Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-accent" />
 					<p className="text-gray-600">Loading demo...</p>
+					<p className="text-xs text-gray-400 mt-2">Waiting for state hydration...</p>
 				</div>
 			</div>
 		)
 	}
+
+	console.log(`[${config.platformName} Demo] ✅ Hydration complete, rendering demo`, {
+		hasHydrated,
+		selectedEnvironment,
+		hasSelectedProduct: hasSelectedProduct(),
+		selectedPersona,
+	})
 
 	return (
 		<div className="min-h-screen bg-gradient-to-b from-gray-25 via-white to-white">
@@ -696,15 +690,8 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 			{/* Demo Settings */}
 			<DemoSettings />
 
-			{/* 2-Step Modal Flow */}
-			<ProductSelectionModal open={showProductModal} onProductSelected={handleProductSelected} />
-
-			<PersonaSelectionModal
-				open={showPersonaModal}
-				visualizationType={config.platformId}
-				onPersonaSelected={handlePersonaSelected}
-				onStartOnboarding={handleStartOnboarding}
-			/>
+			{/* Setup Wizard Modal */}
+			<SetupWizardModal open={setupWizardOpen} onComplete={handleWizardComplete} />
 		</div>
 	)
 }

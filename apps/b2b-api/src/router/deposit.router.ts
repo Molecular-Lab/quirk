@@ -667,6 +667,19 @@ export function createDepositRouter(
 
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
+				// ✅ Update transaction hash in database for all completed deposits
+				if (txHash) {
+					logger.info("📝 Updating transaction hashes in database...");
+					for (const order of completedOrders) {
+						try {
+							await depositService.updateTransactionHash(order.orderId, txHash);
+							logger.info(`   ✅ Updated ${order.orderId} with txHash: ${txHash.substring(0, 10)}...`);
+						} catch (error) {
+							logger.error(`   ❌ Failed to update txHash for ${order.orderId}:`, error);
+						}
+					}
+				}
+
 				// Add transfer txHash to all completed orders
 				const completedOrdersWithTxHash = completedOrders.map(order => ({
 					...order,

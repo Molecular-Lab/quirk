@@ -129,6 +129,8 @@ export class B2BUserUseCase {
 	 * Updates status from 'pending_onboarding' to 'active'
 	 */
 	async activateUser(userId: string, clientId: string) {
+		console.log("[UserUseCase] 🔍 activateUser called:", { userId, clientId });
+
 		// Verify user exists and belongs to the specified client
 		let user = null
 
@@ -138,23 +140,44 @@ export class B2BUserUseCase {
 		if (isUuid) {
 			try {
 				user = await this.userRepository.getById(userId)
+				console.log("[UserUseCase] 🔍 Found user by UUID:", {
+					userId: user?.id,
+					userClientId: user?.clientId,
+					requestedClientId: clientId,
+					match: user?.clientId === clientId,
+				});
 			} catch {
 				// UUID lookup failed, will try clientUserId lookup
+				console.log("[UserUseCase] ⚠️ UUID lookup failed, trying clientUserId lookup");
 			}
 		}
 
 		// Fallback: try looking up by client + user_id
 		if (!user) {
 			user = await this.userRepository.getByClientAndUserId(clientId, userId)
+			console.log("[UserUseCase] 🔍 Found user by clientId + userId:", {
+				userId: user?.id,
+				userClientId: user?.clientId,
+				requestedClientId: clientId,
+			});
 		}
 
 		if (!user) {
+			console.error("[UserUseCase] ❌ User not found:", { userId, clientId });
 			throw new Error("User not found")
 		}
 
 		if (user.clientId !== clientId) {
+			console.error("[UserUseCase] ❌ User does not belong to client:", {
+				userId: user.id,
+				userClientId: user.clientId,
+				requestedClientId: clientId,
+				mismatch: true,
+			});
 			throw new Error("User does not belong to this client")
 		}
+
+		console.log("[UserUseCase] ✅ User verified, proceeding with activation");
 
 		// Check current status
 		if (user.status === "active") {

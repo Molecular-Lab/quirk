@@ -476,8 +476,13 @@ export function ProductConfigPage() {
 	}, [activeProductId, organizations, isOrganizationsLoaded])
 
 	// Update displayed API key when environment changes
+	// ✅ FIX: Only show key if it's a full 40-character key (not just 16-char prefix)
 	useEffect(() => {
-		setGeneratedApiKey(apiKeyEnvironment === "sandbox" ? sandboxApiKey : productionApiKey)
+		const selectedKey = apiKeyEnvironment === "sandbox" ? sandboxApiKey : productionApiKey
+		// Prefixes are 16 chars, full keys are 40 chars
+		// Only display if it's a full generated key
+		const isFullKey = selectedKey?.length === 40
+		setGeneratedApiKey(isFullKey ? selectedKey : "")
 	}, [apiKeyEnvironment, sandboxApiKey, productionApiKey])
 
 	// Convert allocations to investmentStrategy format whenever allocations change
@@ -591,7 +596,9 @@ Help them understand or refine their strategy.`
 
 				// ✅ Save to demoProductStore (Zustand with persistence) for demos
 				const { setApiKey } = await import("@/store/demoProductStore").then((m) => m.useDemoProductStore.getState())
-				setApiKey(activeProductId, newKey)
+				// Include environment suffix so wizard can find the key
+				const storageKey = apiKeyEnvironment === "sandbox" ? `${activeProductId}_sandbox` : activeProductId
+				setApiKey(storageKey, newKey)
 
 				console.log(
 					`[ProductConfigPage] ✅ New ${apiKeyEnvironment} API Key generated:`,
