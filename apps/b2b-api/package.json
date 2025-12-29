@@ -10,6 +10,7 @@
         "type-check": "tsc --noEmit"
     },
     "dependencies": {
+        "@privy-io/node": "^0.4.1",
         "@quirk/b2b-api-core": "workspace:*",
         "@quirk/core": "workspace:*",
         "@quirk/sqlcgen": "workspace:*",

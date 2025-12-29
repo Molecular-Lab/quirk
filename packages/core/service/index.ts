@@ -1,5 +1,6 @@
 export * from "./client-growth-index.service"
 export * from "./fiat-onramp.service"
+export * from "./privy-wallet.service"
 export * from "./revenue.service"
 export * from "./token-transfer.service"
 export * from "./vault-balance-verifier.service"

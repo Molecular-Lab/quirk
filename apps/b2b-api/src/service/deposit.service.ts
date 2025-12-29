@@ -5,7 +5,7 @@
 import type { B2BDepositUseCase } from "@quirk/core";
 
 export class DepositService {
-	constructor(private depositUseCase: B2BDepositUseCase) {}
+	constructor(private depositUseCase: B2BDepositUseCase) { }
 
 	async createDeposit(request: {
 		orderId?: string;
@@ -83,6 +83,24 @@ export class DepositService {
 			tokenAddress,
 			custodialWallet,
 			amount
+		);
+	}
+
+	async transferFromOracle(
+		chainId: string,
+		tokenAddress: string,
+		custodialWallet: string,
+		amount: string,
+		oraclePrivateKey: string,
+		rpcUrl?: string
+	) {
+		return await this.depositUseCase.transferFromOracle(
+			chainId,
+			tokenAddress,
+			custodialWallet,
+			amount,
+			oraclePrivateKey,
+			rpcUrl
 		);
 	}
 }

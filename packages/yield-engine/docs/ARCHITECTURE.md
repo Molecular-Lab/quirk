@@ -1,10 +1,10 @@
-# Proxify Yield Engine - Architecture Documentation
+# Quirk Yield Engine - Architecture Documentation
 
-> Complete architecture guide for the Proxify yield optimization and execution engine
+> Complete architecture guide for the Quirk yield optimization and execution engine
 
-**Last Updated**: December 2024
-**Status**: 🚧 Execution Layer In Development
-**Version**: 2.0 (Adding Write Capabilities)
+**Last Updated**: December 29, 2024
+**Status**: ✅ Phase 1 Complete | ⚠️ Execution Layer Pending
+**Version**: 2.0 (Write Methods Implemented)
 
 ---
 
@@ -23,7 +23,7 @@
 
 ## Overview
 
-The Proxify Yield Engine is a **multi-protocol DeFi orchestration layer** that enables:
+The Quirk Yield Engine is a **multi-protocol DeFi orchestration layer** that enables:
 
 - ✅ Real-time yield opportunity analysis across AAVE, Compound, and Morpho
 - ✅ Multi-protocol deposit/withdrawal execution
@@ -96,7 +96,7 @@ The Proxify Yield Engine is a **multi-protocol DeFi orchestration layer** that e
 ### Package Structure
 
 ```
-@proxify/yield-engine/
+@quirk/yield-engine/
 ├── src/
 │   ├── types/
 │   │   └── common.types.ts          # Core interfaces (IProtocolAdapter, etc.)
@@ -951,7 +951,7 @@ export interface ProtocolExecutionResult {
 
 ```typescript
 // Backend: Get wallet client for signing
-import { ViemClientManager } from '@proxify/core/blockchain/viem-client'
+import { ViemClientManager } from '@quirk/core/blockchain/viem-client'
 
 // Initialize with Privy-managed key
 ViemClientManager.init(privyManagedPrivateKey)

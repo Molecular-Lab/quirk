@@ -1,6 +1,6 @@
 # Morpho Protocol Implementation Guide
 
-> Comprehensive documentation for the Morpho protocol adapter in @proxify/yield-engine
+> Comprehensive documentation for the Morpho protocol adapter in @quirk/yield-engine
 
 ## Table of Contents
 
@@ -528,7 +528,7 @@ globalCache.set(cacheKey, apy, MORPHO_CACHE_TTL) // 5 minutes
 ### Basic APY Fetching
 
 ```typescript
-import { MorphoAdapter } from '@proxify/yield-engine'
+import { MorphoAdapter } from '@quirk/yield-engine'
 
 // Initialize adapter
 const morpho = new MorphoAdapter(1) // Ethereum
@@ -637,7 +637,7 @@ const supportsUSDC = await morpho.supportsToken('USDC', 1)  // true
 const supportsDAI = await morpho.supportsToken('DAI', 1)    // false
 
 // Get all supported tokens for a chain
-import { getSupportedTokens } from '@proxify/yield-engine'
+import { getSupportedTokens } from '@quirk/yield-engine'
 const tokens = getSupportedTokens(1)
 console.log(tokens) // ['USDC', 'USDT']
 ```
@@ -1046,5 +1046,5 @@ MorphoAdapter
 ---
 
 **Last Updated**: Phase 4 Complete (November 2024)
-**Maintainer**: @proxify/yield-engine team
+**Maintainer**: @quirk/yield-engine team
 **Status**: ✅ Production Ready

@@ -1,9 +1,9 @@
 # Deposit/Withdrawal Execution Guide
 
-> Comprehensive guide for executing DeFi deposits and withdrawals using the Proxify Yield Engine
+> Comprehensive guide for executing DeFi deposits and withdrawals using the Quirk Yield Engine
 
-**Status**: 🚧 In Development
-**Target Release**: Q1 2025
+**Status**: ✅ Implementation Complete
+**Reference**: Protocol adapters ready for use
 
 ---
 
@@ -25,13 +25,13 @@
 ### Installation
 
 ```bash
-npm install @proxify/yield-engine viem
+npm install @quirk/yield-engine viem
 ```
 
 ### Basic Deposit (Transaction Data Only)
 
 ```typescript
-import { AaveAdapter } from '@proxify/yield-engine'
+import { AaveAdapter } from '@quirk/yield-engine'
 import { parseUnits } from 'viem'
 
 // Initialize adapter for Base chain
@@ -60,7 +60,7 @@ await wallet.sendTransaction(depositTx)
 ### Basic Deposit (Direct Execution)
 
 ```typescript
-import { AaveAdapter } from '@proxify/yield-engine'
+import { AaveAdapter } from '@quirk/yield-engine'
 import { createWalletClient, http } from 'viem'
 import { base } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
@@ -151,7 +151,7 @@ const receipt = await adapter.executeDeposit(token, chainId, amount, walletClien
 ### AAVE V3 Deposit
 
 ```typescript
-import { AaveAdapter } from '@proxify/yield-engine'
+import { AaveAdapter } from '@quirk/yield-engine'
 
 const adapter = new AaveAdapter(8453) // Base chain
 
@@ -181,7 +181,7 @@ const receipt = await adapter.executeDeposit(
 ### Compound V3 Deposit
 
 ```typescript
-import { CompoundAdapter } from '@proxify/yield-engine'
+import { CompoundAdapter } from '@quirk/yield-engine'
 
 const adapter = new CompoundAdapter(8453)
 
@@ -202,7 +202,7 @@ const receipt = await adapter.executeDeposit(
 ### Morpho Vault Deposit
 
 ```typescript
-import { MorphoAdapter } from '@proxify/yield-engine'
+import { MorphoAdapter } from '@quirk/yield-engine'
 
 const adapter = new MorphoAdapter(8453)
 
@@ -255,7 +255,7 @@ const receipt = await morphoAdapter.executeWithdrawal(
 ### Execute Across Multiple Protocols
 
 ```typescript
-import { BatchExecutor } from '@proxify/yield-engine'
+import { BatchExecutor } from '@quirk/yield-engine'
 import { parseUnits } from 'viem'
 
 // Initialize executor for Base chain
@@ -360,8 +360,8 @@ if (result.partialFailure) {
 ### Estimate Before Execution
 
 ```typescript
-import { AaveAdapter } from '@proxify/yield-engine'
-import { estimateGasCostUSD } from '@proxify/yield-engine'
+import { AaveAdapter } from '@quirk/yield-engine'
+import { estimateGasCostUSD } from '@quirk/yield-engine'
 
 const adapter = new AaveAdapter(8453)
 
@@ -425,7 +425,7 @@ const tx = {
 ### Gas Price Limits
 
 ```typescript
-import { getGasPrice } from '@proxify/yield-engine'
+import { getGasPrice } from '@quirk/yield-engine'
 
 const MAX_GAS_PRICE_GWEI = 100
 
@@ -506,7 +506,7 @@ if (gasPrice > MAX_ACCEPTABLE_GAS_PRICE) {
 ### Retry Logic
 
 ```typescript
-import { retryWithBackoff } from '@proxify/yield-engine'
+import { retryWithBackoff } from '@quirk/yield-engine'
 
 const receipt = await retryWithBackoff(
   async () => adapter.executeDeposit(token, chainId, amount, walletClient),
@@ -591,7 +591,7 @@ async function safeDeposit(
 ### Wait for Confirmation
 
 ```typescript
-import { getPublicClient } from '@proxify/yield-engine'
+import { getPublicClient } from '@quirk/yield-engine'
 
 // Prepare and send transaction
 const tx = await adapter.prepareDeposit(...)
@@ -856,7 +856,7 @@ import {
   estimateGasCostUSD,
   getGasPrice,
   retryWithBackoff,
-} from '@proxify/yield-engine'
+} from '@quirk/yield-engine'
 import { parseUnits } from 'viem'
 
 async function executeProductionDeposit(

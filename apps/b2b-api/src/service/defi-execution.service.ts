@@ -1,11 +1,13 @@
 /**
  * DeFi Execution Service
- * Prepares DeFi deposit/withdrawal transactions using yield-engine adapters
+ * Prepares and executes DeFi deposit/withdrawal transactions using yield-engine adapters
  * 
  * This service bridges optimization → execution:
  * 1. Uses DeFiProtocolService.optimizeAllocation() for risk-based allocations
  * 2. Uses yield-engine adapters to prepare transaction data
- * 3. Returns transaction data for frontend/wallet signing
+ * 3. Executes transactions via:
+ *    - Sandbox: ViemClientManager (mock USDC)
+ *    - Production: PrivyWalletService (real USDC)
  */
 
 import {
@@ -16,12 +18,19 @@ import {
 	type TransactionRequest,
 	type Protocol,
 	type BatchProtocolAllocation,
+	getPoolAddress,
+	getCompoundTokenInfo,
+	getMorphoTokenInfo,
 } from '@quirk/yield-engine'
+import { ViemClientManager, type PrivyWalletService } from '@quirk/core'
 import { DeFiProtocolService } from './defi-protocol.service'
+import type { Logger } from 'winston'
 
 // ============================================================================
 // Types
 // ============================================================================
+
+export type Environment = 'sandbox' | 'production'
 
 export interface PrepareDepositParams {
 	/** Token symbol (e.g., "USDC") */
@@ -36,6 +45,13 @@ export interface PrepareDepositParams {
 	riskLevel: 'conservative' | 'moderate' | 'aggressive'
 }
 
+export interface ExecuteDepositParams extends PrepareDepositParams {
+	/** Environment determines execution path */
+	environment: Environment
+	/** Privy wallet ID (required for production) */
+	privyWalletId?: string
+}
+
 export interface PrepareWithdrawalParams {
 	/** Token symbol */
 	token: string
@@ -48,6 +64,13 @@ export interface PrepareWithdrawalParams {
 	}>
 	/** User wallet address */
 	toAddress: string
+}
+
+export interface ExecuteWithdrawalParams extends PrepareWithdrawalParams {
+	/** Environment determines execution path */
+	environment: Environment
+	/** Privy wallet ID (required for production) */
+	privyWalletId?: string
 }
 
 export interface PreparedTransaction {
@@ -79,6 +102,17 @@ export interface PrepareDepositResult {
 	riskLevel: string
 }
 
+export interface ExecutionResult {
+	/** Whether execution succeeded */
+	success: boolean
+	/** Transaction hashes */
+	transactionHashes: string[]
+	/** Environment used */
+	environment: Environment
+	/** Error message if failed */
+	error?: string
+}
+
 export interface GasEstimateResult {
 	/** Total gas estimate across all protocols */
 	totalGas: string
@@ -97,9 +131,17 @@ export interface GasEstimateResult {
 
 export class DeFiExecutionService {
 	private defiProtocolService: DeFiProtocolService
+	private privyWalletService?: PrivyWalletService
+	private logger?: Logger
 
-	constructor(defiProtocolService: DeFiProtocolService) {
+	constructor(
+		defiProtocolService: DeFiProtocolService,
+		privyWalletService?: PrivyWalletService,
+		logger?: Logger
+	) {
 		this.defiProtocolService = defiProtocolService
+		this.privyWalletService = privyWalletService
+		this.logger = logger
 		console.log('✅ DeFiExecutionService initialized')
 	}
 
@@ -332,24 +374,177 @@ export class DeFiExecutionService {
 		token: string,
 		chainId: number
 	): Promise<string> {
-		// Import constants from yield-engine
 		switch (protocol) {
 			case 'aave': {
-				const { getPoolAddress } = await import('@quirk/yield-engine')
 				return getPoolAddress(chainId) || ''
 			}
 			case 'compound': {
-				const { getCompoundTokenInfo } = await import('@quirk/yield-engine')
 				const config = getCompoundTokenInfo(token, chainId)
 				return config?.cometAddress || ''
 			}
 			case 'morpho': {
-				const { getMorphoTokenInfo } = await import('@quirk/yield-engine')
 				const config = getMorphoTokenInfo(token, chainId)
 				return config?.vaultAddress || ''
 			}
 			default:
 				throw new Error(`Unknown protocol: ${protocol}`)
+		}
+	}
+
+	// ============================================================================
+	// Execution Methods (Environment-Aware)
+	// ============================================================================
+
+	/**
+	 * Execute deposit - environment determines execution path
+	 * - Sandbox: Uses ViemClientManager (mock USDC with private key)
+	 * - Production: Uses PrivyWalletService (real USDC via Privy API)
+	 */
+	async executeDeposit(params: ExecuteDepositParams): Promise<ExecutionResult> {
+		const { token, chainId, amount, fromAddress, riskLevel, environment, privyWalletId } = params
+		const transactionHashes: string[] = []
+
+		try {
+			// 1. Prepare all deposit transactions
+			const prepared = await this.prepareDeposit({
+				token,
+				chainId,
+				amount,
+				fromAddress,
+				riskLevel,
+			})
+
+			// 2. Execute based on environment
+			if (environment === 'sandbox') {
+				// Use ViemClientManager for sandbox (mock USDC)
+				const walletClient = ViemClientManager.getWalletClient(chainId.toString() as '11155111' | '84532')
+				
+				for (const tx of prepared.transactions) {
+					const adapter = this.getAdapter(tx.protocol, chainId)
+					const receipt = await adapter.executeDeposit(
+						token,
+						chainId,
+						tx.amount,
+						walletClient
+					)
+					transactionHashes.push(receipt.hash)
+					this.logger?.info('[DeFiExecution] Sandbox deposit executed', {
+						protocol: tx.protocol,
+						hash: receipt.hash,
+					})
+				}
+			} else {
+				// Use PrivyWalletService for production
+				if (!this.privyWalletService) {
+					throw new Error('PrivyWalletService not configured for production')
+				}
+				if (!privyWalletId) {
+					throw new Error('Privy wallet ID required for production execution')
+				}
+
+				for (const tx of prepared.transactions) {
+					const result = await this.privyWalletService.sendTransaction({
+						walletId: privyWalletId,
+						chainId,
+						to: tx.transaction.to,
+						data: tx.transaction.data,
+						value: tx.transaction.value?.toString() || '0x0',
+					})
+					transactionHashes.push(result.hash)
+					this.logger?.info('[DeFiExecution] Production deposit executed', {
+						protocol: tx.protocol,
+						hash: result.hash,
+					})
+				}
+			}
+
+			return {
+				success: true,
+				transactionHashes,
+				environment,
+			}
+		} catch (error) {
+			this.logger?.error('[DeFiExecution] Deposit failed', { error, environment })
+			return {
+				success: false,
+				transactionHashes,
+				environment,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			}
+		}
+	}
+
+	/**
+	 * Execute withdrawal - environment determines execution path
+	 */
+	async executeWithdrawal(params: ExecuteWithdrawalParams): Promise<ExecutionResult> {
+		const { token, chainId, withdrawals, toAddress, environment, privyWalletId } = params
+		const transactionHashes: string[] = []
+
+		try {
+			// 1. Prepare all withdrawal transactions
+			const prepared = await this.prepareWithdrawal({
+				token,
+				chainId,
+				withdrawals,
+				toAddress,
+			})
+
+			// 2. Execute based on environment
+			if (environment === 'sandbox') {
+				const walletClient = ViemClientManager.getWalletClient(chainId.toString() as '11155111' | '84532')
+				
+				for (const tx of prepared) {
+					const adapter = this.getAdapter(tx.protocol, chainId)
+					const receipt = await adapter.executeWithdrawal(
+						token,
+						chainId,
+						tx.amount,
+						walletClient
+					)
+					transactionHashes.push(receipt.hash)
+					this.logger?.info('[DeFiExecution] Sandbox withdrawal executed', {
+						protocol: tx.protocol,
+						hash: receipt.hash,
+					})
+				}
+			} else {
+				if (!this.privyWalletService) {
+					throw new Error('PrivyWalletService not configured for production')
+				}
+				if (!privyWalletId) {
+					throw new Error('Privy wallet ID required for production execution')
+				}
+
+				for (const tx of prepared) {
+					const result = await this.privyWalletService.sendTransaction({
+						walletId: privyWalletId,
+						chainId,
+						to: tx.transaction.to,
+						data: tx.transaction.data,
+						value: tx.transaction.value?.toString() || '0x0',
+					})
+					transactionHashes.push(result.hash)
+					this.logger?.info('[DeFiExecution] Production withdrawal executed', {
+						protocol: tx.protocol,
+						hash: result.hash,
+					})
+				}
+			}
+
+			return {
+				success: true,
+				transactionHashes,
+				environment,
+			}
+		} catch (error) {
+			this.logger?.error('[DeFiExecution] Withdrawal failed', { error, environment })
+			return {
+				success: false,
+				transactionHashes,
+				environment,
+				error: error instanceof Error ? error.message : 'Unknown error',
+			}
 		}
 	}
 }

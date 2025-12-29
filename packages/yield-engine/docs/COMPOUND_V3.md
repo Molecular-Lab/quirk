@@ -1,6 +1,6 @@
 # Compound V3 (Comet) Implementation Guide
 
-> Comprehensive documentation for the Compound V3 protocol adapter in @proxify/yield-engine
+> Comprehensive documentation for the Compound V3 protocol adapter in @quirk/yield-engine
 
 ## Table of Contents
 
@@ -376,7 +376,7 @@ const supplyAPY = calculateAPY(supplyRatePerSecond)
 ### 1. Initialize the Adapter
 
 ```typescript
-import { CompoundAdapter } from '@proxify/yield-engine'
+import { CompoundAdapter } from '@quirk/yield-engine'
 
 // Create adapter for Ethereum
 const compound = new CompoundAdapter(1)
@@ -452,7 +452,7 @@ const supportsUSDC = await compound.supportsToken('USDC', 1)  // true
 const supportsDAI = await compound.supportsToken('DAI', 1)    // false
 
 // Get all supported tokens on a chain
-import { getSupportedTokens } from '@proxify/yield-engine'
+import { getSupportedTokens } from '@quirk/yield-engine'
 
 const ethereumTokens = getSupportedTokens(1)
 console.log(ethereumTokens) // ['USDC', 'USDT']
@@ -710,7 +710,7 @@ Verified that APY calculation uses correct 1e18 precision:
 
 ### Integration Examples
 
-- **@proxify/yield-engine Source Code**:
+- **@quirk/yield-engine Source Code**:
   - `src/protocols/compound/compound.adapter.ts` - Main adapter implementation
   - `src/protocols/compound/compound.test.ts` - Usage examples and tests
   - `src/protocols/compound/compound.constants.ts` - All contract addresses

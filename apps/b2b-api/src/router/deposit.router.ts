@@ -586,11 +586,8 @@ export function createDepositRouter(
 								status: 400 as const,
 								body: {
 									success: false,
-									status: "insufficient_balance",
-									error: transferResult.error,
-									oracleBalance: transferResult.oracleBalance,
-									requiredAmount: transferResult.requiredAmount,
-									custodialWallet,
+									error: transferResult.error || "Insufficient oracle balance",
+									details: `Oracle balance: ${transferResult.oracleBalance}, Required: ${transferResult.requiredAmount}`,
 								},
 							};
 						}

@@ -29,7 +29,8 @@ import {
 	B2BWithdrawalUseCase,
 	B2BUserVaultUseCase,
 	ClientGrowthIndexService, // ✅ Client growth index calculation
-	ViemClientManager, // ✅ Blockchain client for minting tokens
+	ViemClientManager, // ✅ Blockchain client for minting tokens (sandbox)
+	PrivyWalletService, // ✅ Privy server wallets (production)
 	RevenueService, // ✅ Revenue tracking service
 } from "@quirk/core";
 import { b2bContract } from "@quirk/b2b-api-core";
@@ -158,7 +159,29 @@ async function main() {
 	// 4. Initialize Services
 	const clientService = new ClientService(clientUseCase);
 	const defiProtocolService = new DeFiProtocolService(); // Adapters created per-request with correct chainId
-	const defiExecutionService = new DeFiExecutionService(defiProtocolService);
+
+	// Initialize PrivyWalletService if production credentials are available
+	let privyWalletService: PrivyWalletService | undefined;
+	const privyAppId = process.env.PRIVY_APP_ID;
+	const privyAppSecret = process.env.PRIVY_APP_SECRET;
+	const privyAuthKeyId = process.env.PRIVY_AUTHORIZATION_KEY_ID;
+
+	if (privyAppId && privyAppSecret) {
+		privyWalletService = new PrivyWalletService(
+			{
+				appId: privyAppId,
+				appSecret: privyAppSecret,
+				authorizationKeyId: privyAuthKeyId,
+			},
+			logger
+		);
+		logger.info("✅ PrivyWalletService initialized for production DeFi execution");
+	} else {
+		logger.info("ℹ️ PrivyWalletService not configured (production execution disabled)");
+		logger.info("   Set PRIVY_APP_ID and PRIVY_APP_SECRET in .env to enable");
+	}
+
+	const defiExecutionService = new DeFiExecutionService(defiProtocolService, privyWalletService, logger);
 	const vaultService = new VaultService(vaultUseCase);
 	const userService = new UserService(userUseCase, clientUseCase); // ✅ Added clientUseCase for productId lookup
 	const depositService = new DepositService(depositUseCase);
@@ -176,7 +199,6 @@ async function main() {
 	const router = createMainRouter(s, {
 		clientService,
 		defiProtocolService,
-		defiExecutionService,
 		vaultService,
 		userService,
 		depositService,
