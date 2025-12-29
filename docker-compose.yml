@@ -40,12 +40,12 @@ services:
   mcp-server:
     build:
       context: .
-      dockerfile: packages/mcp/Dockerfile
+      dockerfile: apps/mcp/Dockerfile
     container_name: proxify-mcp-server
     ports:
       - "3001:3001"
     env_file:
-      - ./packages/mcp/.env
+      - ./apps/mcp/.env
     environment:
       - NODE_ENV=production
     networks:
@@ -61,13 +61,13 @@ services:
   # Yield Optimizer Agent - AI-powered DeFi yield optimization API
   agent:
     build:
-      context: packages/agent
+      context: apps/agent
       dockerfile: Dockerfile
     container_name: proxify-agent
     ports:
       - "8002:8002"
     env_file:
-      - ./packages/agent/.env
+      - ./apps/agent/.env
     environment:
       - MCP_SERVER_URL=http://mcp-server:3001
     depends_on:

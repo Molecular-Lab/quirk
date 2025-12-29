@@ -42,6 +42,7 @@ import { DeFiProtocolService } from "./service/defi-protocol.service";
 import { VaultService } from "./service/vault.service";
 import { UserService } from "./service/user.service";
 import { DepositService } from "./service/deposit.service";
+import { DeFiExecutionService } from "./service/defi-execution.service";
 import { WithdrawalService } from "./service/withdrawal.service";
 import { UserVaultService } from "./service/user-vault.service";
 import { PrivyAccountService } from "./service/privy-account.service";
@@ -157,6 +158,7 @@ async function main() {
 	// 4. Initialize Services
 	const clientService = new ClientService(clientUseCase);
 	const defiProtocolService = new DeFiProtocolService(); // Adapters created per-request with correct chainId
+	const defiExecutionService = new DeFiExecutionService(defiProtocolService);
 	const vaultService = new VaultService(vaultUseCase);
 	const userService = new UserService(userUseCase, clientUseCase); // ✅ Added clientUseCase for productId lookup
 	const depositService = new DepositService(depositUseCase);
@@ -174,6 +176,7 @@ async function main() {
 	const router = createMainRouter(s, {
 		clientService,
 		defiProtocolService,
+		defiExecutionService,
 		vaultService,
 		userService,
 		depositService,

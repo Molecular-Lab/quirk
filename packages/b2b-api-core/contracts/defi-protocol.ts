@@ -13,6 +13,15 @@ import {
 	OptimizationResponseDto,
 	MultiChainOptimizationRequestDto,
 	MultiChainOptimizationResponseDto,
+	// Execution DTOs
+	PrepareDepositRequestDto,
+	PrepareDepositResponseDto,
+	PrepareWithdrawalRequestDto,
+	PrepareWithdrawalResponseDto,
+	EstimateGasRequestDto,
+	EstimateGasResponseDto,
+	CheckApprovalsRequestDto,
+	CheckApprovalsResponseDto,
 } from '../dto/defi-protocol'
 
 const c = initContract()
@@ -78,26 +87,6 @@ export const defiProtocolContract = c.router({
 		summary: 'Get Morpho protocol metrics',
 	},
 
-	// Get APYs only (lightweight endpoint for client-side strategy calculation)
-	getAPYs: {
-		method: 'GET',
-		path: '/defi/apys',
-		query: z.object({
-			token: z.string().default('USDC'),
-			chainId: z.coerce.string().default('8453'),
-		}),
-		responses: {
-			200: z.object({
-				aave: z.string(),
-				compound: z.string(),
-				morpho: z.string(),
-				timestamp: z.string(),
-			}),
-			500: ErrorResponseDto,
-		},
-		summary: 'Get APY rates for all protocols (lightweight)',
-	},
-
 	// Optimize allocation based on risk profile (single chain)
 	optimize: {
 		method: 'POST',
@@ -123,5 +112,72 @@ export const defiProtocolContract = c.router({
 		},
 		summary: 'Get optimized allocation across multiple chains with gas-aware net APY',
 	},
+
+	// ========================================================================
+	// Execution Endpoints (Phase 2)
+	// ========================================================================
+
+	/**
+	 * Prepare deposit transactions
+	 * Returns unsigned transaction data for wallet signing
+	 */
+	prepareDeposit: {
+		method: 'POST',
+		path: '/defi/execute/prepare-deposit',
+		body: PrepareDepositRequestDto,
+		responses: {
+			200: PrepareDepositResponseDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Prepare deposit transactions with risk-based allocation',
+	},
+
+	/**
+	 * Prepare withdrawal transactions
+	 * Returns unsigned transaction data for wallet signing
+	 */
+	prepareWithdrawal: {
+		method: 'POST',
+		path: '/defi/execute/prepare-withdrawal',
+		body: PrepareWithdrawalRequestDto,
+		responses: {
+			200: PrepareWithdrawalResponseDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Prepare withdrawal transactions from specified protocols',
+	},
+
+	/**
+	 * Estimate gas for deposit operation
+	 */
+	estimateGas: {
+		method: 'POST',
+		path: '/defi/execute/estimate-gas',
+		body: EstimateGasRequestDto,
+		responses: {
+			200: EstimateGasResponseDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Estimate gas cost for deposit across protocols',
+	},
+
+	/**
+	 * Check if approvals are needed before deposit
+	 */
+	checkApprovals: {
+		method: 'POST',
+		path: '/defi/execute/check-approvals',
+		body: CheckApprovalsRequestDto,
+		responses: {
+			200: CheckApprovalsResponseDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Check ERC-20 allowances for each protocol',
+	},
 })
+
 

@@ -2,6 +2,12 @@
         migrate-up migrate-down migrate-reset migrate-force migrate-version migrate-create \
         sqlc-generate sqlc-go sqlc-ts migrate-install check-migrate setup setup-clean
 
+# Use bash for shell commands
+SHELL := /bin/bash
+
+# Ensure snap binaries are in PATH
+export PATH := /snap/bin:$(PATH)
+
 # Default target
 .DEFAULT_GOAL := help
 

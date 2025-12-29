@@ -9,18 +9,18 @@ WORKDIR /app
 COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 
 # Copy package files from monorepo
-COPY packages/mcp/package.json ./packages/mcp/package.json
+COPY apps/mcp/package.json ./apps/mcp/package.json
 COPY packages/yield-engine/package.json ./packages/yield-engine/package.json
 COPY packages/tsconfig ./packages/tsconfig
 
 # Install pnpm and dependencies
 RUN corepack enable && \
     corepack prepare pnpm@latest --activate && \
-    pnpm install --frozen-lockfile --filter @proxify/mcp...
+    pnpm install --frozen-lockfile --filter @quirk/mcp...
 
 # Copy source code for both packages
-COPY packages/mcp/src ./packages/mcp/src
-COPY packages/mcp/tsconfig.json packages/mcp/tsup.config.ts ./packages/mcp/
+COPY apps/mcp/src ./apps/mcp/src
+COPY apps/mcp/tsconfig.json apps/mcp/tsup.config.ts ./apps/mcp/
 COPY packages/yield-engine/src ./packages/yield-engine/src
 COPY packages/yield-engine/tsconfig.json packages/yield-engine/tsup.config.ts ./packages/yield-engine/
 
@@ -28,7 +28,7 @@ COPY packages/yield-engine/tsconfig.json packages/yield-engine/tsup.config.ts ./
 WORKDIR /app/packages/yield-engine
 RUN pnpm build
 
-WORKDIR /app/packages/mcp
+WORKDIR /app/apps/mcp
 RUN pnpm build
 
 # ==========================================
@@ -54,15 +54,15 @@ RUN corepack enable && \
 COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 
 # Copy package files
-COPY packages/mcp/package.json ./packages/mcp/package.json
+COPY apps/mcp/package.json ./apps/mcp/package.json
 COPY packages/yield-engine/package.json ./packages/yield-engine/package.json
 COPY packages/tsconfig ./packages/tsconfig
 
 # Install production dependencies for mcp package
-RUN pnpm install --prod --frozen-lockfile --filter @proxify/mcp...
+RUN pnpm install --prod --frozen-lockfile --filter @quirk/mcp...
 
 # Copy built files from builder
-COPY --from=builder --chown=appuser:appuser /app/packages/mcp/dist ./packages/mcp/dist
+COPY --from=builder --chown=appuser:appuser /app/apps/mcp/dist ./apps/mcp/dist
 COPY --from=builder --chown=appuser:appuser /app/packages/yield-engine/dist ./packages/yield-engine/dist
 
 # Switch to non-root user
@@ -71,4 +71,4 @@ USER appuser
 EXPOSE 3000
 
 # Start the server from the correct location
-CMD ["node", "packages/mcp/dist/index.js"]
+CMD ["node", "apps/mcp/dist/index.js"]

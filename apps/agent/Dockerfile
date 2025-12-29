@@ -24,7 +24,6 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
 COPY src ./src
-COPY prompt ./prompt
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
@@ -45,7 +44,6 @@ WORKDIR /app
 # We copy the entire .venv directory
 COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 COPY --from=builder --chown=appuser:appuser /app/src /app/src
-COPY --from=builder --chown=appuser:appuser /app/prompt /app/prompt
 
 ENV PATH="/app/.venv/bin:$PATH"
 
