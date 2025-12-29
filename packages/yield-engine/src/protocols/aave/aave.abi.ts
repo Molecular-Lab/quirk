@@ -2,6 +2,7 @@
  * AAVE V3 Pool Contract ABI (minimal - only methods we need)
  */
 export const AAVE_POOL_ABI = [
+	// Read methods
 	{
 		name: 'getReserveData',
 		type: 'function',
@@ -31,12 +32,37 @@ export const AAVE_POOL_ABI = [
 			},
 		],
 	},
+	// Write methods
+	{
+		name: 'supply',
+		type: 'function',
+		stateMutability: 'nonpayable',
+		inputs: [
+			{ name: 'asset', type: 'address' },
+			{ name: 'amount', type: 'uint256' },
+			{ name: 'onBehalfOf', type: 'address' },
+			{ name: 'referralCode', type: 'uint16' },
+		],
+		outputs: [],
+	},
+	{
+		name: 'withdraw',
+		type: 'function',
+		stateMutability: 'nonpayable',
+		inputs: [
+			{ name: 'asset', type: 'address' },
+			{ name: 'amount', type: 'uint256' },
+			{ name: 'to', type: 'address' },
+		],
+		outputs: [{ name: '', type: 'uint256' }],
+	},
 ] as const
 
 /**
- * ERC20 ABI (minimal - for aToken balance queries)
+ * ERC20 ABI (minimal - for token operations)
  */
 export const ERC20_ABI = [
+	// Read methods
 	{
 		name: 'balanceOf',
 		type: 'function',
@@ -71,6 +97,37 @@ export const ERC20_ABI = [
 		stateMutability: 'view',
 		inputs: [],
 		outputs: [{ name: '', type: 'uint256' }],
+	},
+	{
+		name: 'allowance',
+		type: 'function',
+		stateMutability: 'view',
+		inputs: [
+			{ name: 'owner', type: 'address' },
+			{ name: 'spender', type: 'address' },
+		],
+		outputs: [{ name: '', type: 'uint256' }],
+	},
+	// Write methods
+	{
+		name: 'approve',
+		type: 'function',
+		stateMutability: 'nonpayable',
+		inputs: [
+			{ name: 'spender', type: 'address' },
+			{ name: 'amount', type: 'uint256' },
+		],
+		outputs: [{ name: '', type: 'bool' }],
+	},
+	{
+		name: 'transfer',
+		type: 'function',
+		stateMutability: 'nonpayable',
+		inputs: [
+			{ name: 'to', type: 'address' },
+			{ name: 'amount', type: 'uint256' },
+		],
+		outputs: [{ name: '', type: 'bool' }],
 	},
 ] as const
 

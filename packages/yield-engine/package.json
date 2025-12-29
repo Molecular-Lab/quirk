@@ -1,26 +1,13 @@
 {
-	"name": "@quirk/yield-engine",
+	"name": "@proxify/yield-engine",
 	"version": "0.1.0",
 	"type": "module",
-	"main": "./src/index.ts",
-	"types": "./src/index.ts",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
 	"exports": {
 		".": {
-			"development": "./src/index.ts",
-			"types": "./src/index.ts",
-			"import": "./src/index.ts",
-			"default": "./src/index.ts"
-		}
-	},
-	"publishConfig": {
-		"main": "./dist/index.js",
-		"types": "./dist/index.d.ts",
-		"exports": {
-			".": {
-				"types": "./dist/index.d.ts",
-				"import": "./dist/index.js",
-				"default": "./dist/index.js"
-			}
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
 		}
 	},
 	"scripts": {
@@ -43,8 +30,8 @@
 		"zod": "catalog:"
 	},
 	"devDependencies": {
-		"@quirk/eslint-config-base": "workspace:*",
-		"@quirk/tsconfig": "workspace:*",
+		"@proxify/eslint-config-base": "workspace:*",
+		"@proxify/tsconfig": "workspace:*",
 		"@types/node": "^22.10.1",
 		"eslint": "catalog:",
 		"tsup": "^8.3.5",

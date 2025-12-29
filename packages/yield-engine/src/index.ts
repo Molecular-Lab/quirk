@@ -1,5 +1,5 @@
 /**
- * @quirk/yield-engine
+ * @proxify/yield-engine
  *
  * A comprehensive yield optimization engine that aggregates and compares
  * yields across multiple DeFi protocols (AAVE, Compound, Morpho).
@@ -23,6 +23,10 @@ export type {
 	RiskProfile,
 	CacheEntry,
 	IProtocolAdapter,
+	// Execution types (Phase 1)
+	TransactionRequest,
+	TransactionReceipt,
+	ApprovalStatus,
 } from './types/common.types'
 
 export {
@@ -184,3 +188,17 @@ export {
 	PROTOCOL_GAS_UNITS,
 	MultiChainOptimizerConfigSchema,
 } from './optimizer/multi-chain-optimizer.types'
+
+// ============================================================================
+// Executor (Phase 1 - Batch Operations)
+// ============================================================================
+
+export { BatchExecutor } from './executor/batch-executor'
+export type {
+	ProtocolAllocation as BatchProtocolAllocation,
+	BatchDepositRequest,
+	BatchWithdrawalRequest,
+	ProtocolExecutionResult,
+	BatchExecutionResult,
+} from './executor/batch-executor'
+

@@ -1,9 +1,14 @@
+import type { WalletClient } from 'viem'
+import { encodeFunctionData } from 'viem'
 import type {
 	IProtocolAdapter,
 	Protocol,
 	YieldOpportunity,
 	ProtocolPosition,
 	ProtocolMetrics,
+	TransactionRequest,
+	TransactionReceipt,
+	ApprovalStatus,
 } from '../../types/common.types'
 import { ProtocolError } from '../../types/common.types'
 import { getPublicClient, retryWithBackoff } from '../../utils/rpc'
@@ -245,9 +250,9 @@ export class AaveAdapter implements IProtocolAdapter {
 			const avgSupplyAPY =
 				validMetrics.length > 0
 					? (
-							validMetrics.reduce((sum, m) => sum + parseFloat(m.supplyAPY), 0) /
-							validMetrics.length
-					  ).toFixed(2)
+						validMetrics.reduce((sum, m) => sum + parseFloat(m.supplyAPY), 0) /
+						validMetrics.length
+					).toFixed(2)
 					: '0'
 
 			return {
@@ -277,6 +282,315 @@ export class AaveAdapter implements IProtocolAdapter {
 	async supportsToken(token: string, chainId: number): Promise<boolean> {
 		return isTokenSupported(token, chainId)
 	}
+
+	// ==========================================
+	// WRITE METHODS (Phase 1 - Execute Deposits/Withdrawals)
+	// ==========================================
+
+	/**
+	 * Prepare deposit transaction (returns unsigned transaction data)
+	 */
+	async prepareDeposit(
+		token: string,
+		chainId: number,
+		amount: string,
+		fromAddress: string,
+	): Promise<TransactionRequest> {
+		const tokenAddress = getTokenAddress(token, chainId)
+		if (!tokenAddress) {
+			throw new ProtocolError('aave', `Token ${token} not supported on chain ${chainId}`)
+		}
+
+		const poolAddress = getPoolAddress(chainId)
+
+		// Encode Pool.supply() call
+		const data = encodeFunctionData({
+			abi: AAVE_POOL_ABI,
+			functionName: 'supply',
+			args: [
+				tokenAddress as `0x${string}`,
+				BigInt(amount),
+				fromAddress as `0x${string}`,
+				0, // referralCode
+			],
+		})
+
+		return {
+			to: poolAddress,
+			data,
+			value: '0',
+			chainId,
+		}
+	}
+
+	/**
+	 * Prepare withdrawal transaction
+	 */
+	async prepareWithdrawal(
+		token: string,
+		chainId: number,
+		amount: string,
+		toAddress: string,
+	): Promise<TransactionRequest> {
+		const tokenAddress = getTokenAddress(token, chainId)
+		if (!tokenAddress) {
+			throw new ProtocolError('aave', `Token ${token} not supported on chain ${chainId}`)
+		}
+
+		const poolAddress = getPoolAddress(chainId)
+
+		// Encode Pool.withdraw() call
+		const data = encodeFunctionData({
+			abi: AAVE_POOL_ABI,
+			functionName: 'withdraw',
+			args: [
+				tokenAddress as `0x${string}`,
+				BigInt(amount),
+				toAddress as `0x${string}`,
+			],
+		})
+
+		return {
+			to: poolAddress,
+			data,
+			value: '0',
+			chainId,
+		}
+	}
+
+	/**
+	 * Prepare ERC-20 approval transaction
+	 */
+	async prepareApproval(
+		token: string,
+		chainId: number,
+		spender: string,
+		amount: string,
+		_fromAddress: string,
+	): Promise<TransactionRequest> {
+		const tokenAddress = getTokenAddress(token, chainId)
+		if (!tokenAddress) {
+			throw new ProtocolError('aave', `Token ${token} not supported on chain ${chainId}`)
+		}
+
+		// Encode ERC20.approve() call
+		const data = encodeFunctionData({
+			abi: ERC20_ABI,
+			functionName: 'approve',
+			args: [spender as `0x${string}`, BigInt(amount)],
+		})
+
+		return {
+			to: tokenAddress,
+			data,
+			value: '0',
+			chainId,
+		}
+	}
+
+	/**
+	 * Execute deposit transaction (handles approval + deposit + verification)
+	 */
+	async executeDeposit(
+		token: string,
+		chainId: number,
+		amount: string,
+		walletClient: WalletClient,
+	): Promise<TransactionReceipt> {
+		if (!walletClient.account) {
+			throw new ProtocolError('aave', 'WalletClient must have an account')
+		}
+
+		const poolAddress = getPoolAddress(chainId)
+		const userAddress = walletClient.account.address
+
+		// 1. Check if approval is needed
+		const approvalStatus = await this.checkApproval(
+			token,
+			chainId,
+			userAddress,
+			poolAddress,
+			amount,
+		)
+
+		// 2. Execute approval if needed
+		if (approvalStatus.needsApproval) {
+			const approvalTx = await this.prepareApproval(
+				token,
+				chainId,
+				poolAddress,
+				amount,
+				userAddress,
+			)
+
+			const approvalHash = await walletClient.sendTransaction({
+				to: approvalTx.to as `0x${string}`,
+				data: approvalTx.data as `0x${string}`,
+				chain: null,
+				account: walletClient.account,
+			})
+
+			// Wait for approval confirmation
+			const client = getPublicClient(chainId)
+			await client.waitForTransactionReceipt({ hash: approvalHash })
+		}
+
+		// 3. Execute deposit
+		const depositTx = await this.prepareDeposit(token, chainId, amount, userAddress)
+
+		const hash = await walletClient.sendTransaction({
+			to: depositTx.to as `0x${string}`,
+			data: depositTx.data as `0x${string}`,
+			chain: null,
+			account: walletClient.account,
+		})
+
+		// 4. Wait for confirmation
+		const client = getPublicClient(chainId)
+		const receipt = await client.waitForTransactionReceipt({ hash })
+
+		return {
+			hash,
+			blockNumber: receipt.blockNumber,
+			status: receipt.status === 'success' ? 'success' : 'reverted',
+			gasUsed: receipt.gasUsed,
+			effectiveGasPrice: receipt.effectiveGasPrice,
+			from: receipt.from,
+			to: receipt.to ?? undefined,
+			timestamp: Date.now(),
+		}
+	}
+
+	/**
+	 * Execute withdrawal transaction
+	 */
+	async executeWithdrawal(
+		token: string,
+		chainId: number,
+		amount: string,
+		walletClient: WalletClient,
+	): Promise<TransactionReceipt> {
+		if (!walletClient.account) {
+			throw new ProtocolError('aave', 'WalletClient must have an account')
+		}
+
+		const userAddress = walletClient.account.address
+
+		// Execute withdrawal
+		const withdrawTx = await this.prepareWithdrawal(token, chainId, amount, userAddress)
+
+		const hash = await walletClient.sendTransaction({
+			to: withdrawTx.to as `0x${string}`,
+			data: withdrawTx.data as `0x${string}`,
+			chain: null,
+			account: walletClient.account,
+		})
+
+		// Wait for confirmation
+		const client = getPublicClient(chainId)
+		const receipt = await client.waitForTransactionReceipt({ hash })
+
+		return {
+			hash,
+			blockNumber: receipt.blockNumber,
+			status: receipt.status === 'success' ? 'success' : 'reverted',
+			gasUsed: receipt.gasUsed,
+			effectiveGasPrice: receipt.effectiveGasPrice,
+			from: receipt.from,
+			to: receipt.to ?? undefined,
+			timestamp: Date.now(),
+		}
+	}
+
+	/**
+	 * Estimate gas for deposit operation
+	 */
+	async estimateDepositGas(
+		token: string,
+		chainId: number,
+		amount: string,
+		fromAddress: string,
+	): Promise<bigint> {
+		const tx = await this.prepareDeposit(token, chainId, amount, fromAddress)
+		const client = getPublicClient(chainId)
+
+		try {
+			return await client.estimateGas({
+				to: tx.to as `0x${string}`,
+				data: tx.data as `0x${string}`,
+				account: fromAddress as `0x${string}`,
+			})
+		} catch {
+			// Return a default estimate if estimation fails (common for deposits without approval)
+			return 250000n
+		}
+	}
+
+	/**
+	 * Estimate gas for withdrawal operation
+	 */
+	async estimateWithdrawalGas(
+		token: string,
+		chainId: number,
+		amount: string,
+		fromAddress: string,
+	): Promise<bigint> {
+		const tx = await this.prepareWithdrawal(token, chainId, amount, fromAddress)
+		const client = getPublicClient(chainId)
+
+		try {
+			return await client.estimateGas({
+				to: tx.to as `0x${string}`,
+				data: tx.data as `0x${string}`,
+				account: fromAddress as `0x${string}`,
+			})
+		} catch {
+			// Return a default estimate if estimation fails
+			return 200000n
+		}
+	}
+
+	/**
+	 * Check current ERC-20 approval status
+	 */
+	async checkApproval(
+		token: string,
+		chainId: number,
+		owner: string,
+		spender: string,
+		requiredAmount: string,
+	): Promise<ApprovalStatus> {
+		const tokenAddress = getTokenAddress(token, chainId)
+		if (!tokenAddress) {
+			throw new ProtocolError('aave', `Token ${token} not supported on chain ${chainId}`)
+		}
+
+		const client = getPublicClient(chainId)
+
+		const allowance = await retryWithBackoff(async () => {
+			return await client.readContract({
+				address: tokenAddress as `0x${string}`,
+				abi: ERC20_ABI,
+				functionName: 'allowance',
+				args: [owner as `0x${string}`, spender as `0x${string}`],
+			})
+		})
+
+		const required = BigInt(requiredAmount)
+		const needsApproval = allowance < required
+
+		return {
+			isApproved: !needsApproval,
+			currentAllowance: allowance.toString(),
+			requiredAmount,
+			needsApproval,
+			spenderAddress: spender,
+		}
+	}
+
+	// ==========================================
+	// PRIVATE HELPER METHODS
+	// ==========================================
 
 	/**
 	 * Get reserve data from AAVE Pool contract

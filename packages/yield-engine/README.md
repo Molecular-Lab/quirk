@@ -214,7 +214,7 @@ packages/yield-engine/
 
 ## Contributing
 
-This is part of the Quirk monorepo. See main README for contribution guidelines.
+This is part of the Proxify monorepo. See main README for contribution guidelines.
 
 ## License
 
