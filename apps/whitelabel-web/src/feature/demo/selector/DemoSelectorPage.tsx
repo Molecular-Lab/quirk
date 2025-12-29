@@ -2,6 +2,9 @@ import { useNavigate } from "@tanstack/react-router"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { LandingNavbar } from "@/feature/landing/LandingNavbar"
+import { useApiStore } from "@/store/apiStore"
+import { useDemoProductStore } from "@/store/demoProductStore"
+import { useDemoStore } from "@/store/demoStore"
 
 interface DemoOption {
 	id: string
@@ -48,9 +51,46 @@ const demoOptions: DemoOption[] = [
  */
 export function DemoSelectorPage() {
 	const navigate = useNavigate()
+	const { resetDemo } = useDemoStore()
+	const { clearSelection } = useDemoProductStore()
 
 	const handleSelectPlatform = (path: string) => {
-		console.log("[DemoSelectorPage] Navigating to:", path)
+		console.log("[DemoSelectorPage] 🔄 Platform selected, forcing API key cleanup...")
+
+		// 1. Reset demo state (persona, endUser, etc.)
+		resetDemo()
+
+		// 2. Clear product selection
+		clearSelection()
+
+		// 3. ✅ FORCE CLEAR ALL API KEY STORAGE
+		console.log("[DemoSelectorPage] 🧹 Clearing ALL API key related localStorage...")
+
+		// Clear Zustand apiStore (in-memory)
+		const { setApiKey } = useApiStore.getState()
+		setApiKey(null)
+
+		// Clear demoProductStore API keys (in-memory)
+		useDemoProductStore.setState({ apiKeys: {} })
+
+		// Clear direct localStorage keys
+		localStorage.removeItem("b2b:api_keys")
+		localStorage.removeItem("b2b:api_key")
+
+		// Clear proxify-api-testing localStorage (apiStore persist)
+		const apiTestingData = localStorage.getItem("proxify-api-testing")
+		if (apiTestingData) {
+			try {
+				const parsed = JSON.parse(apiTestingData)
+				parsed.state.apiKey = null
+				localStorage.setItem("proxify-api-testing", JSON.stringify(parsed))
+			} catch (e) {
+				// If parse fails, just remove it
+				localStorage.removeItem("proxify-api-testing")
+			}
+		}
+
+		console.log("[DemoSelectorPage] ✅ API key cleanup complete, navigating to:", path)
 		navigate({ to: path })
 	}
 
@@ -65,7 +105,7 @@ export function DemoSelectorPage() {
 				<div className="text-center mb-12">
 					<h1 className="text-4xl font-bold text-gray-950 mb-4">Choose Your Demo</h1>
 					<p className="text-lg text-gray-600 max-w-2xl mx-auto">
-						Select a platform to see how Proxify's Earn-as-a-Service works for different business models.
+						Select a platform to see how Quirk's Earn-as-a-Service works for different business models.
 					</p>
 				</div>
 
@@ -75,7 +115,9 @@ export function DemoSelectorPage() {
 						<Card
 							key={demo.id}
 							className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-accent"
-							onClick={() => handleSelectPlatform(demo.path)}
+							onClick={() => {
+								handleSelectPlatform(demo.path)
+							}}
 						>
 							<CardHeader>
 								<div className="text-5xl mb-4">{demo.icon}</div>

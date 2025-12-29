@@ -142,6 +142,13 @@ UPDATE deposit_transactions
 SET status = 'expired'
 WHERE id = $1;
 
+-- name: UpdateTransactionHash :exec
+-- Update transaction hash for a deposit (after blockchain mint)
+UPDATE deposit_transactions
+SET transaction_hash = $2,
+    updated_at = now()
+WHERE order_id = $1;
+
 -- ============================================
 -- DEPOSIT BATCH QUEUE QUERIES
 -- ============================================

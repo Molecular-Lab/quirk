@@ -3,6 +3,7 @@
  */
 
 import type { B2BUserUseCase, B2BClientUseCase } from "@quirk/core";
+import { logger } from "../logger";
 
 export class UserService {
 	constructor(
@@ -49,11 +50,19 @@ export class UserService {
 			throw new Error("Client use case not available");
 		}
 
+		logger.info("[UserService] 🔍 Activating user by productId", { userId, productId });
+
 		// Look up client by productId
 		const client = await this.clientUseCase.getClientByProductId(productId);
 		if (!client) {
 			throw new Error(`Client not found for product: ${productId}`);
 		}
+
+		logger.info("[UserService] 🔍 Found client for productId", {
+			productId,
+			clientId: client.id,
+			companyName: client.companyName,
+		});
 
 		// Activate user with the resolved clientId
 		return await this.userUseCase.activateUser(userId, client.id);

@@ -161,7 +161,7 @@ export class B2BClientUseCase {
 
 	/**
 	 * Create new client
-	 * NOTE: API keys are NOT auto-generated - user must explicitly click "Generate Key" button
+	 * NOTE: API keys are auto-generated for demo purposes
 	 */
 	async createClient(request: CreateClientRequest): Promise<
 		GetClientByProductIdRow & {
@@ -199,7 +199,24 @@ export class B2BClientUseCase {
 			throw new Error("Failed to create client")
 		}
 
-		// NOTE: API keys are NOT stored here - user must click "Generate Key" button
+		// ✅ Auto-generate API keys for both environments (for demo purposes)
+		console.log("[ClientUsecase] Auto-generating API keys for new product...")
+
+		// Generate sandbox API key
+		const sandboxApiKey = generateApiKey(true) // true = sandbox/test
+		const sandboxHash = await hashApiKey(sandboxApiKey)
+		const sandboxPrefix = extractPrefix(sandboxApiKey)
+
+		await this.clientRepository.regenerateSandboxKey(client.id, sandboxHash, sandboxPrefix)
+		console.log("[ClientUsecase] ✅ Generated sandbox API key:", sandboxPrefix)
+
+		// Generate production API key
+		const productionApiKey = generateApiKey(false) // false = production/live
+		const productionHash = await hashApiKey(productionApiKey)
+		const productionPrefix = extractPrefix(productionApiKey)
+
+		await this.clientRepository.regenerateProductionKey(client.id, productionHash, productionPrefix)
+		console.log("[ClientUsecase] ✅ Generated production API key:", productionPrefix)
 
 		// Initialize balance
 		await this.clientRepository.createBalance({

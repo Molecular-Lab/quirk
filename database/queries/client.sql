@@ -36,8 +36,8 @@ SELECT
   co.business_type,
   co.description,
   co.website_url,
-  SUBSTRING(co.sandbox_api_key, 1, 20) AS sandbox_api_key_prefix,
-  SUBSTRING(co.production_api_key, 1, 20) AS production_api_key_prefix,
+  co.sandbox_api_secret AS sandbox_api_key_prefix,
+  co.production_api_secret AS production_api_key_prefix,
   co.webhook_urls,
   co.webhook_secret,
   co.custom_strategy,
@@ -70,8 +70,8 @@ LIMIT 1;
 -- Retrieve ALL organizations for a Privy user (for aggregation)
 SELECT
   co.*,
-  SUBSTRING(co.sandbox_api_key, 1, 20) AS sandbox_api_key_prefix,
-  SUBSTRING(co.production_api_key, 1, 20) AS production_api_key_prefix,
+  co.sandbox_api_secret AS sandbox_api_key_prefix,
+  co.production_api_secret AS production_api_key_prefix,
   pa.privy_organization_id,
   pa.wallet_type
 FROM client_organizations co

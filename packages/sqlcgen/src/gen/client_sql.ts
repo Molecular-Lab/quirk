@@ -241,8 +241,8 @@ SELECT
   co.business_type,
   co.description,
   co.website_url,
-  SUBSTRING(co.sandbox_api_key, 1, 20) AS sandbox_api_key_prefix,
-  SUBSTRING(co.production_api_key, 1, 20) AS production_api_key_prefix,
+  co.sandbox_api_secret AS sandbox_api_key_prefix,
+  co.production_api_secret AS production_api_key_prefix,
   co.webhook_urls,
   co.webhook_secret,
   co.custom_strategy,
@@ -276,8 +276,8 @@ export interface GetClientByProductIdRow {
     businessType: string;
     description: string | null;
     websiteUrl: string | null;
-    sandboxApiKeyPrefix: string;
-    productionApiKeyPrefix: string;
+    sandboxApiKeyPrefix: string | null;
+    productionApiKeyPrefix: string | null;
     webhookUrls: string[] | null;
     webhookSecret: string | null;
     customStrategy: any | null;
@@ -441,8 +441,8 @@ export async function getClientByPrivyOrgId(sql: Sql, args: GetClientByPrivyOrgI
 export const getAllClientsByPrivyOrgIdQuery = `-- name: GetAllClientsByPrivyOrgId :many
 SELECT
   co.id, co.privy_account_id, co.product_id, co.company_name, co.business_type, co.description, co.website_url, co.sandbox_api_key, co.sandbox_api_secret, co.production_api_key, co.production_api_secret, co.webhook_urls, co.webhook_secret, co.custom_strategy, co.client_revenue_share_percent, co.platform_fee_percent, co.performance_fee, co.monthly_recurring_revenue, co.annual_run_rate, co.last_mrr_calculation_at, co.supported_currencies, co.bank_accounts, co.is_active, co.is_sandbox, co.customer_tier, co.strategies_preferences, co.strategies_customization, co.idle_balance, co.earning_balance, co.client_revenue_earned, co.platform_revenue_earned, co.enduser_revenue_earned, co.total_end_users, co.new_users_30d, co.active_users_30d, co.total_deposited, co.total_withdrawn, co.sandbox_apy_simulation_rate, co.production_use_real_defi, co.created_at, co.updated_at,
-  SUBSTRING(co.sandbox_api_key, 1, 20) AS sandbox_api_key_prefix,
-  SUBSTRING(co.production_api_key, 1, 20) AS production_api_key_prefix,
+  co.sandbox_api_secret AS sandbox_api_key_prefix,
+  co.production_api_secret AS production_api_key_prefix,
   pa.privy_organization_id,
   pa.wallet_type
 FROM client_organizations co
@@ -497,8 +497,8 @@ export interface GetAllClientsByPrivyOrgIdRow {
     productionUseRealDefi: boolean | null;
     createdAt: Date;
     updatedAt: Date;
-    sandboxApiKeyPrefix: string;
-    productionApiKeyPrefix: string;
+    sandboxApiKeyPrefix: string | null;
+    productionApiKeyPrefix: string | null;
     privyOrganizationId: string;
     walletType: string;
 }

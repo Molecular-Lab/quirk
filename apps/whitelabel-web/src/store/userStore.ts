@@ -149,8 +149,13 @@ export const useUserStore = create<UserStore>()(
 			loadOrganizations: async () => {
 				const privyOrganizationId = get().privyOrganizationId
 
+				console.log("[UserStore] 🔍 loadOrganizations() called:", {
+					privyOrganizationId,
+					hasPrivyId: !!privyOrganizationId,
+				})
+
 				if (!privyOrganizationId) {
-					console.warn("[UserStore] Cannot load organizations: No Privy user authenticated")
+					console.warn("[UserStore] ❌ Cannot load organizations: No Privy user authenticated")
 					return
 				}
 

@@ -102,7 +102,7 @@ export const useApiStore = create<ApiTestState>()(
 		{
 			name: "proxify-api-testing",
 			partialize: (state) => ({
-				apiKey: state.apiKey,
+				// ✅ apiKey NOT persisted - force fresh load
 				baseUrl: state.baseUrl,
 				history: state.history,
 			}),

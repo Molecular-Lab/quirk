@@ -5,9 +5,6 @@
  * All responses are now properly typed!
  */
 
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-return */
 /* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable object-shorthand */
@@ -77,15 +74,21 @@ export async function registerClient(data: {
  * List organizations by Privy ID
  */
 export async function listOrganizationsByPrivyId(privyOrganizationId: string) {
+	console.log("[b2bClientHelpers] 🔍 Fetching organizations for privyOrgId:", privyOrganizationId)
+
 	const { status, body } = await b2bApiClient.client.listByPrivyOrgId({
 		params: { privyOrganizationId },
 	})
 
+	console.log("[b2bClientHelpers] 🔍 API Response:", { status, body })
+
 	if (status === 200) {
+		console.log("[b2bClientHelpers] ✅ Returning body (array of orgs):", body)
 		// ✅ body is typed as array of clients
 		return body
 	}
 
+	console.log("[b2bClientHelpers] ⚠️ Non-200 status, returning empty array")
 	return []
 }
 
@@ -331,7 +334,7 @@ export async function getEffectiveProductStrategies(productId: string) {
 		params: { productId },
 	})
 
-	console.log('[b2bClientHelpers] getEffectiveProductStrategies RESPONSE:', { status, body })
+	console.log("[b2bClientHelpers] getEffectiveProductStrategies RESPONSE:", { status, body })
 
 	if (status === 200 && body.found && body.data) {
 		// Extract strategies from body.data
@@ -339,7 +342,7 @@ export async function getEffectiveProductStrategies(productId: string) {
 			strategies: body.data.strategies,
 			source: body.data.source,
 		}
-		console.log('[b2bClientHelpers] Extracted strategies:', result)
+		console.log("[b2bClientHelpers] Extracted strategies:", result)
 		return result
 	}
 
@@ -533,7 +536,10 @@ export async function getUserByClientUserId(clientId: string, clientUserId: stri
 /**
  * Get user balance (with environment support)
  */
-export async function getUserBalance(userId: string, params?: { chain?: string; token?: string; environment?: "sandbox" | "production" }) {
+export async function getUserBalance(
+	userId: string,
+	params?: { chain?: string; token?: string; environment?: "sandbox" | "production" },
+) {
 	const { status, body } = await b2bApiClient.user.getBalance({
 		params: { userId },
 		query: params ?? {},
@@ -875,4 +881,3 @@ export async function getWalletBalances(productId: string, environment?: "sandbo
 
 	throw new Error("Failed to get wallet balances")
 }
-

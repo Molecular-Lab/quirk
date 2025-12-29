@@ -56,6 +56,7 @@ export function mapDepositToDto(
 		status: mapDepositStatus(deposit.status),
 		createdAt: deposit.createdAt.toISOString(),
 		completedAt: deposit.completedAt?.toISOString(),
+		transactionHash: deposit.transactionHash || null, // ✅ Blockchain transaction hash
 
 		// ✅ Return stored payment instructions (immutable, frozen at deposit creation)
 		expectedCryptoAmount,

@@ -199,6 +199,13 @@ export class DepositUsecase {
   }
 
   /**
+   * Update transaction hash (after blockchain mint)
+   */
+  async updateTransactionHash(orderId: string, transactionHash: string): Promise<void> {
+    await this.deps.depositRepository.updateTransactionHash(orderId, transactionHash);
+  }
+
+  /**
    * Fail deposit
    */
   async failDeposit(orderId: string, reason: string, actorId: string): Promise<void> {

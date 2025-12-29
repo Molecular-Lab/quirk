@@ -19,6 +19,7 @@ import {
 	completeDepositByOrderID,
 	failDeposit,
 	expireDeposit,
+	updateTransactionHash,
 	updateDepositGatewayInfo,
 	markDepositAsBatched,
 	markDepositAsStaked,
@@ -131,6 +132,10 @@ export class DepositRepository {
 
 	async markExpired(id: string): Promise<void> {
 		await expireDeposit(this.sql, { id })
+	}
+
+	async updateTransactionHash(orderId: string, transactionHash: string): Promise<void> {
+		await updateTransactionHash(this.sql, { orderId, transactionHash })
 	}
 
 	async updateGatewayInfo(id: string, paymentUrl: string | null, gatewayOrderId: string | null): Promise<void> {

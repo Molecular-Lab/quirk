@@ -198,6 +198,26 @@ export const createClientRouter = (
 
 				logger.info("Found clients", { count: clients.length, privyOrganizationId: params.privyOrganizationId });
 
+				// 🔍 DEBUG: Log raw client data from database
+				if (clients.length > 0) {
+					clients.forEach((client, index) => {
+						logger.info(`[listByPrivyOrgId] 🔍 RAW CLIENT[${index}] FROM DB:`, {
+							id: client.id,
+							productId: client.productId,
+							companyName: client.companyName,
+							sandboxApiKeyPrefix: client.sandboxApiKeyPrefix,
+							productionApiKeyPrefix: client.productionApiKeyPrefix,
+							hasSandboxPrefix: !!client.sandboxApiKeyPrefix,
+							hasProductionPrefix: !!client.productionApiKeyPrefix,
+							prefixType: {
+								sandbox: typeof client.sandboxApiKeyPrefix,
+								production: typeof client.productionApiKeyPrefix,
+							},
+							allKeys: Object.keys(client),
+						});
+					});
+				}
+
 				// Map to ClientDto array
 				const mappedClients = clients.map(client => ({
 					id: client.id,
@@ -208,8 +228,8 @@ export const createClientRouter = (
 					websiteUrl: client.websiteUrl || null,
 					walletType: client.walletType, // ✅ From JOIN (SQLC generates as walletType)
 					privyOrganizationId: client.privyOrganizationId, // ✅ From JOIN
-					sandboxApiKeyPrefix: (client as any).sandboxApiKeyPrefix || null, // ✅ Sandbox API key prefix (pk_test_xxx)
-					productionApiKeyPrefix: (client as any).productionApiKeyPrefix || null, // ✅ Production API key prefix (pk_live_xxx)
+					sandboxApiKeyPrefix: client.sandboxApiKeyPrefix || null, // ✅ Sandbox API key prefix (pk_test_xxx)
+					productionApiKeyPrefix: client.productionApiKeyPrefix || null, // ✅ Production API key prefix (pk_live_xxx)
 					supportedCurrencies: client.supportedCurrencies || [],
 					// Normalize bankAccounts (may be JSON string from DB)
 					bankAccounts: normalizeBankAccounts(client.bankAccounts),
@@ -218,6 +238,19 @@ export const createClientRouter = (
 					createdAt: client.createdAt.toISOString(),
 					updatedAt: client.updatedAt.toISOString(),
 				}));
+
+				// 🔍 DEBUG: Log mapped response
+				if (mappedClients.length > 0) {
+					mappedClients.forEach((mappedClient, index) => {
+						logger.info(`[listByPrivyOrgId] 🔍 MAPPED RESPONSE[${index}]:`, {
+							productId: mappedClient.productId,
+							companyName: mappedClient.companyName,
+							sandboxApiKeyPrefix: mappedClient.sandboxApiKeyPrefix,
+							productionApiKeyPrefix: mappedClient.productionApiKeyPrefix,
+							fullMappedClient: mappedClient,
+						});
+					});
+				}
 
 				return {
 					status: 200 as const,

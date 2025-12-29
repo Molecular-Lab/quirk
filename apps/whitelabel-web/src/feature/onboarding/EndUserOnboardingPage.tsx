@@ -13,6 +13,7 @@ import { activateUser, getUserByClientUserId } from "@/api/b2bClientHelpers"
 import { useClientContextStore } from "@/store/clientContextStore"
 import { useDemoStore } from "@/store/demoStore"
 import { Button } from "@/components/ui/button"
+import { parseDemoClientUserId, DEMO_PERSONAS } from "@/feature/demo/personas"
 
 import { OnboardingStepper } from "./components/OnboardingStepper"
 import { FinalStep } from "./steps/FinalStep"
@@ -46,6 +47,42 @@ export function EndUserOnboardingPage() {
 	const returnPath = (search as any)?.returnPath || "/demo"
 
 	console.log("[EndUserOnboardingPage] productId:", productId, "from URL:", (search as any)?.productId, "from store:", storedProductId)
+
+	// Parse Static Key from URL to restore persona and platform state
+	// This ensures when redirecting back from onboarding, the demo page knows which persona/platform to show
+	useEffect(() => {
+		if (!clientUserId) return
+
+		console.log("[EndUserOnboardingPage] 🔑 Parsing Static Key:", clientUserId)
+		const parsed = parseDemoClientUserId(clientUserId)
+
+		if (parsed) {
+			console.log("[EndUserOnboardingPage] ✅ Parsed Static Key:", {
+				privyUserId: parsed.privyUserId,
+				platform: parsed.visualizationType,
+				persona: parsed.persona,
+				environment: parsed.environment,
+			})
+
+			// Restore state from Static Key to demoStore
+			const { setPersona, setEnvironment } = useDemoStore.getState()
+
+			// First set environment (setPersona uses it to generate clientUserId)
+			setEnvironment(parsed.environment)
+
+			// Then set persona with all required params
+			setPersona(parsed.privyUserId, parsed.persona, parsed.visualizationType)
+
+			console.log("[EndUserOnboardingPage] 💾 Restored state from Static Key:", {
+				persona: parsed.persona,
+				environment: parsed.environment,
+				platform: parsed.visualizationType,
+				privyUserId: parsed.privyUserId,
+			})
+		} else {
+			console.warn("[EndUserOnboardingPage] ⚠️ Failed to parse Static Key:", clientUserId)
+		}
+	}, [clientUserId])
 
 	// Check if user is already activated on mount
 	useEffect(() => {
@@ -136,10 +173,18 @@ export function EndUserOnboardingPage() {
 			const stateToFlush = {
 				selectedPersona: currentState.selectedPersona,
 				selectedVisualizationType: currentState.selectedVisualizationType,
+				selectedEnvironment: currentState.selectedEnvironment, // ✅ FIX: Include environment
 				endUserId: currentState.endUserId,
 				endUserClientUserId: currentState.endUserClientUserId,
 				hasEarnAccount: currentState.hasEarnAccount,
 				personaData: currentState.personaData,
+				setupWizardOpen: false, // ✅ FIX: Close wizard after onboarding
+				setupWizardStep: 1, // ✅ Reset wizard to step 1
+				wizardSelections: {
+					environment: currentState.selectedEnvironment, // ✅ Keep environment in sync
+					productId: null,
+					persona: null,
+				},
 				_hasHydrated: true,
 			}
 
