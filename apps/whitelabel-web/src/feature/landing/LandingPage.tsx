@@ -8,8 +8,7 @@ import quirkLogo from "@/assets/quirk-logo.svg"
 
 import { BusinessTypesSection } from "./BusinessTypesSection"
 import { CustomizeEarnSection } from "./CustomizeEarnSection"
-import { GetStartedSection } from "./GetStartedSection"
-import { IntegrationSection } from "./IntegrationSection"
+import { HowItWorksSection } from "./HowItWorksSection"
 import { NewHeroSection } from "./NewHeroSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
 import { TradingStrategiesSection } from "./TradingStrategiesSection"
@@ -95,15 +94,15 @@ export function LandingPage() {
 		<div className="min-h-screen bg-gradient-to-b from-blue-50/30 via-purple-50/10 to-white">
 			{/* Header - Pure glass blur (no background color) */}
 			<header
-				className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl ${
-					isScrolled ? "border-b border-gray-200/30 shadow-sm" : "border-b border-transparent"
-				}`}
+				className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl ${isScrolled ? "border-b border-gray-200/30 shadow-sm" : "border-b border-transparent"
+					}`}
 			>
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 					<Link to="/" className="flex items-center gap-3 group">
 						<div className="relative p-2 -m-2 rounded-lg transition-all">
 							<img src={quirkLogo} alt="Quirk Logo" className="size-16 cursor-pointer" />
 						</div>
+						<span className="text-2xl font-bold text-gray-950">QUIRK</span>
 					</Link>
 					<nav className="hidden md:flex items-center gap-6">
 						<Link to="/demo" className="text-lg text-gray-700 hover:text-gray-950 transition-colors font-medium">
@@ -131,11 +130,12 @@ export function LandingPage() {
 			{/* Customize Earn Solution */}
 			<CustomizeEarnSection />
 
-			{/* Integration */}
-			<IntegrationSection />
 
 			{/* Trading Strategies */}
 			<TradingStrategiesSection />
+
+			{/* How It Works */}
+			<HowItWorksSection />
 
 			{/* Business Types - Stripe-style showcase */}
 			<BusinessTypesSection />
@@ -143,8 +143,6 @@ export function LandingPage() {
 			{/* Supported Assets */}
 			<SupportedAssetsSection />
 
-			{/* Get Started & Survey */}
-			<GetStartedSection />
 
 			{/* Footer */}
 			<footer className="bg-gradient-to-b from-gray-50 to-white border-t border-gray-150 py-12">

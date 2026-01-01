@@ -21,7 +21,7 @@ export function SupportedAssetsSection() {
 	]
 
 	return (
-		<section className="py-20 bg-white">
+		<section className="pt-20 pb-32 bg-white">
 			<div
 				ref={ref as React.RefObject<HTMLDivElement>}
 				className={`max-w-7xl mx-auto px-6 transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"

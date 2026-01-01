@@ -1,23 +1,6 @@
-import { useRef } from "react"
+import { useRef, useEffect, useState } from "react"
 import { ShoppingBag, CreditCard, Briefcase, Palette, Car } from "lucide-react"
 import { useScrollAnimation } from "@/hooks/useScrollAnimation"
-
-import linePayLogo from "@/assets/line-pay-seeklogo.svg"
-import wiseLogo from "@/assets/wise-plc-seeklogo.svg"
-import paypalLogo from "@/assets/paypal-seeklogo.svg"
-import upworkLogo from "@/assets/upwork-seeklogo.svg"
-import fiverrLogo from "@/assets/fiverr-seeklogo.svg"
-import toptalLogo from "@/assets/toptal-seeklogo-2.svg"
-import tiktokLogo from "@/assets/tiktok-app-icon-seeklogo.svg"
-import instagramLogo from "@/assets/instagram-new-2022-seeklogo.svg"
-import youtubeLogo from "@/assets/youtube-2017-icon-seeklogo-3.svg"
-import onlyfansLogo from "@/assets/onlyfans-seeklogo.svg"
-import grabLogo from "@/assets/grab-seeklogo.svg"
-import uberLogo from "@/assets/uber-seeklogo.svg"
-import foodpandaLogo from "@/assets/foodpanda-seeklogo.svg"
-import shopifyLogo from "@/assets/shopify-seeklogo.svg"
-import shopeeLogo from "@/assets/shopee-seeklogo.svg"
-import lazadaLogo from "@/assets/lazada-seeklogo.svg"
 
 export function BusinessTypesSection() {
 	const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 })
@@ -27,39 +10,157 @@ export function BusinessTypesSection() {
 			description:
 				"User wallets and payment processing funds earn yield during settlement periods. Optimize treasury management with automated yield generation.",
 			icon: <CreditCard className="w-6 h-6 text-gray-900" />,
-			logos: [linePayLogo, wiseLogo, paypalLogo],
 		},
 		{
 			title: "Freelance Platforms",
 			description:
 				"Project escrow and milestone payments earn yield until release. Freelancer earnings accumulate returns while waiting for withdrawal, maximizing value for both clients and workers.",
 			icon: <Briefcase className="w-6 h-6 text-gray-900" />,
-			logos: [upworkLogo, fiverrLogo, toptalLogo],
 		},
 		{
 			title: "Creator Platforms",
 			description:
 				"Creator revenue earns yield until withdrawal. Boost creator retention and satisfaction by offering competitive returns on their earnings while they focus on content.",
 			icon: <Palette className="w-6 h-6 text-gray-900" />,
-			logos: [tiktokLogo, instagramLogo, youtubeLogo, onlyfansLogo],
 		},
 		{
 			title: "Gig Worker Platforms",
 			description:
 				"Escrow funds and driver earnings earn yield until payout. Better than 0% checking accounts, creating a competitive advantage for platform adoption and retention.",
 			icon: <Car className="w-6 h-6 text-gray-900" />,
-			logos: [grabLogo, uberLogo, foodpandaLogo],
 		},
 		{
 			title: "E-commerce",
 			description:
 				"Enable merchants to earn yield on idle balances. Seller pending payouts and treasury funds generate returns while waiting for settlement.",
 			icon: <ShoppingBag className="w-6 h-6 text-gray-900" />,
-			logos: [shopifyLogo, shopeeLogo, lazadaLogo],
 		},
 	]
 
 	const scrollerRef = useRef<HTMLDivElement>(null)
+	const autoScrollIntervalRef = useRef<NodeJS.Timeout | null>(null)
+	const [shouldAutoScroll, setShouldAutoScroll] = useState(true)
+	const [isHovering, setIsHovering] = useState(false)
+	const isHoveringRef = useRef(false)
+
+	// Duplicate cards for infinite scroll (3 sets for seamless looping)
+	const duplicatedCards = [...businessTypes, ...businessTypes, ...businessTypes]
+
+	useEffect(() => {
+		const scroller = scrollerRef.current
+		if (!scroller) return
+
+		// Calculate the width of one set of cards
+		const firstCard = scroller.querySelector<HTMLElement>("[data-business-card]")
+		if (!firstCard) return
+
+		const cardWidth = firstCard.offsetWidth
+		const gap = 24 // gap-6 = 24px
+		const oneSetWidth = businessTypes.length * (cardWidth + gap) - gap
+
+		// Set initial scroll position to the middle set
+		scroller.scrollLeft = oneSetWidth
+
+		const handleScroll = () => {
+			if (!scroller || isHoveringRef.current) return
+
+			// If scrolled to the end, jump to the middle set
+			if (scroller.scrollLeft >= oneSetWidth * 2 - 10) {
+				scroller.scrollLeft = oneSetWidth
+			}
+			// If scrolled to the beginning, jump to the middle set
+			else if (scroller.scrollLeft <= 10) {
+				scroller.scrollLeft = oneSetWidth
+			}
+		}
+
+		scroller.addEventListener("scroll", handleScroll)
+		return () => scroller.removeEventListener("scroll", handleScroll)
+	}, [businessTypes.length])
+
+	// Auto-scroll functionality
+	useEffect(() => {
+		// Clear any existing interval first
+		if (autoScrollIntervalRef.current) {
+			clearInterval(autoScrollIntervalRef.current)
+			autoScrollIntervalRef.current = null
+		}
+
+		if (!shouldAutoScroll || isHoveringRef.current) {
+			return
+		}
+
+		const scroller = scrollerRef.current
+		if (!scroller) return
+
+		autoScrollIntervalRef.current = setInterval(() => {
+			if (!scroller || !shouldAutoScroll || isHoveringRef.current) {
+				if (autoScrollIntervalRef.current) {
+					clearInterval(autoScrollIntervalRef.current)
+					autoScrollIntervalRef.current = null
+				}
+				return
+			}
+
+			const firstCard = scroller.querySelector<HTMLElement>("[data-business-card]")
+			if (!firstCard) return
+
+			const step = (firstCard.offsetWidth ?? 400) + 24 // card width + gap
+			scroller.scrollBy({
+				left: step,
+				behavior: "smooth",
+			})
+		}, 3000) // Scroll every 3 seconds
+
+		return () => {
+			if (autoScrollIntervalRef.current) {
+				clearInterval(autoScrollIntervalRef.current)
+				autoScrollIntervalRef.current = null
+			}
+		}
+	}, [shouldAutoScroll])
+
+	const handleCardHover = (cardElement: HTMLElement) => {
+		// Immediately stop auto-scroll
+		isHoveringRef.current = true
+		setIsHovering(true)
+		setShouldAutoScroll(false)
+		
+		// Clear interval immediately
+		if (autoScrollIntervalRef.current) {
+			clearInterval(autoScrollIntervalRef.current)
+			autoScrollIntervalRef.current = null
+		}
+
+		// Snap to the hovered card (only if needed)
+		const scroller = scrollerRef.current
+		if (!scroller) return
+
+		const cardRect = cardElement.getBoundingClientRect()
+		const scrollerRect = scroller.getBoundingClientRect()
+		const cardCenter = cardRect.left + cardRect.width / 2
+		const scrollerCenter = scrollerRect.left + scrollerRect.width / 2
+		
+		// Only scroll if card is not already centered
+		if (Math.abs(cardCenter - scrollerCenter) > 50) {
+			const scrollLeft = scroller.scrollLeft
+			const relativeLeft = cardRect.left - scrollerRect.left + scrollLeft
+
+			scroller.scrollTo({
+				left: relativeLeft - (scrollerRect.width - cardRect.width) / 2,
+				behavior: "smooth",
+			})
+		}
+	}
+
+	const handleCardLeave = () => {
+		isHoveringRef.current = false
+		setIsHovering(false)
+		// Small delay before resuming auto-scroll
+		setTimeout(() => {
+			setShouldAutoScroll(true)
+		}, 500)
+	}
 
 	const scrollByCard = (direction: "left" | "right") => {
 		const scroller = scrollerRef.current
@@ -97,58 +198,52 @@ export function BusinessTypesSection() {
 
 					<div
 						ref={scrollerRef}
-						className="flex gap-6 overflow-x-auto pb-8 scrollbar-hide snap-x snap-mandatory px-2 sm:px-4"
+						className={`flex gap-6 overflow-x-auto pb-8 scrollbar-hide px-2 sm:px-4 ${isHovering ? '' : 'snap-x snap-mandatory'}`}
+						onMouseEnter={() => {
+							isHoveringRef.current = true
+							setIsHovering(true)
+							setShouldAutoScroll(false)
+							if (autoScrollIntervalRef.current) {
+								clearInterval(autoScrollIntervalRef.current)
+								autoScrollIntervalRef.current = null
+							}
+						}}
+						onMouseLeave={() => {
+							isHoveringRef.current = false
+							setIsHovering(false)
+							setTimeout(() => {
+								setShouldAutoScroll(true)
+							}, 500)
+						}}
 					>
-						{businessTypes.map((type, idx) => {
+						{duplicatedCards.map((type, idx) => {
 							// Cycle through pastel colors: Purple, Orange, Gray
 							const bgColors = ["bg-purple-50", "bg-orange-50", "bg-gray-100"]
-							const bgColor = bgColors[idx % bgColors.length]
+							const originalIdx = idx % businessTypes.length
+							const bgColor = bgColors[originalIdx % bgColors.length]
 
 							return (
 								<div
 									key={idx}
 									data-business-card
-									className={`snap-center flex-shrink-0 w-[360px] sm:w-[400px] lg:w-[460px] ${bgColor} rounded-3xl p-8 flex flex-col justify-between hover:shadow-md transition-all`}
+									className={`snap-center flex-shrink-0 w-[420px] sm:w-[480px] lg:w-[540px] ${bgColor} rounded-3xl p-10 flex flex-col justify-between hover:shadow-xl hover:scale-[1.02] transition-all duration-300 border border-white/50`}
+									onMouseEnter={(e) => handleCardHover(e.currentTarget)}
+									onMouseLeave={handleCardLeave}
 								>
-									<div>
+									<div className="flex-1 flex flex-col">
 										{/* Icon Header */}
-										<div className="flex items-center gap-4 mb-8">
-											<div className="w-12 h-12 rounded-full bg-white/60 flex items-center justify-center">
+										<div className="flex items-center gap-5 mb-10">
+											<div className="w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm border border-white/50">
 												{type.icon}
 											</div>
-											<h3 className="text-2xl font-bold text-gray-950">{type.title}</h3>
+											<h3 className="text-3xl font-bold text-gray-950">{type.title}</h3>
 										</div>
 
-										{/* Description/Tags */}
-										<div className="mb-8">
-											<p className="text-gray-700 text-lg leading-relaxed">
+										{/* Description */}
+										<div className="flex-1 flex items-start">
+											<p className="text-gray-700 text-xl leading-relaxed">
 												{type.description}
 											</p>
-										</div>
-									</div>
-
-									{/* Apps Footer */}
-									<div>
-										<p className="text-gray-500 text-sm font-mono uppercase tracking-wider mb-4">
-											APPS
-										</p>
-										<div className="flex items-center gap-4 flex-wrap">
-											{type.logos.map((logo, logoIdx) => {
-												// Toptal logo has a taller aspect ratio and needs special sizing
-												const isToptal = logo === toptalLogo
-												return (
-													<div
-														key={logoIdx}
-														className={`${isToptal ? "h-16 px-6" : "h-14 px-5"} bg-white rounded-xl flex items-center justify-center shadow border border-gray-200`}
-													>
-														<img
-															src={logo}
-															alt=""
-															className={isToptal ? "h-12 w-auto object-contain max-w-[120px]" : "h-8 w-auto object-contain max-w-[96px]"}
-														/>
-													</div>
-												)
-											})}
 										</div>
 									</div>
 								</div>

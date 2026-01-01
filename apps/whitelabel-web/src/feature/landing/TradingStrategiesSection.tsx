@@ -12,30 +12,53 @@ ChartJS.register(ArcElement, Tooltip, Legend)
 export function TradingStrategiesSection() {
 	const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 })
 	const [allocations, setAllocations] = useState({
-		defi: 45,
-		liquidityPool: 45,
-		cefi: 10,
+		lending: 20,
+		staking: 20,
+		arbitrage: 20,
+		cefi: 20,
+		liquidityProvider: 20,
 	})
 
 	const handleAllocationChange = (strategy: keyof typeof allocations, value: number) => {
+		const currentValue = allocations[strategy]
+		const diff = value - currentValue
+
+		if (diff === 0) return
+
+		const otherStrategies = Object.keys(allocations).filter(
+			(key) => key !== strategy,
+		) as (keyof typeof allocations)[]
+
+		// Calculate how much we need to take from/give to other sliders
+		const otherTotal = otherStrategies.reduce((sum, key) => sum + allocations[key], 0)
+
+		if (otherTotal === 0 && diff > 0) return // Can't increase if others are at 0
+
 		const newAllocations = { ...allocations, [strategy]: value }
-		const total = Object.values(newAllocations).reduce((sum, val) => sum + val, 0)
 
-		// If total exceeds 100, adjust other values proportionally
-		if (total > 100) {
-			const excess = total - 100
-			const otherStrategies = Object.keys(newAllocations).filter(
-				(key) => key !== strategy,
-			) as (keyof typeof allocations)[]
-			const otherTotal = otherStrategies.reduce((sum, key) => sum + newAllocations[key], 0)
-
+		// Distribute the difference proportionally among other strategies
+		otherStrategies.forEach((key) => {
 			if (otherTotal > 0) {
-				otherStrategies.forEach((key) => {
-					newAllocations[key] = Math.max(
-						0,
-						Math.round(newAllocations[key] - (excess * newAllocations[key]) / otherTotal),
-					)
-				})
+				const proportion = allocations[key] / otherTotal
+				const adjustment = Math.round(diff * proportion)
+				newAllocations[key] = Math.max(0, Math.min(100, allocations[key] - adjustment))
+			} else {
+				// If other totals are 0, distribute equally
+				newAllocations[key] = Math.round((100 - value) / otherStrategies.length)
+			}
+		})
+
+		// Ensure total is exactly 100
+		const total = Object.values(newAllocations).reduce((sum, val) => sum + val, 0)
+		if (total !== 100) {
+			const adjustment = total - 100
+			// Adjust the first non-changed strategy that can absorb the difference
+			for (const key of otherStrategies) {
+				const newVal = newAllocations[key] - adjustment
+				if (newVal >= 0 && newVal <= 100) {
+					newAllocations[key] = newVal
+					break
+				}
 			}
 		}
 
@@ -45,14 +68,16 @@ export function TradingStrategiesSection() {
 	const totalAllocation = Object.values(allocations).reduce((sum, val) => sum + val, 0)
 
 	const chartData = {
-		labels: ["DeFi", "Place LP", "CeFi"],
+		labels: ["Lending", "Staking", "Arbitrage", "CeFi", "Liquidity Provider"],
 		datasets: [
 			{
-				data: [allocations.defi, allocations.liquidityPool, allocations.cefi],
+				data: [allocations.lending, allocations.staking, allocations.arbitrage, allocations.cefi, allocations.liquidityProvider],
 				backgroundColor: [
-					"#8B5CF6", // Vibrant purple for DeFi (matches background gradient)
-					"#06B6D4", // Cyan/turquoise for Place LP
-					"#F59E0B", // Amber for CeFi
+					"#A78BFA", // Softer purple for Lending
+					"#60A5FA", // Softer blue for Staking
+					"#FBBF24", // Softer amber for Arbitrage
+					"#34D399", // Softer emerald for CeFi
+					"#F472B6", // Softer pink for Liquidity Provider
 				],
 				borderColor: "#ffffff",
 				borderWidth: 4,
@@ -119,86 +144,118 @@ export function TradingStrategiesSection() {
 						</div>
 
 						{/* Controls Section */}
-						<div className="space-y-8">
+						<div className="space-y-6">
 							<div>
 								<h3 className="text-3xl font-bold text-gray-950 mb-3">Portfolio Distribution</h3>
-								<p className="text-lg text-gray-700">Adjust sliders to simulate different allocation strategies</p>
+								<p className="text-lg text-gray-700">Allocation optimized based on market condition by agent</p>
 							</div>
-							<div className="space-y-8">
-								{/* DeFi */}
-								<div className="space-y-3">
+							<div className="space-y-5">
+								{/* Lending */}
+								<div className="space-y-2">
 									<div className="flex items-center justify-between">
-										<div>
-											<label className="text-gray-950 font-semibold text-xl">DeFi</label>
-										</div>
+										<label className="text-gray-950 font-semibold text-lg">Lending</label>
 										<div className="flex items-center gap-1">
-											<span className="text-3xl font-bold text-gray-950">{allocations.defi}</span>
-											<span className="text-gray-500 text-xl">%</span>
+											<span className="text-2xl font-bold text-gray-950">{allocations.lending}</span>
+											<span className="text-gray-500 text-lg">%</span>
 										</div>
 									</div>
 									<input
 										type="range"
-										value={allocations.defi}
-										onChange={(e) => {
-											handleAllocationChange("defi", Number(e.target.value))
-										}}
+										value={allocations.lending}
+										onChange={(e) => handleAllocationChange("lending", Number(e.target.value))}
 										className="w-full h-2 rounded-lg appearance-none cursor-pointer"
 										min="0"
 										max="100"
 										style={{
-											background: `linear-gradient(to right, #8B5CF6 0%, #8B5CF6 ${allocations.defi}%, #E3E3E3 ${allocations.defi}%, #E3E3E3 100%)`,
+											background: `linear-gradient(to right, #A78BFA 0%, #A78BFA ${allocations.lending}%, #E5E7EB ${allocations.lending}%, #E5E7EB 100%)`,
 										}}
 									/>
 								</div>
 
-								{/* Place LP */}
-								<div className="space-y-3">
+								{/* Staking */}
+								<div className="space-y-2">
 									<div className="flex items-center justify-between">
-										<div>
-											<label className="text-gray-950 font-semibold text-xl">Liquidity Provider</label>
-										</div>
+										<label className="text-gray-950 font-semibold text-lg">Staking</label>
 										<div className="flex items-center gap-1">
-											<span className="text-3xl font-bold text-gray-950">{allocations.liquidityPool}</span>
-											<span className="text-gray-500 text-xl">%</span>
+											<span className="text-2xl font-bold text-gray-950">{allocations.staking}</span>
+											<span className="text-gray-500 text-lg">%</span>
 										</div>
 									</div>
 									<input
 										type="range"
-										value={allocations.liquidityPool}
-										onChange={(e) => {
-											handleAllocationChange("liquidityPool", Number(e.target.value))
-										}}
+										value={allocations.staking}
+										onChange={(e) => handleAllocationChange("staking", Number(e.target.value))}
 										className="w-full h-2 rounded-lg appearance-none cursor-pointer"
 										min="0"
 										max="100"
 										style={{
-											background: `linear-gradient(to right, #06B6D4 0%, #06B6D4 ${allocations.liquidityPool}%, #E3E3E3 ${allocations.liquidityPool}%, #E3E3E3 100%)`,
+											background: `linear-gradient(to right, #60A5FA 0%, #60A5FA ${allocations.staking}%, #E5E7EB ${allocations.staking}%, #E5E7EB 100%)`,
+										}}
+									/>
+								</div>
+
+								{/* Arbitrage */}
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<label className="text-gray-950 font-semibold text-lg">Arbitrage</label>
+										<div className="flex items-center gap-1">
+											<span className="text-2xl font-bold text-gray-950">{allocations.arbitrage}</span>
+											<span className="text-gray-500 text-lg">%</span>
+										</div>
+									</div>
+									<input
+										type="range"
+										value={allocations.arbitrage}
+										onChange={(e) => handleAllocationChange("arbitrage", Number(e.target.value))}
+										className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+										min="0"
+										max="100"
+										style={{
+											background: `linear-gradient(to right, #FBBF24 0%, #FBBF24 ${allocations.arbitrage}%, #E5E7EB ${allocations.arbitrage}%, #E5E7EB 100%)`,
 										}}
 									/>
 								</div>
 
 								{/* CeFi */}
-								<div className="space-y-3">
+								<div className="space-y-2">
 									<div className="flex items-center justify-between">
-										<div>
-											<label className="text-gray-950 font-semibold text-xl">CeFi</label>
-										</div>
+										<label className="text-gray-950 font-semibold text-lg">CeFi</label>
 										<div className="flex items-center gap-1">
-											<span className="text-3xl font-bold text-gray-950">{allocations.cefi}</span>
-											<span className="text-gray-500 text-xl">%</span>
+											<span className="text-2xl font-bold text-gray-950">{allocations.cefi}</span>
+											<span className="text-gray-500 text-lg">%</span>
 										</div>
 									</div>
 									<input
 										type="range"
 										value={allocations.cefi}
-										onChange={(e) => {
-											handleAllocationChange("cefi", Number(e.target.value))
-										}}
+										onChange={(e) => handleAllocationChange("cefi", Number(e.target.value))}
 										className="w-full h-2 rounded-lg appearance-none cursor-pointer"
 										min="0"
 										max="100"
 										style={{
-											background: `linear-gradient(to right, #F59E0B 0%, #F59E0B ${allocations.cefi}%, #E3E3E3 ${allocations.cefi}%, #E3E3E3 100%)`,
+											background: `linear-gradient(to right, #34D399 0%, #34D399 ${allocations.cefi}%, #E5E7EB ${allocations.cefi}%, #E5E7EB 100%)`,
+										}}
+									/>
+								</div>
+
+								{/* Liquidity Provider */}
+								<div className="space-y-2">
+									<div className="flex items-center justify-between">
+										<label className="text-gray-950 font-semibold text-lg">Liquidity Provider</label>
+										<div className="flex items-center gap-1">
+											<span className="text-2xl font-bold text-gray-950">{allocations.liquidityProvider}</span>
+											<span className="text-gray-500 text-lg">%</span>
+										</div>
+									</div>
+									<input
+										type="range"
+										value={allocations.liquidityProvider}
+										onChange={(e) => handleAllocationChange("liquidityProvider", Number(e.target.value))}
+										className="w-full h-2 rounded-lg appearance-none cursor-pointer"
+										min="0"
+										max="100"
+										style={{
+											background: `linear-gradient(to right, #F472B6 0%, #F472B6 ${allocations.liquidityProvider}%, #E5E7EB ${allocations.liquidityProvider}%, #E5E7EB 100%)`,
 										}}
 									/>
 								</div>
