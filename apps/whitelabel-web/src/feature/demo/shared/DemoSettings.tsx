@@ -31,7 +31,7 @@ export function DemoSettings() {
 		productName: string
 	}>({ open: false, productName: "" })
 
-	const { selectedPersona, personaData, setPersona, selectedEnvironment, setEnvironment } = useDemoStore()
+	const { selectedPersona, personaData, selectedEnvironment, setEnvironment } = useDemoStore()
 	const { selectedProduct, selectedProductId, visualizationType, availableProducts, selectProduct } = useDemoProductStore()
 
 	const personas = getAllPersonas()

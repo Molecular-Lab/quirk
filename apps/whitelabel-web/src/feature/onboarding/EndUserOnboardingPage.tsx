@@ -13,7 +13,7 @@ import { activateUser, getUserByClientUserId } from "@/api/b2bClientHelpers"
 import { useClientContextStore } from "@/store/clientContextStore"
 import { useDemoStore } from "@/store/demoStore"
 import { Button } from "@/components/ui/button"
-import { parseDemoClientUserId, DEMO_PERSONAS } from "@/feature/demo/personas"
+import { parseDemoClientUserId } from "@/feature/demo/personas"
 
 import { OnboardingStepper } from "./components/OnboardingStepper"
 import { FinalStep } from "./steps/FinalStep"

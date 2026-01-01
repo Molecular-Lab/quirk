@@ -6,7 +6,7 @@ SET
   strategies = $2::jsonb,
   updated_at = now()
 WHERE id = $1
-RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at`;
+RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at, privy_wallet_id`;
 
 export interface UpdateVaultStrategiesArgs {
     id: string;
@@ -34,6 +34,7 @@ export interface UpdateVaultStrategiesRow {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    privyWalletId: string | null;
 }
 
 export async function updateVaultStrategies(sql: Sql, args: UpdateVaultStrategiesArgs): Promise<UpdateVaultStrategiesRow | null> {
@@ -62,12 +63,13 @@ export async function updateVaultStrategies(sql: Sql, args: UpdateVaultStrategie
         custodialWalletAddress: row[16],
         isActive: row[17],
         createdAt: row[18],
-        updatedAt: row[19]
+        updatedAt: row[19],
+        privyWalletId: row[20]
     };
 }
 
 export const getVaultWithStrategiesQuery = `-- name: GetVaultWithStrategies :one
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at, privy_wallet_id FROM client_vaults
 WHERE id = $1`;
 
 export interface GetVaultWithStrategiesArgs {
@@ -95,6 +97,7 @@ export interface GetVaultWithStrategiesRow {
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;
+    privyWalletId: string | null;
 }
 
 export async function getVaultWithStrategies(sql: Sql, args: GetVaultWithStrategiesArgs): Promise<GetVaultWithStrategiesRow | null> {
@@ -123,7 +126,8 @@ export async function getVaultWithStrategies(sql: Sql, args: GetVaultWithStrateg
         custodialWalletAddress: row[16],
         isActive: row[17],
         createdAt: row[18],
-        updatedAt: row[19]
+        updatedAt: row[19],
+        privyWalletId: row[20]
     };
 }
 

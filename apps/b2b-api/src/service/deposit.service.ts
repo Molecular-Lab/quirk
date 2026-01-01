@@ -48,6 +48,10 @@ export class DepositService {
 		return await this.depositUseCase.completeDeposit(request);
 	}
 
+	async updateTransactionHash(orderId: string, transactionHash: string) {
+		return await this.depositUseCase.updateTransactionHash(orderId, transactionHash);
+	}
+
 	async failDeposit(orderId: string, errorMessage: string, errorCode?: string) {
 		return await this.depositUseCase.failDeposit(orderId, errorMessage, errorCode);
 	}

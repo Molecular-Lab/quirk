@@ -608,9 +608,8 @@ if (typeof window !== 'undefined') {
 	// Wait for next tick to ensure persist middleware is initialized
 	setTimeout(() => {
 		const unsubscribe = store.subscribe(
-			(state) => state._hasHydrated,
-			(hasHydrated) => {
-				if (!hasHydrated) {
+			(state) => {
+				if (!state._hasHydrated) {
 					console.log('[demoStore] 🔧 Manually setting _hasHydrated = true')
 					store.setState({ _hasHydrated: true })
 					unsubscribe()

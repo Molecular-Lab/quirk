@@ -95,7 +95,13 @@ export function DashboardLayout() {
 					<div className="flex flex-col w-[72px] bg-gray-50 border-r border-gray-200">
 						{/* Logo */}
 						<div className="flex items-center justify-center h-16 border-b border-gray-200">
-							<img src={QuirkLogo} alt="Quirk" className="w-8 h-8" />
+							<button
+								onClick={() => void navigate({ to: "/" })}
+								className="cursor-pointer hover:opacity-80 transition-opacity"
+								aria-label="Go to home"
+							>
+								<img src={QuirkLogo} alt="Quirk" className="w-8 h-8" />
+							</button>
 						</div>
 
 						{/* Clean Navigation Icons */}
@@ -250,10 +256,14 @@ export function DashboardLayout() {
 					/>
 					<div className="fixed inset-y-0 left-0 flex flex-col w-64 bg-white shadow-xl">
 						<div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
-							<div className="flex items-center gap-2">
+							<button
+								onClick={() => void navigate({ to: "/" })}
+								className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity"
+								aria-label="Go to home"
+							>
 								<img src={QuirkLogo} alt="Quirk" className="w-8 h-8" />
 								<h1 className="text-xl font-bold text-gray-900">QUIRK</h1>
-							</div>
+							</button>
 							<button
 								onClick={() => {
 									setSidebarOpen(false)

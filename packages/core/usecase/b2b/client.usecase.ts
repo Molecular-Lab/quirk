@@ -199,24 +199,9 @@ export class B2BClientUseCase {
 			throw new Error("Failed to create client")
 		}
 
-		// ✅ Auto-generate API keys for both environments (for demo purposes)
-		console.log("[ClientUsecase] Auto-generating API keys for new product...")
-
-		// Generate sandbox API key
-		const sandboxApiKey = generateApiKey(true) // true = sandbox/test
-		const sandboxHash = await hashApiKey(sandboxApiKey)
-		const sandboxPrefix = extractPrefix(sandboxApiKey)
-
-		await this.clientRepository.regenerateSandboxKey(client.id, sandboxHash, sandboxPrefix)
-		console.log("[ClientUsecase] ✅ Generated sandbox API key:", sandboxPrefix)
-
-		// Generate production API key
-		const productionApiKey = generateApiKey(false) // false = production/live
-		const productionHash = await hashApiKey(productionApiKey)
-		const productionPrefix = extractPrefix(productionApiKey)
-
-		await this.clientRepository.regenerateProductionKey(client.id, productionHash, productionPrefix)
-		console.log("[ClientUsecase] ✅ Generated production API key:", productionPrefix)
+		// API keys will be generated only when user explicitly requests
+		// via regenerateApiKey() endpoint (triggered by "Generate Key" button)
+		console.log("[ClientUsecase] Client created without API keys - user will generate manually")
 
 		// Initialize balance
 		await this.clientRepository.createBalance({
@@ -1155,8 +1140,34 @@ export class B2BClientUseCase {
 			let parsedStrategies: any[] = []
 			if (strategies) {
 				try {
-					parsedStrategies = typeof strategies === "string" ? JSON.parse(strategies) : strategies
-				} catch {
+					const parsed = typeof strategies === "string" ? JSON.parse(strategies) : strategies
+					
+					// Handle two possible formats:
+					// Format 1: Array of strategies [{ protocol: "aave", percentage: 40 }, ...]
+					// Format 2: Object with categories { lending: { aave: 40, compound: 35 }, lp: {}, staking: {} }
+					if (Array.isArray(parsed)) {
+						parsedStrategies = parsed
+					} else if (typeof parsed === "object" && parsed !== null) {
+						// Convert object format to array format
+						const strategiesArray: any[] = []
+						for (const [category, protocols] of Object.entries(parsed)) {
+							if (typeof protocols === "object" && protocols !== null) {
+								for (const [protocol, allocation] of Object.entries(protocols)) {
+									if (typeof allocation === "number" && allocation > 0) {
+										strategiesArray.push({
+											protocol: protocol,
+											percentage: allocation,
+											allocation: allocation,
+											category: category,
+										})
+									}
+								}
+							}
+						}
+						parsedStrategies = strategiesArray
+					}
+				} catch (err) {
+					console.error("[B2BClientUseCase] Error parsing strategies:", err)
 					parsedStrategies = []
 				}
 			}

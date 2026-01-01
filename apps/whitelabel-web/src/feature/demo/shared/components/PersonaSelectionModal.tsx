@@ -39,7 +39,7 @@ export function PersonaSelectionModal({
 	const privyUserId = user?.id || ""
 
 	const { productId, clientId, hasApiKey } = useClientContextStore()
-	const { setPersonaWithUser, setIsCreatingAccount, setError } = useDemoStore()
+	const { setPersonaWithUser, setIsCreatingAccount, setError, selectedEnvironment } = useDemoStore()
 
 	const [selectedPersona, setSelectedPersona] = useState<string | null>(null)
 	const [isCreating, setIsCreating] = useState(false)
@@ -72,7 +72,7 @@ export function PersonaSelectionModal({
 			}
 
 			// Generate Static Key for this persona
-			const clientUserId = generateDemoClientUserId(privyUserId, visualizationType, persona.id)
+			const clientUserId = generateDemoClientUserId(privyUserId, visualizationType, persona.id, selectedEnvironment || "sandbox")
 
 			console.log(`[PersonaSelectionModal] 🔑 Generated Static Key:`, clientUserId)
 

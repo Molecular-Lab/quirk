@@ -521,6 +521,13 @@ export class B2BDepositUseCase {
 	}
 
 	/**
+	 * Update transaction hash for a deposit
+	 */
+	async updateTransactionHash(orderId: string, transactionHash: string): Promise<void> {
+		await this.depositRepository.updateTransactionHash(orderId, transactionHash)
+	}
+
+	/**
 	 * List deposits by client
 	 */
 	async listDepositsByClient(clientId: string, limit = 50, offset = 0) {

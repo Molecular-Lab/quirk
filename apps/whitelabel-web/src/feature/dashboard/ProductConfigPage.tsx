@@ -42,6 +42,7 @@ import { useAPYCache } from "@/hooks/useAPYCache"
 import { useMockUSDCBalance } from "@/hooks/useMockUSDCBalance"
 import { useUserStore } from "@/store/userStore"
 import { Currency } from "@/types"
+import { generateDemoKeysForProduct } from "@/utils/demoApiKeys"
 
 const CUSTODIAL_WALLET_ADDRESS = import.meta.env.VITE_CUSTODIAL_WALLET_ADDRESS
 
@@ -59,6 +60,11 @@ const PROTOCOL_COLORS: Record<string, string> = {
 	aave: "#B6509E",
 	compound: "#00D395",
 	morpho: "#2470FF",
+}
+
+interface ApiKeyState {
+	sandbox: string | null
+	production: string | null
 }
 
 interface ProtocolAllocation {
@@ -164,11 +170,17 @@ export function ProductConfigPage() {
 	>({} as any)
 
 	// API Key State
-	const [showApiKey, setShowApiKey] = useState(false)
-	const [generatedApiKey, setGeneratedApiKey] = useState("")
+	const [apiKeys, setApiKeys] = useState<ApiKeyState>({
+		sandbox: null,
+		production: null,
+	})
 	const [apiKeyEnvironment, setApiKeyEnvironment] = useState<"sandbox" | "production">("sandbox")
-	const [sandboxApiKey, setSandboxApiKey] = useState<string>("")
-	const [productionApiKey, setProductionApiKey] = useState<string>("")
+	const [showApiKey, setShowApiKey] = useState(false)
+
+	// What to display: full key or empty
+	const displayedApiKey = useMemo(() => {
+		return apiKeys[apiKeyEnvironment] || ""
+	}, [apiKeys, apiKeyEnvironment])
 
 	// Fee Configuration State
 	const [feeConfig, setFeeConfig] = useState({
@@ -449,21 +461,58 @@ export function ProductConfigPage() {
 					setBestChain({ chainId: 8453, chainName: "Base" })
 				}
 
-				// Update API keys from API response (environment-specific)
-				// productData structure: { found: boolean, data: {...}, message: string }
-				const sandboxKey = (productData as any)?.data?.sandboxApiKeyPrefix || ""
-				const productionKey = (productData as any)?.data?.productionApiKeyPrefix || ""
+				// Generate full demo API keys from database prefixes
+				const sandboxPrefix = (productData as any)?.data?.sandboxApiKeyPrefix
+				const productionPrefix = (productData as any)?.data?.productionApiKeyPrefix
 
-				setSandboxApiKey(sandboxKey)
-				setProductionApiKey(productionKey)
-
-				// Set displayed key based on current environment
-				setGeneratedApiKey(apiKeyEnvironment === "sandbox" ? sandboxKey : productionKey)
-
-				console.log("[ProductConfigPage] Loaded API keys from database:", {
-					sandbox: sandboxKey ? "✓ Generated" : "✗ Not generated",
-					production: productionKey ? "✓ Generated" : "✗ Not generated",
+				console.log("[ProductConfigPage] 📋 API Response Prefixes:", {
+					sandboxPrefix,
+					productionPrefix,
+					hasPrefix: Boolean(sandboxPrefix || productionPrefix)
 				})
+
+				if (sandboxPrefix || productionPrefix) {
+					// Convert 16-char prefixes → 40-char demo keys
+					const { sandboxKey, productionKey } = generateDemoKeysForProduct(
+						sandboxPrefix || "",
+						productionPrefix || ""
+					)
+
+					// Store in Zustand for persistence
+					const { setApiKey } = await import("@/store/demoProductStore").then(
+						(m) => m.useDemoProductStore.getState()
+					)
+
+					const sandboxStorageKey = `${activeProductId}_sandbox`
+					const productionStorageKey = activeProductId
+
+					if (sandboxKey) {
+						setApiKey(sandboxStorageKey, sandboxKey)
+					}
+					if (productionKey) {
+						setApiKey(productionStorageKey, productionKey)
+					}
+
+					// Update component state
+					setApiKeys({
+						sandbox: sandboxKey || null,
+						production: productionKey || null,
+					})
+
+					console.log("[ProductConfigPage] ✅ Generated API keys from prefixes:", {
+						sandbox: sandboxKey ? `${sandboxKey.substring(0, 16)}...` : "No prefix",
+						production: productionKey ? `${productionKey.substring(0, 16)}...` : "No prefix",
+						sandboxLength: sandboxKey?.length,
+						productionLength: productionKey?.length,
+					})
+				} else {
+					// No prefixes in database - user hasn't generated keys yet
+					setApiKeys({
+						sandbox: null,
+						production: null,
+					})
+					console.log("[ProductConfigPage] ℹ️ No API key prefixes found in database")
+				}
 			} catch (error) {
 				console.error("[ProductConfigPage] Error loading product config:", error)
 				toast.error("Failed to load product configuration")
@@ -474,16 +523,6 @@ export function ProductConfigPage() {
 
 		void loadProductConfig()
 	}, [activeProductId, organizations, isOrganizationsLoaded])
-
-	// Update displayed API key when environment changes
-	// ✅ FIX: Only show key if it's a full 40-character key (not just 16-char prefix)
-	useEffect(() => {
-		const selectedKey = apiKeyEnvironment === "sandbox" ? sandboxApiKey : productionApiKey
-		// Prefixes are 16 chars, full keys are 40 chars
-		// Only display if it's a full generated key
-		const isFullKey = selectedKey?.length === 40
-		setGeneratedApiKey(isFullKey ? selectedKey : "")
-	}, [apiKeyEnvironment, sandboxApiKey, productionApiKey])
 
 	// Convert allocations to investmentStrategy format whenever allocations change
 	useEffect(() => {
@@ -578,8 +617,10 @@ Help them understand or refine their strategy.`
 	}
 
 	const handleCopyApiKey = () => {
-		navigator.clipboard.writeText(generatedApiKey)
-		toast.success("API key copied to clipboard!")
+		if (displayedApiKey) {
+			void navigator.clipboard.writeText(displayedApiKey)
+			toast.success("API key copied to clipboard!")
+		}
 	}
 
 	const handleRegenerateApiKey = async () => {
@@ -591,8 +632,12 @@ Help them understand or refine their strategy.`
 			const newKey = (response as any)?.apiKey || (response as any)?.api_key
 
 			if (newKey) {
-				// Update local state with full key (shown temporarily - user must copy)
-				setGeneratedApiKey(newKey)
+				// Store full key in state
+				setApiKeys(prev => ({
+					...prev,
+					[apiKeyEnvironment]: newKey,  // Store full key
+				}))
+				setShowApiKey(true)
 
 				// ✅ Save to demoProductStore (Zustand with persistence) for demos
 				const { setApiKey } = await import("@/store/demoProductStore").then((m) => m.useDemoProductStore.getState())
@@ -1024,13 +1069,13 @@ Help them understand or refine their strategy.`
 									</label>
 									<div className="relative">
 										<Input
-											type={showApiKey || !generatedApiKey ? "text" : "password"}
-											value={generatedApiKey || ""}
+											type={showApiKey || !displayedApiKey ? "text" : "password"}
+											value={displayedApiKey}
 											readOnly
-											placeholder={generatedApiKey ? "" : "No API key generated yet"}
+											placeholder="No API key generated yet"
 											className="pr-20 bg-gray-50 font-mono text-sm"
 										/>
-										{generatedApiKey && (
+										{displayedApiKey && (
 											<div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
 												<button
 													onClick={() => {
@@ -1055,7 +1100,7 @@ Help them understand or refine their strategy.`
 											</div>
 										)}
 									</div>
-									{!generatedApiKey && (
+									{!displayedApiKey && (
 										<p className="text-xs text-gray-500 mt-1.5">
 											Click "Generate Key" below to create your {apiKeyEnvironment} API key
 										</p>
@@ -1066,17 +1111,17 @@ Help them understand or refine their strategy.`
 								<button
 									onClick={handleRegenerateApiKey}
 									className={`w-full flex items-center justify-center gap-2 px-4 py-3 ${
-										generatedApiKey
+										displayedApiKey
 											? "bg-red-50 border border-red-200 text-red-700 hover:bg-red-100"
 											: "bg-blue-50 border border-blue-200 text-blue-700 hover:bg-blue-100"
 									} rounded-xl font-medium transition-colors`}
 								>
 									<RefreshCw className="w-4 h-4" />
-									{generatedApiKey ? "Regenerate Key" : "Generate Key"}
+									{displayedApiKey ? "Regenerate Key" : "Generate Key"}
 								</button>
 
 								{/* Warning Message */}
-								{generatedApiKey && (
+								{displayedApiKey && (
 									<div className="bg-warning-light border border-warning/20 rounded-lg p-3">
 										<div className="flex items-start gap-2">
 											<span className="text-warning text-sm">⚠️</span>

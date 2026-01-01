@@ -8,7 +8,7 @@
 import { useEffect, useState } from "react"
 
 import { usePrivy } from "@privy-io/react-auth"
-import { Building2, CheckCircle2, RefreshCw } from "lucide-react"
+import { Building2, CheckCircle2 } from "lucide-react"
 
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"

@@ -9,7 +9,6 @@
 
 import { useEffect, useMemo, useState } from "react"
 
-import { usePrivy } from "@privy-io/react-auth"
 import { useNavigate } from "@tanstack/react-router"
 import { Home, Loader2, RefreshCw, TrendingUp, Wallet } from "lucide-react"
 
@@ -42,8 +41,6 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 	const [touchEnd, setTouchEnd] = useState(0)
 
 	// Get Privy user for logging
-	const { user } = usePrivy()
-	const privyUserId = user?.id
 
 	// Get client context (productId, clientId, apiKey)
 	const { productId, clientId, hasApiKey } = useClientContextStore()
@@ -304,7 +301,7 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 	}
 
 	const handleDeposit = async (amount: number) => {
-		if (!endUserId) {
+		if (!endUserId || !endUserClientUserId) {
 			throw new Error("No end-user account found. Please create an account first.")
 		}
 
@@ -357,7 +354,7 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 	}
 
 	const handleWithdraw = async () => {
-		if (!endUserId) {
+		if (!endUserId || !endUserClientUserId) {
 			setError("No end-user account found. Please create an account first.")
 			return
 		}

@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 import { Link, useNavigate } from "@tanstack/react-router"
-import { Building2, Check, Copy, Key, Loader2, Plus, RefreshCw, Settings, X } from "lucide-react"
+import { Building2, Check, Copy, Loader2, Plus, RefreshCw, Settings, X } from "lucide-react"
 import { toast } from "sonner"
 
 import { useProducts } from "@/hooks/useProducts"
@@ -98,7 +98,7 @@ export function ProductsListPage() {
 							// ✅ Check for sandbox/production API keys
 							const hasSandboxKey = !!product.sandboxApiKeyPrefix
 							const hasProductionKey = !!product.productionApiKeyPrefix
-							const hasAnyKey = hasSandboxKey || hasProductionKey
+							// hasSandboxKey || hasProductionKey
 
 							return (
 								<div

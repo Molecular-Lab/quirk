@@ -13,11 +13,11 @@ export interface Organization {
 	productId: string
 	companyName: string
 	businessType: string
-	description: string | null
-	websiteUrl: string | null
-	apiKeyPrefix: string | null // ⚠️ Deprecated - use sandboxApiKeyPrefix/productionApiKeyPrefix
-	sandboxApiKeyPrefix: string | null // ✅ Sandbox API key prefix (from database)
-	productionApiKeyPrefix: string | null // ✅ Production API key prefix (from database)
+	description?: string
+	websiteUrl?: string
+	apiKeyPrefix?: string | null // ⚠️ Deprecated - use sandboxApiKeyPrefix/productionApiKeyPrefix
+	sandboxApiKeyPrefix?: string | null // ✅ Sandbox API key prefix (from database)
+	productionApiKeyPrefix?: string | null // ✅ Production API key prefix (from database)
 	apiKey?: string | null // ✅ Full API key (stored in Zustand)
 	isActive: boolean
 	isSandbox: boolean
@@ -139,16 +139,16 @@ export const useDemoProductStore = create<DemoProductState>()(
 					}
 				}
 
-				// FORCE RE-SELECT: If selectedProductId exists, re-select it to sync API key to clientContextStore
-				// This handles page refresh case where selectedProductId is restored from localStorage
-				// but API keys were just freshly generated and need to be synced
-				if (selectedProductId && products.find((p) => p.productId === selectedProductId)) {
-					// Get current environment (defaults to sandbox if not set)
-					const currentEnv = useDemoStore.getState().selectedEnvironment || "sandbox"
+			// FORCE RE-SELECT: If selectedProductId exists, re-select it to sync API key to clientContextStore
+			// This handles page refresh case where selectedProductId is restored from localStorage
+			// but API keys were just freshly generated and need to be synced
+			if (selectedProductId && products.find((p) => p.productId === selectedProductId)) {
+				// Get current environment (defaults to sandbox if not set)
+				const currentEnv = useDemoStore.getState().selectedEnvironment || "sandbox"
 
-					// Force re-select to sync API key to clientContextStore
-					get().selectProduct(selectedProductId, currentEnv)
-				}
+				// Force re-select to sync API key to clientContextStore
+				get().selectProduct(selectedProductId, currentEnv)
+			}
 			},
 
 			// NOTE: loadApiKeysFromLocalStorage() method removed
@@ -157,6 +157,7 @@ export const useDemoProductStore = create<DemoProductState>()(
 
 			// NEW: Load products by Privy ID (API call)
 			loadProductsByPrivyId: async (privyOrgId: string) => {
+
 				// ✅ CLEAR OLD API KEYS - fresh load from API should regenerate all keys
 				set({ apiKeys: {} })
 				try {
@@ -165,8 +166,8 @@ export const useDemoProductStore = create<DemoProductState>()(
 					// ✅ Generate demo API keys for each organization
 					const products = response.map((org) => {
 						const { sandboxKey, productionKey } = generateDemoKeysForProduct(
-							org.sandboxApiKeyPrefix ?? null,
-							org.productionApiKeyPrefix ?? null,
+							org.sandboxApiKeyPrefix,
+							org.productionApiKeyPrefix,
 						)
 
 						// Auto-save generated keys to apiKeys map
@@ -182,13 +183,13 @@ export const useDemoProductStore = create<DemoProductState>()(
 							productId: org.productId,
 							companyName: org.companyName,
 							businessType: org.businessType,
-							description: org.description ?? null,
-							websiteUrl: org.websiteUrl ?? null,
-							apiKeyPrefix: org.apiKeyPrefix ?? null,
-							sandboxApiKeyPrefix: org.sandboxApiKeyPrefix ?? null,
-							productionApiKeyPrefix: org.productionApiKeyPrefix ?? null,
+							description: org.description,
+							websiteUrl: org.websiteUrl,
+							apiKeyPrefix: org.apiKeyPrefix,
+							sandboxApiKeyPrefix: org.sandboxApiKeyPrefix,
+							productionApiKeyPrefix: org.productionApiKeyPrefix,
 							isActive: org.isActive,
-							isSandbox: org.isSandbox ?? false,
+							isSandbox: org.isSandbox,
 							createdAt: org.createdAt,
 							updatedAt: org.updatedAt,
 						}
@@ -238,8 +239,9 @@ export const useDemoProductStore = create<DemoProductState>()(
 
 			// Select product by productId
 			selectProduct: (productId: string, environment?: "sandbox" | "production") => {
-				const { availableProducts, apiKeys } = get()
+				const { availableProducts, apiKeys, selectedProductId: previousProductId } = get()
 				const product = availableProducts.find((p) => p.productId === productId)
+
 
 				if (!product) {
 					console.error(`[demoProductStore] ❌ Product not found: ${productId}`)
@@ -253,7 +255,6 @@ export const useDemoProductStore = create<DemoProductState>()(
 				const envKey = apiKeys[`${productId}_${selectedEnv}`]
 				const apiKey = envKey || apiKeys[productId]
 
-				set({
 					selectedProductId: productId,
 					selectedProduct: product,
 				})
@@ -288,6 +289,8 @@ export const useDemoProductStore = create<DemoProductState>()(
 				const demoStore = useDemoStore.getState()
 				demoStore.resetPersona() // Clears persona + end-user state
 				demoStore.resetEndUser() // Extra safety: ensure end-user state is reset
+
+				})
 			},
 
 			// Select visualization type

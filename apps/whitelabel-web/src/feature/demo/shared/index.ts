@@ -24,7 +24,3 @@ export type {
 
 // Hooks
 export { useDemoBalance } from "./hooks/useDemoBalance"
-export type {
-	UseDemoBalanceParams,
-	UseDemoBalanceReturn,
-} from "./hooks/useDemoBalance"

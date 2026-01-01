@@ -68,7 +68,7 @@ export function DemoSelectorPage() {
 
 		// Clear Zustand apiStore (in-memory)
 		const { setApiKey } = useApiStore.getState()
-		setApiKey(null)
+		setApiKey("")
 
 		// Clear demoProductStore API keys (in-memory)
 		useDemoProductStore.setState({ apiKeys: {} })
