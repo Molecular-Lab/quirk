@@ -5,13 +5,13 @@
 	"main": "./src/index.ts",
 	"dependencies": {
 		"@quirk/core": "workspace:*",
-		"@tanstack/react-query": "catalog:",
-		"axios": "catalog:",
-		"react": "catalog:"
+		"@tanstack/react-query": "5.90.5",
+		"axios": "1.13.1",
+		"react": "^19.0.0"
 	},
 	"devDependencies": {
-		"@types/react": "catalog:",
-		"typescript": "catalog:",
+		"@types/react": "^19.0.7",
+		"typescript": "5.8.3",
 		"@quirk/tsconfig": "workspace:*"
 	}
 }

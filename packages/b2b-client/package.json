@@ -16,14 +16,14 @@
 	},
 	"dependencies": {
 		"@quirk/core": "workspace:*",
-		"axios": "catalog:",
+		"axios": "1.13.1",
 		"dotenv": "^16.4.7",
-		"zod": "catalog:"
+		"zod": "3.25.76"
 	},
 	"devDependencies": {
 		"@types/node": "^22.10.2",
 		"tsx": "^4.19.2",
-		"typescript": "catalog:",
+		"typescript": "5.8.3",
 		"vitest": "^2.1.8"
 	},
 	"packageManager": "pnpm@10.18.3"

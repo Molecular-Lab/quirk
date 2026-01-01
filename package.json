@@ -17,7 +17,7 @@
 	},
 	"devDependencies": {
 		"@quirk/eslint-config-base": "workspace:*",
-		"eslint": "catalog:",
+		"eslint": "^9.23.0",
 		"prettier": "^3.5.3",
 		"turbo": "^2.5.2"
 	},

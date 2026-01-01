@@ -38,17 +38,17 @@
 		"@morpho-org/blue-sdk": "^5.7.0",
 		"@morpho-org/blue-sdk-viem": "^4.1.2",
 		"bignumber.js": "^9.3.1",
-		"dayjs": "catalog:",
+		"dayjs": "^1.11.19",
 		"viem": "^2.38.3",
-		"zod": "catalog:"
+		"zod": "3.25.76"
 	},
 	"devDependencies": {
 		"@quirk/eslint-config-base": "workspace:*",
 		"@quirk/tsconfig": "workspace:*",
 		"@types/node": "^22.10.1",
-		"eslint": "catalog:",
+		"eslint": "^9.23.0",
 		"tsup": "^8.3.5",
-		"typescript": "catalog:",
+		"typescript": "5.8.3",
 		"vitest": "^2.1.8"
 	}
 }
