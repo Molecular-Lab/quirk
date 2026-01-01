@@ -1,10 +1,10 @@
+import { useEnvironmentStore } from "@/store/environmentStore"
+import { useUserStore } from "@/store/userStore"
+
 import { CategorySection } from "../../components/market/CategorySection"
 import { ProtocolCard } from "../../components/market/ProtocolCard"
 import { useAllDeFiProtocols } from "../../hooks/useDeFiProtocols"
-import { useMockUSDCBalance } from "../../hooks/useMockUSDCBalance"
-
-// TODO: Get custodial wallet address from user context/auth
-const CUSTODIAL_WALLET_ADDRESS = import.meta.env.VITE_CUSTODIAL_WALLET_ADDRESS
+import { useUserBalance } from "../../hooks/useUserBalance"
 
 // Mock data for non-DeFi categories (will be replaced with real data later)
 const MOCK_CATEGORIES = [
@@ -64,8 +64,15 @@ export function MarketPage() {
 	// Fetch real DeFi protocol data (Base chain)
 	const { protocols, isLoading, errors } = useAllDeFiProtocols("USDC", 8453)
 
-	// Fetch Mock USDC balance
-	const { data: balance, isLoading: balanceLoading } = useMockUSDCBalance(CUSTODIAL_WALLET_ADDRESS)
+	const privyWalletAddress = useUserStore((state) => state.privyWalletAddress)
+	const apiEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
+
+	// Fetch user's USDC balance
+	const { data: balance, isLoading: balanceLoading } = useUserBalance({
+		walletAddress: privyWalletAddress,
+		environment: apiEnvironment,
+		token: "usdc",
+	})
 
 	// 🐛 DEBUG: Log data to console (remove after Phase 1 testing)
 	console.log("=== MARKET DASHBOARD DEBUG ===")

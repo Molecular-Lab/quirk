@@ -39,12 +39,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { useFloatingConcierge } from "@/contexts/FloatingConciergeContext"
 import type { StrategyConfig } from "@/feature/dashboard/ProductStrategyConfig"
 import { useAPYCache } from "@/hooks/useAPYCache"
-import { useMockUSDCBalance } from "@/hooks/useMockUSDCBalance"
+import { useUserBalance } from "@/hooks/useUserBalance"
+import { useEnvironmentStore } from "@/store/environmentStore"
 import { useUserStore } from "@/store/userStore"
 import { Currency } from "@/types"
 import { generateDemoKeysForProduct } from "@/utils/demoApiKeys"
-
-const CUSTODIAL_WALLET_ADDRESS = import.meta.env.VITE_CUSTODIAL_WALLET_ADDRESS
 
 const currencies = [
 	{ value: Currency.USD, label: "USD", flag: "🇺🇸" },
@@ -198,7 +197,14 @@ export function ProductConfigPage() {
 	const [allocations, setAllocations] = useState<ProtocolAllocation[]>(DEFAULT_ALLOCATIONS)
 	const [bestChain, setBestChain] = useState<{ chainId: number; chainName: string } | null>(null)
 
-	const { data: balance, isLoading: balanceLoading } = useMockUSDCBalance(CUSTODIAL_WALLET_ADDRESS)
+	const privyWalletAddress = useUserStore((state) => state.privyWalletAddress)
+	const apiEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
+
+	const { data: balance, isLoading: balanceLoading } = useUserBalance({
+		walletAddress: privyWalletAddress,
+		environment: apiEnvironment,
+		token: "usdc",
+	})
 	const { openWithContext } = useFloatingConcierge()
 
 	// Fetch APY data once on mount with 5-minute cache
@@ -468,20 +474,15 @@ export function ProductConfigPage() {
 				console.log("[ProductConfigPage] 📋 API Response Prefixes:", {
 					sandboxPrefix,
 					productionPrefix,
-					hasPrefix: Boolean(sandboxPrefix || productionPrefix)
+					hasPrefix: Boolean(sandboxPrefix || productionPrefix),
 				})
 
 				if (sandboxPrefix || productionPrefix) {
 					// Convert 16-char prefixes → 40-char demo keys
-					const { sandboxKey, productionKey } = generateDemoKeysForProduct(
-						sandboxPrefix || "",
-						productionPrefix || ""
-					)
+					const { sandboxKey, productionKey } = generateDemoKeysForProduct(sandboxPrefix || "", productionPrefix || "")
 
 					// Store in Zustand for persistence
-					const { setApiKey } = await import("@/store/demoProductStore").then(
-						(m) => m.useDemoProductStore.getState()
-					)
+					const { setApiKey } = await import("@/store/demoProductStore").then((m) => m.useDemoProductStore.getState())
 
 					const sandboxStorageKey = `${activeProductId}_sandbox`
 					const productionStorageKey = activeProductId
@@ -633,9 +634,9 @@ Help them understand or refine their strategy.`
 
 			if (newKey) {
 				// Store full key in state
-				setApiKeys(prev => ({
+				setApiKeys((prev) => ({
 					...prev,
-					[apiKeyEnvironment]: newKey,  // Store full key
+					[apiKeyEnvironment]: newKey, // Store full key
 				}))
 				setShowApiKey(true)
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-import { ArrowDownToLine, DollarSign, RefreshCw, Sparkles, UserPlus, Users, Zap } from "lucide-react"
+import { ArrowDownToLine, DollarSign, RefreshCw, UserPlus, Users, Zap } from "lucide-react"
 
 import { listPendingDeposits, listPendingWithdrawals } from "@/api/b2bClientHelpers"
 import { EnvironmentSelector } from "@/components/EnvironmentSelector"
@@ -80,7 +80,9 @@ export function RampOperationsPage() {
 		try {
 			// Add timestamp to prevent browser caching
 			const timestamp = forceRefresh ? `?_t=${Date.now()}` : ""
-			console.log(`[OperationsDashboard] Loading pending orders (forceRefresh=${forceRefresh}, environment=${apiEnvironment})${timestamp}`)
+			console.log(
+				`[OperationsDashboard] Loading pending orders (forceRefresh=${forceRefresh}, environment=${apiEnvironment})${timestamp}`,
+			)
 
 			// ✅ Pass environment to filter deposits
 			const response = await listPendingDeposits(apiEnvironment)
@@ -296,30 +298,6 @@ export function RampOperationsPage() {
 								<p className="text-xs text-gray-500 mt-1">Pending USDC minting</p>
 							</div>
 						</div>
-
-						{/* AI Onboarding Insights */}
-						<div className="bg-white rounded-2xl p-6 border border-gray-200 mb-8 shadow-sm">
-							<div className="flex items-center gap-2 mb-3">
-								<Sparkles className="w-5 h-5 text-gray-400" />
-								<h2 className="text-lg font-bold text-gray-900">AI Onboarding Insights</h2>
-							</div>
-							<div className="space-y-2">
-								<p className="text-sm text-gray-700">
-									<span className="font-semibold text-purple-700">⚡ Quick Action:</span> {totalPendingOrders} new users
-									ready to be onboarded. Average deposit size: $
-									{totalPendingOrders > 0 ? (totalPendingAmount / totalPendingOrders).toFixed(2) : "0.00"}
-								</p>
-								<p className="text-sm text-gray-700">
-									<span className="font-semibold text-blue-700">📊 Pattern Detected:</span> Peak user registration
-									occurs between 2-4 PM. Consider optimizing on-ramp capacity during these hours.
-								</p>
-								<p className="text-sm text-gray-700">
-									<span className="font-semibold text-green-700">✨ Growth Opportunity:</span> {totalPendingOrders}{" "}
-									users waiting means potential ${totalPendingAmount.toFixed(2)} in AUM once onboarded.
-								</p>
-							</div>
-						</div>
-
 						{/* Pending Orders List */}
 						<div className="bg-white rounded-2xl border border-gray-200 shadow-sm">
 							<div className="px-6 py-4 border-b border-gray-200 bg-white">
@@ -480,38 +458,6 @@ export function RampOperationsPage() {
 									})}
 								</p>
 								<p className="text-xs text-gray-500 mt-1">USDC to convert to fiat</p>
-							</div>
-
-							<div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
-								<div className="flex items-center justify-between mb-2">
-									<p className="text-sm font-medium text-gray-600">Processing Speed</p>
-									<Zap className="w-5 h-5 text-gray-400" />
-								</div>
-								<p className="text-3xl font-bold text-gray-900">~1-2 days</p>
-								<p className="text-xs text-gray-500 mt-1">Average bank transfer time</p>
-							</div>
-						</div>
-
-						{/* AI Off-Ramp Insights */}
-						<div className="bg-white rounded-2xl p-6 border border-gray-200 mb-8 shadow-sm">
-							<div className="flex items-center gap-2 mb-3">
-								<Sparkles className="w-5 h-5 text-gray-400" />
-								<h2 className="text-lg font-bold text-gray-900">AI Off-Ramp Insights</h2>
-							</div>
-							<div className="space-y-2">
-								<p className="text-sm text-gray-700">
-									<span className="font-semibold text-orange-700">💸 Action Required:</span> {totalPendingWithdrawals}{" "}
-									withdrawal{totalPendingWithdrawals !== 1 ? "s" : ""} pending. Total value: $
-									{totalWithdrawalAmount.toFixed(2)} USDC
-								</p>
-								<p className="text-sm text-gray-700">
-									<span className="font-semibold text-blue-700">🏦 Bank Transfer:</span> Funds will be converted to fiat
-									and sent to users' registered bank accounts.
-								</p>
-								<p className="text-sm text-gray-700">
-									<span className="font-semibold text-green-700">✨ Tip:</span> Batch process multiple withdrawals to
-									save on transfer fees and processing time.
-								</p>
 							</div>
 						</div>
 

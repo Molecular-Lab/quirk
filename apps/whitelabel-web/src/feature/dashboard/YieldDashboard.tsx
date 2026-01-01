@@ -1,14 +1,18 @@
 import { useState } from "react"
-import axios from "axios"
+
 import { useSearch } from "@tanstack/react-router"
+import axios from "axios"
+
+import { useEnvironmentStore } from "@/store/environmentStore"
+import { useUserStore } from "@/store/userStore"
+
+import { ContextualAIPanel } from "../../components/chat/ContextualAIPanel"
 import { CategorySection } from "../../components/market/CategorySection"
 import { ProtocolCard } from "../../components/market/ProtocolCard"
-import { ContextualAIPanel } from "../../components/chat/ContextualAIPanel"
 import { useAllDeFiProtocols } from "../../hooks/useDeFiProtocols"
-import { useMockUSDCBalance } from "../../hooks/useMockUSDCBalance"
+import { useUserBalance } from "../../hooks/useUserBalance"
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8888/api/v1"
-const CUSTODIAL_WALLET_ADDRESS = import.meta.env.VITE_CUSTODIAL_WALLET_ADDRESS
 
 interface ProtocolAllocation {
 	id: "aave" | "compound" | "morpho"
@@ -118,7 +122,7 @@ type TabType = "explore" | "strategies"
 
 export function YieldDashboard() {
 	// Read tab from URL query params (for redirects from old routes)
-	const searchParams = useSearch({ from: "/dashboard/yield" }) as { tab?: TabType }
+	const searchParams = useSearch({ from: "/dashboard/yield" })
 	const [activeTab, setActiveTab] = useState<TabType>(searchParams.tab || "explore")
 	const [selectedPackage, setSelectedPackage] = useState<RiskPackage>(PACKAGES[0])
 	const [showTooltip, setShowTooltip] = useState<string | null>(null)
@@ -136,7 +140,15 @@ export function YieldDashboard() {
 
 	// Fetch real DeFi protocol data
 	const { protocols, isLoading, errors } = useAllDeFiProtocols("USDC", 8453)
-	const { data: balance, isLoading: balanceLoading } = useMockUSDCBalance(CUSTODIAL_WALLET_ADDRESS)
+
+	const privyWalletAddress = useUserStore((state) => state.privyWalletAddress)
+	const apiEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
+
+	const { data: balance, isLoading: balanceLoading } = useUserBalance({
+		walletAddress: privyWalletAddress,
+		environment: apiEnvironment,
+		token: "usdc",
+	})
 
 	// Protocol allocations
 	const [allocations, setAllocations] = useState<ProtocolAllocation[]>([
@@ -355,18 +367,20 @@ export function YieldDashboard() {
 				<div className="mb-6 border-b border-gray-200">
 					<div className="flex gap-8">
 						<button
-							onClick={() => setActiveTab("explore")}
+							onClick={() => {
+								setActiveTab("explore")
+							}}
 							className={`pb-4 px-1 font-semibold transition-colors relative ${
 								activeTab === "explore" ? "text-green-600" : "text-gray-500 hover:text-gray-700"
 							}`}
 						>
 							Explore Protocols
-							{activeTab === "explore" && (
-								<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600"></div>
-							)}
+							{activeTab === "explore" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600"></div>}
 						</button>
 						<button
-							onClick={() => setActiveTab("strategies")}
+							onClick={() => {
+								setActiveTab("strategies")
+							}}
 							className={`pb-4 px-1 font-semibold transition-colors relative ${
 								activeTab === "strategies" ? "text-green-600" : "text-gray-500 hover:text-gray-700"
 							}`}
@@ -458,7 +472,12 @@ export function YieldDashboard() {
 						</CategorySection>
 
 						{/* CeFi Category */}
-						<CategorySection id="cefi" title="CeFi Yield" description="Centralized institutional lending partners" defaultExpanded={false}>
+						<CategorySection
+							id="cefi"
+							title="CeFi Yield"
+							description="Centralized institutional lending partners"
+							defaultExpanded={false}
+						>
 							<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
 								{MOCK_CATEGORIES[0].opportunities.map((opp, idx) => (
 									<div
@@ -560,7 +579,9 @@ export function YieldDashboard() {
 
 								<div className="flex gap-3">
 									<button
-										onClick={() => setStrategyMode("preset")}
+										onClick={() => {
+											setStrategyMode("preset")
+										}}
 										className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all ${
 											strategyMode === "preset"
 												? "bg-green-600 text-white shadow-md"
@@ -594,7 +615,9 @@ export function YieldDashboard() {
 															? "border-green-500 bg-green-50"
 															: "border-gray-200 hover:border-gray-300 bg-white"
 													}`}
-													onClick={() => loadCustomStrategy(strategy)}
+													onClick={() => {
+														loadCustomStrategy(strategy)
+													}}
 												>
 													<div className="flex items-start justify-between">
 														<div className="flex-1">
@@ -643,7 +666,9 @@ export function YieldDashboard() {
 											<input
 												type="text"
 												value={customStrategyName}
-												onChange={(e) => setCustomStrategyName(e.target.value)}
+												onChange={(e) => {
+													setCustomStrategyName(e.target.value)
+												}}
 												placeholder="e.g., Conservative High-TVL Strategy"
 												className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
 											/>
@@ -652,7 +677,9 @@ export function YieldDashboard() {
 											<label className="block text-sm font-medium text-gray-700 mb-2">Description (optional)</label>
 											<textarea
 												value={customStrategyDescription}
-												onChange={(e) => setCustomStrategyDescription(e.target.value)}
+												onChange={(e) => {
+													setCustomStrategyDescription(e.target.value)
+												}}
 												placeholder="Describe your strategy..."
 												rows={2}
 												className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm resize-none"
@@ -722,7 +749,6 @@ export function YieldDashboard() {
 									</div>
 								</div>
 							)}
-
 						</div>
 
 						{/* Right Column: Protocol Allocation */}
@@ -842,4 +868,3 @@ export function YieldDashboard() {
 		</div>
 	)
 }
-
