@@ -123,7 +123,7 @@ type TabType = "explore" | "strategies"
 export function YieldDashboard() {
 	// Read tab from URL query params (for redirects from old routes)
 	const searchParams = useSearch({ from: "/dashboard/yield" })
-	const [activeTab, setActiveTab] = useState<TabType>(searchParams.tab || "explore")
+	const [activeTab, setActiveTab] = useState<TabType>((searchParams as any).tab || "explore")
 	const [selectedPackage, setSelectedPackage] = useState<RiskPackage>(PACKAGES[0])
 	const [showTooltip, setShowTooltip] = useState<string | null>(null)
 	const [isOptimizing, setIsOptimizing] = useState(false)
