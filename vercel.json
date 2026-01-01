@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm turbo build --filter=@quirk/whitelabel-web",
+  "outputDirectory": "apps/whitelabel-web/dist",
+  "installCommand": "pnpm install",
+  "framework": "vite",
+  "ignoreCommand": "git diff --quiet HEAD^ HEAD ./apps/whitelabel-web ./packages"
+}
