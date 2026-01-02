@@ -97,11 +97,10 @@ COPY --from=builder --chown=nodejs:nodejs /app/pnpm-workspace.yaml ./pnpm-worksp
 COPY --from=builder --chown=nodejs:nodejs /app/apps/b2b-api/package.json ./apps/b2b-api/package.json
 COPY --from=builder --chown=nodejs:nodejs /app/apps/b2b-api/dist ./apps/b2b-api/dist
 
-# Copy all node_modules (root + app-specific if exists)
+# Copy all node_modules (root level - PNPM hoists dependencies here)
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nodejs:nodejs /app/apps/b2b-api/node_modules ./apps/b2b-api/node_modules 2>/dev/null || true
 
-# Copy workspace packages
+# Copy workspace packages (contains built packages)
 COPY --from=builder --chown=nodejs:nodejs /app/packages ./packages
 
 # Switch to non-root user
