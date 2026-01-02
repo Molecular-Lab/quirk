@@ -47,7 +47,7 @@ const envSchema = z.object({
  */
 const parseEnv = () => {
 	const rawEnv = {
-		PRIVY_APP_ID: import.meta.env.PRIVY_APP_ID,
+		PRIVY_APP_ID: import.meta.env.VITE_PRIVY_APP_ID,
 		API_URL: import.meta.env.VITE_API_URL,
 		API_FEED_URL: import.meta.env.VITE_API_FEED_URL,
 		USER_API_URL: import.meta.env.VITE_USER_API_URL,
