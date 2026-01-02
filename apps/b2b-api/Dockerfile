@@ -66,8 +66,17 @@ COPY sqlc.yaml ./sqlc.yaml
 # Generate SQLC types
 RUN sqlc generate
 
-# Build the application
-RUN pnpm turbo run build --filter=@quirk/b2b-api-service...
+# Build the application with fresh cache
+RUN pnpm turbo run build --filter=@quirk/b2b-api-service... --force
+
+# Verify build produced required files
+RUN echo "=== Build verification ===" && \
+    test -f /app/apps/b2b-api/dist/env.js || \
+    (echo "❌ env.js not found" && ls -la /app/apps/b2b-api/dist && exit 1) && \
+    test -f /app/apps/b2b-api/dist/server.js || \
+    (echo "❌ server.js not found" && ls -la /app/apps/b2b-api/dist && exit 1) && \
+    echo "✅ Build output verified" && \
+    ls -la /app/apps/b2b-api/dist
 
 # Don't prune - keep all dependencies for monorepo to work correctly
 # The pnpm prune command doesn't work well with workspace dependencies
@@ -88,6 +97,7 @@ RUN addgroup -g 1001 -S nodejs && \
 # Set production environment
 ENV NODE_ENV=production
 ENV PORT=8080
+ENV NODE_PATH=/app/node_modules
 
 # Copy root package files for workspace resolution
 COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
@@ -102,6 +112,25 @@ COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 
 # Copy workspace packages (contains built packages)
 COPY --from=builder --chown=nodejs:nodejs /app/packages ./packages
+
+# Copy pnpm-lock.yaml for production install
+COPY --from=builder --chown=nodejs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
+
+# Enable pnpm in production image
+ENV PNPM_HOME="/pnpm"
+ENV PATH="$PNPM_HOME:$PATH"
+RUN corepack enable && \
+    corepack prepare pnpm@10.18.3 --activate
+
+# Install production dependencies to ensure all runtime deps are available
+# This fixes issues with missing dependencies like dotenv
+ENV CI=true
+RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
+    pnpm install --prod --frozen-lockfile --ignore-scripts
+
+# Debug: List what's in node_modules (remove after debugging)
+RUN ls -la /app/node_modules | head -20 || echo "node_modules not found"
+RUN ls -la /app/node_modules/dotenv || echo "dotenv not found in node_modules"
 
 # Switch to non-root user
 USER nodejs

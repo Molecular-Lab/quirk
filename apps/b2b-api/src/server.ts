@@ -36,21 +36,21 @@ import {
 import { b2bContract } from "@quirk/b2b-api-core";
 import { createExpressEndpoints } from "@ts-rest/express";
 
-import { ENV } from "./env";
-import { logger } from "./logger";
-import { ClientService } from "./service/client.service";
-import { DeFiProtocolService } from "./service/defi-protocol.service";
-import { VaultService } from "./service/vault.service";
-import { UserService } from "./service/user.service";
-import { DepositService } from "./service/deposit.service";
-import { DeFiExecutionService } from "./service/defi-execution.service";
-import { WithdrawalService } from "./service/withdrawal.service";
-import { UserVaultService } from "./service/user-vault.service";
-import { PrivyAccountService } from "./service/privy-account.service";
-import { ExplorerService } from "./service/explorer.service";
-import { createMainRouter } from "./router";
-import { apiKeyAuth } from "./middleware/apiKeyAuth";
-import { privyAuth } from "./middleware/privyAuth";
+import { ENV } from "./env.js";
+import { logger } from "./logger.js";
+import { ClientService } from "./service/client.service.js";
+import { DeFiProtocolService } from "./service/defi-protocol.service.js";
+import { VaultService } from "./service/vault.service.js";
+import { UserService } from "./service/user.service.js";
+import { DepositService } from "./service/deposit.service.js";
+import { DeFiExecutionService } from "./service/defi-execution.service.js";
+import { WithdrawalService } from "./service/withdrawal.service.js";
+import { UserVaultService } from "./service/user-vault.service.js";
+import { PrivyAccountService } from "./service/privy-account.service.js";
+import { ExplorerService } from "./service/explorer.service.js";
+import { createMainRouter } from "./router/index.js";
+import { apiKeyAuth } from "./middleware/apiKeyAuth.js";
+import { privyAuth } from "./middleware/privyAuth.js";
 
 const app = express();
 
