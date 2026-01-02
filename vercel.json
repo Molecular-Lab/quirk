@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "echo 'Using pre-built dist'",
-  "installCommand": "echo 'Skipping install - using pre-built files'",
+  "buildCommand": "cd apps/whitelabel-web && pnpm build",
+  "installCommand": "pnpm install",
   "outputDirectory": "apps/whitelabel-web/dist"
 }
