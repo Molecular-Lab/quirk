@@ -6,10 +6,7 @@ primary_region = "sjc"  # San Jose, California - change to your preferred region
 
 # Build configuration
 [build]
-  dockerfile = "apps/b2b-api/Dockerfile"
-  # IMPORTANT: This Dockerfile must be run from the repository root
-  # When deploying, use: flyctl deploy from the repository root
-  # Or specify: flyctl deploy --config apps/b2b-api/fly.toml
+  dockerfile = "./Dockerfile"
 
 # Environment variables (non-secret)
 [env]
