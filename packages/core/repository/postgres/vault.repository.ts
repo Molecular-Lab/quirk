@@ -56,8 +56,18 @@ import {
 import BigNumber from "bignumber.js"
 import { Sql } from "postgres"
 
+// Import pure calculation utilities for share-based accounting
+import {
+	calculateShares,
+	calculateValueFromShares,
+	calculateWeightedIndex,
+	calculateYield,
+	calculateNewIndex as calculateNewIndexUtil,
+	calculateSharesToBurn,
+} from "../../utils/vault-accounting.utils"
+
 export class VaultRepository {
-	constructor(private readonly sql: Sql) {}
+	constructor(private readonly sql: Sql) { }
 
 	// Client Vaults
 	async getClientVaultById(id: string): Promise<GetClientVaultRow | null> {
@@ -163,8 +173,8 @@ export class VaultRepository {
 		// For now, we only update cumulative yield and staked balance
 		// The revenue distribution logic would need a different SQLC function
 		const totalRevenue = parseFloat(distribution.clientRevenue) +
-							 parseFloat(distribution.platformRevenue) +
-							 parseFloat(distribution.enduserRevenue);
+			parseFloat(distribution.platformRevenue) +
+			parseFloat(distribution.enduserRevenue);
 
 		await recordYieldDistribution(this.sql, {
 			id: vaultId,
@@ -245,7 +255,31 @@ export class VaultRepository {
 		return await listTopUsersByDeposit(this.sql, { clientId, limit })
 	}
 
-	// BigNumber calculations (✅ SIMPLIFIED - no shares)
+	// ==========================================
+	// SHARE ACCOUNTING (uses pure utility functions)
+	// ==========================================
+
+	/**
+	 * Calculate shares to issue for a deposit
+	 * Uses pure utility function for precision
+	 */
+	calculateSharesForDeposit(amount: string, currentIndex: string): string {
+		return calculateShares(amount, currentIndex)
+	}
+
+	/**
+	 * Calculate shares to burn for a withdrawal
+	 */
+	calculateSharesForWithdrawal(amount: string, currentIndex: string): string {
+		return calculateSharesToBurn(amount, currentIndex)
+	}
+
+	/**
+	 * Calculate current value of user's shares
+	 */
+	calculateValueFromUserShares(shares: string, currentIndex: string): string {
+		return calculateValueFromShares(shares, currentIndex)
+	}
 
 	/**
 	 * Calculate user's current value based on client growth index
@@ -263,19 +297,15 @@ export class VaultRepository {
 
 	/**
 	 * Calculate user's yield earned
-	 * Formula: yield = current_value - total_deposited
+	 * Uses pure utility function
 	 */
-	calculateUserYield(totalDeposited: string, entryIndex: string, clientGrowthIndex: string): string {
-		const currentValue = new BigNumber(this.calculateUserCurrentValue(totalDeposited, entryIndex, clientGrowthIndex))
-		const deposited = new BigNumber(totalDeposited)
-		const yield_ = currentValue.minus(deposited)
-
-		return yield_.isNegative() ? "0" : yield_.decimalPlaces(18, BigNumber.ROUND_DOWN).toString()
+	calculateUserYield(totalDeposited: string, currentIndex: string, entryIndex: string): string {
+		return calculateYield(totalDeposited, currentIndex, entryIndex)
 	}
 
 	/**
 	 * Calculate weighted entry index for DCA deposits
-	 * Formula: new_weighted_index = (old_deposited × old_index + new_deposited × current_index) / (old_deposited + new_deposited)
+	 * Uses pure utility function
 	 */
 	calculateWeightedEntryIndex(
 		oldTotalDeposited: string,
@@ -283,22 +313,7 @@ export class VaultRepository {
 		newDepositAmount: string,
 		clientGrowthIndex: string,
 	): string {
-		const oldDeposited = new BigNumber(oldTotalDeposited)
-		const oldIndex = new BigNumber(oldWeightedIndex)
-		const newDeposit = new BigNumber(newDepositAmount)
-		const currentIndex = new BigNumber(clientGrowthIndex)
-
-		// First deposit
-		if (oldDeposited.isZero()) {
-			return currentIndex.toString()
-		}
-
-		// DCA: weighted average
-		const oldWeight = oldDeposited.multipliedBy(oldIndex)
-		const newWeight = newDeposit.multipliedBy(currentIndex)
-		const totalDeposited = oldDeposited.plus(newDeposit)
-
-		return oldWeight.plus(newWeight).dividedBy(totalDeposited).integerValue(BigNumber.ROUND_DOWN).toString()
+		return calculateWeightedIndex(oldTotalDeposited, oldWeightedIndex, newDepositAmount, clientGrowthIndex)
 	}
 
 	/**
@@ -311,6 +326,14 @@ export class VaultRepository {
 		const yield_ = new BigNumber(yieldAmount)
 		if (staked.isZero()) return oldIndex
 		return index.multipliedBy(staked.plus(yield_)).dividedBy(staked).integerValue(BigNumber.ROUND_DOWN).toString()
+	}
+
+	/**
+	 * Calculate new index from daily yield percentage
+	 * Used by cron job for daily index updates
+	 */
+	calculateNewIndexFromDailyYield(currentIndex: string, dailyYieldPercent: string): string {
+		return calculateNewIndexUtil(currentIndex, dailyYieldPercent)
 	}
 
 	// Vault Strategies (JSONB)

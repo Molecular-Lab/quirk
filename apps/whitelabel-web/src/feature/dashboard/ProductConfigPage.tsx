@@ -40,6 +40,7 @@ import { useFloatingConcierge } from "@/contexts/FloatingConciergeContext"
 import type { StrategyConfig } from "@/feature/dashboard/ProductStrategyConfig"
 import { useAPYCache } from "@/hooks/useAPYCache"
 import { useUserBalance } from "@/hooks/useUserBalance"
+import { useAPYCacheStore, type Allocation } from "@/store/apyCacheStore"
 import { useEnvironmentStore } from "@/store/environmentStore"
 import { useUserStore } from "@/store/userStore"
 import { Currency } from "@/types"
@@ -70,8 +71,6 @@ interface ProtocolAllocation {
 	id: "aave" | "compound" | "morpho"
 	name: string
 	allocation: number
-	expectedAPY: string
-	tvl: string
 	color: string
 }
 
@@ -115,16 +114,9 @@ const RISK_PROFILES: RiskProfile[] = [
 ]
 
 const DEFAULT_ALLOCATIONS: ProtocolAllocation[] = [
-	{ id: "aave", name: "Aave V3", allocation: 50, expectedAPY: "0.00", tvl: "0", color: PROTOCOL_COLORS.aave },
-	{
-		id: "compound",
-		name: "Compound V3",
-		allocation: 30,
-		expectedAPY: "0.00",
-		tvl: "0",
-		color: PROTOCOL_COLORS.compound,
-	},
-	{ id: "morpho", name: "Morpho", allocation: 20, expectedAPY: "0.00", tvl: "0", color: PROTOCOL_COLORS.morpho },
+	{ id: "aave", name: "Aave V3", allocation: 50, color: PROTOCOL_COLORS.aave },
+	{ id: "compound", name: "Compound V3", allocation: 30, color: PROTOCOL_COLORS.compound },
+	{ id: "morpho", name: "Morpho", allocation: 20, color: PROTOCOL_COLORS.morpho },
 ]
 
 // Predefined strategy allocations - used for instant client-side calculation
@@ -208,19 +200,37 @@ export function ProductConfigPage() {
 	const { openWithContext } = useFloatingConcierge()
 
 	// Fetch APY data once on mount with 5-minute cache
-	const { apys } = useAPYCache("USDC", 8453)
+	const { apys, isLoading: isAPYLoading } = useAPYCache("USDC", 8453)
+
+	// Get calculateExpectedAPY function from store
+	const calculateExpectedAPY = useAPYCacheStore((state) => state.calculateExpectedAPY)
+
+	// Check if APY data is fully loaded
+	const isAPYDataLoaded = useMemo(() => {
+		return !isAPYLoading && apys !== null
+	}, [isAPYLoading, apys])
 
 	// Calculate blended APY from cached APYs (instant, no API call)
 	const blendedAPY = useMemo(() => {
-		if (!apys) return "0.00"
-
-		let total = 0
-		for (const alloc of allocations) {
-			const apy = parseFloat(apys[alloc.id] || "0")
-			total += (apy * alloc.allocation) / 100
+		if (!apys || allocations.length === 0) {
+			console.log("[ProductConfigPage] APY calculation skipped:", { apysLoaded: !!apys, allocationsLength: allocations.length })
+			return "0.00"
 		}
-		return total.toFixed(2)
-	}, [allocations, apys])
+
+		// Convert allocations to the format expected by calculateExpectedAPY
+		const allocs: Allocation[] = allocations.map((a) => ({
+			protocol: a.id,
+			percentage: a.allocation,
+		}))
+
+		const result = calculateExpectedAPY(allocs)
+		console.log("[ProductConfigPage] Blended APY calculated:", { 
+			apys, 
+			allocations: allocs, 
+			blendedAPY: result 
+		})
+		return result
+	}, [allocations, apys, calculateExpectedAPY])
 
 	const totalAllocation = allocations.reduce((sum, a) => sum + a.allocation, 0)
 	const isValidAllocation = totalAllocation === 100
@@ -408,24 +418,18 @@ export function ProductConfigPage() {
 							id: "aave",
 							name: "Aave V3",
 							allocation: strategies.lending.aave || 0,
-							expectedAPY: "0.00",
-							tvl: "0",
 							color: PROTOCOL_COLORS.aave,
 						},
 						{
 							id: "compound",
 							name: "Compound V3",
 							allocation: strategies.lending.compound || 0,
-							expectedAPY: "0.00",
-							tvl: "0",
 							color: PROTOCOL_COLORS.compound,
 						},
 						{
 							id: "morpho",
 							name: "Morpho",
 							allocation: strategies.lending.morpho || 0,
-							expectedAPY: "0.00",
-							tvl: "0",
 							color: PROTOCOL_COLORS.morpho,
 						},
 					]
@@ -970,12 +974,19 @@ Help them understand or refine their strategy.`
 								>
 									{/* Donut Chart - centered when not custom */}
 									<div className={selectedProfile.id === "custom" ? "" : "w-full flex justify-center"}>
-										<AllocationDonutChart
-											allocations={allocations}
-											centerText={`${blendedAPY}%`}
-											centerSubtext="Expected APY"
-											size={180}
-										/>
+										{isAPYDataLoaded ? (
+											<AllocationDonutChart
+												allocations={allocations}
+												centerText={`${blendedAPY}%`}
+												centerSubtext="Expected APY"
+												size={180}
+											/>
+										) : (
+											<div className="flex flex-col items-center justify-center w-[180px] h-[180px]">
+												<Loader2 className="w-8 h-8 text-accent animate-spin mb-2" />
+												<p className="text-sm text-gray-500">Loading APY data...</p>
+											</div>
+										)}
 									</div>
 
 									{/* Custom Sliders (only for custom profile) */}

@@ -121,6 +121,34 @@ export const createDeFiProtocolRouter = (
 			}
 		},
 
+		// Get APYs summary (lightweight endpoint for client-side caching)
+		getAPYs: async ({ query }) => {
+			try {
+				const token = query.token
+				const chainId = parseInt(query.chainId, 10)
+
+				console.log('[DeFi Router] Fetching APYs summary:', { token, chainId })
+
+				const data = await defiService.getAPYsSummary(token, chainId)
+
+				console.log('[DeFi Router] APYs summary fetched:', data)
+
+				return {
+					status: 200,
+					body: data,
+				}
+			} catch (error) {
+				console.error('Error fetching APYs summary:', error)
+				return {
+					status: 500,
+					body: {
+						error: 'Failed to fetch APYs summary',
+						message: error instanceof Error ? error.message : 'Unknown error',
+					},
+				}
+			}
+		},
+
 		// Optimize allocation
 		optimize: async ({ body }) => {
 			try {

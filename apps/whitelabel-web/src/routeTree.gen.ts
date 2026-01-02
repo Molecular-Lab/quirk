@@ -28,6 +28,7 @@ import { Route as DashboardOperationsRouteImport } from './routes/dashboard.oper
 import { Route as DashboardMarketRouteImport } from './routes/dashboard/market'
 import { Route as DashboardIntegrationRouteImport } from './routes/dashboard/integration'
 import { Route as DashboardExploreRouteImport } from './routes/dashboard/explore'
+import { Route as DashboardEarnRouteImport } from './routes/dashboard/earn'
 import { Route as DashboardDocsRouteImport } from './routes/dashboard/docs'
 import { Route as DashboardApiTestingRouteImport } from './routes/dashboard/api-testing'
 import { Route as DashboardAnalyticsRouteImport } from './routes/dashboard/analytics'
@@ -132,6 +133,11 @@ const DashboardExploreRoute = DashboardExploreRouteImport.update({
   path: '/explore',
   getParentRoute: () => DashboardRoute,
 } as any)
+const DashboardEarnRoute = DashboardEarnRouteImport.update({
+  id: '/earn',
+  path: '/earn',
+  getParentRoute: () => DashboardRoute,
+} as any)
 const DashboardDocsRoute = DashboardDocsRouteImport.update({
   id: '/docs',
   path: '/docs',
@@ -190,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/api-testing': typeof DashboardApiTestingRoute
   '/dashboard/docs': typeof DashboardDocsRoute
+  '/dashboard/earn': typeof DashboardEarnRoute
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
@@ -218,6 +225,7 @@ export interface FileRoutesByTo {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/api-testing': typeof DashboardApiTestingRoute
   '/dashboard/docs': typeof DashboardDocsRoute
+  '/dashboard/earn': typeof DashboardEarnRoute
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
@@ -249,6 +257,7 @@ export interface FileRoutesById {
   '/dashboard/analytics': typeof DashboardAnalyticsRoute
   '/dashboard/api-testing': typeof DashboardApiTestingRoute
   '/dashboard/docs': typeof DashboardDocsRoute
+  '/dashboard/earn': typeof DashboardEarnRoute
   '/dashboard/explore': typeof DashboardExploreRoute
   '/dashboard/integration': typeof DashboardIntegrationRoute
   '/dashboard/market': typeof DashboardMarketRoute
@@ -280,6 +289,7 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/api-testing'
     | '/dashboard/docs'
+    | '/dashboard/earn'
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
@@ -308,6 +318,7 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/api-testing'
     | '/dashboard/docs'
+    | '/dashboard/earn'
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/dashboard/analytics'
     | '/dashboard/api-testing'
     | '/dashboard/docs'
+    | '/dashboard/earn'
     | '/dashboard/explore'
     | '/dashboard/integration'
     | '/dashboard/market'
@@ -510,6 +522,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardExploreRouteImport
       parentRoute: typeof DashboardRoute
     }
+    '/dashboard/earn': {
+      id: '/dashboard/earn'
+      path: '/earn'
+      fullPath: '/dashboard/earn'
+      preLoaderRoute: typeof DashboardEarnRouteImport
+      parentRoute: typeof DashboardRoute
+    }
     '/dashboard/docs': {
       id: '/dashboard/docs'
       path: '/docs'
@@ -593,6 +612,7 @@ interface DashboardRouteChildren {
   DashboardAnalyticsRoute: typeof DashboardAnalyticsRoute
   DashboardApiTestingRoute: typeof DashboardApiTestingRoute
   DashboardDocsRoute: typeof DashboardDocsRoute
+  DashboardEarnRoute: typeof DashboardEarnRoute
   DashboardExploreRoute: typeof DashboardExploreRoute
   DashboardIntegrationRoute: typeof DashboardIntegrationRoute
   DashboardMarketRoute: typeof DashboardMarketRoute
@@ -610,6 +630,7 @@ const DashboardRouteChildren: DashboardRouteChildren = {
   DashboardAnalyticsRoute: DashboardAnalyticsRoute,
   DashboardApiTestingRoute: DashboardApiTestingRoute,
   DashboardDocsRoute: DashboardDocsRoute,
+  DashboardEarnRoute: DashboardEarnRoute,
   DashboardExploreRoute: DashboardExploreRoute,
   DashboardIntegrationRoute: DashboardIntegrationRoute,
   DashboardMarketRoute: DashboardMarketRoute,

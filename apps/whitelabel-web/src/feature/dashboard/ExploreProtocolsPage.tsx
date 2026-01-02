@@ -4,7 +4,7 @@ import curveLogo from "../../assets/curve-dao-token-crv-logo.svg"
 import uniswapLogo from "../../assets/uniswap-uni-logo.svg"
 import { CategorySection } from "../../components/market/CategorySection"
 import { ProtocolCard } from "../../components/market/ProtocolCard"
-import { useAllDeFiProtocols } from "../../hooks/useDeFiProtocols"
+import { useAllDeFiProtocolsOptimized } from "../../hooks/useDeFiProtocols"
 import { useUserBalance } from "../../hooks/useUserBalance"
 import { useUserStore } from "@/store/userStore"
 import { useEnvironmentStore } from "@/store/environmentStore"
@@ -74,8 +74,9 @@ const MOCK_CATEGORIES = [
 ]
 
 export function ExploreProtocolsPage() {
-	// Fetch real DeFi protocol data
-	const { protocols, isLoading, errors } = useAllDeFiProtocols("USDC", 8453)
+	// Fetch real DeFi protocol data with optimized caching
+	// Uses lightweight APY cache for instant display, then enriches with full data
+	const { protocols, isLoading, isRefreshing, errors } = useAllDeFiProtocolsOptimized("USDC", 8453)
 
 	const privyWalletAddress = useUserStore((state) => state.privyWalletAddress)
 	const apiEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
@@ -98,7 +99,12 @@ export function ExploreProtocolsPage() {
 				<div className="mb-6 flex justify-between items-start">
 					<div>
 						<h1 className="text-3xl font-bold text-gray-900 mb-2">Explore Protocols</h1>
-						<p className="text-gray-600">Discover DeFi and CeFi yield opportunities</p>
+						<p className="text-gray-600">
+							Discover DeFi and CeFi yield opportunities
+							{isRefreshing && (
+								<span className="ml-2 text-xs text-blue-600 animate-pulse">● Updating details...</span>
+							)}
+						</p>
 					</div>
 					<div className="text-right bg-white px-6 py-4 rounded-2xl border border-gray-200 shadow-sm">
 						{balanceLoading ? (
@@ -139,7 +145,9 @@ export function ExploreProtocolsPage() {
 										`$${(totalTVL / 1_000_000).toFixed(1)}M`
 									)}
 								</span>
-								<span className="text-green-600 text-sm font-medium">Live</span>
+								<span className={`text-sm font-medium ${isRefreshing ? "text-blue-600 animate-pulse" : "text-green-600"}`}>
+									{isRefreshing ? "Refreshing..." : "Live"}
+								</span>
 							</div>
 						</div>
 

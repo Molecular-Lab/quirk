@@ -220,24 +220,53 @@ export class DeFiProtocolService {
 	}
 
 	/**
-	 * Fetch all protocols in parallel
+	 * Fetch all protocols sequentially to avoid RPC rate limits
+	 * TODO: Remove delays once better RPC endpoint is configured (see RPC_RATE_LIMIT_FIX.md)
 	 */
 	async fetchAllProtocols(token: string, chainId: number): Promise<ProtocolData[]> {
-		const results = await Promise.allSettled([
-			this.fetchAAVEMetrics(token, chainId),
-			this.fetchCompoundMetrics(token, chainId),
-			this.fetchMorphoMetrics(token, chainId),
-		])
-
-		// Return only successful results
-		return results
-			.filter((result): result is PromiseFulfilledResult<ProtocolData> => result.status === 'fulfilled')
-			.map((result) => result.value)
+		const protocols: ProtocolData[] = []
+		
+		// Fetch AAVE
+		try {
+			const aave = await this.fetchAAVEMetrics(token, chainId)
+			protocols.push(aave)
+			console.log('[DeFi] ✅ AAVE fetched successfully')
+		} catch (error) {
+			console.error('[DeFi] ❌ AAVE fetch failed:', error instanceof Error ? error.message : 'Unknown error')
+		}
+		
+		// Small delay to avoid rate limiting
+		await new Promise(resolve => setTimeout(resolve, 300))
+		
+		// Fetch Compound
+		try {
+			const compound = await this.fetchCompoundMetrics(token, chainId)
+			protocols.push(compound)
+			console.log('[DeFi] ✅ Compound fetched successfully')
+		} catch (error) {
+			console.error('[DeFi] ❌ Compound fetch failed:', error instanceof Error ? error.message : 'Unknown error')
+		}
+		
+		// Small delay to avoid rate limiting
+		await new Promise(resolve => setTimeout(resolve, 300))
+		
+		// Fetch Morpho
+		try {
+			const morpho = await this.fetchMorphoMetrics(token, chainId)
+			protocols.push(morpho)
+			console.log('[DeFi] ✅ Morpho fetched successfully')
+		} catch (error) {
+			console.error('[DeFi] ❌ Morpho fetch failed:', error instanceof Error ? error.message : 'Unknown error')
+		}
+		
+		console.log(`[DeFi] Fetched ${protocols.length}/3 protocols successfully`)
+		return protocols
 	}
 
 	/**
 	 * Get APYs summary (lightweight endpoint for client-side strategy calculation)
 	 * Returns only APY values for each protocol
+	 * Fetches sequentially to avoid RPC rate limits
 	 */
 	async getAPYsSummary(token: string, chainId: number): Promise<{
 		aave: string
@@ -245,21 +274,47 @@ export class DeFiProtocolService {
 		morpho: string
 		timestamp: string
 	}> {
-		const results = await Promise.allSettled([
-			this.fetchAAVEMetrics(token, chainId),
-			this.fetchCompoundMetrics(token, chainId),
-			this.fetchMorphoMetrics(token, chainId),
-		])
-
-		// Extract APYs, defaulting to "0" if protocol fetch failed
-		const aaveResult = results[0]
-		const compoundResult = results[1]
-		const morphoResult = results[2]
+		const apys = {
+			aave: '0',
+			compound: '0',
+			morpho: '0',
+		}
+		
+		// Fetch AAVE APY
+		try {
+			const aave = await this.fetchAAVEMetrics(token, chainId)
+			apys.aave = aave.supplyAPY
+			console.log('[DeFi APY] ✅ AAVE:', apys.aave)
+		} catch (error) {
+			console.error('[DeFi APY] ❌ AAVE failed:', error instanceof Error ? error.message : 'Unknown')
+		}
+		
+		await new Promise(resolve => setTimeout(resolve, 300)) // Delay to avoid rate limit
+		
+		// Fetch Compound APY
+		try {
+			const compound = await this.fetchCompoundMetrics(token, chainId)
+			apys.compound = compound.supplyAPY
+			console.log('[DeFi APY] ✅ Compound:', apys.compound)
+		} catch (error) {
+			console.error('[DeFi APY] ❌ Compound failed:', error instanceof Error ? error.message : 'Unknown')
+		}
+		
+		await new Promise(resolve => setTimeout(resolve, 300)) // Delay to avoid rate limit
+		
+		// Fetch Morpho APY
+		try {
+			const morpho = await this.fetchMorphoMetrics(token, chainId)
+			apys.morpho = morpho.supplyAPY
+			console.log('[DeFi APY] ✅ Morpho:', apys.morpho)
+		} catch (error) {
+			console.error('[DeFi APY] ❌ Morpho failed:', error instanceof Error ? error.message : 'Unknown')
+		}
+		
+		console.log('[DeFi APY] Final APYs:', apys)
 
 		return {
-			aave: aaveResult.status === 'fulfilled' ? aaveResult.value.supplyAPY : '0',
-			compound: compoundResult.status === 'fulfilled' ? compoundResult.value.supplyAPY : '0',
-			morpho: morphoResult.status === 'fulfilled' ? morphoResult.value.supplyAPY : '0',
+			...apys,
 			timestamp: new Date().toISOString(),
 		}
 	}

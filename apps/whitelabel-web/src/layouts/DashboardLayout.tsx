@@ -43,7 +43,7 @@ import { useVaultStore } from "@/store/vaultStore"
 
 const navigation = [
 	{ name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-	{ name: "Explore Protocols", href: "/dashboard/explore", icon: Compass },
+	{ name: "Earn", href: "/dashboard/earn", icon: Compass },
 	{ name: "Products", href: "/dashboard/products", icon: Sliders },
 	{ name: "Operations", href: "/dashboard/operations", icon: ArrowLeftRight },
 	{ name: "Integration", href: "/dashboard/integration", icon: BookText },
