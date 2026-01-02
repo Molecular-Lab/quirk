@@ -57,7 +57,6 @@ export class VaultIndexService {
 	 * @returns Array of sync results per protocol
 	 */
 	async syncWrappedTokenBalances(vaultId: string): Promise<WrappedTokenSyncResult[]> {
-		console.log(`[VaultIndex] Syncing wrapped token balances for vault: ${vaultId}`)
 
 		// Get vault info
 		const vault = await this.vaultRepository.getClientVaultById(vaultId)
@@ -73,7 +72,7 @@ export class VaultIndexService {
 		const strategies: VaultStrategy[] = vault.strategies ? JSON.parse(vault.strategies) : []
 
 		if (strategies.length === 0) {
-			console.log(`[VaultIndex] No strategies configured for vault: ${vaultId}`)
+
 			return []
 		}
 
@@ -91,11 +90,6 @@ export class VaultIndexService {
 				)
 				syncResults.push(result)
 
-				console.log(`[VaultIndex] ✓ Synced ${strategy.protocol}:`, {
-					wrappedBalance: result.wrappedBalance,
-					exchangeRate: result.exchangeRate,
-					realValue: result.realValue,
-				})
 			} catch (error) {
 				console.error(`[VaultIndex] ✗ Failed to sync ${strategy.protocol}:`, error)
 				// Continue with other protocols even if one fails
@@ -152,7 +146,6 @@ export class VaultIndexService {
 	 * @returns Index update result
 	 */
 	async updateVaultIndex(vaultId: string): Promise<IndexUpdateResult> {
-		console.log(`[VaultIndex] Updating index for vault: ${vaultId}`)
 
 		// Get vault info
 		const vault = await this.vaultRepository.getClientVaultById(vaultId)
@@ -171,7 +164,7 @@ export class VaultIndexService {
 		const previousValueDecimal = new Decimal(previousValue)
 
 		if (previousValueDecimal.isZero()) {
-			console.log(`[VaultIndex] Skipping index update: no previous value`)
+
 			throw new Error("Cannot update index: no previous staked balance")
 		}
 
@@ -220,15 +213,6 @@ export class VaultIndexService {
 			timestamp: new Date(),
 		}
 
-		console.log("[VaultIndex] Index updated:", {
-			oldIndex: currentIndex.dividedBy(INDEX_SCALE).toFixed(6),
-			newIndex: newIndex.dividedBy(INDEX_SCALE).toFixed(6),
-			previousValue: `$${previousValue}`,
-			currentValue: `$${currentTotalValue}`,
-			yieldGenerated: `$${yieldGenerated.toFixed(2)}`,
-			growthRate: `${dailyGrowthRate.toFixed(6)}%`,
-		})
-
 		return result
 	}
 
@@ -241,20 +225,16 @@ export class VaultIndexService {
 	 * @param vaultId - Client vault ID
 	 */
 	async runDailyUpdate(vaultId: string): Promise<IndexUpdateResult> {
-		console.log(`[VaultIndex] ===== Running daily update for vault: ${vaultId} =====`)
 
 		try {
 			// Step 1: Sync wrapped token balances
 			const syncResults = await this.syncWrappedTokenBalances(vaultId)
-			console.log(`[VaultIndex] Synced ${syncResults.length} protocols`)
 
 			// Step 2: Update index based on real values
 			const indexUpdate = await this.updateVaultIndex(vaultId)
 
 			// Step 3: Update APY metrics (7d, 30d)
 			await this.updateAPYMetrics(vaultId, indexUpdate.dailyGrowthRate)
-
-			console.log(`[VaultIndex] ===== Daily update complete for vault: ${vaultId} =====`)
 
 			return indexUpdate
 		} catch (error) {
@@ -280,12 +260,6 @@ export class VaultIndexService {
 
 		await this.vaultRepository.updateVaultAPY(vaultId, apy7d.toFixed(4), apy30d.toFixed(4))
 
-		console.log(`[VaultIndex] APY metrics updated:`, {
-			dailyRate: `${dailyGrowthRate.toFixed(6)}%`,
-			annualizedAPY: `${annualizedAPY.toFixed(2)}%`,
-			apy7d: `${apy7d.toFixed(2)}%`,
-			apy30d: `${apy30d.toFixed(2)}%`,
-		})
 	}
 
 	/**
@@ -362,12 +336,5 @@ export class VaultIndexService {
 		// TODO: Implement updateTotalStakedBalance in VaultRepository
 		// await this.vaultRepository.updateTotalStakedBalance(vaultId, newStaked.toFixed(6))
 
-		console.log(`[VaultIndex] Withdrawal processed:`, {
-			vaultId,
-			withdrawAmount: `$${withdrawAmount}`,
-			previousStaked: `$${currentStaked.toFixed(2)}`,
-			newStaked: `$${newStaked.toFixed(2)}`,
-			percentageWithdrawn: withdrawal.dividedBy(currentStaked).times(100).toFixed(2) + "%",
-		})
 	}
 }

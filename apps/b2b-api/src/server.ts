@@ -369,11 +369,11 @@ async function main() {
 	);
 
 	// 11. Start server
-	app.listen(ENV.PORT, () => {
+	app.listen(ENV.PORT, '0.0.0.0', () => {
 		logger.info("\n✅ Server started successfully!");
-		logger.info(`🌐 Server running on http://localhost:${ENV.PORT}`);
-		logger.info(`📡 Health check: http://localhost:${ENV.PORT}/health`);
-		logger.info(`📚 API Base: http://localhost:${ENV.PORT}/api/v1`);
+		logger.info(`🌐 Server running on http://0.0.0.0:${ENV.PORT}`);
+		logger.info(`📡 Health check: http://0.0.0.0:${ENV.PORT}/health`);
+		logger.info(`📚 API Base: http://0.0.0.0:${ENV.PORT}/api/v1`);
 		logger.info("\n🏗️ Architecture:");
 		logger.info(`  ✅ DTO Layer: @quirk/b2b-api-core (Zod + ts-rest)`);
 		logger.info(`  ✅ Router Layer: ts-rest/express`);

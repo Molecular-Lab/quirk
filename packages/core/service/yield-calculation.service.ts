@@ -53,12 +53,8 @@ export class YieldCalculationService {
 			const contribution = (strategy.allocation / 100) * protocolData.apy
 			weightedAPY += contribution
 
-			console.log(
-				`[YieldCalc] ${strategy.protocol}: ${strategy.allocation}% allocation * ${protocolData.apy}% APY = ${contribution.toFixed(4)}% contribution`,
-			)
 		}
 
-		console.log(`[YieldCalc] Total Weighted APY: ${weightedAPY.toFixed(4)}%`)
 		return weightedAPY
 	}
 
@@ -122,14 +118,6 @@ export class YieldCalculationService {
 			yieldGenerated: yieldGenerated.toFixed(6),
 			timestamp: new Date(),
 		}
-
-		console.log("[YieldCalc] Index Update:", {
-			oldIndex: currentIndexDecimal.dividedBy(INDEX_SCALE).toFixed(6),
-			newIndex: newIndex.dividedBy(INDEX_SCALE).toFixed(6),
-			growthRate: `${(dailyGrowthRate * 100).toFixed(6)}%`,
-			yieldGenerated: `$${yieldGenerated.toFixed(2)}`,
-			totalStaked: `$${totalStakedDecimal.toFixed(2)}`,
-		})
 
 		return result
 	}

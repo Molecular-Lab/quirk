@@ -11,7 +11,7 @@ import type { VaultRepository } from "../repository/postgres/vault.repository"
 // Simple logger for service layer
 const Logger = {
 	info: (msg: string, meta?: any) => {
-		console.log(`[RevenueService] ${msg}`, meta || "")
+
 	},
 	error: (msg: string, meta?: any) => {
 		console.error(`[RevenueService] ${msg}`, meta || "")
@@ -304,7 +304,7 @@ export class RevenueService {
 	}> {
 		try {
 			// TODO: Update queries to filter by environment when provided
-			console.log(`[RevenueService] getDashboardRevenueSummary - environment filter: ${environment || "all"}`)
+
 			const [revenue, revenueSummary] = await Promise.all([
 				this.getTotalRevenue(clientId),
 				this.deps.clientRepository.getRevenueSummary(clientId),

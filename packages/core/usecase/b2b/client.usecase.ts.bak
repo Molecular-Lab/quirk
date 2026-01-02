@@ -1188,6 +1188,12 @@ export class B2BClientUseCase {
 				}
 			}
 
+			console.log("[B2BClientUseCase] Calculated expected APY from strategies:", {
+				strategies: parsedStrategies.map((s) => `${s.protocol}: ${s.percentage || s.allocation}%`),
+				protocolAPYs,
+				weightedAPY: weightedAPY.toFixed(2),
+				totalAllocation,
+			})
 
 			return totalAllocation > 0 ? weightedAPY.toFixed(2) : "0.00"
 		} catch (error) {

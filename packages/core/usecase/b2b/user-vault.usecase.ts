@@ -30,7 +30,6 @@ export class B2BUserVaultUseCase {
 	 * Returns balance with index-based yield calculation
 	 */
 	async getUserBalance(userId: string, clientId: string, environment: "sandbox" | "production" = "sandbox"): Promise<UserBalanceResponse | null> {
-		console.log("[getUserBalance] Starting balance query:", { userId, clientId, environment })
 
 		// Get end_user record - try by UUID first, then by client_user_id
 		let endUser = null
@@ -41,35 +40,32 @@ export class B2BUserVaultUseCase {
 		if (isUuid) {
 			try {
 				endUser = await this.userRepository.getById(userId)
-				console.log("[getUserBalance] Lookup by UUID result:", { found: !!endUser, endUserId: endUser?.id })
+
 			} catch (error) {
 				// UUID lookup failed (invalid UUID format), will try clientUserId lookup
-				console.log("[getUserBalance] UUID lookup failed, trying clientUserId lookup")
+
 			}
 		}
 
 		// If not found by UUID, try by client_user_id
 		if (!endUser) {
 			endUser = await this.userRepository.getByClientAndUserId(clientId, userId)
-			console.log("[getUserBalance] Lookup by clientId+userId result:", { found: !!endUser, endUserId: endUser?.id })
+
 		}
 
 		if (!endUser) {
-			console.log("[getUserBalance] ❌ End user not found")
+
 			return null
 		}
 
 		// Verify user belongs to this client
 		if (endUser.clientId !== clientId) {
-			console.log("[getUserBalance] ❌ Client mismatch:", { endUserClientId: endUser.clientId, requestedClientId: clientId })
+
 			return null
 		}
 
-		console.log("[getUserBalance] ✅ End user found:", { endUserId: endUser.id, userId: endUser.userId, clientId: endUser.clientId })
-
 		// Get vault for specific environment
 		const vault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, clientId, environment)
-		console.log("[getUserBalance] Vault query result:", { found: !!vault, vaultId: vault?.id, environment })
 
 		// ✅ Return zero balance for users with no deposits yet (user exists but no vault)
 		if (!vault) {

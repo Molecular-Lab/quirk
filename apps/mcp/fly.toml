@@ -32,25 +32,30 @@ primary_region = "sjc"  # San Jose, California - change to your preferred region
     port = 443
     handlers = ["tls", "http"]
 
-  # Health checks
+  # Health checks - Production-grade configuration
   [services.concurrency]
     type = "connections"
     hard_limit = 50
     soft_limit = 40
 
+  # TCP health check - Fast, lightweight connection test
   [[services.tcp_checks]]
-    interval = "15s"
-    timeout = "2s"
-    grace_period = "10s"
+    interval = "15s"        # Check every 15 seconds
+    timeout = "2s"          # Fail if no response in 2s
+    grace_period = "30s"    # Wait 30s after deployment before checking
 
+  # HTTP health check - Application-level health verification
   [[services.http_checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
+    interval = "15s"        # Check every 15 seconds
+    timeout = "3s"          # Fail if no response in 3s
+    grace_period = "30s"    # Wait 30s after deployment before checking
+    restart_limit = 0       # Don't auto-restart (let Fly.io handle it)
     method = "GET"
     path = "/health"
     protocol = "http"
     tls_skip_verify = false
+    [services.http_checks.headers]
+      User-Agent = "Fly-Health-Check"
 
 # VM resources
 [vm]
