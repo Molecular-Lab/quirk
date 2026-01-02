@@ -1,0 +1,67 @@
+# Fly.io Configuration for Proxify AI Agent (Python)
+# Learn more: https://fly.io/docs/reference/configuration/
+
+app = "proxify-agent"
+primary_region = "sjc"  # San Jose, California - change to your preferred region
+
+# Build configuration
+[build]
+  dockerfile = "Dockerfile"
+
+# Environment variables (non-secret)
+[env]
+  API_HOST = "0.0.0.0"
+  API_PORT = "8000"
+  # MCP server URL (use Fly.io internal network)
+  MCP_SERVER_URL = "http://proxify-mcp.internal:3000"
+
+# HTTP service configuration
+[[services]]
+  protocol = "tcp"
+  internal_port = 8000
+  processes = ["app"]
+
+  # HTTP checks
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  # Health checks
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 50
+    soft_limit = 40
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "10s"
+
+  [[services.http_checks]]
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
+    tls_skip_verify = false
+
+# VM resources (Python agent needs more memory for AI processing)
+[vm]
+  size = "shared-cpu-1x"
+  memory = "512mb"  # Python + AI models need more RAM
+
+# Auto-scaling
+[scaling]
+  min_machines = 1
+  max_machines = 1  # AI agent doesn't need scaling
+
+# Metrics and monitoring
+[metrics]
+  port = 9091
+  path = "/metrics"
