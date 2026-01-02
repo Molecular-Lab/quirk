@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "corepack enable && corepack prepare pnpm@10.27.0 --activate && pnpm install --frozen-lockfile && cd apps/whitelabel-web && pnpm build && cd ../.. && pwd && ls -la apps/whitelabel-web/dist",
+  "buildCommand": "corepack enable && corepack prepare pnpm@10.27.0 --activate && pnpm install --frozen-lockfile && pwd && ls -la && cd apps/whitelabel-web && pnpm build && cd ../.. && pwd && ls -la apps/whitelabel-web/dist",
   "installCommand": null,
   "outputDirectory": "apps/whitelabel-web/dist",
   "framework": null,
