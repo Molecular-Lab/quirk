@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "pnpm turbo build --filter=@quirk/whitelabel-web",
   "outputDirectory": "apps/whitelabel-web/dist",
-  "installCommand": "corepack enable pnpm && corepack prepare pnpm@8.15.0 --activate && pnpm install",
+  "installCommand": "corepack enable pnpm && corepack prepare pnpm@10.9.0 --activate && pnpm install",
   "framework": "vite"
 }
