@@ -12,7 +12,7 @@
 *.so
 *.dylib
 bin/
-dist/
+# dist/  # Commented out - committing whitelabel-web/dist for Vercel
 
 # Go test files
 *.test
@@ -46,7 +46,7 @@ yarn-error.log*
 .yarn/install-state.gz
 
 # Build outputs
-dist/
+# dist/  # Commented out - committing whitelabel-web/dist for Vercel
 build/
 .next/
 .turbo/
