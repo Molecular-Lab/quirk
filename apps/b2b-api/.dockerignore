@@ -1,0 +1,44 @@
+# Node modules
+node_modules
+**/node_modules
+
+# Build outputs
+dist
+**/dist
+build
+.next
+.turbo
+
+# Development files
+*.md
+.git
+.gitignore
+.env*
+!.env.example
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Logs
+*.log
+logs
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test files
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__
+coverage
+
+# Docs
+docs
+*.md
+!README.md

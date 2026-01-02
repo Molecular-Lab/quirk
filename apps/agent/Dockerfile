@@ -16,14 +16,14 @@ WORKDIR /app
 
 
 # Install the project's dependencies using the lockfile and settings
-COPY pyproject.toml uv.lock ./
+COPY apps/agent/pyproject.toml apps/agent/uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
 
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
-COPY src ./src
+COPY apps/agent/src ./src
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 

@@ -18,6 +18,11 @@ WORKDIR /app
 # Install turbo globally
 RUN pnpm add -g turbo
 
+# Copy workspace configuration first
+COPY pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY package.json ./package.json
+COPY turbo.json ./turbo.json
+
 # Copy entire monorepo
 COPY . .
 
@@ -64,9 +69,8 @@ RUN sqlc generate
 # Build the application
 RUN pnpm turbo run build --filter=@quirk/b2b-api-service...
 
-# Prune dev dependencies
-ENV CI=true
-RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm prune --prod
+# Don't prune - keep all dependencies for monorepo to work correctly
+# The pnpm prune command doesn't work well with workspace dependencies
 
 ############################
 # STEP 3: Production image
