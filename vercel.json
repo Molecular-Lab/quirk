@@ -3,5 +3,6 @@
   "framework": null,
   "buildCommand": "pnpm install --frozen-lockfile && pnpm --filter @quirk/whitelabel-web build",
   "installCommand": "corepack enable && corepack prepare pnpm@10.27.0 --activate",
-  "outputDirectory": "apps/whitelabel-web/dist"
+  "outputDirectory": "apps/whitelabel-web/dist",
+  "devCommand": "pnpm --filter @quirk/whitelabel-web dev"
 }
