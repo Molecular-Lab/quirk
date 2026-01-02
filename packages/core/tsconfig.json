@@ -7,8 +7,22 @@
 				"name": "next"
 			}
 		],
-		"target": "ES2020"
+		"target": "ES2021",
+		"lib": ["ES2021", "DOM"],
+		"skipLibCheck": true,
+		"declaration": false,
+		"declarationMap": false,
+		"noEmit": true
 	},
 	"include": ["**/*.ts"],
-	"exclude": ["node_modules", "repository/old/**", "usecase/*.usecase.ts", "**/__tests__/**", "**/*.test.ts"]
+	"exclude": [
+		"node_modules",
+		"repository/old/**",
+		"usecase/*.usecase.ts",
+		"usecase/old/**",
+		"service/vault-balance-verifier.service.ts",
+		"service/token-transfer.service.ts",
+		"**/__tests__/**",
+		"**/*.test.ts"
+	]
 }

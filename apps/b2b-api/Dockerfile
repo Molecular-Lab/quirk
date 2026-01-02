@@ -22,7 +22,7 @@ RUN pnpm add -g turbo
 COPY . .
 
 # Prune the monorepo to get only b2b-api dependencies
-RUN turbo prune --scope=@proxify/b2b-api-service --docker
+RUN turbo prune --scope=@quirk/b2b-api-service --docker
 
 ############################
 # STEP 2: Build the application
@@ -62,7 +62,7 @@ COPY sqlc.yaml ./sqlc.yaml
 RUN sqlc generate
 
 # Build the application
-RUN pnpm turbo run build --filter=@proxify/b2b-api-service...
+RUN pnpm turbo run build --filter=@quirk/b2b-api-service...
 
 # Prune dev dependencies
 ENV CI=true
