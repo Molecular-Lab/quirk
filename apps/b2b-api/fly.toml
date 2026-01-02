@@ -1,12 +1,15 @@
 # Fly.io Configuration for Proxify B2B API
 # Learn more: https://fly.io/docs/reference/configuration/
 
-app = "proxify-b2b-api"
+app = "quirk-b2b-api"
 primary_region = "sjc"  # San Jose, California - change to your preferred region
 
 # Build configuration
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = "apps/b2b-api/Dockerfile"
+  # IMPORTANT: This Dockerfile must be run from the repository root
+  # When deploying, use: flyctl deploy from the repository root
+  # Or specify: flyctl deploy --config apps/b2b-api/fly.toml
 
 # Environment variables (non-secret)
 [env]

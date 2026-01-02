@@ -1,7 +1,7 @@
-# Fly.io Configuration for Proxify MCP Server (Model Context Protocol)
+# Fly.io Configuration for Quirk MCP Server (Model Context Protocol)
 # Learn more: https://fly.io/docs/reference/configuration/
 
-app = "proxify-mcp"
+app = "quirk-mcp"
 primary_region = "sjc"  # San Jose, California - change to your preferred region
 
 # Build configuration (requires monorepo context)

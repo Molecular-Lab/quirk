@@ -1,7 +1,7 @@
-# Fly.io Configuration for Proxify AI Agent (Python)
+# Fly.io Configuration for Quirk AI Agent (Python)
 # Learn more: https://fly.io/docs/reference/configuration/
 
-app = "proxify-agent"
+app = "quirk-agent"
 primary_region = "sjc"  # San Jose, California - change to your preferred region
 
 # Build configuration
@@ -13,7 +13,7 @@ primary_region = "sjc"  # San Jose, California - change to your preferred region
   API_HOST = "0.0.0.0"
   API_PORT = "8000"
   # MCP server URL (use Fly.io internal network)
-  MCP_SERVER_URL = "http://proxify-mcp.internal:3000"
+  MCP_SERVER_URL = "http://quirk-mcp.internal:3000"
 
 # HTTP service configuration
 [[services]]
