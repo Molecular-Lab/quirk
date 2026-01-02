@@ -89,10 +89,19 @@ RUN addgroup -g 1001 -S nodejs && \
 ENV NODE_ENV=production
 ENV PORT=8080
 
+# Copy root package files for workspace resolution
+COPY --from=builder --chown=nodejs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nodejs:nodejs /app/pnpm-workspace.yaml ./pnpm-workspace.yaml
+
 # Copy built application
 COPY --from=builder --chown=nodejs:nodejs /app/apps/b2b-api/package.json ./apps/b2b-api/package.json
 COPY --from=builder --chown=nodejs:nodejs /app/apps/b2b-api/dist ./apps/b2b-api/dist
+
+# Copy all node_modules (root + app-specific if exists)
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nodejs:nodejs /app/apps/b2b-api/node_modules ./apps/b2b-api/node_modules 2>/dev/null || true
+
+# Copy workspace packages
 COPY --from=builder --chown=nodejs:nodejs /app/packages ./packages
 
 # Switch to non-root user
