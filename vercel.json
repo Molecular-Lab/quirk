@@ -1,5 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": null,
-  "outputDirectory": "apps/whitelabel-web/dist"
+  "framework": "vite",
+  "installCommand": "corepack enable && pnpm install",
+  "buildCommand": "pnpm turbo run build --filter=@quirk/whitelabel-web...",
+  "outputDirectory": "apps/whitelabel-web/dist",
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
