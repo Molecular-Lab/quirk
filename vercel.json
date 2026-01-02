@@ -1,7 +1,40 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+<<<<<<< HEAD
   "buildCommand": "corepack enable && corepack prepare pnpm@10.27.0 --activate && pnpm install --frozen-lockfile && pnpm --filter @quirk/whitelabel-web build && mv apps/whitelabel-web/dist dist",
   "installCommand": null,
   "outputDirectory": "dist",
   "framework": null
 }
+=======
+  "buildCommand": "pnpm turbo build --filter=@proxify/whitelabel-web",
+  "installCommand": "pnpm install",
+  "outputDirectory": "apps/whitelabel-web/dist",
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://quirk-b2b-api.fly.dev/api/:path*"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        }
+      ]
+    }
+  ]
+}
+>>>>>>> a90e16e (chore: fix vercel build)
