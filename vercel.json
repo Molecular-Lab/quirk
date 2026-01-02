@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": null,
+  "buildCommand": "echo 'Using pre-built dist'",
+  "installCommand": "echo 'Skipping install - using pre-built files'",
   "outputDirectory": "apps/whitelabel-web/dist"
 }
