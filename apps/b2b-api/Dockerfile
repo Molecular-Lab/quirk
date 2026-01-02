@@ -145,5 +145,5 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 # Use dumb-init to handle signals properly
 ENTRYPOINT ["dumb-init", "--"]
 
-# Start the application
-CMD ["node", "apps/b2b-api/dist/server.js"]
+# Start the application with tsx to support importing raw TS files from @quirk/core
+CMD ["npx", "tsx", "apps/b2b-api/dist/server.js"]
