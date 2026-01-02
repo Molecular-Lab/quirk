@@ -966,17 +966,16 @@ export function createDepositRouter(
 				return {
 					status: 401 as const,
 					body: {
-						deposits: [],
-						summary: [],
+						error: "Authentication required",
 					},
 				};
 			} catch (error) {
 				logger.error("Failed to list pending deposit orders", { error });
 				return {
-					status: 200 as const,
+					status: 500 as const,
 					body: {
-						deposits: [],
-						summary: [],
+						error: "Failed to list pending deposits",
+						details: error instanceof Error ? error.message : String(error),
 					},
 				};
 			}
@@ -1024,8 +1023,11 @@ export function createDepositRouter(
 			} catch (error) {
 				logger.error("Failed to list deposits", { error, clientId: params.clientId });
 				return {
-					status: 200 as const,
-					body: [],
+					status: 500 as const,
+					body: {
+						error: "Failed to list client deposits",
+						details: error instanceof Error ? error.message : String(error),
+					},
 				};
 			}
 		},
@@ -1045,8 +1047,11 @@ export function createDepositRouter(
 			} catch (error) {
 				logger.error("Failed to list user deposits", { error, userId: params.userId });
 				return {
-					status: 200 as const,
-					body: [],
+					status: 500 as const,
+					body: {
+						error: "Failed to list user deposits",
+						details: error instanceof Error ? error.message : String(error),
+					},
 				};
 			}
 		},

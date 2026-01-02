@@ -110,37 +110,48 @@ export function privyAuth(
 				});
 			}
 
-			// Load all products under this Privy organization
-			const products = await clientUseCase.getClientsByPrivyOrgId(privyOrgId);
+			// ⚡ Performance optimization: Only load products when needed
+			// Skip loading for endpoints that handle their own product fetching
+			let products: any[] = [];
 
-			// ✅ Skip product validation for privy-account endpoints and list-clients endpoints
-			// New users won't have products yet when checking/creating privy account
-			// List clients endpoint should return empty array [] if no products
-			if (!isPrivyAccountEndpoint && !isListClientsEndpoint && (!products || products.length === 0)) {
-				logger.warn("[Privy Auth] No products found for organization", {
-					privyOrgId,
-					path: req.path
-				});
-				return res.status(404).json({
-					success: false,
-					error: "No products found for this organization",
-					hint: "Please register a product first before accessing the dashboard.",
-				});
-			}
-
-			if (!isPrivyAccountEndpoint && !isListClientsEndpoint) {
-				logger.info("[Privy Auth] Authentication successful", {
-					privyOrgId,
-					productsCount: products.length,
-					productNames: products.map(p => p.companyName).join(", "),
+			if (isPrivyAccountEndpoint || isListClientsEndpoint) {
+				// These endpoints handle their own data fetching - skip middleware load
+				logger.info("[Privy Auth] Skipping product load for endpoint (handled by router)", {
 					path: req.path,
+					privyOrgId
 				});
 			} else {
-				logger.info("[Privy Auth] Skipping product validation for privy-account/list-clients endpoint", {
-					path: req.path,
-					privyOrgId,
-					productsCount: products?.length || 0
-				});
+				// Load all products under this Privy organization for dashboard endpoints
+				products = await clientUseCase.getClientsByPrivyOrgId(privyOrgId);
+
+				// Validate products exist for dashboard endpoints
+				if (!products || products.length === 0) {
+					logger.warn("[Privy Auth] No products found for organization", {
+						privyOrgId,
+						path: req.path
+					});
+					// For root path ("/"), allow access with empty products array
+					// Users will see "No products" message and can register
+					if (req.path === "/") {
+						logger.info("[Privy Auth] Allowing access to root path with empty products", {
+							privyOrgId,
+							path: req.path
+						});
+					} else {
+						return res.status(404).json({
+							success: false,
+							error: "No products found for this organization",
+							hint: "Please register a product first before accessing the dashboard.",
+						});
+					}
+				} else {
+					logger.info("[Privy Auth] Authentication successful", {
+						privyOrgId,
+						productsCount: products.length,
+						productNames: products.map(p => p.companyName).join(", "),
+						path: req.path,
+					});
+				}
 			}
 
 			// Attach Privy session info to request for downstream use

@@ -198,28 +198,9 @@ export const createClientRouter = (
 
 				logger.info("Found clients", { count: clients.length, privyOrganizationId: params.privyOrganizationId });
 
-				// 🔍 DEBUG: Log raw client data from database
-				if (clients.length > 0) {
-					clients.forEach((client, index) => {
-						logger.info(`[listByPrivyOrgId] 🔍 RAW CLIENT[${index}] FROM DB:`, {
-							id: client.id,
-							productId: client.productId,
-							companyName: client.companyName,
-							sandboxApiKeyPrefix: client.sandboxApiKeyPrefix,
-							productionApiKeyPrefix: client.productionApiKeyPrefix,
-							hasSandboxPrefix: !!client.sandboxApiKeyPrefix,
-							hasProductionPrefix: !!client.productionApiKeyPrefix,
-							prefixType: {
-								sandbox: typeof client.sandboxApiKeyPrefix,
-								production: typeof client.productionApiKeyPrefix,
-							},
-							allKeys: Object.keys(client),
-						});
-					});
-				}
-
-				// Map to ClientDto array
-				const mappedClients = clients.map(client => ({
+				// ✅ Return empty array instead of 404 when no clients exist yet
+				// This allows new users to see the registration page
+				const mappedClients = (clients || []).map(client => ({
 					id: client.id,
 					productId: client.productId,
 					companyName: client.companyName,
@@ -239,19 +220,6 @@ export const createClientRouter = (
 					updatedAt: client.updatedAt.toISOString(),
 				}));
 
-				// 🔍 DEBUG: Log mapped response
-				if (mappedClients.length > 0) {
-					mappedClients.forEach((mappedClient, index) => {
-						logger.info(`[listByPrivyOrgId] 🔍 MAPPED RESPONSE[${index}]:`, {
-							productId: mappedClient.productId,
-							companyName: mappedClient.companyName,
-							sandboxApiKeyPrefix: mappedClient.sandboxApiKeyPrefix,
-							productionApiKeyPrefix: mappedClient.productionApiKeyPrefix,
-							fullMappedClient: mappedClient,
-						});
-					});
-				}
-
 				return {
 					status: 200 as const,
 					body: mappedClients,
@@ -262,12 +230,11 @@ export const createClientRouter = (
 					params,
 					stack: error.stack
 				});
+				// ✅ Return empty array on error instead of throwing 500
+				// This provides better UX for new users
 				return {
-					status: 500 as const,
-					body: {
-						success: false,
-						error: error.message || "Failed to list clients",
-					},
+					status: 200 as const,
+					body: [],
 				};
 			}
 		},

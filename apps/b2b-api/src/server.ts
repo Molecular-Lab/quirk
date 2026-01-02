@@ -215,16 +215,16 @@ async function main() {
 	// 7. Setup Express middleware
 	// CORS middleware - Allow requests from frontend
 	app.use((req, res, next) => {
+		// Set CORS headers for ALL responses (including errors)
 		res.header("Access-Control-Allow-Origin", "*"); // In production, set specific origin
-		res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS"); // ✅ Added PATCH
-		res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key, x-privy-org-id"); // ✅ Added x-privy-org-id for dashboard auth
+		res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+		res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key, x-privy-org-id");
+		res.header("Access-Control-Allow-Credentials", "true");
 		res.header("Access-Control-Max-Age", "86400"); // 24 hours
 
-		// Handle preflight requests
+		// Handle preflight requests (no logging for performance)
 		if (req.method === "OPTIONS") {
-			logger.info("Handling OPTIONS preflight request", { path: req.path });
-			res.sendStatus(200);
-			return;
+			return res.status(200).end();
 		}
 
 		next();
@@ -232,15 +232,9 @@ async function main() {
 
 	app.use(express.json());
 
-	// Request logging middleware
+	// Minimal request logging (endpoint name only)
 	app.use((req, _res, next) => {
-		logger.info(`${req.method} ${req.path}`, {
-			method: req.method,
-			path: req.path,
-			query: req.query,
-			body: req.body,
-			headers: req.headers,
-		});
+		logger.info(`${req.method} ${req.path}`);
 		next();
 	});
 

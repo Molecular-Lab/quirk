@@ -271,15 +271,16 @@ export function createWithdrawalRouter(
 				return {
 					status: 401 as const,
 					body: {
-						withdrawals: [],
+						error: "Authentication required",
 					},
 				};
 			} catch (error) {
 				logger.error("Failed to list pending withdrawals", { error });
 				return {
-					status: 200 as const,
+					status: 500 as const,
 					body: {
-						withdrawals: [],
+						error: "Failed to list pending withdrawals",
+						details: error instanceof Error ? error.message : String(error),
 					},
 				};
 			}
@@ -350,8 +351,11 @@ export function createWithdrawalRouter(
 			} catch (error) {
 				logger.error("Failed to list withdrawals", { error, clientId: params.clientId });
 				return {
-					status: 200 as const,
-					body: [],
+					status: 500 as const,
+					body: {
+						error: "Failed to list client withdrawals",
+						details: error instanceof Error ? error.message : String(error),
+					},
 				};
 			}
 		},
@@ -384,8 +388,11 @@ export function createWithdrawalRouter(
 			} catch (error) {
 				logger.error("Failed to list user withdrawals", { error, userId: params.userId });
 				return {
-					status: 200 as const,
-					body: [],
+					status: 500 as const,
+					body: {
+						error: "Failed to list user withdrawals",
+						details: error instanceof Error ? error.message : String(error),
+					},
 				};
 			}
 		},

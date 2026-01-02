@@ -78,8 +78,11 @@ export const createVaultRouter = (
 			} catch (error: any) {
 				logger.error("Error listing client vaults", { error: error.message, params });
 				return {
-					status: 200 as const,
-					body: [],
+					status: 500 as const,
+					body: {
+						error: "Failed to list vaults",
+						details: error instanceof Error ? error.message : String(error),
+					},
 				};
 			}
 		},
@@ -220,8 +223,11 @@ export const createVaultRouter = (
 			} catch (error: any) {
 				logger.error("Error getting vaults ready for staking", { error: error.message });
 				return {
-					status: 200 as const,
-					body: [],
+					status: 500 as const,
+					body: {
+						error: "Failed to list vaults ready for staking",
+						details: error instanceof Error ? error.message : String(error),
+					},
 				};
 			}
 		},
