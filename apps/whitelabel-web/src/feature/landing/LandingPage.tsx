@@ -8,10 +8,14 @@ import { listOrganizationsByPrivyId } from "@/api/b2bClientHelpers"
 import quirkLogo from "@/assets/quirk-logo.svg"
 
 import { BusinessTypesSection } from "./BusinessTypesSection"
+import { CTASection } from "./CTASection"
 import { CustomizeEarnSection } from "./CustomizeEarnSection"
 import { FAQSection } from "./FAQSection"
+import { FeaturesGridSection } from "./FeaturesGridSection"
 import { HowItWorksSection } from "./HowItWorksSection"
+import { MarqueeSection } from "./MarqueeSection"
 import { NewHeroSection } from "./NewHeroSection"
+import { PartnersSection } from "./PartnersSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
 import { TradingStrategiesSection } from "./TradingStrategiesSection"
 
@@ -156,6 +160,12 @@ export function LandingPage() {
 			{/* Hero */}
 			<NewHeroSection />
 
+			{/* Features Grid - Bento style */}
+			<FeaturesGridSection />
+
+			{/* Marquee - Why Quirk */}
+			<MarqueeSection />
+
 			{/* Customize Earn Solution */}
 			<CustomizeEarnSection />
 
@@ -168,11 +178,17 @@ export function LandingPage() {
 			{/* Business Types - Stripe-style showcase */}
 			<BusinessTypesSection />
 
+			{/* Partners & Protocols */}
+			<PartnersSection />
+
 			{/* Supported Assets */}
 			<SupportedAssetsSection />
 
 			{/* FAQ Section */}
 			<FAQSection />
+
+			{/* CTA Section */}
+			<CTASection />
 
 			{/* Footer */}
 			<AnimatedFooter />
