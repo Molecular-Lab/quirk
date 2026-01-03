@@ -68,51 +68,53 @@ const ServiceCard = ({ service, index, progress }: ServiceCardProps) => {
 	return (
 		<motion.div
 			style={{ opacity }}
-			className="absolute inset-0 flex flex-col items-center justify-center"
+			className="absolute inset-0 flex items-center justify-center p-4"
 		>
-			{/* Header - shows on all cards */}
-			<div className="text-center mb-8">
-				<h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-2">
-					Explore Our Services
-				</h2>
-				<p className="text-lg text-gray-600">
-					Everything you need to embed yield infrastructure into your platform.
-				</p>
-			</div>
+			{/* Full Card Container - 90vw x 90vh */}
+			<div
+				className="bg-gray-50 rounded-3xl p-8 lg:p-12 flex flex-col"
+				style={{ width: "90vw", height: "90vh", maxWidth: "90vw", maxHeight: "90vh" }}
+			>
+				{/* Header inside card */}
+				<div className="text-center mb-8 lg:mb-12">
+					<h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-2">
+						Explore Our Services
+					</h2>
+					<p className="text-base lg:text-lg text-gray-600">
+						Everything you need to embed yield infrastructure into your platform.
+					</p>
+				</div>
 
-			{/* Card */}
-			<div className="w-full px-4 lg:px-8" style={{ maxWidth: "90vw" }}>
-				<div className="bg-gray-50 rounded-3xl p-8 lg:p-14">
-					<div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
-						{/* Icon */}
-						<div className="flex-shrink-0">
-							<div className="w-20 h-20 lg:w-28 lg:h-28 bg-white rounded-3xl flex items-center justify-center shadow-sm">
-								<Icon
-									className="w-10 h-10 lg:w-14 lg:h-14 text-gray-800"
-									strokeWidth={1.5}
-								/>
-							</div>
+				{/* Card Content - fills remaining space */}
+				<div className="flex-1 flex flex-col lg:flex-row gap-6 lg:gap-12 items-center justify-center">
+					{/* Icon */}
+					<div className="flex-shrink-0">
+						<div className="w-24 h-24 lg:w-32 lg:h-32 bg-white rounded-3xl flex items-center justify-center shadow-sm">
+							<Icon
+								className="w-12 h-12 lg:w-16 lg:h-16 text-gray-800"
+								strokeWidth={1.5}
+							/>
 						</div>
+					</div>
 
-						{/* Content */}
-						<div className="flex-1 text-center lg:text-left">
-							<span className="text-sm font-medium text-gray-500 uppercase tracking-wider">
-								{service.subtitle}
-							</span>
-							<h3 className="text-2xl lg:text-4xl font-bold text-gray-900 mt-2 mb-4">
-								{service.title}
-							</h3>
-							<p className="text-gray-600 text-base lg:text-lg leading-relaxed max-w-2xl">
-								{service.description}
-							</p>
-						</div>
+					{/* Content */}
+					<div className="flex-1 text-center lg:text-left max-w-2xl">
+						<span className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+							{service.subtitle}
+						</span>
+						<h3 className="text-3xl lg:text-5xl font-bold text-gray-900 mt-2 mb-4">
+							{service.title}
+						</h3>
+						<p className="text-gray-600 text-lg lg:text-xl leading-relaxed">
+							{service.description}
+						</p>
+					</div>
 
-						{/* Index number */}
-						<div className="flex-shrink-0">
-							<span className="text-[80px] lg:text-[140px] font-bold text-gray-200 leading-none">
-								{String(index + 1).padStart(2, "0")}
-							</span>
-						</div>
+					{/* Index number */}
+					<div className="flex-shrink-0">
+						<span className="text-[100px] lg:text-[180px] font-bold text-gray-200 leading-none">
+							{String(index + 1).padStart(2, "0")}
+						</span>
 					</div>
 				</div>
 			</div>

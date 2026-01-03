@@ -11,6 +11,7 @@ import { CTASection } from "./CTASection"
 import { FAQSection } from "./FAQSection"
 import { HowItWorksSection } from "./HowItWorksSection"
 import { NewHeroSection } from "./NewHeroSection"
+import { PlatformsCarouselSection } from "./PlatformsCarouselSection"
 import { ServicesShowcaseSection } from "./ServicesShowcaseSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
 import { WhyQuirkSection } from "./WhyQuirkSection"
@@ -164,6 +165,9 @@ export function LandingPage() {
 
 			{/* How It Works */}
 			<HowItWorksSection />
+
+			{/* Platforms - Quirk Everywhere */}
+			<PlatformsCarouselSection />
 
 			{/* Supported Assets */}
 			<SupportedAssetsSection />
