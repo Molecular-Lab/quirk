@@ -122,14 +122,8 @@ export function HowItWorksSection() {
 
 							{/* Right: Two Big Cards with Standalone Numbers */}
 							<div className="flex-1 grid lg:grid-cols-2 gap-4 lg:gap-6 min-h-0">
-								{/* QUIRKLESS Card */}
-								<motion.div
-									className="bg-white rounded-2xl p-6 lg:p-8 border border-gray-200 flex flex-col justify-center items-center text-center overflow-hidden"
-									key={`quirkless-${activeStep}`}
-									initial={{ opacity: 0, y: 20 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{ duration: 0.4 }}
-								>
+								{/* QUIRKLESS Card - Static container */}
+								<div className="bg-white rounded-2xl p-6 lg:p-8 border border-gray-200 flex flex-col justify-center items-center text-center overflow-hidden">
 									<p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
 										Quirkless
 									</p>
@@ -138,12 +132,13 @@ export function HowItWorksSection() {
 										{currentData.quirkless.label}
 									</p>
 
+									{/* Only the number animates */}
 									<motion.p
 										className="text-6xl lg:text-8xl xl:text-9xl font-bold text-gray-300 leading-none"
 										key={`quirkless-value-${activeStep}`}
-										initial={{ opacity: 0, scale: 0.8 }}
-										animate={{ opacity: 1, scale: 1 }}
-										transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
 									>
 										{currentData.quirkless.value}
 									</motion.p>
@@ -151,16 +146,10 @@ export function HowItWorksSection() {
 									<p className="text-base text-gray-400 mt-4">
 										{currentData.quirkless.subtext}
 									</p>
-								</motion.div>
+								</div>
 
-								{/* QUIRK Card */}
-								<motion.div
-									className="bg-gray-900 rounded-2xl p-6 lg:p-8 text-white flex flex-col justify-center items-center text-center overflow-hidden"
-									key={`quirk-${activeStep}`}
-									initial={{ opacity: 0, y: 20 }}
-									animate={{ opacity: 1, y: 0 }}
-									transition={{ duration: 0.4, delay: 0.1 }}
-								>
+								{/* QUIRK Card - Static container */}
+								<div className="bg-gray-900 rounded-2xl p-6 lg:p-8 text-white flex flex-col justify-center items-center text-center overflow-hidden">
 									<p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
 										Quirk
 									</p>
@@ -169,14 +158,15 @@ export function HowItWorksSection() {
 										{currentData.quirk.label}
 									</p>
 
+									{/* Only the number animates */}
 									<motion.p
 										className={`text-6xl lg:text-8xl xl:text-9xl font-bold leading-none ${
 											currentData.quirk.highlight ? "text-green-400" : "text-white"
 										}`}
 										key={`quirk-value-${activeStep}`}
-										initial={{ opacity: 0, scale: 0.8 }}
-										animate={{ opacity: 1, scale: 1 }}
-										transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
 									>
 										{currentData.quirk.value}
 									</motion.p>
@@ -184,7 +174,7 @@ export function HowItWorksSection() {
 									<p className="text-base text-gray-500 mt-4">
 										{currentData.quirk.subtext}
 									</p>
-								</motion.div>
+								</div>
 							</div>
 						</div>
 					</div>
