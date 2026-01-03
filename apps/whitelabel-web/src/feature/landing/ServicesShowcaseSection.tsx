@@ -1,11 +1,5 @@
 import { motion, useScroll, useTransform, useInView } from "framer-motion"
-import {
-	Code2,
-	Bot,
-	Shield,
-	FileCheck,
-	ArrowLeftRight,
-} from "lucide-react"
+import { Code2, Bot, Shield, FileCheck, ArrowLeftRight } from "lucide-react"
 import { useRef } from "react"
 
 const services = [
@@ -50,54 +44,33 @@ interface ServiceCardProps {
 	service: (typeof services)[0]
 	index: number
 	progress: any
-	range: [number, number]
-	targetScale: number
 }
 
-const ServiceCard = ({
-	service,
-	index,
-	progress,
-	range,
-	targetScale,
-}: ServiceCardProps) => {
-	const cardRef = useRef(null)
-	const isInView = useInView(cardRef, { once: true, margin: "-50px" })
+const ServiceCard = ({ service, index, progress }: ServiceCardProps) => {
 	const Icon = service.icon
+	const cardCount = services.length
 
-	const scale = useTransform(progress, range, [1, targetScale])
-	const opacity = useTransform(
-		progress,
-		[range[0], range[1], range[1] + 0.1],
-		[1, 1, 0.3]
-	)
+	// Each card fades out completely as the next one comes in
+	const start = index / cardCount
+	const end = (index + 1) / cardCount
+
+	const opacity = useTransform(progress, [start, end - 0.1, end], [1, 1, 0])
+	const scale = useTransform(progress, [start, end], [1, 0.9])
+	const y = useTransform(progress, [start, end], [0, -50])
 
 	return (
-		<div
-			ref={cardRef}
-			className="h-screen flex items-center justify-center sticky top-0"
-			style={{ zIndex: services.length - index }}
+		<motion.div
+			style={{ opacity, scale, y }}
+			className="absolute inset-0 flex items-center justify-center px-6"
 		>
-			<motion.div
-				style={{ scale, opacity }}
-				className="w-full max-w-4xl mx-auto px-6"
-			>
-				<motion.div
-					className="bg-white rounded-3xl p-8 lg:p-12 shadow-lg border border-gray-100"
-					initial={{ y: 100, opacity: 0 }}
-					animate={isInView ? { y: 0, opacity: 1 } : { y: 100, opacity: 0 }}
-					transition={{
-						duration: 0.6,
-						delay: 0.1,
-						ease: [0.22, 1, 0.36, 1],
-					}}
-				>
-					<div className="flex flex-col lg:flex-row gap-8 items-center">
+			<div className="w-full max-w-5xl">
+				<div className="bg-gray-100 rounded-3xl p-10 lg:p-16">
+					<div className="flex flex-col lg:flex-row gap-10 items-center">
 						{/* Icon */}
 						<div className="flex-shrink-0">
-							<div className="w-20 h-20 lg:w-24 lg:h-24 bg-gray-100 rounded-2xl flex items-center justify-center">
+							<div className="w-24 h-24 lg:w-32 lg:h-32 bg-white rounded-3xl flex items-center justify-center shadow-sm">
 								<Icon
-									className="w-10 h-10 lg:w-12 lg:h-12 text-gray-800"
+									className="w-12 h-12 lg:w-16 lg:h-16 text-gray-800"
 									strokeWidth={1.5}
 								/>
 							</div>
@@ -105,27 +78,27 @@ const ServiceCard = ({
 
 						{/* Content */}
 						<div className="flex-1 text-center lg:text-left">
-							<span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+							<span className="text-sm font-medium text-gray-500 uppercase tracking-wider">
 								{service.subtitle}
 							</span>
-							<h3 className="text-2xl lg:text-3xl font-bold text-gray-900 mt-2 mb-4">
+							<h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-5">
 								{service.title}
 							</h3>
-							<p className="text-gray-600 text-lg leading-relaxed max-w-xl">
+							<p className="text-gray-600 text-lg lg:text-xl leading-relaxed max-w-2xl">
 								{service.description}
 							</p>
 						</div>
 
 						{/* Index number */}
-						<div className="flex-shrink-0 hidden lg:block">
-							<span className="text-8xl font-bold text-gray-100">
+						<div className="flex-shrink-0">
+							<span className="text-[120px] lg:text-[160px] font-bold text-gray-200 leading-none">
 								{String(index + 1).padStart(2, "0")}
 							</span>
 						</div>
 					</div>
-				</motion.div>
-			</motion.div>
-		</div>
+				</div>
+			</div>
+		</motion.div>
 	)
 }
 
@@ -140,9 +113,9 @@ export const ServicesShowcaseSection = () => {
 	})
 
 	return (
-		<section ref={containerRef} className="bg-gray-50">
+		<section ref={containerRef} className="bg-white">
 			{/* Section Header */}
-			<div className="py-24 lg:py-32">
+			<div className="py-20 lg:py-28">
 				<motion.div
 					ref={headerRef}
 					className="max-w-7xl mx-auto px-6 text-center"
@@ -152,34 +125,31 @@ export const ServicesShowcaseSection = () => {
 					}
 					transition={{ duration: 0.6 }}
 				>
-					<h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+					<h2 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
 						Explore Our Services
 					</h2>
-					<p className="text-xl text-gray-600 max-w-2xl mx-auto">
+					<p className="text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto">
 						Everything you need to embed yield infrastructure into your
 						platform.
 					</p>
 				</motion.div>
 			</div>
 
-			{/* Stacked Cards */}
-			<div className="relative" style={{ height: `${services.length * 100}vh` }}>
-				{services.map((service, index) => {
-					const targetScale = 1 - (services.length - index) * 0.05
-					const rangeStart = index / services.length
-					const rangeEnd = (index + 1) / services.length
-
-					return (
+			{/* Stacked Cards Container */}
+			<div
+				className="relative"
+				style={{ height: `${(services.length + 0.5) * 100}vh` }}
+			>
+				<div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+					{services.map((service, index) => (
 						<ServiceCard
 							key={service.title}
 							service={service}
 							index={index}
 							progress={scrollYProgress}
-							range={[rangeStart, rangeEnd]}
-							targetScale={targetScale}
 						/>
-					)
-				})}
+					))}
+				</div>
 			</div>
 		</section>
 	)

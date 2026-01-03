@@ -4,82 +4,13 @@ import {
 	useMotionValue,
 	useTransform,
 	animate,
-	useScroll,
 } from "framer-motion"
-import { useRef, useEffect, useState } from "react"
-import { ArrowRight, TrendingUp, DollarSign, Clock, Zap } from "lucide-react"
-
-const steps = [
-	{
-		number: "01",
-		title: "Connect Your Platform",
-		description: "Integrate Quirk SDK in minutes with our simple API",
-		icon: Zap,
-	},
-	{
-		number: "02",
-		title: "Deposit Idle Funds",
-		description: "Operational float automatically flows into yield strategies",
-		icon: DollarSign,
-	},
-	{
-		number: "03",
-		title: "Earn Yield",
-		description: "Smart agents optimize returns across DeFi protocols",
-		icon: TrendingUp,
-	},
-	{
-		number: "04",
-		title: "Withdraw Anytime",
-		description: "Instant liquidity when your users need their funds",
-		icon: Clock,
-	},
-]
+import { useRef, useEffect } from "react"
+import { ArrowRight, TrendingUp } from "lucide-react"
 
 export function HowItWorksSection() {
 	const ref = useRef(null)
-	const containerRef = useRef<HTMLDivElement>(null)
 	const isInView = useInView(ref, { once: true, amount: 0.15 })
-	const [activeStep, setActiveStep] = useState(0)
-
-	const { scrollYProgress } = useScroll({
-		target: containerRef,
-		offset: ["start center", "end center"],
-	})
-
-	useEffect(() => {
-		const unsubscribe = scrollYProgress.on("change", (value) => {
-			const stepIndex = Math.min(
-				Math.floor(value * steps.length),
-				steps.length - 1
-			)
-			setActiveStep(stepIndex)
-		})
-		return unsubscribe
-	}, [scrollYProgress])
-
-	const containerVariants = {
-		hidden: { opacity: 0 },
-		visible: {
-			opacity: 1,
-			transition: {
-				staggerChildren: 0.1,
-				delayChildren: 0.2,
-			},
-		},
-	}
-
-	const titleVariants = {
-		hidden: { opacity: 0, y: 30 },
-		visible: {
-			opacity: 1,
-			y: 0,
-			transition: {
-				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1],
-			},
-		},
-	}
 
 	const AnimatedNumber = ({
 		value,
@@ -120,8 +51,8 @@ export function HowItWorksSection() {
 
 		return (
 			<motion.span
-				initial={{ opacity: 0, scale: 0.5 }}
-				animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
+				initial={{ opacity: 0 }}
+				animate={isInView ? { opacity: 1 } : { opacity: 0 }}
 				transition={{ delay, duration: 0.5 }}
 			>
 				{prefix}
@@ -132,192 +63,174 @@ export function HowItWorksSection() {
 	}
 
 	return (
-		<section className="py-24 lg:py-32 bg-white overflow-hidden">
+		<section className="py-32 lg:py-40 bg-gray-50 overflow-hidden">
 			<motion.div
 				ref={ref}
-				variants={containerVariants}
-				initial="hidden"
-				animate={isInView ? "visible" : "hidden"}
+				initial={{ opacity: 0 }}
+				animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+				transition={{ duration: 0.6 }}
 				className="max-w-7xl mx-auto px-6"
 			>
 				{/* Header */}
-				<motion.div className="text-center mb-20" variants={titleVariants}>
-					<h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+				<motion.div
+					className="text-center mb-24"
+					initial={{ opacity: 0, y: 30 }}
+					animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
+					transition={{ duration: 0.6 }}
+				>
+					<h2 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
 						How Quirk Works
 					</h2>
-					<p className="text-xl text-gray-600 max-w-3xl mx-auto">
+					<p className="text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto">
 						Transform idle funds into revenue-generating assets with Quirk's
 						automated yield infrastructure
 					</p>
 				</motion.div>
 
-				{/* Steps */}
-				<div ref={containerRef} className="mb-20">
-					<div className="grid md:grid-cols-4 gap-6">
-						{steps.map((step, index) => {
-							const Icon = step.icon
-							const isActive = index <= activeStep
-
-							return (
-								<motion.div
-									key={step.number}
-									className={`relative bg-gray-50 rounded-2xl p-6 border-2 transition-all duration-500 ${
-										isActive
-											? "border-gray-900 bg-white shadow-lg"
-											: "border-gray-100"
-									}`}
-									initial={{ opacity: 0, y: 30 }}
-									animate={
-										isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }
-									}
-									transition={{ delay: 0.2 + index * 0.1, duration: 0.5 }}
-									whileHover={{ y: -4 }}
-								>
-									{/* Step Number */}
-									<span
-										className={`text-sm font-bold transition-colors duration-300 ${
-											isActive ? "text-gray-900" : "text-gray-300"
-										}`}
-									>
-										{step.number}
-									</span>
-
-									{/* Icon */}
-									<div
-										className={`w-12 h-12 rounded-xl flex items-center justify-center mt-4 mb-4 transition-all duration-300 ${
-											isActive ? "bg-gray-900" : "bg-gray-200"
-										}`}
-									>
-										<Icon
-											className={`w-6 h-6 transition-colors duration-300 ${
-												isActive ? "text-white" : "text-gray-500"
-											}`}
-										/>
-									</div>
-
-									{/* Content */}
-									<h3
-										className={`text-lg font-semibold mb-2 transition-colors duration-300 ${
-											isActive ? "text-gray-900" : "text-gray-500"
-										}`}
-									>
-										{step.title}
-									</h3>
-									<p
-										className={`text-sm transition-colors duration-300 ${
-											isActive ? "text-gray-600" : "text-gray-400"
-										}`}
-									>
-										{step.description}
-									</p>
-
-									{/* Connector Arrow */}
-									{index < steps.length - 1 && (
-										<div className="hidden md:block absolute -right-3 top-1/2 -translate-y-1/2 z-10">
-											<ArrowRight
-												className={`w-6 h-6 transition-colors duration-300 ${
-													isActive ? "text-gray-900" : "text-gray-300"
-												}`}
-											/>
-										</div>
-									)}
-								</motion.div>
-							)
-						})}
+				{/* Big Number Display */}
+				<motion.div
+					className="text-center mb-24"
+					initial={{ opacity: 0, scale: 0.9 }}
+					animate={
+						isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.9 }
+					}
+					transition={{ duration: 0.7, delay: 0.2 }}
+				>
+					<p className="text-lg text-gray-500 mb-4 uppercase tracking-wider">
+						Your Operational Float
+					</p>
+					<div className="text-[100px] lg:text-[150px] font-bold text-gray-900 leading-none">
+						$<AnimatedNumber value={50} delay={0.3} />M
 					</div>
-				</div>
+					<p className="text-xl text-gray-500 mt-4">
+						sitting idle, earning nothing
+					</p>
+				</motion.div>
 
-				{/* Before/After Comparison */}
-				<div className="grid lg:grid-cols-2 gap-8">
-					{/* Before */}
+				{/* Arrow */}
+				<motion.div
+					className="flex justify-center mb-24"
+					initial={{ opacity: 0, y: -20 }}
+					animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+					transition={{ duration: 0.5, delay: 0.5 }}
+				>
 					<motion.div
-						className="bg-gray-50 rounded-2xl p-8 border border-gray-100"
+						animate={{ y: [0, 10, 0] }}
+						transition={{ duration: 1.5, repeat: Infinity }}
+						className="w-16 h-16 bg-gray-900 rounded-full flex items-center justify-center"
+					>
+						<ArrowRight className="w-8 h-8 text-white rotate-90" />
+					</motion.div>
+				</motion.div>
+
+				{/* Result Cards */}
+				<div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+					{/* Without Quirk */}
+					<motion.div
+						className="bg-white rounded-3xl p-10 lg:p-14 border border-gray-200"
 						initial={{ opacity: 0, x: -30 }}
 						animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
-						transition={{ delay: 0.5, duration: 0.6 }}
+						transition={{ delay: 0.6, duration: 0.6 }}
 					>
-						<div className="text-center mb-8">
-							<span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+						<div className="mb-10">
+							<span className="text-sm font-medium text-gray-500 uppercase tracking-wider">
 								Without Quirk
 							</span>
-							<h3 className="text-2xl font-bold text-gray-900 mt-2">Before</h3>
+							<h3 className="text-3xl font-bold text-gray-900 mt-2">Before</h3>
 						</div>
 
-						<div className="space-y-4">
-							<div className="flex items-center justify-between py-3 border-b border-gray-200">
-								<span className="text-gray-600">Operational Float</span>
-								<span className="font-semibold text-gray-900">$50M</span>
+						<div className="space-y-6 mb-10">
+							<div className="flex items-center justify-between py-4 border-b border-gray-100">
+								<span className="text-lg text-gray-600">
+									Operational Float
+								</span>
+								<span className="text-xl font-semibold text-gray-900">
+									$50M
+								</span>
 							</div>
-							<div className="flex items-center justify-between py-3 border-b border-gray-200">
-								<span className="text-gray-600">Idle Period</span>
-								<span className="font-semibold text-gray-900">14 days</span>
+							<div className="flex items-center justify-between py-4 border-b border-gray-100">
+								<span className="text-lg text-gray-600">Idle Period</span>
+								<span className="text-xl font-semibold text-gray-900">
+									14 days
+								</span>
 							</div>
-							<div className="flex items-center justify-between py-3 border-b border-gray-200">
-								<span className="text-gray-600">Annual Yield</span>
-								<span className="font-semibold text-gray-400">0%</span>
+							<div className="flex items-center justify-between py-4">
+								<span className="text-lg text-gray-600">Annual Yield</span>
+								<span className="text-xl font-semibold text-gray-400">0%</span>
 							</div>
 						</div>
 
-						<div className="mt-8 pt-6 border-t border-gray-200 text-center">
-							<p className="text-sm text-gray-500 mb-2">Platform Revenue</p>
-							<p className="text-4xl font-bold text-gray-400">
-								$<AnimatedNumber value={0} suffix="/year" delay={0.8} />
+						<div className="pt-8 border-t border-gray-100 text-center">
+							<p className="text-sm text-gray-500 mb-3 uppercase tracking-wide">
+								Annual Revenue
+							</p>
+							<p className="text-6xl lg:text-7xl font-bold text-gray-300">
+								$0
 							</p>
 						</div>
 					</motion.div>
 
-					{/* After */}
+					{/* With Quirk */}
 					<motion.div
-						className="bg-white rounded-2xl p-8 border-2 border-gray-900 shadow-xl"
+						className="bg-gray-900 rounded-3xl p-10 lg:p-14 text-white"
 						initial={{ opacity: 0, x: 30 }}
 						animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: 30 }}
-						transition={{ delay: 0.6, duration: 0.6 }}
+						transition={{ delay: 0.7, duration: 0.6 }}
 					>
-						<div className="text-center mb-8">
-							<span className="text-sm font-medium text-gray-500 uppercase tracking-wide">
+						<div className="mb-10">
+							<span className="text-sm font-medium text-gray-400 uppercase tracking-wider">
 								With Quirk
 							</span>
-							<h3 className="text-2xl font-bold text-gray-900 mt-2">After</h3>
+							<h3 className="text-3xl font-bold text-white mt-2 flex items-center gap-3">
+								After
+								<TrendingUp className="w-8 h-8 text-green-400" />
+							</h3>
 						</div>
 
-						<div className="space-y-4">
-							<div className="flex items-center justify-between py-3 border-b border-gray-200">
-								<span className="text-gray-600">Operational Float</span>
-								<span className="font-semibold text-gray-900">$50M</span>
+						<div className="space-y-6 mb-10">
+							<div className="flex items-center justify-between py-4 border-b border-gray-700">
+								<span className="text-lg text-gray-300">
+									Operational Float
+								</span>
+								<span className="text-xl font-semibold text-white">$50M</span>
 							</div>
-							<div className="flex items-center justify-between py-3 border-b border-gray-200">
-								<span className="text-gray-600">Yield Strategy</span>
-								<span className="font-semibold text-gray-900">
+							<div className="flex items-center justify-between py-4 border-b border-gray-700">
+								<span className="text-lg text-gray-300">Yield Strategy</span>
+								<span className="text-xl font-semibold text-white">
 									Auto-optimized
 								</span>
 							</div>
-							<div className="flex items-center justify-between py-3 border-b border-gray-200">
-								<span className="text-gray-600">Annual Yield</span>
-								<span className="font-semibold text-gray-900">~5% APY</span>
+							<div className="flex items-center justify-between py-4">
+								<span className="text-lg text-gray-300">Annual Yield</span>
+								<span className="text-xl font-semibold text-green-400">
+									~5% APY
+								</span>
 							</div>
 						</div>
 
-						<div className="mt-8 pt-6 border-t border-gray-200">
-							<div className="text-center mb-4">
-								<p className="text-sm text-gray-500 mb-2">Gross Revenue</p>
-								<p className="text-4xl font-bold text-gray-900">
-									$<AnimatedNumber value={2.5} suffix="M/year" delay={1} decimals={1} />
+						<div className="pt-8 border-t border-gray-700">
+							<div className="text-center mb-8">
+								<p className="text-sm text-gray-400 mb-3 uppercase tracking-wide">
+									Gross Revenue
+								</p>
+								<p className="text-6xl lg:text-7xl font-bold text-white">
+									$<AnimatedNumber value={2.5} suffix="M" delay={1} decimals={1} />
 								</p>
 							</div>
-							<div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-100">
+							<div className="grid grid-cols-2 gap-6 pt-6 border-t border-gray-700">
 								<div className="text-center">
-									<p className="text-xs text-gray-500 mb-1">Your Platform</p>
-									<p className="text-xl font-bold text-gray-900">
+									<p className="text-sm text-gray-400 mb-2">Your Platform</p>
+									<p className="text-3xl font-bold text-white">
 										$<AnimatedNumber value={2.25} suffix="M" delay={1.1} decimals={2} />
 									</p>
-									<p className="text-xs text-gray-400">(90%)</p>
+									<p className="text-sm text-gray-500 mt-1">90% share</p>
 								</div>
 								<div className="text-center">
-									<p className="text-xs text-gray-500 mb-1">Quirk Fee</p>
-									<p className="text-xl font-bold text-gray-500">
+									<p className="text-sm text-gray-400 mb-2">Quirk Fee</p>
+									<p className="text-3xl font-bold text-gray-400">
 										$<AnimatedNumber value={250} suffix="k" delay={1.2} />
 									</p>
-									<p className="text-xs text-gray-400">(10%)</p>
+									<p className="text-sm text-gray-500 mt-1">10% share</p>
 								</div>
 							</div>
 						</div>
