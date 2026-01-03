@@ -6,6 +6,7 @@
 import type { CreateVaultRequest } from "../../dto/b2b"
 import type { AuditRepository } from "../../repository/postgres/audit.repository"
 import type { VaultRepository } from "../../repository/postgres/vault.repository"
+import type { PrivyWalletService } from "../../service/privy-wallet.service"
 import type {
 	GetClientVaultByTokenRow,
 	GetClientVaultRow,
@@ -21,11 +22,15 @@ export class B2BVaultUseCase {
 	constructor(
 		private readonly vaultRepository: VaultRepository,
 		private readonly auditRepository: AuditRepository,
+		private readonly privyWalletService?: PrivyWalletService, // Optional: only needed for production vaults
 	) {}
 
 	/**
 	 * Get or create client vault for a specific chain/token (with environment support)
 	 * Returns existing vault or creates new one with index = 1.0e18
+	 *
+	 * For production vaults: Automatically creates Privy server wallet for custodial signing
+	 * For sandbox vaults: Uses local wallet via ViemClientManager (no Privy wallet needed)
 	 */
 	async getOrCreateVault(request: CreateVaultRequest, environment: "sandbox" | "production" = "sandbox", custodialWalletAddress?: string): Promise<GetClientVaultByTokenRow> {
 		// Check if vault exists for this environment
@@ -33,6 +38,35 @@ export class B2BVaultUseCase {
 
 		if (existing) {
 			return existing
+		}
+
+		// For production vaults, create Privy server wallet for custodial signing
+		let privyWalletId: string | null = null
+		let walletAddress: string | null = custodialWalletAddress || null
+
+		if (environment === "production") {
+			if (!this.privyWalletService) {
+				throw new Error(
+					"PrivyWalletService not configured. Cannot create production vault. " +
+					"Please set PRIVY_APP_ID and PRIVY_APP_SECRET in .env"
+				)
+			}
+
+			try {
+				// Create Privy server wallet
+				const privyWallet = await this.privyWalletService.createServerWallet()
+				privyWalletId = privyWallet.walletId
+				walletAddress = privyWallet.address
+
+				console.log(`✅ Created Privy wallet for production vault`)
+				console.log(`   Wallet ID: ${privyWalletId}`)
+				console.log(`   Address: ${walletAddress}`)
+			} catch (error) {
+				console.error("❌ Failed to create Privy wallet:", error)
+				throw new Error(
+					`Failed to create Privy wallet for production vault: ${error instanceof Error ? error.message : "Unknown error"}`
+				)
+			}
 		}
 
 		// Create new vault with initial index = 1.0e18 for this environment
@@ -47,7 +81,8 @@ export class B2BVaultUseCase {
 			totalStakedBalance: "0",
 			cumulativeYield: "0",
 			environment,
-			custodialWalletAddress: custodialWalletAddress || null,
+			custodialWalletAddress: walletAddress,
+			privyWalletId, // Set for production, null for sandbox
 		})
 
 		if (!vault) {

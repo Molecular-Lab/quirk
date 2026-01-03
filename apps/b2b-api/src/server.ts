@@ -105,7 +105,28 @@ async function main() {
 
 	logger.info("✅ Repositories initialized");
 
-	// 2.5 Initialize Services needed by UseCases
+	// 2.5 Initialize PrivyWalletService BEFORE UseCases (needed for vault creation)
+	let privyWalletService: PrivyWalletService | undefined;
+	const privyAppId = process.env.PRIVY_APP_ID;
+	const privyAppSecret = process.env.PRIVY_APP_SECRET;
+	const privyAuthKeyId = process.env.PRIVY_AUTHORIZATION_KEY_ID;
+
+	if (privyAppId && privyAppSecret) {
+		privyWalletService = new PrivyWalletService(
+			{
+				appId: privyAppId,
+				appSecret: privyAppSecret,
+				authorizationKeyId: privyAuthKeyId,
+			},
+			logger
+		);
+		logger.info("✅ PrivyWalletService initialized for production DeFi execution");
+	} else {
+		logger.info("ℹ️ PrivyWalletService not configured (production execution disabled)");
+		logger.info("   Set PRIVY_APP_ID and PRIVY_APP_SECRET in .env to enable");
+	}
+
+	// 2.6 Initialize Services needed by UseCases
 	const revenueService = new RevenueService({
 		clientRepository,
 		vaultRepository
@@ -119,7 +140,7 @@ async function main() {
 		vaultRepository,
 		revenueService // ✅ Added for revenue tracking
 	);
-	const vaultUseCase = new B2BVaultUseCase(vaultRepository, auditRepository);
+	const vaultUseCase = new B2BVaultUseCase(vaultRepository, auditRepository, privyWalletService); // ✅ Pass PrivyWalletService
 	const userUseCase = new B2BUserUseCase(
 		userRepository,
 		vaultRepository,
@@ -160,27 +181,7 @@ async function main() {
 	const clientService = new ClientService(clientUseCase);
 	const defiProtocolService = new DeFiProtocolService(); // Adapters created per-request with correct chainId
 
-	// Initialize PrivyWalletService if production credentials are available
-	let privyWalletService: PrivyWalletService | undefined;
-	const privyAppId = process.env.PRIVY_APP_ID;
-	const privyAppSecret = process.env.PRIVY_APP_SECRET;
-	const privyAuthKeyId = process.env.PRIVY_AUTHORIZATION_KEY_ID;
-
-	if (privyAppId && privyAppSecret) {
-		privyWalletService = new PrivyWalletService(
-			{
-				appId: privyAppId,
-				appSecret: privyAppSecret,
-				authorizationKeyId: privyAuthKeyId,
-			},
-			logger
-		);
-		logger.info("✅ PrivyWalletService initialized for production DeFi execution");
-	} else {
-		logger.info("ℹ️ PrivyWalletService not configured (production execution disabled)");
-		logger.info("   Set PRIVY_APP_ID and PRIVY_APP_SECRET in .env to enable");
-	}
-
+	// PrivyWalletService already initialized above (needed by vaultUseCase)
 	const defiExecutionService = new DeFiExecutionService(defiProtocolService, privyWalletService, logger);
 	const vaultService = new VaultService(vaultUseCase);
 	const userService = new UserService(userUseCase, clientUseCase); // ✅ Added clientUseCase for productId lookup
@@ -199,6 +200,7 @@ async function main() {
 	const router = createMainRouter(s, {
 		clientService,
 		defiProtocolService,
+		defiExecutionService,
 		vaultService,
 		userService,
 		depositService,
@@ -218,7 +220,7 @@ async function main() {
 		// Set CORS headers for ALL responses (including errors)
 		res.header("Access-Control-Allow-Origin", "*"); // In production, set specific origin
 		res.header("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
-		res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key, x-privy-org-id");
+		res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, x-api-key, x-privy-org-id, x-environment");
 		res.header("Access-Control-Allow-Credentials", "true");
 		res.header("Access-Control-Max-Age", "86400"); // 24 hours
 

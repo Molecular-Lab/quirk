@@ -13,7 +13,8 @@ WHERE id = $1 LIMIT 1;
 -- name: GetClientVaultByToken :one
 SELECT
   cv.*,
-  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
+  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address,
+  cv.privy_wallet_id
 FROM client_vaults cv
 JOIN client_organizations co ON cv.client_id = co.id
 JOIN privy_accounts pa ON co.privy_account_id = pa.id
@@ -27,7 +28,8 @@ LIMIT 1;
 -- Use in transactions to lock the vault row
 SELECT
   cv.*,
-  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
+  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address,
+  cv.privy_wallet_id
 FROM client_vaults cv
 JOIN client_organizations co ON cv.client_id = co.id
 JOIN privy_accounts pa ON co.privy_account_id = pa.id
@@ -63,15 +65,17 @@ WITH new_vault AS (
     total_staked_balance,
     cumulative_yield,
     environment,
-    custodial_wallet_address
+    custodial_wallet_address,
+    privy_wallet_id
   ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
   )
   RETURNING *
 )
 SELECT
   nv.*,
-  COALESCE(nv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
+  COALESCE(nv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address,
+  nv.privy_wallet_id
 FROM new_vault nv
 JOIN client_organizations co ON nv.client_id = co.id
 JOIN privy_accounts pa ON co.privy_account_id = pa.id;

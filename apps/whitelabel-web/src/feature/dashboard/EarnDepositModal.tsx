@@ -15,7 +15,8 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useProducts } from "@/hooks/useProducts"
 import { useDepositExecution, usePrepareDeposit, useGasEstimate } from "@/hooks/defi/useDefiExecution"
-import { useCustodialBalance } from "@/hooks/useCustodialBalance"
+import { useClientWalletBalance } from "@/hooks/useClientWalletBalance"
+import { useEnvironmentStore } from "@/store/environmentStore"
 
 // ============================================================================
 // Types
@@ -26,6 +27,9 @@ interface EarnDepositModalProps {
     onClose: () => void
     onComplete?: () => void
     defaultAmount?: string
+    configuredRiskProfile?: RiskLevel
+    configuredBlendedAPY?: string
+    hasConfiguredStrategy?: boolean
 }
 
 type Step = "input" | "allocations" | "confirm" | "processing" | "success" | "error"
@@ -60,30 +64,42 @@ const MIN_DEPOSIT = 10 // Minimum $10 deposit
 // Component
 // ============================================================================
 
-export function EarnDepositModal({ isOpen, onClose, onComplete, defaultAmount = "" }: EarnDepositModalProps) {
+export function EarnDepositModal({ 
+    isOpen, 
+    onClose, 
+    onComplete, 
+    defaultAmount = "",
+    configuredRiskProfile,
+    configuredBlendedAPY,
+    hasConfiguredStrategy = false
+}: EarnDepositModalProps) {
     const queryClient = useQueryClient()
     const { authenticated } = usePrivy()
     // activeProductId is used by the execution hooks internally
     useProducts()
 
+    // Get current environment (sandbox or production)
+    const apiEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
+
     // Form state
     const [step, setStep] = useState<Step>("input")
     const [amount, setAmount] = useState(defaultAmount)
-    const [riskLevel, setRiskLevel] = useState<RiskLevel>("moderate")
+    // ✅ Use configured risk profile if available, otherwise default to "moderate"
+    const [riskLevel, setRiskLevel] = useState<RiskLevel>(configuredRiskProfile || "moderate")
     const [errorMessage, setErrorMessage] = useState("")
     const [txHashes, setTxHashes] = useState<string[]>([])
 
-    // API hooks - using production environment for real DeFi staking
+    // API hooks - environment comes from store
     const depositMutation = useDepositExecution()
     const prepareMutation = usePrepareDeposit()
     const { data: gasEstimate, isLoading: gasLoading } = useGasEstimate(
         amount && parseFloat(amount) >= MIN_DEPOSIT ? { amount, riskLevel } : undefined
     )
 
-    // User balance - fetch from backend API
-    const { data: balanceData, isLoading: balanceLoading, error: balanceError } = useCustodialBalance()
-    const currentBalance = balanceData?.balance || 0
-    const currentAPY = balanceData?.apy || "0%"
+    // Client wallet balance - fetch from backend API (platform vault, not end-user)
+    const { data: balanceData, isLoading: balanceLoading, error: balanceError } = useClientWalletBalance()
+    const currentBalance = balanceData?.totalBalance || 0
+    const currentAPY = "0%" // Client vault doesn't have APY, it's calculated per end-user
 
     // Computed values
     const numericAmount = useMemo(() => {
@@ -125,6 +141,10 @@ export function EarnDepositModal({ isOpen, onClose, onComplete, defaultAmount = 
     }, [prepareMutation.data, riskLevel, numericAmount])
 
     const blendedAPY = useMemo(() => {
+        // ✅ Use configured blended APY if available
+        if (hasConfiguredStrategy && configuredBlendedAPY) {
+            return `${configuredBlendedAPY}%`
+        }
         if (prepareMutation.data?.expectedBlendedAPY) {
             return prepareMutation.data.expectedBlendedAPY
         }
@@ -134,14 +154,15 @@ export function EarnDepositModal({ isOpen, onClose, onComplete, defaultAmount = 
             return sum + (apy * a.percentage / 100)
         }, 0)
         return `${totalAPY.toFixed(2)}%`
-    }, [prepareMutation.data, allocations])
+    }, [prepareMutation.data, allocations, hasConfiguredStrategy, configuredBlendedAPY])
 
     // Reset state when modal opens/closes
     useEffect(() => {
         if (isOpen) {
             setStep("input")
             setAmount(defaultAmount)
-            setRiskLevel("moderate")
+            // ✅ Reset to configured risk profile if available
+            setRiskLevel(configuredRiskProfile || "moderate")
             setErrorMessage("")
             setTxHashes([])
             depositMutation.reset()
@@ -210,7 +231,7 @@ export function EarnDepositModal({ isOpen, onClose, onComplete, defaultAmount = 
             const result = await depositMutation.mutateAsync({
                 amount,
                 riskLevel,
-                environment: "production", // Always use production for real DeFi staking
+                environment: apiEnvironment, // Use current environment from store
             })
 
             if (result.success) {
@@ -220,7 +241,7 @@ export function EarnDepositModal({ isOpen, onClose, onComplete, defaultAmount = 
                 // Invalidate queries
                 queryClient.invalidateQueries({ queryKey: ["userBalance"] })
                 queryClient.invalidateQueries({ queryKey: ["vault-index"] })
-                queryClient.invalidateQueries({ queryKey: ["custodialBalance"] })
+                queryClient.invalidateQueries({ queryKey: ["clientWalletBalance"] })
             } else {
                 setErrorMessage(result.error || "Transaction failed")
                 setStep("error")
@@ -246,7 +267,7 @@ export function EarnDepositModal({ isOpen, onClose, onComplete, defaultAmount = 
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
-            <DialogContent className="max-w-[520px] w-full">
+            <DialogContent className="max-w-[600px] w-full max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
                         <TrendingUp className="w-6 h-6 text-green-600" />
@@ -258,6 +279,19 @@ export function EarnDepositModal({ isOpen, onClose, onComplete, defaultAmount = 
                         {step === "error" && "Deposit Failed"}
                     </DialogTitle>
                 </DialogHeader>
+
+                {/* Sandbox Warning */}
+                {apiEnvironment === "sandbox" && (
+                    <div className="mx-6 mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <h4 className="font-semibold text-amber-900 text-sm">Earn features unavailable in Sandbox</h4>
+                            <p className="text-amber-700 text-xs mt-1">
+                                Mock USDC cannot access real DeFi protocols. Switch to Production mode to deposit funds and earn yield.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="p-4">
                     {/* Step 1: Input Amount */}
@@ -301,34 +335,6 @@ export function EarnDepositModal({ isOpen, onClose, onComplete, defaultAmount = 
                                 {numericAmount > 0 && numericAmount < MIN_DEPOSIT && (
                                     <p className="text-red-500 text-sm mt-2">Minimum deposit: ${MIN_DEPOSIT}</p>
                                 )}
-                            </div>
-
-                            {/* Risk Level Selector */}
-                            <div className="space-y-3">
-                                <label className="text-sm font-medium text-gray-700">Risk Level</label>
-                                <div className="grid grid-cols-3 gap-2">
-                                    {RISK_LEVELS.map((level) => (
-                                        <button
-                                            key={level.value}
-                                            onClick={() => setRiskLevel(level.value)}
-                                            className={`p-3 rounded-xl border-2 transition-all ${riskLevel === level.value
-                                                    ? "border-blue-500 bg-blue-50"
-                                                    : "border-gray-200 hover:border-gray-300"
-                                                }`}
-                                        >
-                                            <p className="font-semibold text-sm text-gray-900">{level.label}</p>
-                                            <p className="text-xs text-gray-500 mt-1">{level.description}</p>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Expected APY Preview */}
-                            <div className="bg-green-50 border border-green-200 rounded-xl p-4">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-sm text-green-700">Expected APY</span>
-                                    <span className="text-xl font-bold text-green-700">{blendedAPY}</span>
-                                </div>
                             </div>
 
                             {/* Production Mode Notice */}

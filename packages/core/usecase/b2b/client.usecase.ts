@@ -336,6 +336,7 @@ export class B2BClientUseCase {
 				cumulativeYield: "0",
 				environment: params.environment,
 				custodialWalletAddress: params.custodialWalletAddress || null,
+				privyWalletId: null, // Will be set when creating Privy server wallet
 			})
 
 			if (!vault) {

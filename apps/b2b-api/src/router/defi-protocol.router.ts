@@ -6,11 +6,34 @@
 import type { initServer } from '@ts-rest/express'
 import type { DeFiProtocolService } from '../service/defi-protocol.service'
 import type { DeFiExecutionService } from '../service/defi-execution.service'
+import type { ClientService } from '../service/client.service'
+import type { VaultService } from '../service/vault.service'
 import { defiProtocolContract } from '@quirk/b2b-api-core'
 
 interface DeFiRouterServices {
 	defiService: DeFiProtocolService
 	executionService?: DeFiExecutionService // Optional for backward compatibility
+	clientService?: ClientService // For wallet address lookup
+	vaultService?: VaultService // For privy wallet ID lookup
+}
+
+/**
+ * Get chain configuration based on environment
+ * @param environment - 'sandbox' or 'production'
+ * @returns { chainId, usdcAddress }
+ */
+function getChainConfig(environment: 'sandbox' | 'production'): { chainId: number; usdcAddress: string } {
+	if (environment === 'production') {
+		return {
+			chainId: 8453, // Base Mainnet
+			usdcAddress: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913', // Real USDC on Base
+		}
+	} else {
+		return {
+			chainId: 84532, // Base Sepolia
+			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // Mock USDC on Base Sepolia
+		}
+	}
 }
 
 export const createDeFiProtocolRouter = (
@@ -20,6 +43,8 @@ export const createDeFiProtocolRouter = (
 	// Handle both old and new API
 	const defiService = 'defiService' in services ? services.defiService : services
 	const executionService = 'executionService' in services ? services.executionService : undefined
+	const clientService = 'clientService' in services ? services.clientService : undefined
+	const vaultService = 'vaultService' in services ? services.vaultService : undefined
 
 	return s.router(defiProtocolContract, {
 		// Get all protocols
@@ -237,7 +262,7 @@ export const createDeFiProtocolRouter = (
 		// ========================================================================
 
 		// Prepare deposit transactions
-		prepareDeposit: async ({ body }) => {
+		prepareDeposit: async ({ body, headers }) => {
 			try {
 				if (!executionService) {
 					return {
@@ -249,11 +274,80 @@ export const createDeFiProtocolRouter = (
 					}
 				}
 
+				if (!clientService) {
+					return {
+						status: 500,
+						body: {
+							error: 'Client service not configured',
+							message: 'ClientService is not available',
+						},
+					}
+				}
+
+				if (!vaultService) {
+					return {
+						status: 500,
+						body: {
+							error: 'Vault service not configured',
+							message: 'VaultService is not available',
+						},
+					}
+				}
+
+				// Extract product ID from headers
+				const productId = headers['x-privy-org-id'] as string
+				if (!productId) {
+					return {
+						status: 400,
+						body: {
+							error: 'Missing x-privy-org-id header',
+							message: 'Product ID is required',
+						},
+					}
+				}
+
+				// Extract environment from headers
+				const environment = (headers['x-environment'] as 'sandbox' | 'production') || 'sandbox'
+
+				// Get client to find client_id
+				const client = await clientService.getClientByProductId(productId)
+				if (!client) {
+					return {
+						status: 400,
+						body: {
+							error: 'Client not found for product ID',
+							message: 'Invalid product ID',
+						},
+					}
+				}
+
+				// Get chain configuration based on environment
+				const { chainId, usdcAddress } = getChainConfig(environment)
+
+				const vault = await vaultService.getVaultByToken(
+					client.id,
+					chainId.toString(),
+					usdcAddress,
+					environment
+				)
+
+				if (!vault || !vault.custodialWalletAddress) {
+					return {
+						status: 400,
+						body: {
+							error: 'Vault not found. Please create a vault first.',
+							message: 'Vault or wallet address not found',
+						},
+					}
+				}
+
+				const fromAddress = vault.custodialWalletAddress
+
 				const result = await executionService.prepareDeposit({
-					token: body.token,
-					chainId: body.chainId,
+					token: 'USDC',
+					chainId,
 					amount: body.amount,
-					fromAddress: body.fromAddress,
+					fromAddress,
 					riskLevel: body.riskLevel,
 				})
 
@@ -310,7 +404,7 @@ export const createDeFiProtocolRouter = (
 		},
 
 		// Estimate gas for deposit
-		estimateGas: async ({ body }) => {
+		estimateGas: async ({ body, headers }) => {
 			try {
 				if (!executionService) {
 					return {
@@ -322,11 +416,80 @@ export const createDeFiProtocolRouter = (
 					}
 				}
 
+				if (!clientService) {
+					return {
+						status: 500,
+						body: {
+							error: 'Client service not configured',
+							message: 'ClientService is not available',
+						},
+					}
+				}
+
+				if (!vaultService) {
+					return {
+						status: 500,
+						body: {
+							error: 'Vault service not configured',
+							message: 'VaultService is not available',
+						},
+					}
+				}
+
+				// Extract product ID from headers
+				const productId = headers['x-privy-org-id'] as string
+				if (!productId) {
+					return {
+						status: 400,
+						body: {
+							error: 'Missing x-privy-org-id header',
+							message: 'Product ID is required',
+						},
+					}
+				}
+
+				// Extract environment from headers
+				const environment = (headers['x-environment'] as 'sandbox' | 'production') || 'sandbox'
+
+				// Get client to find client_id
+				const client = await clientService.getClientByProductId(productId)
+				if (!client) {
+					return {
+						status: 400,
+						body: {
+							error: 'Client not found for product ID',
+							message: 'Invalid product ID',
+						},
+					}
+				}
+
+				// Get chain configuration based on environment
+				const { chainId, usdcAddress } = getChainConfig(environment)
+
+				const vault = await vaultService.getVaultByToken(
+					client.id,
+					chainId.toString(),
+					usdcAddress,
+					environment
+				)
+
+				if (!vault || !vault.custodialWalletAddress) {
+					return {
+						status: 400,
+						body: {
+							error: 'Vault not found. Please create a vault first.',
+							message: 'Vault or wallet address not found',
+						},
+					}
+				}
+
+				const fromAddress = vault.custodialWalletAddress
+
 				const result = await executionService.estimateDepositGas(
-					body.token,
-					body.chainId,
+					'USDC',
+					chainId,
 					body.amount,
-					body.fromAddress,
+					fromAddress,
 					body.riskLevel
 				)
 
@@ -377,6 +540,273 @@ export const createDeFiProtocolRouter = (
 					body: {
 						error: 'Failed to check approvals',
 						message: error instanceof Error ? error.message : 'Unknown error',
+					},
+				}
+			}
+		},
+
+		// Execute deposit (custodial - backend signs)
+		executeDeposit: async ({ body, headers }) => {
+			try {
+				if (!executionService) {
+					return {
+						status: 500,
+						body: {
+							error: 'Execution service not configured',
+							message: 'DeFiExecutionService is not available',
+						},
+					}
+				}
+
+				if (!clientService) {
+					return {
+						status: 500,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Client service not configured',
+						},
+					}
+				}
+
+				if (!vaultService) {
+					return {
+						status: 500,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Vault service not configured',
+						},
+					}
+				}
+
+				// Extract product ID from headers
+				const productId = headers['x-privy-org-id'] as string
+				if (!productId) {
+					return {
+						status: 400,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Missing x-privy-org-id header',
+						},
+					}
+				}
+
+				// Get client to find client_id
+				const client = await clientService.getClientByProductId(productId)
+				if (!client) {
+					return {
+						status: 400,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Client not found for product ID',
+						},
+					}
+				}
+
+				// Get chain configuration based on environment
+				const { chainId, usdcAddress } = getChainConfig(body.environment)
+
+				const vault = await vaultService.getVaultByToken(
+					client.id,
+					chainId.toString(),
+					usdcAddress,
+					body.environment
+				)
+
+				if (!vault || !vault.custodialWalletAddress) {
+					return {
+						status: 400,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Vault not found. Please create a vault first.',
+						},
+					}
+				}
+
+				// For production, privy_wallet_id is required
+				if (body.environment === 'production' && !vault.privyWalletId) {
+					return {
+						status: 400,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Privy wallet not configured for production. Please create a server wallet first.',
+						},
+					}
+				}
+
+				const fromAddress = vault.custodialWalletAddress
+				const privyWalletId = vault.privyWalletId || undefined
+
+				const result = await executionService.executeDeposit({
+					token: 'USDC',
+					chainId,
+					amount: body.amount,
+					fromAddress,
+					riskLevel: body.riskLevel,
+					environment: body.environment,
+					privyWalletId,
+				})
+
+				return {
+					status: 200,
+					body: result,
+				}
+			} catch (error) {
+				console.error('Error executing deposit:', error)
+				return {
+					status: 500,
+					body: {
+						success: false,
+						transactionHashes: [],
+						environment: body.environment,
+						error: error instanceof Error ? error.message : 'Unknown error',
+					},
+				}
+			}
+		},
+
+		// Execute withdrawal (custodial - backend signs)
+		executeWithdrawal: async ({ body, headers }) => {
+			try {
+				if (!executionService) {
+					return {
+						status: 500,
+						body: {
+							error: 'Execution service not configured',
+							message: 'DeFiExecutionService is not available',
+						},
+					}
+				}
+
+				if (!clientService) {
+					return {
+						status: 500,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Client service not configured',
+						},
+					}
+				}
+
+				if (!vaultService) {
+					return {
+						status: 500,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Vault service not configured',
+						},
+					}
+				}
+
+				// Extract product ID from headers
+				const productId = headers['x-privy-org-id'] as string
+				if (!productId) {
+					return {
+						status: 400,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Missing x-privy-org-id header',
+						},
+					}
+				}
+
+				// Get client to find client_id
+				const client = await clientService.getClientByProductId(productId)
+				if (!client) {
+					return {
+						status: 400,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Client not found for product ID',
+						},
+					}
+				}
+
+				// Get chain configuration based on environment
+				const { chainId, usdcAddress } = getChainConfig(body.environment)
+
+				const vault = await vaultService.getVaultByToken(
+					client.id,
+					chainId.toString(),
+					usdcAddress,
+					body.environment
+				)
+
+				if (!vault || !vault.custodialWalletAddress) {
+					return {
+						status: 400,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Vault not found. Please create a vault first.',
+						},
+					}
+				}
+
+				// For production, privy_wallet_id is required
+				if (body.environment === 'production' && !vault.privyWalletId) {
+					return {
+						status: 400,
+						body: {
+							success: false,
+							transactionHashes: [],
+							environment: body.environment,
+							error: 'Privy wallet not configured for production. Please create a server wallet first.',
+						},
+					}
+				}
+
+				const toAddress = vault.custodialWalletAddress
+				const privyWalletId = vault.privyWalletId || undefined
+
+				// Build withdrawals array - if protocol is specified, withdraw from that protocol only
+				// Otherwise, withdraw proportionally from all protocols
+				const withdrawals = body.protocol
+					? [{ protocol: body.protocol, amount: body.amount }]
+					: [] // Empty array will trigger proportional withdrawal in service
+
+				const result = await executionService.executeWithdrawal({
+					token: 'USDC',
+					chainId,
+					withdrawals,
+					toAddress,
+					environment: body.environment,
+					privyWalletId,
+				})
+
+				return {
+					status: 200,
+					body: result,
+				}
+			} catch (error) {
+				console.error('Error executing withdrawal:', error)
+				return {
+					status: 500,
+					body: {
+						success: false,
+						transactionHashes: [],
+						environment: body.environment,
+						error: error instanceof Error ? error.message : 'Unknown error',
 					},
 				}
 			}

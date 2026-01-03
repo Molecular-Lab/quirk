@@ -68,7 +68,8 @@ export async function getClientVault(sql: Sql, args: GetClientVaultArgs): Promis
 export const getClientVaultByTokenQuery = `-- name: GetClientVaultByToken :one
 SELECT
   cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.last_successful_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.environment, cv.custodial_wallet_address, cv.is_active, cv.created_at, cv.updated_at, cv.privy_wallet_id,
-  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
+  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address,
+  cv.privy_wallet_id
 FROM client_vaults cv
 JOIN client_organizations co ON cv.client_id = co.id
 JOIN privy_accounts pa ON co.privy_account_id = pa.id
@@ -108,6 +109,7 @@ export interface GetClientVaultByTokenRow {
     updatedAt: Date;
     privyWalletId: string | null;
     custodialWalletAddress_2: string;
+    privyWalletId_2: string | null;
 }
 
 export async function getClientVaultByToken(sql: Sql, args: GetClientVaultByTokenArgs): Promise<GetClientVaultByTokenRow | null> {
@@ -138,14 +140,16 @@ export async function getClientVaultByToken(sql: Sql, args: GetClientVaultByToke
         createdAt: row[18],
         updatedAt: row[19],
         privyWalletId: row[20],
-        custodialWalletAddress_2: row[21]
+        custodialWalletAddress_2: row[21],
+        privyWalletId_2: row[22]
     };
 }
 
 export const getClientVaultByTokenForUpdateQuery = `-- name: GetClientVaultByTokenForUpdate :one
 SELECT
   cv.id, cv.client_id, cv.chain, cv.token_address, cv.token_symbol, cv.total_shares, cv.current_index, cv.last_index_update, cv.last_successful_index_update, cv.pending_deposit_balance, cv.total_staked_balance, cv.cumulative_yield, cv.apy_7d, cv.apy_30d, cv.strategies, cv.environment, cv.custodial_wallet_address, cv.is_active, cv.created_at, cv.updated_at, cv.privy_wallet_id,
-  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
+  COALESCE(cv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address,
+  cv.privy_wallet_id
 FROM client_vaults cv
 JOIN client_organizations co ON cv.client_id = co.id
 JOIN privy_accounts pa ON co.privy_account_id = pa.id
@@ -186,6 +190,7 @@ export interface GetClientVaultByTokenForUpdateRow {
     updatedAt: Date;
     privyWalletId: string | null;
     custodialWalletAddress_2: string;
+    privyWalletId_2: string | null;
 }
 
 export async function getClientVaultByTokenForUpdate(sql: Sql, args: GetClientVaultByTokenForUpdateArgs): Promise<GetClientVaultByTokenForUpdateRow | null> {
@@ -216,7 +221,8 @@ export async function getClientVaultByTokenForUpdate(sql: Sql, args: GetClientVa
         createdAt: row[18],
         updatedAt: row[19],
         privyWalletId: row[20],
-        custodialWalletAddress_2: row[21]
+        custodialWalletAddress_2: row[21],
+        privyWalletId_2: row[22]
     };
 }
 
@@ -352,15 +358,17 @@ WITH new_vault AS (
     total_staked_balance,
     cumulative_yield,
     environment,
-    custodial_wallet_address
+    custodial_wallet_address,
+    privy_wallet_id
   ) VALUES (
-    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
+    $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12
   )
   RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at, privy_wallet_id
 )
 SELECT
   nv.id, nv.client_id, nv.chain, nv.token_address, nv.token_symbol, nv.total_shares, nv.current_index, nv.last_index_update, nv.last_successful_index_update, nv.pending_deposit_balance, nv.total_staked_balance, nv.cumulative_yield, nv.apy_7d, nv.apy_30d, nv.strategies, nv.environment, nv.custodial_wallet_address, nv.is_active, nv.created_at, nv.updated_at, nv.privy_wallet_id,
-  COALESCE(nv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address
+  COALESCE(nv.custodial_wallet_address, pa.privy_wallet_address) as custodial_wallet_address,
+  nv.privy_wallet_id
 FROM new_vault nv
 JOIN client_organizations co ON nv.client_id = co.id
 JOIN privy_accounts pa ON co.privy_account_id = pa.id`;
@@ -377,6 +385,7 @@ export interface CreateClientVaultArgs {
     cumulativeYield: string;
     environment: string;
     custodialWalletAddress: string | null;
+    privyWalletId: string | null;
 }
 
 export interface CreateClientVaultRow {
@@ -402,10 +411,11 @@ export interface CreateClientVaultRow {
     updatedAt: Date;
     privyWalletId: string | null;
     custodialWalletAddress_2: string;
+    privyWalletId_2: string | null;
 }
 
 export async function createClientVault(sql: Sql, args: CreateClientVaultArgs): Promise<CreateClientVaultRow | null> {
-    const rows = await sql.unsafe(createClientVaultQuery, [args.clientId, args.chain, args.tokenAddress, args.tokenSymbol, args.currentIndex, args.totalShares, args.pendingDepositBalance, args.totalStakedBalance, args.cumulativeYield, args.environment, args.custodialWalletAddress]).values();
+    const rows = await sql.unsafe(createClientVaultQuery, [args.clientId, args.chain, args.tokenAddress, args.tokenSymbol, args.currentIndex, args.totalShares, args.pendingDepositBalance, args.totalStakedBalance, args.cumulativeYield, args.environment, args.custodialWalletAddress, args.privyWalletId]).values();
     if (rows.length !== 1) {
         return null;
     }
@@ -432,7 +442,8 @@ export async function createClientVault(sql: Sql, args: CreateClientVaultArgs): 
         createdAt: row[18],
         updatedAt: row[19],
         privyWalletId: row[20],
-        custodialWalletAddress_2: row[21]
+        custodialWalletAddress_2: row[21],
+        privyWalletId_2: row[22]
     };
 }
 

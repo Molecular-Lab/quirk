@@ -159,12 +159,14 @@ export const PreparedTransactionDto = z.object({
 
 /**
  * Request to prepare deposit transactions
+ * For custodial mode: only amount and riskLevel needed (backend derives wallet from headers)
+ * For non-custodial mode: provide fromAddress, token, and chainId
  */
 export const PrepareDepositRequestDto = z.object({
 	token: z.string().default('USDC'),
 	chainId: z.number().default(1),
 	amount: z.string().describe('Amount in token smallest unit (e.g., "1000000000" for 1000 USDC)'),
-	fromAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address'),
+	fromAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address').optional(),
 	riskLevel: z.enum(['conservative', 'moderate', 'aggressive']).default('moderate'),
 })
 
@@ -206,12 +208,14 @@ export const PrepareWithdrawalResponseDto = z.object({
 
 /**
  * Request to estimate gas for deposit
+ * For custodial mode: only amount and riskLevel needed (backend derives wallet from headers)
+ * For non-custodial mode: provide fromAddress, token, and chainId
  */
 export const EstimateGasRequestDto = z.object({
 	token: z.string().default('USDC'),
 	chainId: z.number().default(1),
 	amount: z.string(),
-	fromAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address'),
+	fromAddress: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid Ethereum address').optional(),
 	riskLevel: z.enum(['conservative', 'moderate', 'aggressive']).default('moderate'),
 })
 
@@ -251,6 +255,34 @@ export const CheckApprovalsResponseDto = z.object({
 	})),
 })
 
+/**
+ * Execute deposit request (custodial - backend signs)
+ */
+export const DepositExecutionRequestDto = z.object({
+	amount: z.string(),
+	riskLevel: z.enum(['conservative', 'moderate', 'aggressive']).default('moderate'),
+	environment: z.enum(['sandbox', 'production']).default('sandbox'),
+})
+
+/**
+ * Execute withdrawal request (custodial - backend signs)
+ */
+export const WithdrawalExecutionRequestDto = z.object({
+	amount: z.string(),
+	protocol: z.enum(['aave', 'compound', 'morpho']).optional(),
+	environment: z.enum(['sandbox', 'production']).default('sandbox'),
+})
+
+/**
+ * Execution result
+ */
+export const ExecutionResultDto = z.object({
+	success: z.boolean(),
+	transactionHashes: z.array(z.string()),
+	environment: z.enum(['sandbox', 'production']),
+	error: z.string().optional(),
+})
+
 // Type exports for execution
 export type TransactionRequest = z.infer<typeof TransactionRequestDto>
 export type PreparedTransaction = z.infer<typeof PreparedTransactionDto>
@@ -262,3 +294,6 @@ export type EstimateGasRequest = z.infer<typeof EstimateGasRequestDto>
 export type EstimateGasResponse = z.infer<typeof EstimateGasResponseDto>
 export type CheckApprovalsRequest = z.infer<typeof CheckApprovalsRequestDto>
 export type CheckApprovalsResponse = z.infer<typeof CheckApprovalsResponseDto>
+export type DepositExecutionRequest = z.infer<typeof DepositExecutionRequestDto>
+export type WithdrawalExecutionRequest = z.infer<typeof WithdrawalExecutionRequestDto>
+export type ExecutionResult = z.infer<typeof ExecutionResultDto>

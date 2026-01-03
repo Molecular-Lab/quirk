@@ -443,12 +443,19 @@ export class DeFiExecutionService {
 				}
 
 				for (const tx of prepared.transactions) {
+					// Ensure value is properly formatted as hex string starting with 0x
+					const value = tx.transaction.value
+						? (typeof tx.transaction.value === 'string' && tx.transaction.value.startsWith('0x'))
+							? tx.transaction.value
+							: `0x${BigInt(tx.transaction.value).toString(16)}`
+						: '0x0'
+
 					const result = await this.privyWalletService.sendTransaction({
 						walletId: privyWalletId,
 						chainId,
 						to: tx.transaction.to,
 						data: tx.transaction.data,
-						value: tx.transaction.value?.toString() || '0x0',
+						value,
 					})
 					transactionHashes.push(result.hash)
 					this.logger?.info('[DeFiExecution] Production deposit executed', {
@@ -517,12 +524,19 @@ export class DeFiExecutionService {
 				}
 
 				for (const tx of prepared) {
+					// Ensure value is properly formatted as hex string starting with 0x
+					const value = tx.transaction.value
+						? (typeof tx.transaction.value === 'string' && tx.transaction.value.startsWith('0x'))
+							? tx.transaction.value
+							: `0x${BigInt(tx.transaction.value).toString(16)}`
+						: '0x0'
+
 					const result = await this.privyWalletService.sendTransaction({
 						walletId: privyWalletId,
 						chainId,
 						to: tx.transaction.to,
 						data: tx.transaction.data,
-						value: tx.transaction.value?.toString() || '0x0',
+						value,
 					})
 					transactionHashes.push(result.hash)
 					this.logger?.info('[DeFiExecution] Production withdrawal executed', {

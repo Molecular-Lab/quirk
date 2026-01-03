@@ -16,6 +16,7 @@ import { createPrivyAccountRouter } from "./privy-account.router";
 import { createExplorerRouter } from "./explorer.router";
 import type { ClientService } from "../service/client.service";
 import type { DeFiProtocolService } from "../service/defi-protocol.service";
+import type { DeFiExecutionService } from "../service/defi-execution.service";
 import type { VaultService } from "../service/vault.service";
 import type { UserService } from "../service/user.service";
 import type { DepositService } from "../service/deposit.service";
@@ -29,6 +30,7 @@ export const createMainRouter = (
 	services: {
 		clientService: ClientService;
 		defiProtocolService: DeFiProtocolService;
+		defiExecutionService: DeFiExecutionService;
 		vaultService: VaultService;
 		userService: UserService;
 		depositService: DepositService;
@@ -41,7 +43,12 @@ export const createMainRouter = (
 	return s.router(b2bContract, {
 		client: createClientRouter(s, services.clientService),
 		dashboard: createDashboardRouter(s, services.vaultService, services.userService),
-		defiProtocol: createDeFiProtocolRouter(s, services.defiProtocolService) as any, // TS type path mismatch workaround
+		defiProtocol: createDeFiProtocolRouter(s, {
+			defiService: services.defiProtocolService,
+			executionService: services.defiExecutionService,
+			clientService: services.clientService,
+			vaultService: services.vaultService,
+		}) as any, // TS type path mismatch workaround
 		explorer: createExplorerRouter(s, services.explorerService),
 		vault: createVaultRouter(s, services.vaultService),
 		user: createUserRouter(s, services.userService, services.userVaultService),

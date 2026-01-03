@@ -22,6 +22,9 @@ import {
 	EstimateGasResponseDto,
 	CheckApprovalsRequestDto,
 	CheckApprovalsResponseDto,
+	DepositExecutionRequestDto,
+	WithdrawalExecutionRequestDto,
+	ExecutionResultDto,
 } from '../dto/defi-protocol'
 
 const c = initContract()
@@ -197,6 +200,36 @@ export const defiProtocolContract = c.router({
 			500: ErrorResponseDto,
 		},
 		summary: 'Check ERC-20 allowances for each protocol',
+	},
+
+	/**
+	 * Execute deposit (custodial - backend signs transactions)
+	 */
+	executeDeposit: {
+		method: 'POST',
+		path: '/defi/execute/deposit',
+		body: DepositExecutionRequestDto,
+		responses: {
+			200: ExecutionResultDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Execute deposit with backend-managed wallet signing',
+	},
+
+	/**
+	 * Execute withdrawal (custodial - backend signs transactions)
+	 */
+	executeWithdrawal: {
+		method: 'POST',
+		path: '/defi/execute/withdraw',
+		body: WithdrawalExecutionRequestDto,
+		responses: {
+			200: ExecutionResultDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Execute withdrawal with backend-managed wallet signing',
 	},
 })
 

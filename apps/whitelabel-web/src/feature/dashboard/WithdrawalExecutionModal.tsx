@@ -16,7 +16,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Slider } from "@/components/ui/slider"
 import { useProducts } from "@/hooks/useProducts"
 import { useWithdrawalExecution } from "@/hooks/defi/useDefiExecution"
-import { useCustodialBalance } from "@/hooks/useCustodialBalance"
+import { useClientWalletBalance } from "@/hooks/useClientWalletBalance"
+import { useEnvironmentStore } from "@/store/environmentStore"
 
 // ============================================================================
 // Types
@@ -47,6 +48,9 @@ export function WithdrawalExecutionModal({ isOpen, onClose, onComplete }: Withdr
     // activeProductId is used by the execution hooks internally
     useProducts()
 
+    // Get current environment (sandbox or production)
+    const apiEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
+
     // Form state
     const [step, setStep] = useState<Step>("select")
     const [percentage, setPercentage] = useState(50)
@@ -56,10 +60,10 @@ export function WithdrawalExecutionModal({ isOpen, onClose, onComplete }: Withdr
     // API hooks
     const withdrawalMutation = useWithdrawalExecution()
 
-    // User balance - fetch from backend API
-    const { data: balanceData, isLoading: balanceLoading, error: balanceError } = useCustodialBalance()
-    const currentBalance = balanceData?.balance || 0
-    const currentAPY = balanceData?.apy || "0%"
+    // Client wallet balance - fetch from backend API (platform vault, not end-user)
+    const { data: balanceData, isLoading: balanceLoading, error: balanceError } = useClientWalletBalance()
+    const currentBalance = balanceData?.totalBalance || 0
+    const currentAPY = "0%" // Client vault doesn't have APY, it's calculated per end-user
 
     // Computed values
     const withdrawalAmount = useMemo(() => {
@@ -121,7 +125,7 @@ export function WithdrawalExecutionModal({ isOpen, onClose, onComplete }: Withdr
         try {
             const result = await withdrawalMutation.mutateAsync({
                 amount: withdrawalAmount.toString(),
-                environment: "production", // Always use production for real DeFi unstaking
+                environment: apiEnvironment, // Use current environment from store
             })
 
             if (result.success) {
@@ -131,7 +135,7 @@ export function WithdrawalExecutionModal({ isOpen, onClose, onComplete }: Withdr
                 // Invalidate queries
                 queryClient.invalidateQueries({ queryKey: ["userBalance"] })
                 queryClient.invalidateQueries({ queryKey: ["vault-index"] })
-                queryClient.invalidateQueries({ queryKey: ["custodialBalance"] })
+                queryClient.invalidateQueries({ queryKey: ["clientWalletBalance"] })
             } else {
                 setErrorMessage(result.error || "Transaction failed")
                 setStep("error")
@@ -168,6 +172,19 @@ export function WithdrawalExecutionModal({ isOpen, onClose, onComplete }: Withdr
                         {step === "error" && "Withdrawal Failed"}
                     </DialogTitle>
                 </DialogHeader>
+
+                {/* Sandbox Warning */}
+                {apiEnvironment === "sandbox" && (
+                    <div className="mx-6 mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
+                        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                            <h4 className="font-semibold text-amber-900 text-sm">Earn features unavailable in Sandbox</h4>
+                            <p className="text-amber-700 text-xs mt-1">
+                                Mock USDC cannot access real DeFi protocols. Switch to Production mode to withdraw funds.
+                            </p>
+                        </div>
+                    </div>
+                )}
 
                 <div className="p-4">
                     {/* Step 1: Select Percentage */}

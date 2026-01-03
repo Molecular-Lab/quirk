@@ -28,10 +28,15 @@ export class VaultService {
 	}
 
 	/**
-	 * Get vault by token details
+	 * Get vault by token details and environment
 	 */
-	async getVaultByToken(clientId: string, chain: string, tokenAddress: string) {
-		return await this.vaultUseCase.getVaultByToken(clientId, chain, tokenAddress);
+	async getVaultByToken(
+		clientId: string,
+		chain: string,
+		tokenAddress: string,
+		environment: "sandbox" | "production" = "sandbox"
+	) {
+		return await this.vaultUseCase.getVaultByToken(clientId, chain, tokenAddress, environment);
 	}
 
 	/**
