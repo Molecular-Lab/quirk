@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from "react"
 import { motion, useInView } from "framer-motion"
-import { ShoppingBag, CreditCard, Briefcase, Palette, Car } from "lucide-react"
+import { ShoppingBag, CreditCard, Briefcase, Palette, Car, TrendingUp, Coins, Wallet, PiggyBank, Store } from "lucide-react"
 
 export function BusinessTypesSection() {
 	const sectionRef = useRef(null)
@@ -8,34 +8,64 @@ export function BusinessTypesSection() {
 
 	const businessTypes = [
 		{
+			tag: "Financial Services",
 			title: "Fintech",
 			description:
 				"User wallets and payment processing funds earn yield during settlement periods. Optimize treasury management with automated yield generation.",
-			icon: <CreditCard className="w-6 h-6 text-gray-900" />,
+			icon: CreditCard,
+			secondaryIcon: TrendingUp,
+			bgGradient: "from-purple-100 to-purple-50",
+			accentColor: "purple",
+			tagBg: "bg-purple-100",
+			tagText: "text-purple-700",
 		},
 		{
+			tag: "Workforce Solutions",
 			title: "Freelance Platforms",
 			description:
-				"Project escrow and milestone payments earn yield until release. Freelancer earnings accumulate returns while waiting for withdrawal, maximizing value for both clients and workers.",
-			icon: <Briefcase className="w-6 h-6 text-gray-900" />,
+				"Project escrow and milestone payments earn yield until release. Freelancer earnings accumulate returns while waiting for withdrawal.",
+			icon: Briefcase,
+			secondaryIcon: Coins,
+			bgGradient: "from-orange-100 to-orange-50",
+			accentColor: "orange",
+			tagBg: "bg-orange-100",
+			tagText: "text-orange-700",
 		},
 		{
+			tag: "Creative Economy",
 			title: "Creator Platforms",
 			description:
-				"Creator revenue earns yield until withdrawal. Boost creator retention and satisfaction by offering competitive returns on their earnings while they focus on content.",
-			icon: <Palette className="w-6 h-6 text-gray-900" />,
+				"Creator revenue earns yield until withdrawal. Boost creator retention by offering competitive returns on their earnings.",
+			icon: Palette,
+			secondaryIcon: Wallet,
+			bgGradient: "from-blue-100 to-blue-50",
+			accentColor: "blue",
+			tagBg: "bg-blue-100",
+			tagText: "text-blue-700",
 		},
 		{
+			tag: "Mobility & Logistics",
 			title: "Gig Worker Platforms",
 			description:
-				"Escrow funds and driver earnings earn yield until payout. Better than 0% checking accounts, creating a competitive advantage for platform adoption and retention.",
-			icon: <Car className="w-6 h-6 text-gray-900" />,
+				"Escrow funds and driver earnings earn yield until payout. Better than 0% checking accounts, creating a competitive advantage.",
+			icon: Car,
+			secondaryIcon: PiggyBank,
+			bgGradient: "from-purple-100 to-purple-50",
+			accentColor: "purple",
+			tagBg: "bg-purple-100",
+			tagText: "text-purple-700",
 		},
 		{
+			tag: "Retail & Commerce",
 			title: "E-commerce",
 			description:
 				"Enable merchants to earn yield on idle balances. Seller pending payouts and treasury funds generate returns while waiting for settlement.",
-			icon: <ShoppingBag className="w-6 h-6 text-gray-900" />,
+			icon: ShoppingBag,
+			secondaryIcon: Store,
+			bgGradient: "from-orange-100 to-orange-50",
+			accentColor: "orange",
+			tagBg: "bg-orange-100",
+			tagText: "text-orange-700",
 		},
 	]
 
@@ -52,26 +82,21 @@ export function BusinessTypesSection() {
 		const scroller = scrollerRef.current
 		if (!scroller) return
 
-		// Calculate the width of one set of cards
 		const firstCard = scroller.querySelector<HTMLElement>("[data-business-card]")
 		if (!firstCard) return
 
 		const cardWidth = firstCard.offsetWidth
-		const gap = 24 // gap-6 = 24px
+		const gap = 24
 		const oneSetWidth = businessTypes.length * (cardWidth + gap) - gap
 
-		// Set initial scroll position to the middle set
 		scroller.scrollLeft = oneSetWidth
 
 		const handleScroll = () => {
 			if (!scroller || isHoveringRef.current) return
 
-			// If scrolled to the end, jump to the middle set
 			if (scroller.scrollLeft >= oneSetWidth * 2 - 10) {
 				scroller.scrollLeft = oneSetWidth
-			}
-			// If scrolled to the beginning, jump to the middle set
-			else if (scroller.scrollLeft <= 10) {
+			} else if (scroller.scrollLeft <= 10) {
 				scroller.scrollLeft = oneSetWidth
 			}
 		}
@@ -80,9 +105,7 @@ export function BusinessTypesSection() {
 		return () => scroller.removeEventListener("scroll", handleScroll)
 	}, [businessTypes.length])
 
-	// Auto-scroll functionality
 	useEffect(() => {
-		// Clear any existing interval first
 		if (autoScrollIntervalRef.current) {
 			clearInterval(autoScrollIntervalRef.current)
 			autoScrollIntervalRef.current = null
@@ -107,12 +130,12 @@ export function BusinessTypesSection() {
 			const firstCard = scroller.querySelector<HTMLElement>("[data-business-card]")
 			if (!firstCard) return
 
-			const step = (firstCard.offsetWidth ?? 400) + 24 // card width + gap
+			const step = (firstCard.offsetWidth ?? 400) + 24
 			scroller.scrollBy({
 				left: step,
 				behavior: "smooth",
 			})
-		}, 3000) // Scroll every 3 seconds
+		}, 3000)
 
 		return () => {
 			if (autoScrollIntervalRef.current) {
@@ -123,18 +146,15 @@ export function BusinessTypesSection() {
 	}, [shouldAutoScroll])
 
 	const handleCardHover = (cardElement: HTMLElement) => {
-		// Immediately stop auto-scroll
 		isHoveringRef.current = true
 		setIsHovering(true)
 		setShouldAutoScroll(false)
 
-		// Clear interval immediately
 		if (autoScrollIntervalRef.current) {
 			clearInterval(autoScrollIntervalRef.current)
 			autoScrollIntervalRef.current = null
 		}
 
-		// Snap to the hovered card (only if needed)
 		const scroller = scrollerRef.current
 		if (!scroller) return
 
@@ -143,7 +163,6 @@ export function BusinessTypesSection() {
 		const cardCenter = cardRect.left + cardRect.width / 2
 		const scrollerCenter = scrollerRect.left + scrollerRect.width / 2
 
-		// Only scroll if card is not already centered
 		if (Math.abs(cardCenter - scrollerCenter) > 50) {
 			const scrollLeft = scroller.scrollLeft
 			const relativeLeft = cardRect.left - scrollerRect.left + scrollLeft
@@ -158,7 +177,6 @@ export function BusinessTypesSection() {
 	const handleCardLeave = () => {
 		isHoveringRef.current = false
 		setIsHovering(false)
-		// Small delay before resuming auto-scroll
 		setTimeout(() => {
 			setShouldAutoScroll(true)
 		}, 500)
@@ -168,9 +186,8 @@ export function BusinessTypesSection() {
 		const scroller = scrollerRef.current
 		if (!scroller) return
 
-		// Use the width of the first card as the scroll step; fall back to 320px.
 		const firstCard = scroller.querySelector<HTMLElement>("[data-business-card]")
-		const step = (firstCard?.offsetWidth ?? 320) + 24 // 24px gap from gap-6
+		const step = (firstCard?.offsetWidth ?? 320) + 24
 
 		scroller.scrollBy({
 			left: direction === "left" ? -step : step,
@@ -202,6 +219,86 @@ export function BusinessTypesSection() {
 				ease: [0.22, 1, 0.36, 1]
 			}
 		})
+	}
+
+	// Decorative illustration component
+	const CardIllustration = ({
+		icon: Icon,
+		secondaryIcon: SecondaryIcon,
+		accentColor
+	}: {
+		icon: React.ElementType
+		secondaryIcon: React.ElementType
+		accentColor: string
+	}) => {
+		const colorMap: Record<string, { primary: string; secondary: string; tertiary: string; bg: string }> = {
+			purple: {
+				primary: "from-purple-400 to-purple-500",
+				secondary: "bg-purple-200",
+				tertiary: "bg-purple-300",
+				bg: "from-purple-100/80 to-purple-50/50"
+			},
+			orange: {
+				primary: "from-orange-400 to-orange-500",
+				secondary: "bg-orange-200",
+				tertiary: "bg-orange-300",
+				bg: "from-orange-100/80 to-orange-50/50"
+			},
+			blue: {
+				primary: "from-blue-400 to-blue-500",
+				secondary: "bg-blue-200",
+				tertiary: "bg-blue-300",
+				bg: "from-blue-100/80 to-blue-50/50"
+			},
+		}
+
+		const colors = colorMap[accentColor] || colorMap.purple
+
+		return (
+			<div className={`relative w-full h-48 rounded-2xl bg-gradient-to-br ${colors.bg} overflow-hidden`}>
+				{/* Decorative shapes */}
+				<motion.div
+					className={`absolute top-4 right-4 w-16 h-16 ${colors.secondary} rounded-full opacity-60`}
+					animate={{ y: [0, -5, 0], scale: [1, 1.05, 1] }}
+					transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+				/>
+				<motion.div
+					className={`absolute bottom-8 left-8 w-10 h-10 ${colors.tertiary} rounded-lg opacity-50 rotate-12`}
+					animate={{ rotate: [12, 20, 12], y: [0, -3, 0] }}
+					transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
+				/>
+				<motion.div
+					className={`absolute top-12 left-6 w-6 h-6 ${colors.secondary} rounded-full opacity-40`}
+					animate={{ scale: [1, 1.2, 1] }}
+					transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+				/>
+
+				{/* Main icon container */}
+				<motion.div
+					className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-gradient-to-br ${colors.primary} rounded-2xl shadow-lg flex items-center justify-center`}
+					whileHover={{ scale: 1.1, rotate: 5 }}
+					transition={{ type: "spring", stiffness: 300 }}
+				>
+					<Icon className="w-12 h-12 text-white" strokeWidth={1.5} />
+				</motion.div>
+
+				{/* Secondary floating icon */}
+				<motion.div
+					className="absolute bottom-4 right-6 w-12 h-12 bg-white rounded-xl shadow-md flex items-center justify-center"
+					animate={{ y: [0, -4, 0] }}
+					transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+				>
+					<SecondaryIcon className="w-6 h-6 text-gray-700" strokeWidth={1.5} />
+				</motion.div>
+
+				{/* Decorative coins/elements */}
+				<motion.div
+					className={`absolute top-6 right-20 w-8 h-8 bg-gradient-to-br ${colors.primary} rounded-full shadow-sm opacity-80`}
+					animate={{ y: [0, -6, 0], x: [0, 2, 0] }}
+					transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut", delay: 0.7 }}
+				/>
+			</div>
+		)
 	}
 
 	return (
@@ -264,10 +361,7 @@ export function BusinessTypesSection() {
 						}}
 					>
 						{duplicatedCards.map((type, idx) => {
-							// Cycle through pastel colors: Purple, Orange, Gray
-							const bgColors = ["bg-purple-50", "bg-orange-50", "bg-gray-100"]
 							const originalIdx = idx % businessTypes.length
-							const bgColor = bgColors[originalIdx % bgColors.length]
 
 							return (
 								<motion.div
@@ -287,32 +381,38 @@ export function BusinessTypesSection() {
 											damping: 20
 										}
 									}}
-									className={`snap-center flex-shrink-0 w-[420px] sm:w-[480px] lg:w-[540px] ${bgColor} rounded-3xl p-10 flex flex-col justify-between border border-white/50 cursor-pointer`}
+									className={`snap-center flex-shrink-0 w-[380px] sm:w-[420px] lg:w-[460px] bg-gradient-to-br ${type.bgGradient} rounded-3xl overflow-hidden border border-white/50 cursor-pointer`}
 									onMouseEnter={(e) => handleCardHover(e.currentTarget)}
 									onMouseLeave={handleCardLeave}
 								>
-									<div className="flex-1 flex flex-col">
-										{/* Icon Header */}
-										<div className="flex items-center gap-5 mb-10">
-											<motion.div
-												className="w-14 h-14 rounded-2xl bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm border border-white/50"
-												whileHover={{
-													scale: 1.1,
-													rotate: 5,
-													transition: { type: "spring", stiffness: 400 }
-												}}
-											>
-												{type.icon}
-											</motion.div>
-											<h3 className="text-3xl font-bold text-gray-950">{type.title}</h3>
-										</div>
+									{/* Illustration Area */}
+									<div className="p-6 pb-0">
+										<CardIllustration
+											icon={type.icon}
+											secondaryIcon={type.secondaryIcon}
+											accentColor={type.accentColor}
+										/>
+									</div>
+
+									{/* Content Area */}
+									<div className="p-6 pt-5">
+										{/* Tag */}
+										<motion.span
+											className={`inline-block px-3 py-1 ${type.tagBg} ${type.tagText} text-sm font-medium rounded-full mb-3`}
+											initial={{ opacity: 0, scale: 0.8 }}
+											animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
+											transition={{ delay: originalIdx * 0.1 + 0.3 }}
+										>
+											• {type.tag}
+										</motion.span>
+
+										{/* Title */}
+										<h3 className="text-2xl font-bold text-gray-950 mb-3">{type.title}</h3>
 
 										{/* Description */}
-										<div className="flex-1 flex items-start">
-											<p className="text-gray-700 text-xl leading-relaxed">
-												{type.description}
-											</p>
-										</div>
+										<p className="text-gray-600 text-base leading-relaxed line-clamp-3">
+											{type.description}
+										</p>
 									</div>
 								</motion.div>
 							)
