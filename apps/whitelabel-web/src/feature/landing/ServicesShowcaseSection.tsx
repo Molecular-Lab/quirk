@@ -50,27 +50,34 @@ const ServiceCard = ({ service, index, progress }: ServiceCardProps) => {
 	const Icon = service.icon
 	const cardCount = services.length
 
-	// Each card fades out completely as the next one comes in
 	const start = index / cardCount
 	const end = (index + 1) / cardCount
 
-	const opacity = useTransform(progress, [start, end - 0.1, end], [1, 1, 0])
-	const scale = useTransform(progress, [start, end], [1, 0.9])
-	const y = useTransform(progress, [start, end], [0, -50])
+	// Card becomes visible when it's "active", fades out as next card comes
+	const opacity = useTransform(
+		progress,
+		[
+			Math.max(0, start - 0.1),
+			start,
+			end - 0.15,
+			end,
+		],
+		[0, 1, 1, 0]
+	)
 
 	return (
 		<motion.div
-			style={{ opacity, scale, y }}
-			className="absolute inset-0 flex items-center justify-center px-6"
+			style={{ opacity }}
+			className="absolute inset-0 flex items-center justify-center"
 		>
-			<div className="w-full max-w-5xl">
-				<div className="bg-gray-100 rounded-3xl p-10 lg:p-16">
-					<div className="flex flex-col lg:flex-row gap-10 items-center">
+			<div className="w-full px-4 lg:px-8" style={{ maxWidth: "90vw" }}>
+				<div className="bg-gray-50 rounded-3xl p-8 lg:p-14">
+					<div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
 						{/* Icon */}
 						<div className="flex-shrink-0">
-							<div className="w-24 h-24 lg:w-32 lg:h-32 bg-white rounded-3xl flex items-center justify-center shadow-sm">
+							<div className="w-20 h-20 lg:w-28 lg:h-28 bg-white rounded-3xl flex items-center justify-center shadow-sm">
 								<Icon
-									className="w-12 h-12 lg:w-16 lg:h-16 text-gray-800"
+									className="w-10 h-10 lg:w-14 lg:h-14 text-gray-800"
 									strokeWidth={1.5}
 								/>
 							</div>
@@ -81,17 +88,17 @@ const ServiceCard = ({ service, index, progress }: ServiceCardProps) => {
 							<span className="text-sm font-medium text-gray-500 uppercase tracking-wider">
 								{service.subtitle}
 							</span>
-							<h3 className="text-3xl lg:text-4xl font-bold text-gray-900 mt-3 mb-5">
+							<h3 className="text-2xl lg:text-4xl font-bold text-gray-900 mt-2 mb-4">
 								{service.title}
 							</h3>
-							<p className="text-gray-600 text-lg lg:text-xl leading-relaxed max-w-2xl">
+							<p className="text-gray-600 text-base lg:text-lg leading-relaxed max-w-2xl">
 								{service.description}
 							</p>
 						</div>
 
 						{/* Index number */}
 						<div className="flex-shrink-0">
-							<span className="text-[120px] lg:text-[160px] font-bold text-gray-200 leading-none">
+							<span className="text-[80px] lg:text-[140px] font-bold text-gray-200 leading-none">
 								{String(index + 1).padStart(2, "0")}
 							</span>
 						</div>
@@ -115,7 +122,7 @@ export const ServicesShowcaseSection = () => {
 	return (
 		<section ref={containerRef} className="bg-white">
 			{/* Section Header */}
-			<div className="py-20 lg:py-28">
+			<div className="py-16 lg:py-24">
 				<motion.div
 					ref={headerRef}
 					className="max-w-7xl mx-auto px-6 text-center"
@@ -125,10 +132,10 @@ export const ServicesShowcaseSection = () => {
 					}
 					transition={{ duration: 0.6 }}
 				>
-					<h2 className="text-5xl lg:text-6xl font-bold text-gray-900 mb-6">
+					<h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-4">
 						Explore Our Services
 					</h2>
-					<p className="text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto">
+					<p className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
 						Everything you need to embed yield infrastructure into your
 						platform.
 					</p>
@@ -138,9 +145,9 @@ export const ServicesShowcaseSection = () => {
 			{/* Stacked Cards Container */}
 			<div
 				className="relative"
-				style={{ height: `${(services.length + 0.5) * 100}vh` }}
+				style={{ height: `${services.length * 100}vh` }}
 			>
-				<div className="sticky top-0 h-screen flex items-center justify-center overflow-hidden">
+				<div className="sticky top-0 h-screen flex items-center justify-center">
 					{services.map((service, index) => (
 						<ServiceCard
 							key={service.title}

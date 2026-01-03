@@ -7,10 +7,11 @@ export const WhyQuirkSection = () => {
 
 	return (
 		<section ref={sectionRef} className="py-24 lg:py-32 bg-white">
-			<div className="max-w-7xl mx-auto px-6">
-				{/* Content Card */}
+			<div className="px-4 lg:px-8">
+				{/* Content Card - 90vw width */}
 				<motion.div
-					className="bg-gray-50 rounded-3xl p-12 lg:p-20"
+					className="bg-gray-50 rounded-3xl p-12 lg:p-20 mx-auto"
+					style={{ maxWidth: "90vw" }}
 					initial={{ opacity: 0, y: 30 }}
 					animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
 					transition={{ duration: 0.6 }}
