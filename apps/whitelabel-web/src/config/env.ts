@@ -16,7 +16,8 @@ const envSchema = z.object({
 	PRIVY_APP_ID: z.string().min(1, "VITE_PRIVY_APP_ID is required"),
 
 	// API Endpoints (Optional - defaults to localhost for development)
-	API_URL: z.string().url().optional().default("http://localhost:8080"),
+	API_URL: z.string().url().optional().default("http://localhost:8080/api/v1"),
+	AGENT_API_URL: z.string().url().optional().default("http://localhost:8000"),
 	API_FEED_URL: z.string().url().optional(),
 	USER_API_URL: z.string().url().optional(),
 	WS_URL: z.string().url().optional(),
@@ -58,6 +59,7 @@ const parseEnv = () => {
 		MIXPANEL_DEBUG: import.meta.env.VITE_MIXPANEL_DEBUG,
 		SOLANA_RPC_ENDPOINT: import.meta.env.VITE_SOLANA_RPC_ENDPOINT,
 		OKX_PROXY_ENDPOINT: import.meta.env.VITE_OKX_PROXY_ENDPOINT,
+		AGENT_API_URL: import.meta.env.VITE_AGENT_API_URL,
 	}
 
 	try {
