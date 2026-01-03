@@ -1,12 +1,15 @@
-import { motion, useScroll, useTransform } from "framer-motion"
-import { useRef } from "react"
+import { motion, useAnimation } from "framer-motion"
+import { useEffect, useState, useRef } from "react"
 import {
 	Smartphone,
 	Globe,
 	CreditCard,
 	Wallet,
 	Building2,
-	ShoppingBag,
+	ShoppingCart,
+	Briefcase,
+	PenTool,
+	Video,
 } from "lucide-react"
 
 const platforms = [
@@ -14,203 +17,208 @@ const platforms = [
 		title: "Mobile Wallets",
 		subtitle: "iOS & Android",
 		description:
-			"Embed yield directly into your mobile wallet app. Users earn while they hold, no extra steps required.",
+			"Embed yield directly into your mobile wallet app. Users earn while they hold.",
 		icon: Smartphone,
-		examples: ["Trust Wallet", "MetaMask Mobile", "Coinbase Wallet"],
 	},
 	{
-		title: "Web Applications",
+		title: "Web Apps",
 		subtitle: "DeFi & CeFi",
 		description:
-			"Add yield capabilities to any web platform. One SDK integration, instant earning infrastructure.",
+			"Add yield capabilities to any web platform. One SDK, instant infrastructure.",
 		icon: Globe,
-		examples: ["DEX Platforms", "Portfolio Trackers", "Trading Apps"],
 	},
 	{
 		title: "Payment Apps",
 		subtitle: "Fintech",
 		description:
-			"Turn idle balances into yield-generating assets. Give your users a reason to keep funds in your app.",
+			"Turn idle balances into yield-generating assets for your users.",
 		icon: CreditCard,
-		examples: ["Neobanks", "Payment Processors", "Remittance Apps"],
 	},
 	{
-		title: "Custodial Services",
+		title: "Custodial",
 		subtitle: "Institutional",
 		description:
-			"Offer yield to your custody clients. Enterprise-grade security meets DeFi returns.",
+			"Offer yield to custody clients with enterprise-grade security.",
 		icon: Wallet,
-		examples: ["Custody Providers", "Asset Managers", "Family Offices"],
 	},
 	{
-		title: "Banking Platforms",
+		title: "Banking",
 		subtitle: "TradFi",
 		description:
-			"Bridge traditional banking with DeFi yields. Compliant, regulated, and ready for scale.",
+			"Bridge traditional banking with DeFi yields. Compliant and scalable.",
 		icon: Building2,
-		examples: ["Digital Banks", "Credit Unions", "Savings Apps"],
 	},
 	{
 		title: "E-Commerce",
 		subtitle: "Retail",
 		description:
-			"Let customers earn on their store credit and loyalty points. Transform balances into engagement.",
-		icon: ShoppingBag,
-		examples: ["Marketplaces", "Loyalty Programs", "Gift Card Platforms"],
+			"Let customers earn on store credit and loyalty points.",
+		icon: ShoppingCart,
+	},
+	{
+		title: "Gig Workers",
+		subtitle: "Platforms",
+		description:
+			"Help gig workers earn yield on their earnings between payouts.",
+		icon: Briefcase,
+	},
+	{
+		title: "Freelancers",
+		subtitle: "Professionals",
+		description:
+			"Enable freelancers to grow their income with automated yield.",
+		icon: PenTool,
+	},
+	{
+		title: "Creators",
+		subtitle: "Content",
+		description:
+			"Let creators earn more from their revenue with embedded yield.",
+		icon: Video,
 	},
 ]
 
-interface PlatformCardProps {
-	platform: (typeof platforms)[0]
-	index: number
-	progress: any
-}
+export const PlatformsCarouselSection = () => {
+	const [currentIndex, setCurrentIndex] = useState(0)
+	const containerRef = useRef<HTMLDivElement>(null)
+	const controls = useAnimation()
 
-const PlatformCard = ({ platform, index, progress }: PlatformCardProps) => {
-	const Icon = platform.icon
-	const cardCount = platforms.length
+	// Auto-advance carousel
+	useEffect(() => {
+		const interval = setInterval(() => {
+			setCurrentIndex((prev) => (prev + 1) % platforms.length)
+		}, 4000)
+		return () => clearInterval(interval)
+	}, [])
 
-	const start = index / cardCount
-	const end = (index + 1) / cardCount
+	// Animate on index change
+	useEffect(() => {
+		controls.start({
+			x: -currentIndex * 100 + "%",
+			transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+		})
+	}, [currentIndex, controls])
 
-	const opacity = useTransform(
-		progress,
-		[Math.max(0, start - 0.1), start, end - 0.15, end],
-		[0, 1, 1, 0]
-	)
+	const goToSlide = (index: number) => {
+		setCurrentIndex(index)
+	}
+
+	const goNext = () => {
+		setCurrentIndex((prev) => (prev + 1) % platforms.length)
+	}
+
+	const goPrev = () => {
+		setCurrentIndex((prev) => (prev - 1 + platforms.length) % platforms.length)
+	}
 
 	return (
-		<motion.div
-			style={{ opacity }}
-			className="absolute inset-0 flex items-center justify-center p-4"
-		>
-			{/* Full Card Container - 90vw x 90vh */}
-			<div
-				className="bg-gray-900 rounded-3xl p-8 lg:p-12 flex flex-col text-white"
-				style={{
-					width: "90vw",
-					height: "90vh",
-					maxWidth: "90vw",
-					maxHeight: "90vh",
-				}}
-			>
-				{/* Header inside card */}
-				<div className="text-center mb-8 lg:mb-12">
-					<p className="text-sm font-medium text-gray-400 uppercase tracking-wider mb-2">
-						Quirk Everywhere
-					</p>
-					<h2 className="text-3xl lg:text-5xl font-bold text-white">
-						Any Platform, Any Scale
-					</h2>
-				</div>
-
-				{/* Card Content - fills remaining space */}
-				<div className="flex-1 flex flex-col lg:flex-row gap-8 lg:gap-16 items-center justify-center">
-					{/* Left: Icon + Index */}
-					<div className="flex flex-col items-center lg:items-start gap-6">
-						<div className="w-28 h-28 lg:w-36 lg:h-36 bg-gray-800 rounded-3xl flex items-center justify-center">
-							<Icon
-								className="w-14 h-14 lg:w-20 lg:h-20 text-white"
-								strokeWidth={1.5}
-							/>
-						</div>
-						<span className="text-[80px] lg:text-[120px] font-bold text-gray-800 leading-none">
-							{String(index + 1).padStart(2, "0")}
-						</span>
+		<section className="bg-white py-8">
+			<div className="flex items-center justify-center p-4">
+				{/* Full Card Container - 90vw x 90vh */}
+				<div
+					className="bg-gray-900 rounded-3xl p-6 lg:p-10 flex flex-col overflow-hidden"
+					style={{ width: "90vw", height: "90vh", maxWidth: "90vw", maxHeight: "90vh" }}
+				>
+					{/* Header */}
+					<div className="text-center mb-6 lg:mb-8 flex-shrink-0">
+						<p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
+							Quirk Everywhere
+						</p>
+						<h2 className="text-3xl lg:text-5xl font-bold text-white">
+							Any Platform, Any Scale
+						</h2>
 					</div>
 
-					{/* Center: Content */}
-					<div className="flex-1 text-center lg:text-left max-w-2xl">
-						<span className="text-sm font-medium text-gray-400 uppercase tracking-wider">
-							{platform.subtitle}
-						</span>
-						<h3 className="text-4xl lg:text-6xl font-bold text-white mt-2 mb-6">
-							{platform.title}
-						</h3>
-						<p className="text-gray-400 text-lg lg:text-xl leading-relaxed mb-8">
-							{platform.description}
-						</p>
+					{/* Carousel Container */}
+					<div className="flex-1 relative overflow-hidden min-h-0">
+						<motion.div
+							ref={containerRef}
+							className="flex h-full"
+							animate={controls}
+							style={{ width: `${platforms.length * 100}%` }}
+						>
+							{platforms.map((platform, index) => {
+								const Icon = platform.icon
+								return (
+									<div
+										key={platform.title}
+										className="flex-shrink-0 h-full px-4"
+										style={{ width: `${100 / platforms.length}%` }}
+									>
+										<div className="h-full flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16">
+											{/* Left: Large Icon */}
+											<div className="flex-shrink-0">
+												<div className="w-40 h-40 lg:w-56 lg:h-56 bg-gray-800 rounded-3xl flex items-center justify-center">
+													<Icon
+														className="w-20 h-20 lg:w-28 lg:h-28 text-white"
+														strokeWidth={1.2}
+													/>
+												</div>
+											</div>
 
-						{/* Examples */}
-						<div className="flex flex-wrap gap-3 justify-center lg:justify-start">
-							{platform.examples.map((example) => (
-								<span
-									key={example}
-									className="px-4 py-2 bg-gray-800 rounded-full text-sm text-gray-300"
-								>
-									{example}
-								</span>
+											{/* Center: Content */}
+											<div className="text-center lg:text-left max-w-lg">
+												<span className="text-sm font-medium text-gray-500 uppercase tracking-wider">
+													{platform.subtitle}
+												</span>
+												<h3 className="text-4xl lg:text-6xl font-bold text-white mt-2 mb-4">
+													{platform.title}
+												</h3>
+												<p className="text-gray-400 text-lg lg:text-xl leading-relaxed">
+													{platform.description}
+												</p>
+											</div>
+
+											{/* Right: Index number */}
+											<div className="flex-shrink-0 hidden lg:block">
+												<span className="text-[120px] lg:text-[180px] font-bold text-gray-800 leading-none">
+													{String(index + 1).padStart(2, "0")}
+												</span>
+											</div>
+										</div>
+									</div>
+								)
+							})}
+						</motion.div>
+					</div>
+
+					{/* Navigation */}
+					<div className="flex items-center justify-center gap-4 mt-6 flex-shrink-0">
+						{/* Prev Button */}
+						<button
+							onClick={goPrev}
+							className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
+						>
+							<svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+							</svg>
+						</button>
+
+						{/* Dots */}
+						<div className="flex gap-2">
+							{platforms.map((_, index) => (
+								<button
+									key={index}
+									onClick={() => goToSlide(index)}
+									className={`w-2 h-2 rounded-full transition-all duration-300 ${
+										index === currentIndex
+											? "bg-white w-8"
+											: "bg-gray-600 hover:bg-gray-500"
+									}`}
+								/>
 							))}
 						</div>
+
+						{/* Next Button */}
+						<button
+							onClick={goNext}
+							className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
+						>
+							<svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+							</svg>
+						</button>
 					</div>
-
-					{/* Right: Visual element */}
-					<div className="hidden lg:flex flex-col items-center justify-center">
-						<div className="relative">
-							{/* Animated rings */}
-							<motion.div
-								className="absolute inset-0 border-2 border-gray-700 rounded-full"
-								style={{ width: 200, height: 200 }}
-								animate={{
-									scale: [1, 1.2, 1],
-									opacity: [0.5, 0.2, 0.5],
-								}}
-								transition={{
-									duration: 3,
-									repeat: Infinity,
-									ease: "easeInOut",
-								}}
-							/>
-							<motion.div
-								className="absolute inset-0 border border-gray-800 rounded-full"
-								style={{ width: 200, height: 200, margin: -20 }}
-								animate={{
-									scale: [1.2, 1, 1.2],
-									opacity: [0.2, 0.4, 0.2],
-								}}
-								transition={{
-									duration: 3,
-									repeat: Infinity,
-									ease: "easeInOut",
-									delay: 0.5,
-								}}
-							/>
-							{/* Center Q */}
-							<div className="w-[200px] h-[200px] bg-gray-800 rounded-full flex items-center justify-center">
-								<span className="text-6xl font-bold text-white">Q</span>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</motion.div>
-	)
-}
-
-export const PlatformsCarouselSection = () => {
-	const containerRef = useRef(null)
-
-	const { scrollYProgress } = useScroll({
-		target: containerRef,
-		offset: ["start start", "end end"],
-	})
-
-	return (
-		<section ref={containerRef} className="bg-white">
-			{/* Stacked Cards Container */}
-			<div
-				className="relative"
-				style={{ height: `${platforms.length * 100}vh` }}
-			>
-				<div className="sticky top-0 h-screen flex items-center justify-center">
-					{platforms.map((platform, index) => (
-						<PlatformCard
-							key={platform.title}
-							platform={platform}
-							index={index}
-							progress={scrollYProgress}
-						/>
-					))}
 				</div>
 			</div>
 		</section>

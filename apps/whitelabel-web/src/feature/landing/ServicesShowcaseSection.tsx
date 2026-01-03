@@ -65,9 +65,33 @@ const ServiceCard = ({ service, index, progress }: ServiceCardProps) => {
 		[0, 1, 1, 0]
 	)
 
+	// Scale animation: 0.9 -> 1 -> 0.95
+	const scale = useTransform(
+		progress,
+		[
+			Math.max(0, start - 0.1),
+			start,
+			end - 0.15,
+			end,
+		],
+		[0.9, 1, 1, 0.95]
+	)
+
+	// TranslateY animation: 60px -> 0 -> -40px
+	const y = useTransform(
+		progress,
+		[
+			Math.max(0, start - 0.1),
+			start,
+			end - 0.15,
+			end,
+		],
+		[60, 0, 0, -40]
+	)
+
 	return (
 		<motion.div
-			style={{ opacity }}
+			style={{ opacity, scale, y }}
 			className="absolute inset-0 flex items-center justify-center p-4"
 		>
 			{/* Full Card Container - 90vw x 90vh */}
