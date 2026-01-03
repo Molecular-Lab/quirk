@@ -12,7 +12,7 @@ export interface PrivyAccountEntity {
 	privyOrganizationId: string
 	privyWalletAddress: string
 	privyEmail: string | null
-	walletType: "custodial" | "non-custodial"
+	walletType: "MANAGED" | "USER_OWNED"
 	createdAt: Date
 	updatedAt: Date
 }
@@ -21,7 +21,7 @@ export interface CreatePrivyAccountInput {
 	privyOrganizationId: string
 	privyWalletAddress: string
 	privyEmail?: string
-	walletType: "custodial" | "non-custodial"
+	walletType: "MANAGED" | "USER_OWNED"
 }
 
 export interface UpdatePrivyAccountInput {

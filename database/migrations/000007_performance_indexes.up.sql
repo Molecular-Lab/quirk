@@ -42,7 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_withdrawal_txns_env_status_created
 -- Covering index for completed withdrawal stats
 CREATE INDEX IF NOT EXISTS idx_withdrawal_txns_client_completed_stats
   ON withdrawal_transactions(client_id, created_at DESC)
-  INCLUDE (requested_amount, destination_currency)
+  INCLUDE (requested_amount, currency)
   WHERE status = 'completed';
 
 -- ============================================
@@ -70,16 +70,16 @@ CREATE INDEX IF NOT EXISTS idx_client_vaults_active_pending
 -- 4. END USER VAULTS (N+1 Query Fix)
 -- ============================================
 
--- Composite index for portfolio calculation JOIN
--- Fixes: GetEndUserPortfolio heavy JOIN on (client_id, chain, token_address)
-CREATE INDEX IF NOT EXISTS idx_end_user_vaults_client_chain_token
-  ON end_user_vaults(client_id, chain, token_address)
+-- Composite index for user vault queries
+-- Optimizes: GetEndUserVaults by (client_id, environment)
+CREATE INDEX IF NOT EXISTS idx_end_user_vaults_client_env
+  ON end_user_vaults(client_id, environment)
   WHERE is_active = true;
 
 -- Covering index for user vault aggregations
-CREATE INDEX IF NOT EXISTS idx_end_user_vaults_user_active_shares
+CREATE INDEX IF NOT EXISTS idx_end_user_vaults_user_active_deposits
   ON end_user_vaults(end_user_id, is_active)
-  INCLUDE (shares, total_deposited, total_withdrawn)
+  INCLUDE (total_deposited, total_withdrawn, weighted_entry_index)
   WHERE is_active = true;
 
 -- ============================================

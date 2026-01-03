@@ -11,12 +11,10 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { toast } from "sonner"
-import axios from "axios"
 import { usePrivy } from "@privy-io/react-auth"
 import { useProducts } from "../useProducts"
 import { useEnvironmentStore } from "@/store/environmentStore"
-
-const API_BASE_URL = import.meta.env.VITE_API_URL
+import { b2bApiClient } from "@/api/b2bClient"
 
 // ============================================================================
 // Types
@@ -107,18 +105,20 @@ export function useDepositExecution() {
         mutationFn: async (params: DepositExecutionParams): Promise<ExecutionResult> => {
             if (!productId || !authenticated) throw new Error('Not authenticated')
 
-            const { data } = await axios.post<ExecutionResult>(
-                `${API_BASE_URL}/defi/execute/deposit`,
-                {
+            const response = await b2bApiClient.defiProtocol.executeDeposit({
+                body: {
                     amount: params.amount,
                     riskLevel: params.riskLevel || 'moderate',
                     environment: params.environment || environment || 'sandbox',
                 },
-                {
-                    headers: getAuthHeaders(productId, params.environment || environment)
-                }
-            )
-            return data
+                extraHeaders: getAuthHeaders(productId, params.environment || environment),
+            })
+
+            if (response.status !== 200) {
+                throw new Error((response.body as any).error || 'Deposit execution failed')
+            }
+
+            return response.body as ExecutionResult
         },
         onSuccess: (_result, variables) => {
             // Invalidate relevant queries
@@ -160,18 +160,20 @@ export function useWithdrawalExecution() {
         mutationFn: async (params: WithdrawalExecutionParams): Promise<ExecutionResult> => {
             if (!productId || !authenticated) throw new Error('Not authenticated')
 
-            const { data } = await axios.post<ExecutionResult>(
-                `${API_BASE_URL}/defi/execute/withdraw`,
-                {
+            const response = await b2bApiClient.defiProtocol.executeWithdrawal({
+                body: {
                     amount: params.amount,
                     protocol: params.protocol,
                     environment: params.environment || environment || 'sandbox',
                 },
-                {
-                    headers: getAuthHeaders(productId, params.environment || environment)
-                }
-            )
-            return data
+                extraHeaders: getAuthHeaders(productId, params.environment || environment),
+            })
+
+            if (response.status !== 200) {
+                throw new Error((response.body as any).error || 'Withdrawal execution failed')
+            }
+
+            return response.body as ExecutionResult
         },
         onSuccess: (_result, variables) => {
             queryClient.invalidateQueries({ queryKey: ['vault-index'] })
@@ -213,17 +215,19 @@ export function useGasEstimate(params?: GasEstimateParams) {
                 return { totalGas: '0', perProtocol: [] }
             }
 
-            const { data } = await axios.post<GasEstimateResult>(
-                `${API_BASE_URL}/defi/execute/estimate-gas`,
-                {
+            const response = await b2bApiClient.defiProtocol.estimateGas({
+                body: {
                     amount: params.amount,
                     riskLevel: params.riskLevel || 'moderate',
                 },
-                {
-                    headers: getAuthHeaders(productId, environment)
-                }
-            )
-            return data
+                extraHeaders: getAuthHeaders(productId, environment),
+            })
+
+            if (response.status !== 200) {
+                throw new Error((response.body as any).error || 'Gas estimation failed')
+            }
+
+            return response.body as GasEstimateResult
         },
         enabled: Boolean(productId && params?.amount),
         staleTime: 30000, // 30 seconds
@@ -236,6 +240,9 @@ export function useGasEstimate(params?: GasEstimateParams) {
 
 /**
  * Get DeFi transaction history
+ *
+ * TODO: Add /defi/transactions endpoint to b2b-api-core contract
+ * For now, returning empty array to prevent 404 errors
  */
 export function useTransactionHistory(limit = 20, offset = 0) {
     const { activeProductId } = useProducts()
@@ -248,14 +255,19 @@ export function useTransactionHistory(limit = 20, offset = 0) {
         queryFn: async (): Promise<DefiTransaction[]> => {
             if (!productId) return []
 
-            const { data } = await axios.get<DefiTransaction[]>(
-                `${API_BASE_URL}/defi/transactions`,
-                {
-                    params: { limit, offset },
-                    headers: getAuthHeaders(productId, environment)
-                }
-            )
-            return data
+            // TODO: Once /defi/transactions endpoint is added to contract, use:
+            // const response = await b2bApiClient.defiProtocol.getTransactions({
+            //     query: { limit, offset },
+            //     headers: getAuthHeaders(productId, environment),
+            // })
+            // if (response.status !== 200) {
+            //     throw new Error(response.body.error || 'Failed to fetch transactions')
+            // }
+            // return response.body
+
+            // Temporary: Return empty array to prevent 404 errors
+            console.warn('[useTransactionHistory] Endpoint /defi/transactions not yet implemented in contract')
+            return []
         },
         enabled: Boolean(productId),
         staleTime: 60000, // 1 minute
@@ -300,17 +312,19 @@ export function usePrepareDeposit() {
         }): Promise<PrepareDepositResult> => {
             if (!productId || !authenticated) throw new Error('Not authenticated')
 
-            const { data } = await axios.post<PrepareDepositResult>(
-                `${API_BASE_URL}/defi/execute/prepare-deposit`,
-                {
+            const response = await b2bApiClient.defiProtocol.prepareDeposit({
+                body: {
                     amount: params.amount,
                     riskLevel: params.riskLevel || 'moderate',
                 },
-                {
-                    headers: getAuthHeaders(productId, environment)
-                }
-            )
-            return data
+                extraHeaders: getAuthHeaders(productId, environment),
+            })
+
+            if (response.status !== 200) {
+                throw new Error((response.body as any).error || 'Failed to prepare deposit')
+            }
+
+            return response.body as any as PrepareDepositResult
         },
     })
 }
