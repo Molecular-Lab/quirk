@@ -10,7 +10,7 @@ import { optimizerTools } from './tools/optimizerTools.js';
 
 // Configuration
 const PORT = process.env.PORT ? parseInt(process.env.PORT) : 3000;
-const HOST = process.env.HOST || 'localhost';
+const HOST = process.env.HOST || '0.0.0.0'; // Bind to all interfaces for Docker/Fly.io
 
 // Track active sessions
 const activeSessions = new Map<string, McpServer>();
@@ -18,6 +18,17 @@ const activeSessions = new Map<string, McpServer>();
 async function main() {
 	// Create HTTP server
 	const httpServer = createServer(async (req, res) => {
+		// Health check endpoint (GET /health)
+		if (req.method === 'GET' && req.url === '/health') {
+			res.writeHead(200, { 'Content-Type': 'application/json' });
+			res.end(JSON.stringify({
+				status: 'ok',
+				activeSessions: activeSessions.size,
+				uptime: process.uptime()
+			}));
+			return;
+		}
+
 		// Only accept POST requests for MCP
 		if (req.method !== 'POST') {
 			res.writeHead(405, { 'Content-Type': 'application/json' });
