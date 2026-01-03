@@ -10,7 +10,7 @@ export const fadeInUp: Variants = {
 	visible: {
 		opacity: 1,
 		y: 0,
-		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
 	}
 }
 
@@ -19,7 +19,7 @@ export const fadeInDown: Variants = {
 	visible: {
 		opacity: 1,
 		y: 0,
-		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
 	}
 }
 
@@ -36,7 +36,7 @@ export const scaleIn: Variants = {
 	visible: {
 		opacity: 1,
 		scale: 1,
-		transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+		transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }
 	}
 }
 
@@ -45,7 +45,7 @@ export const slideInLeft: Variants = {
 	visible: {
 		opacity: 1,
 		x: 0,
-		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
 	}
 }
 
@@ -54,7 +54,7 @@ export const slideInRight: Variants = {
 	visible: {
 		opacity: 1,
 		x: 0,
-		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
 	}
 }
 
@@ -217,7 +217,7 @@ export function TextReveal({
 			filter: "blur(0px)",
 			transition: {
 				duration: 0.4,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -323,7 +323,7 @@ export function CharacterReveal({
 }
 
 interface FloatingElementProps {
-	children: ReactNode
+	children?: ReactNode
 	className?: string
 	duration?: number
 	distance?: number
@@ -443,7 +443,7 @@ export function AnimatedButton({
 		},
 		whileTap: { scale: 0.98 },
 		transition: {
-			type: "spring",
+			type: "spring" as const,
 			stiffness: 400,
 			damping: 17
 		}
@@ -500,7 +500,7 @@ export function AnimatedCard({
 			}}
 			whileTap={{ scale: 0.98 }}
 			transition={{
-				type: "spring",
+				type: "spring" as const,
 				stiffness: 300,
 				damping: 20
 			}}

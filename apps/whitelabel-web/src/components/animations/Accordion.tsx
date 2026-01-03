@@ -69,7 +69,7 @@ function AccordionItemComponent({
 				</span>
 				<motion.div
 					animate={{ rotate: isOpen ? 180 : 0 }}
-					transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+					transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
 					className="flex-shrink-0"
 				>
 					<ChevronDown className="w-5 h-5 text-gray-500" />
@@ -83,7 +83,7 @@ function AccordionItemComponent({
 						animate={{ height: "auto", opacity: 1 }}
 						exit={{ height: 0, opacity: 0 }}
 						transition={{
-							height: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+							height: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const },
 							opacity: { duration: 0.2, delay: 0.1 }
 						}}
 					>

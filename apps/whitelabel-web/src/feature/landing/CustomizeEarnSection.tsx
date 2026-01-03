@@ -24,7 +24,7 @@ export function CustomizeEarnSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -36,7 +36,7 @@ export function CustomizeEarnSection() {
 			y: 0,
 			transition: {
 				duration: 0.5,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -47,7 +47,7 @@ export function CustomizeEarnSection() {
 			scale: 1,
 			rotate: 0,
 			transition: {
-				type: "spring",
+				type: "spring" as const,
 				stiffness: 200,
 				damping: 15,
 				delay: 0.2
@@ -127,7 +127,7 @@ export function CustomizeEarnSection() {
 									whileHover={{
 										scale: 1.1,
 										rotate: 5,
-										transition: { type: "spring", stiffness: 400 }
+										transition: { type: "spring" as const, stiffness: 400 }
 									}}
 									className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-gray-100 group-hover:shadow-md transition-all duration-300"
 								>

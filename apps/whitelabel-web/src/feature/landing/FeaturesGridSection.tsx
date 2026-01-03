@@ -1,6 +1,6 @@
 import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
-import { Zap, Shield, LayoutDashboard, Bot, TrendingUp, Clock, Wallet, PieChart } from "lucide-react"
+import { Zap, Shield, TrendingUp, Clock, Wallet, PieChart } from "lucide-react"
 
 export function FeaturesGridSection() {
 	const ref = useRef(null)
@@ -25,7 +25,7 @@ export function FeaturesGridSection() {
 			scale: 1,
 			transition: {
 				duration: 0.5,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -164,7 +164,7 @@ export function FeaturesGridSection() {
 								className="text-5xl font-bold text-purple-600"
 								initial={{ opacity: 0, scale: 0.5 }}
 								animate={isInView ? { opacity: 1, scale: 1 } : {}}
-								transition={{ delay: 0.5, type: "spring" }}
+								transition={{ delay: 0.5, type: "spring" as const }}
 							>
 								90%
 							</motion.span>

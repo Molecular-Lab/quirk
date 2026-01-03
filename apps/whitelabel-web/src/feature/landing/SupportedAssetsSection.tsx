@@ -41,7 +41,7 @@ export function SupportedAssetsSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1],
+				ease: [0.22, 1, 0.36, 1] as const,
 			},
 		},
 	}
@@ -54,7 +54,7 @@ export function SupportedAssetsSection() {
 			scale: 1,
 			transition: {
 				duration: 0.5,
-				ease: [0.22, 1, 0.36, 1],
+				ease: [0.22, 1, 0.36, 1] as const,
 			},
 		},
 	}
@@ -65,7 +65,7 @@ export function SupportedAssetsSection() {
 			scale: 1,
 			rotate: 0,
 			transition: {
-				type: "spring",
+				type: "spring" as const,
 				stiffness: 200,
 				damping: 15,
 			},
@@ -102,7 +102,7 @@ export function SupportedAssetsSection() {
 							whileHover={{
 								y: -4,
 								transition: {
-									type: "spring",
+									type: "spring" as const,
 									stiffness: 300,
 									damping: 20,
 								},
@@ -114,7 +114,7 @@ export function SupportedAssetsSection() {
 									variants={logoVariants}
 									whileHover={{
 										scale: 1.05,
-										transition: { type: "spring", stiffness: 400 },
+										transition: { type: "spring" as const, stiffness: 400 },
 									}}
 									className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center"
 								>

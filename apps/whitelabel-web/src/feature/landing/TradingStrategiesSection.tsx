@@ -133,7 +133,7 @@ export function TradingStrategiesSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -146,7 +146,7 @@ export function TradingStrategiesSection() {
 			scale: 1,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -159,7 +159,7 @@ export function TradingStrategiesSection() {
 			transition: {
 				duration: 0.4,
 				delay: 0.3 + index * 0.1,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		})
 	}
@@ -172,7 +172,7 @@ export function TradingStrategiesSection() {
 			rotate: 0,
 			transition: {
 				duration: 0.8,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -185,7 +185,7 @@ export function TradingStrategiesSection() {
 		if (isInView) {
 			animate(count, totalAllocation, {
 				duration: 1,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			})
 		}
 
@@ -249,7 +249,7 @@ export function TradingStrategiesSection() {
 								<motion.div
 									className="relative w-full h-full max-w-[380px]"
 									whileHover={{ scale: 1.02 }}
-									transition={{ type: "spring", stiffness: 300 }}
+									transition={{ type: "spring" as const, stiffness: 300 }}
 								>
 									<Doughnut data={chartData} options={chartOptions} />
 									<motion.div
@@ -264,7 +264,7 @@ export function TradingStrategiesSection() {
 												key={totalAllocation}
 												initial={{ scale: 1.2 }}
 												animate={{ scale: 1 }}
-												transition={{ type: "spring", stiffness: 300 }}
+												transition={{ type: "spring" as const, stiffness: 300 }}
 											>
 												<AnimatedPercentage />%
 											</motion.div>
@@ -296,7 +296,7 @@ export function TradingStrategiesSection() {
 												key={allocations[strategy.key]}
 												initial={{ scale: 1.1 }}
 												animate={{ scale: 1 }}
-												transition={{ type: "spring", stiffness: 400 }}
+												transition={{ type: "spring" as const, stiffness: 400 }}
 											>
 												<span className="text-2xl font-bold text-gray-950">{allocations[strategy.key]}</span>
 												<span className="text-gray-500 text-lg">%</span>

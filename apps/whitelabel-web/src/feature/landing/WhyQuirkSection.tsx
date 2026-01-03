@@ -55,7 +55,7 @@ export const WhyQuirkSection = () => {
 							<motion.div
 								className="bg-gray-900 rounded-[3rem] p-3 shadow-2xl"
 								whileHover={{ y: -8 }}
-								transition={{ type: "spring", stiffness: 300, damping: 20 }}
+								transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
 							>
 								<div className="bg-white rounded-[2.5rem] overflow-hidden">
 									{/* Status Bar */}

@@ -15,7 +15,7 @@ export function CTASection() {
 					className="bg-gray-900 rounded-3xl p-12 lg:p-16 relative overflow-hidden"
 					initial={{ opacity: 0, y: 30 }}
 					animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-					transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+					transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
 				>
 					{/* Background decoration */}
 					<motion.div

@@ -202,7 +202,7 @@ export function BusinessTypesSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -216,7 +216,7 @@ export function BusinessTypesSection() {
 			transition: {
 				duration: 0.5,
 				delay: index * 0.1,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		})
 	}
@@ -277,7 +277,7 @@ export function BusinessTypesSection() {
 				<motion.div
 					className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-gradient-to-br ${colors.primary} rounded-2xl shadow-lg flex items-center justify-center`}
 					whileHover={{ scale: 1.1, rotate: 5 }}
-					transition={{ type: "spring", stiffness: 300 }}
+					transition={{ type: "spring" as const, stiffness: 300 }}
 				>
 					<Icon className="w-12 h-12 text-white" strokeWidth={1.5} />
 				</motion.div>
@@ -376,7 +376,7 @@ export function BusinessTypesSection() {
 										scale: 1.02,
 										boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.15)",
 										transition: {
-											type: "spring",
+											type: "spring" as const,
 											stiffness: 300,
 											damping: 20
 										}

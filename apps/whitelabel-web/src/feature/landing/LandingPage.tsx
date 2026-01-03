@@ -102,7 +102,7 @@ export function LandingPage() {
 				}`}
 				initial={{ y: -100 }}
 				animate={{ y: 0 }}
-				transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+				transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
 			>
 				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
 					<Link to="/" className="flex items-center gap-3 group">
@@ -206,7 +206,7 @@ function AnimatedFooter() {
 			y: 0,
 			transition: {
 				duration: 0.5,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -218,7 +218,7 @@ function AnimatedFooter() {
 			x: 0,
 			transition: {
 				duration: 0.4,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}

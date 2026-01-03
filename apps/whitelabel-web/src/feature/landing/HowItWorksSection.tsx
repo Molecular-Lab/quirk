@@ -1,9 +1,6 @@
 import {
 	motion,
 	useScroll,
-	useTransform,
-	useMotionValue,
-	animate,
 } from "framer-motion"
 import { useRef, useEffect, useState } from "react"
 
@@ -138,7 +135,7 @@ export function HowItWorksSection() {
 										key={`quirkless-value-${activeStep}`}
 										initial={{ opacity: 0, y: 20 }}
 										animate={{ opacity: 1, y: 0 }}
-										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
 									>
 										{currentData.quirkless.value}
 									</motion.p>
@@ -166,7 +163,7 @@ export function HowItWorksSection() {
 										key={`quirk-value-${activeStep}`}
 										initial={{ opacity: 0, y: 20 }}
 										animate={{ opacity: 1, y: 0 }}
-										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
 									>
 										{currentData.quirk.value}
 									</motion.p>

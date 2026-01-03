@@ -10,11 +10,11 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "echo 'Skipping build for @quirk/mock-token-client (dev-only package)'",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "viem": "catalog:"
+    "viem": "^2.21.0"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",

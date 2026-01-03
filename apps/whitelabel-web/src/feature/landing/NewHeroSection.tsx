@@ -37,7 +37,7 @@ export function NewHeroSection() {
 			filter: "blur(0px)",
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -50,7 +50,7 @@ export function NewHeroSection() {
 			transition: {
 				duration: 0.8,
 				delay: 0.8,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
@@ -64,7 +64,7 @@ export function NewHeroSection() {
 			transition: {
 				duration: 0.6,
 				delay: 1.1,
-				ease: [0.22, 1, 0.36, 1]
+				ease: [0.22, 1, 0.36, 1] as const
 			}
 		}
 	}
