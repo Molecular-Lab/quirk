@@ -1,197 +1,185 @@
-import { useEffect, useState } from "react"
-import { ArrowDown, TrendingUp, DollarSign, Clock } from "lucide-react"
-import { useScrollAnimation } from "@/hooks/useScrollAnimation"
+import {
+	motion,
+	useScroll,
+	useTransform,
+	useMotionValue,
+	animate,
+} from "framer-motion"
+import { useRef, useEffect, useState } from "react"
+
+const milestones = [
+	{ id: 1, label: "Idle Capital" },
+	{ id: 2, label: "Connect Quirk" },
+	{ id: 3, label: "Earn Yield" },
+	{ id: 4, label: "Revenue" },
+]
+
+// Data for each step - what to show in cards
+const stepData = [
+	{
+		quirkless: { label: "Idle Capital", value: "$50M", subtext: "sitting unused" },
+		quirk: { label: "Idle Capital", value: "$50M", subtext: "ready to earn" },
+	},
+	{
+		quirkless: { label: "Your Options", value: "0", subtext: "yield solutions" },
+		quirk: { label: "Integration", value: "1", subtext: "SDK to embed" },
+	},
+	{
+		quirkless: { label: "Annual Yield", value: "0%", subtext: "APY" },
+		quirk: { label: "Annual Yield", value: "5%", subtext: "APY", highlight: true },
+	},
+	{
+		quirkless: { label: "Lost Revenue", value: "$0", subtext: "per year" },
+		quirk: { label: "Your Revenue", value: "$2.5M", subtext: "per year (90% share)", highlight: true },
+	},
+]
 
 export function HowItWorksSection() {
-	const { ref, isVisible } = useScrollAnimation({ threshold: 0.1 })
-	const [animated, setAnimated] = useState(false)
+	const containerRef = useRef<HTMLDivElement>(null)
+	const [activeStep, setActiveStep] = useState(0)
+
+	const { scrollYProgress } = useScroll({
+		target: containerRef,
+		offset: ["start start", "end end"],
+	})
 
 	useEffect(() => {
-		if (isVisible) {
-			// Delay animation slightly after section becomes visible
-			const timer = setTimeout(() => setAnimated(true), 300)
-			return () => clearTimeout(timer)
-		}
-	}, [isVisible])
+		const unsubscribe = scrollYProgress.on("change", (value) => {
+			const step = Math.min(Math.floor(value * milestones.length), milestones.length - 1)
+			setActiveStep(step)
+		})
+		return unsubscribe
+	}, [scrollYProgress])
 
-	const FlowStep = ({
-		icon: Icon,
-		text,
-		delay = 0,
-		highlight = false,
-	}: {
-		icon: React.ElementType
-		text: string
-		delay?: number
-		highlight?: boolean
-	}) => (
-		<div
-			className={`flex flex-col items-center gap-3 transition-all duration-700 ${
-				animated ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
-			}`}
-			style={{ transitionDelay: `${delay}ms` }}
-		>
-			<div
-				className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-500 ${
-					highlight
-						? "bg-gradient-to-br from-purple-500 to-blue-500 text-white shadow-lg scale-110"
-						: "bg-white border-2 border-gray-200 text-gray-700"
-				}`}
-			>
-				<Icon className="w-8 h-8" />
-			</div>
-			<p className={`text-lg font-medium text-center ${highlight ? "text-gray-950 font-semibold" : "text-gray-700"}`}>
-				{text}
-			</p>
-		</div>
-	)
-
-	const AnimatedNumber = ({ value, suffix = "", delay = 0, decimals = 0 }: { value: number; suffix?: string; delay?: number; decimals?: number }) => {
-		const [displayValue, setDisplayValue] = useState(0)
-
-		useEffect(() => {
-			if (!animated) return
-
-			let interval: NodeJS.Timeout | null = null
-			const timer = setTimeout(() => {
-				const duration = 2000
-				const steps = 60
-				const increment = value / steps
-				let current = 0
-
-				interval = setInterval(() => {
-					current += increment
-					if (current >= value) {
-						setDisplayValue(value)
-						if (interval) clearInterval(interval)
-					} else {
-						setDisplayValue(current)
-					}
-				}, duration / steps)
-			}, delay)
-
-			return () => {
-				clearTimeout(timer)
-				if (interval) clearInterval(interval)
-			}
-		}, [animated, value, delay])
-
-		const formatValue = (val: number) => {
-			if (decimals === 0) {
-				return val.toLocaleString(undefined, { maximumFractionDigits: 0 })
-			}
-			return val.toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals })
-		}
-
-		return (
-			<span>
-				{formatValue(displayValue)}
-				{suffix}
-			</span>
-		)
-	}
+	const currentData = stepData[activeStep]
 
 	return (
-		<section className="py-24 bg-gradient-to-b from-white to-blue-50/20">
-			<div
-				ref={ref as React.RefObject<HTMLDivElement>}
-				className={`max-w-7xl mx-auto px-6 transition-all duration-700 ease-out ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
-					}`}
-			>
-				<div className="text-center mb-16">
-					<h2 className="text-6xl font-bold text-gray-950 mb-4">How It Works</h2>
-					<p className="text-xl text-gray-700 max-w-3xl mx-auto">
-						Transform idle funds into revenue-generating assets with Quirk's automated yield infrastructure
-					</p>
-				</div>
-
-				<div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-					{/* Before Section */}
-					<div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 lg:p-10 border-2 border-gray-200 shadow-lg">
-						<div className="text-center mb-8">
-							<h3 className="text-4xl font-bold text-gray-950 mb-2">Before</h3>
-							<div className="w-24 h-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent mx-auto" />
+		<section ref={containerRef} className="bg-white">
+			{/* Tall scroll container - 4 steps = 400vh for slower scroll */}
+			<div className="relative" style={{ height: "400vh" }}>
+				{/* Sticky content that stays in view */}
+				<div className="sticky top-0 h-screen flex items-center justify-center p-4">
+					{/* Full Card Container - 90vw x 90vh */}
+					<div
+						className="bg-gray-100 rounded-3xl p-6 lg:p-10 flex flex-col"
+						style={{ width: "90vw", height: "90vh", maxWidth: "90vw", maxHeight: "90vh" }}
+					>
+						{/* Header inside card */}
+						<div className="text-center mb-6 lg:mb-8">
+							<h2 className="text-4xl lg:text-6xl font-bold text-gray-900">
+								How Quirk Works
+							</h2>
 						</div>
 
-						<div className="space-y-6">
-							<FlowStep icon={DollarSign} text="Operational Float: $50M" delay={100} />
-							<div className="flex justify-center">
-								<ArrowDown className="w-6 h-6 text-gray-400" />
-							</div>
-							<FlowStep icon={Clock} text="14 days idle" delay={200} />
-							<div className="flex justify-center">
-								<ArrowDown className="w-6 h-6 text-gray-400" />
-							</div>
-							<FlowStep icon={DollarSign} text="User Payout" delay={300} />
-						</div>
+						{/* Main Layout: Steps + Cards */}
+						<div className="flex-1 flex flex-col lg:flex-row gap-6 lg:gap-8 min-h-0">
+							{/* Left: Milestone Steps with Vertical Line */}
+							<div className="lg:w-56 flex-shrink-0">
+								<div className="relative h-full flex flex-col justify-center">
+									{/* Vertical Line Background */}
+									<div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gray-300" />
 
-						<div className="mt-10 pt-8 border-t-2 border-gray-200">
-							<div className="text-center">
-								<p className="text-sm text-gray-500 mb-2">Platform Revenue</p>
-								<p className="text-5xl font-bold text-gray-400">
-									<AnimatedNumber value={0} suffix="/year" delay={400} />
-								</p>
-							</div>
-						</div>
-					</div>
+									{/* Vertical Line Progress */}
+									<motion.div
+										className="absolute left-5 top-0 w-0.5 bg-gray-900 origin-top transition-all duration-500"
+										style={{
+											height: `${Math.min(((activeStep + 1) / milestones.length) * 100, 100)}%`,
+										}}
+									/>
 
-					{/* After Section */}
-					<div className="bg-gradient-to-br from-purple-50/80 to-blue-50/80 backdrop-blur-sm rounded-2xl p-8 lg:p-10 border-2 border-purple-200 shadow-xl relative overflow-hidden">
-						{/* Decorative gradient overlay */}
-						<div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-purple-400 via-blue-400 to-purple-400" />
-						
-						<div className="text-center mb-8">
-							<h3 className="text-4xl font-bold text-gray-950 mb-2">After</h3>
-							<div className="w-24 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent mx-auto" />
-						</div>
+									<div className="space-y-12 relative">
+										{milestones.map((milestone, index) => (
+											<motion.div
+												key={milestone.id}
+												className="flex items-center gap-4"
+												initial={{ opacity: 0, x: -20 }}
+												animate={{ opacity: 1, x: 0 }}
+												transition={{ delay: 0.2 + index * 0.1 }}
+											>
+												<div
+													className={`w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all duration-500 z-10 ${
+														index <= activeStep
+															? "border-gray-900 bg-gray-900"
+															: "border-gray-400 bg-white"
+													}`}
+												>
+													<span className={`text-sm font-bold ${index <= activeStep ? "text-white" : "text-gray-400"}`}>
+														{index + 1}
+													</span>
+												</div>
+												<span
+													className={`text-base font-medium transition-colors duration-300 ${
+														index <= activeStep ? "text-gray-900" : "text-gray-400"
+													}`}
+												>
+													{milestone.label}
+												</span>
+											</motion.div>
+										))}
+									</div>
+								</div>
+							</div>
 
-						<div className="space-y-6">
-							<FlowStep icon={DollarSign} text="Operational Float: $50M" delay={500} />
-							<div className="flex justify-center">
-								<ArrowDown className="w-6 h-6 text-purple-500 animate-pulse" />
-							</div>
-							<FlowStep icon={TrendingUp} text="Quirk Stablecoin Yield (5%)" delay={600} highlight />
-							<div className="flex justify-center">
-								<ArrowDown className="w-6 h-6 text-purple-500 animate-pulse" />
-							</div>
-							<FlowStep icon={Clock} text="Auto Withdraw on demand" delay={700} />
-							<div className="flex justify-center">
-								<ArrowDown className="w-6 h-6 text-purple-500 animate-pulse" />
-							</div>
-							<FlowStep icon={DollarSign} text="User Payout" delay={800} />
-						</div>
+							{/* Right: Two Big Cards with Standalone Numbers */}
+							<div className="flex-1 grid lg:grid-cols-2 gap-4 lg:gap-6 min-h-0">
+								{/* QUIRKLESS Card - Static container */}
+								<div className="bg-white rounded-2xl p-6 lg:p-8 border border-gray-200 flex flex-col justify-center items-center text-center overflow-hidden">
+									<p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+										Quirkless
+									</p>
 
-						<div className="mt-10 pt-8 border-t-2 border-purple-200/50">
-							<div className="space-y-4">
-								<div className="text-center">
-									<p className="text-sm text-gray-600 mb-1">Gross Revenue</p>
-									<p className="text-4xl font-bold text-gray-950">
-										$<AnimatedNumber value={2.5} suffix="M/year" delay={900} decimals={1} />
+									<p className="text-sm text-gray-500 mb-2">
+										{currentData.quirkless.label}
+									</p>
+
+									{/* Only the number animates */}
+									<motion.p
+										className="text-6xl lg:text-8xl xl:text-9xl font-bold text-gray-300 leading-none"
+										key={`quirkless-value-${activeStep}`}
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+									>
+										{currentData.quirkless.value}
+									</motion.p>
+
+									<p className="text-base text-gray-400 mt-4">
+										{currentData.quirkless.subtext}
 									</p>
 								</div>
-								<div className="grid grid-cols-2 gap-4 pt-4 border-t border-purple-200/30">
-									<div className="text-center">
-										<p className="text-xs text-gray-600 mb-1">Platform</p>
-										<p className="text-2xl font-bold text-purple-600">
-											$<AnimatedNumber value={2.25} suffix="M" delay={1000} decimals={2} />
-										</p>
-										<p className="text-xs text-gray-500 mt-1">(90%)</p>
-									</div>
-									<div className="text-center">
-										<p className="text-xs text-gray-600 mb-1">Quirk</p>
-										<p className="text-2xl font-bold text-blue-600">
-											$<AnimatedNumber value={250} suffix="k" delay={1100} />
-										</p>
-										<p className="text-xs text-gray-500 mt-1">(10%)</p>
-									</div>
+
+								{/* QUIRK Card - Static container */}
+								<div className="bg-gray-900 rounded-2xl p-6 lg:p-8 text-white flex flex-col justify-center items-center text-center overflow-hidden">
+									<p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
+										Quirk
+									</p>
+
+									<p className="text-sm text-gray-400 mb-2">
+										{currentData.quirk.label}
+									</p>
+
+									{/* Only the number animates */}
+									<motion.p
+										className={`text-6xl lg:text-8xl xl:text-9xl font-bold leading-none ${
+											currentData.quirk.highlight ? "text-green-400" : "text-white"
+										}`}
+										key={`quirk-value-${activeStep}`}
+										initial={{ opacity: 0, y: 20 }}
+										animate={{ opacity: 1, y: 0 }}
+										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+									>
+										{currentData.quirk.value}
+									</motion.p>
+
+									<p className="text-base text-gray-500 mt-4">
+										{currentData.quirk.subtext}
+									</p>
 								</div>
 							</div>
 						</div>
 					</div>
 				</div>
-
 			</div>
 		</section>
 	)
 }
-
