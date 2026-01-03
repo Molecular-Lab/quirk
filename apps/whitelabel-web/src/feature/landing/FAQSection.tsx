@@ -138,7 +138,7 @@ export function FAQSection() {
 	}
 
 	return (
-		<section className="py-24 bg-gradient-to-b from-white to-gray-50/50 overflow-hidden">
+		<section className="py-24 lg:py-32 bg-white overflow-hidden">
 			<motion.div
 				ref={ref}
 				variants={containerVariants}
@@ -147,23 +147,15 @@ export function FAQSection() {
 				className="max-w-4xl mx-auto px-6"
 			>
 				{/* Section Header */}
-				<motion.div className="text-center mb-12" variants={titleVariants}>
-					<motion.span
-						className="inline-block px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-4"
-						initial={{ opacity: 0, scale: 0.8 }}
-						animate={isInView ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
-						transition={{ delay: 0.1 }}
-					>
-						FAQ
-					</motion.span>
+				<motion.div className="text-center mb-16" variants={titleVariants}>
 					<motion.h2
-						className="text-5xl font-bold text-gray-950 mb-4"
+						className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4"
 						variants={titleVariants}
 					>
 						Frequently Asked Questions
 					</motion.h2>
 					<motion.p
-						className="text-xl text-gray-700 max-w-2xl mx-auto"
+						className="text-xl text-gray-600 max-w-2xl mx-auto"
 						variants={titleVariants}
 					>
 						Everything you need to know about Quirk

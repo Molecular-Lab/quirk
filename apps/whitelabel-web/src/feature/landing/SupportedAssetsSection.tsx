@@ -29,9 +29,9 @@ export function SupportedAssetsSection() {
 			opacity: 1,
 			transition: {
 				staggerChildren: 0.15,
-				delayChildren: 0.2
-			}
-		}
+				delayChildren: 0.2,
+			},
+		},
 	}
 
 	const titleVariants = {
@@ -41,9 +41,9 @@ export function SupportedAssetsSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1]
-			}
-		}
+				ease: [0.22, 1, 0.36, 1],
+			},
+		},
 	}
 
 	const cardVariants = {
@@ -54,9 +54,9 @@ export function SupportedAssetsSection() {
 			scale: 1,
 			transition: {
 				duration: 0.5,
-				ease: [0.22, 1, 0.36, 1]
-			}
-		}
+				ease: [0.22, 1, 0.36, 1],
+			},
+		},
 	}
 
 	const logoVariants = {
@@ -67,13 +67,13 @@ export function SupportedAssetsSection() {
 			transition: {
 				type: "spring",
 				stiffness: 200,
-				damping: 15
-			}
-		}
+				damping: 15,
+			},
+		},
 	}
 
 	return (
-		<section className="pt-20 pb-32 bg-white overflow-hidden">
+		<section className="py-24 lg:py-32 bg-gray-50 overflow-hidden">
 			<motion.div
 				ref={ref}
 				variants={containerVariants}
@@ -81,18 +81,18 @@ export function SupportedAssetsSection() {
 				animate={isInView ? "visible" : "hidden"}
 				className="max-w-7xl mx-auto px-6"
 			>
-				<motion.div className="text-center mb-12" variants={titleVariants}>
-					<motion.h3
-						className="text-5xl font-bold text-gray-950 mb-4"
-						variants={titleVariants}
-					>
+				<motion.div className="text-center mb-16" variants={titleVariants}>
+					<h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
 						Supported Assets
-					</motion.h3>
+					</h2>
+					<p className="text-xl text-gray-600">
+						Start earning yield on major stablecoins
+					</p>
 				</motion.div>
 
-				{/* Protocol Cards */}
+				{/* Asset Cards */}
 				<motion.div
-					className="flex gap-6 justify-center pb-4"
+					className="flex flex-wrap gap-6 justify-center"
 					variants={containerVariants}
 				>
 					{protocols.map((protocol, idx) => (
@@ -100,58 +100,55 @@ export function SupportedAssetsSection() {
 							key={idx}
 							variants={cardVariants}
 							whileHover={{
-								y: -8,
-								scale: 1.02,
-								boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
-								borderColor: "#93c5fd",
+								y: -4,
 								transition: {
 									type: "spring",
 									stiffness: 300,
-									damping: 20
-								}
+									damping: 20,
+								},
 							}}
-							className="flex-shrink-0 w-[240px] bg-white rounded-xl border border-gray-200 p-8 flex items-center justify-center cursor-pointer"
+							className="w-[200px] bg-white rounded-2xl border border-gray-200 p-6 flex items-center justify-center cursor-pointer hover:border-gray-300 hover:shadow-lg transition-shadow"
 						>
 							<div className="flex flex-col items-center justify-center gap-4 w-full">
 								<motion.div
 									variants={logoVariants}
 									whileHover={{
-										scale: 1.1,
-										rotate: 5,
-										transition: { type: "spring", stiffness: 400 }
+										scale: 1.05,
+										transition: { type: "spring", stiffness: 400 },
 									}}
-									className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center border-2 border-blue-200 shadow-sm"
+									className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center"
 								>
 									{protocol.logo ? (
-										<motion.img
+										<img
 											src={protocol.logo}
 											alt={protocol.name}
-											className="w-14 h-14"
-											whileHover={{ scale: 1.1 }}
+											className="w-10 h-10"
 										/>
 									) : protocol.icon === "+" ? (
 										<motion.span
-											className="text-4xl font-bold text-gray-500"
+											className="text-3xl font-bold text-gray-400"
 											animate={{
 												scale: [1, 1.1, 1],
 											}}
 											transition={{
 												duration: 2,
 												repeat: Infinity,
-												ease: "easeInOut"
+												ease: "easeInOut",
 											}}
 										>
 											{protocol.icon}
 										</motion.span>
 									) : (
-										<span className="text-4xl">{protocol.icon}</span>
+										<span className="text-3xl">{protocol.icon}</span>
 									)}
 								</motion.div>
 								<div className="text-center">
-									<span className="block text-xl font-bold text-gray-950">{protocol.name}</span>
+									<span className="block text-lg font-semibold text-gray-900">
+										{protocol.name}
+									</span>
 									{protocol.description && (
 										<motion.span
-											className="text-sm text-gray-600 mt-1 block"
+											className="text-sm text-gray-500 mt-1 block"
 											initial={{ opacity: 0 }}
 											animate={isInView ? { opacity: 1 } : { opacity: 0 }}
 											transition={{ delay: 0.5 }}

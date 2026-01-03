@@ -7,17 +7,13 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import { listOrganizationsByPrivyId } from "@/api/b2bClientHelpers"
 import quirkLogo from "@/assets/quirk-logo.svg"
 
-import { ServicesShowcaseSection } from "./ServicesShowcaseSection"
 import { CTASection } from "./CTASection"
-import { CustomizeEarnSection } from "./CustomizeEarnSection"
 import { FAQSection } from "./FAQSection"
-import { FeaturesGridSection } from "./FeaturesGridSection"
 import { HowItWorksSection } from "./HowItWorksSection"
-import { MarqueeSection } from "./MarqueeSection"
 import { NewHeroSection } from "./NewHeroSection"
-import { PartnersSection } from "./PartnersSection"
+import { ServicesShowcaseSection } from "./ServicesShowcaseSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
-import { TradingStrategiesSection } from "./TradingStrategiesSection"
+import { WhyQuirkSection } from "./WhyQuirkSection"
 
 export function LandingPage() {
 	const { authenticated, ready, user } = usePrivy()
@@ -97,7 +93,7 @@ export function LandingPage() {
 	}
 
 	return (
-		<div className="min-h-screen bg-gradient-to-b from-blue-50/30 via-purple-50/10 to-white">
+		<div className="min-h-screen bg-white">
 			{/* Header - Pure glass blur (no background color) */}
 			<motion.header
 				className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl ${
@@ -160,26 +156,14 @@ export function LandingPage() {
 			{/* Hero */}
 			<NewHeroSection />
 
-			{/* Features Grid - Bento style */}
-			<FeaturesGridSection />
+			{/* Why Quirk - Round cards with phone mockup */}
+			<WhyQuirkSection />
 
-			{/* Marquee - Why Quirk */}
-			<MarqueeSection />
-
-			{/* Customize Earn Solution */}
-			<CustomizeEarnSection />
-
-			{/* Trading Strategies */}
-			<TradingStrategiesSection />
+			{/* Explore our Services - 5 Core Features */}
+			<ServicesShowcaseSection />
 
 			{/* How It Works */}
 			<HowItWorksSection />
-
-			{/* Services Showcase - 5 Core Features */}
-			<ServicesShowcaseSection />
-
-			{/* Partners & Protocols */}
-			<PartnersSection />
 
 			{/* Supported Assets */}
 			<SupportedAssetsSection />
