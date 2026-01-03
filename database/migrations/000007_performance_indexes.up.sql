@@ -9,17 +9,17 @@
 
 -- Composite index for client + status + date queries
 -- Used by: ListPendingDeposits, GetDepositStats, Dashboard
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_deposit_txns_client_status_created
+CREATE INDEX IF NOT EXISTS idx_deposit_txns_client_status_created
   ON deposit_transactions(client_id, status, created_at DESC)
   WHERE status IN ('pending', 'completed', 'failed');
 
 -- Partial index for environment-filtered pending deposits
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_deposit_txns_env_status_created
+CREATE INDEX IF NOT EXISTS idx_deposit_txns_env_status_created
   ON deposit_transactions(environment, status, created_at DESC)
   WHERE status = 'pending';
 
 -- Covering index for completed deposit stats (avoids table lookups)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_deposit_txns_client_completed_stats
+CREATE INDEX IF NOT EXISTS idx_deposit_txns_client_completed_stats
   ON deposit_transactions(client_id, created_at DESC)
   INCLUDE (crypto_amount, total_fees)
   WHERE status = 'completed';
@@ -30,17 +30,17 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_deposit_txns_client_completed_stats
 
 -- Composite index for client + status + date queries
 -- Used by: ListPendingWithdrawals, GetWithdrawalStats, Dashboard
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_withdrawal_txns_client_status_created
+CREATE INDEX IF NOT EXISTS idx_withdrawal_txns_client_status_created
   ON withdrawal_transactions(client_id, status, created_at DESC)
   WHERE status IN ('pending', 'completed', 'failed');
 
 -- Partial index for environment-filtered pending withdrawals
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_withdrawal_txns_env_status_created
+CREATE INDEX IF NOT EXISTS idx_withdrawal_txns_env_status_created
   ON withdrawal_transactions(environment, status, created_at DESC)
   WHERE status = 'pending';
 
 -- Covering index for completed withdrawal stats
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_withdrawal_txns_client_completed_stats
+CREATE INDEX IF NOT EXISTS idx_withdrawal_txns_client_completed_stats
   ON withdrawal_transactions(client_id, created_at DESC)
   INCLUDE (requested_amount, destination_currency)
   WHERE status = 'completed';
@@ -51,18 +51,18 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_withdrawal_txns_client_completed_sta
 
 -- Composite index for environment-filtered vault queries
 -- Used by: GetAggregatedDashboardSummary (CRITICAL - removes correlated subquery slowdown)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_client_vaults_client_env_active
+CREATE INDEX IF NOT EXISTS idx_client_vaults_client_env_active
   ON client_vaults(client_id, environment, is_active)
   WHERE is_active = true;
 
 -- Covering index for active vault aggregations (avoids table lookups)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_client_vaults_client_active_balances
+CREATE INDEX IF NOT EXISTS idx_client_vaults_client_active_balances
   ON client_vaults(client_id, is_active)
   INCLUDE (pending_deposit_balance, total_staked_balance, cumulative_yield)
   WHERE is_active = true;
 
 -- Index for pending stake batch queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_client_vaults_active_pending
+CREATE INDEX IF NOT EXISTS idx_client_vaults_active_pending
   ON client_vaults(is_active, pending_deposit_balance DESC)
   WHERE is_active = true AND pending_deposit_balance > 0;
 
@@ -72,12 +72,12 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_client_vaults_active_pending
 
 -- Composite index for portfolio calculation JOIN
 -- Fixes: GetEndUserPortfolio heavy JOIN on (client_id, chain, token_address)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_end_user_vaults_client_chain_token
+CREATE INDEX IF NOT EXISTS idx_end_user_vaults_client_chain_token
   ON end_user_vaults(client_id, chain, token_address)
   WHERE is_active = true;
 
 -- Covering index for user vault aggregations
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_end_user_vaults_user_active_shares
+CREATE INDEX IF NOT EXISTS idx_end_user_vaults_user_active_shares
   ON end_user_vaults(end_user_id, is_active)
   INCLUDE (shares, total_deposited, total_withdrawn)
   WHERE is_active = true;
@@ -87,12 +87,12 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_end_user_vaults_user_active_shares
 -- ============================================
 
 -- Composite index for client user lists with date sorting
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_end_users_client_active_created
+CREATE INDEX IF NOT EXISTS idx_end_users_client_active_created
   ON end_users(client_id, is_active, created_at DESC)
   WHERE is_active = true;
 
 -- Index for last deposit tracking (used in user ranking)
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_end_users_last_deposit
+CREATE INDEX IF NOT EXISTS idx_end_users_last_deposit
   ON end_users(client_id, last_deposit_at DESC NULLS LAST)
   WHERE is_active = true;
 
@@ -101,11 +101,11 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_end_users_last_deposit
 -- ============================================
 
 -- Composite index for client audit log queries
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_client_created
+CREATE INDEX IF NOT EXISTS idx_audit_logs_client_created
   ON audit_logs(client_id, created_at DESC);
 
 -- Index for action-specific lookups
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_client_action_created
+CREATE INDEX IF NOT EXISTS idx_audit_logs_client_action_created
   ON audit_logs(client_id, action, created_at DESC);
 
 -- ============================================
@@ -113,7 +113,7 @@ CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_audit_logs_client_action_created
 -- ============================================
 
 -- Covering index for queued withdrawal aggregation
-CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_withdrawal_queue_client_status_json
+CREATE INDEX IF NOT EXISTS idx_withdrawal_queue_client_status_json
   ON withdrawal_queue(client_id, status)
   INCLUDE (withdrawal_transaction_id, protocols_to_unstake)
   WHERE status = 'queued';
