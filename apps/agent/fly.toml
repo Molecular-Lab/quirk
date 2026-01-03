@@ -6,7 +6,9 @@ primary_region = "sjc"  # San Jose, California - change to your preferred region
 
 # Build configuration
 [build]
-  dockerfile = "Dockerfile"
+  dockerfile = "apps/agent/Dockerfile"
+  # Set build context to repository root, but Dockerfile is in apps/agent/
+  # We need to adjust COPY paths in Dockerfile to match this
 
 # Environment variables (non-secret)
 [env]
