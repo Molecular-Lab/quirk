@@ -5,6 +5,7 @@ import {
 	Copy,
 	Eye,
 	EyeOff,
+	Info,
 	Loader2,
 	RefreshCw,
 	Rocket,
@@ -29,6 +30,7 @@ import {
 	updateSupportedCurrencies,
 } from "@/api/b2bClientHelpers"
 import { AllocationDonutChart } from "@/components/charts/AllocationDonutChart"
+import { EnvironmentSelector } from "@/components/EnvironmentSelector"
 import { ProductSwitcher } from "@/components/ProductSwitcher"
 import { AllocationSlider } from "@/components/strategy/AllocationSlider"
 import { RiskProfileCard } from "@/components/strategy/RiskProfileCard"
@@ -40,7 +42,7 @@ import { useFloatingConcierge } from "@/contexts/FloatingConciergeContext"
 import type { StrategyConfig } from "@/feature/dashboard/ProductStrategyConfig"
 import { useAPYCache } from "@/hooks/useAPYCache"
 import { useUserBalance } from "@/hooks/useUserBalance"
-import { useAPYCacheStore, type Allocation } from "@/store/apyCacheStore"
+import { type Allocation, useAPYCacheStore } from "@/store/apyCacheStore"
 import { useEnvironmentStore } from "@/store/environmentStore"
 import { useUserStore } from "@/store/userStore"
 import { Currency } from "@/types"
@@ -192,7 +194,7 @@ export function ProductConfigPage() {
 	const privyWalletAddress = useUserStore((state) => state.privyWalletAddress)
 	const apiEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
 
-	const { data: balance, isLoading: balanceLoading } = useUserBalance({
+	const {} = useUserBalance({
 		walletAddress: privyWalletAddress,
 		environment: apiEnvironment,
 		token: "usdc",
@@ -213,7 +215,10 @@ export function ProductConfigPage() {
 	// Calculate blended APY from cached APYs (instant, no API call)
 	const blendedAPY = useMemo(() => {
 		if (!apys || allocations.length === 0) {
-			console.log("[ProductConfigPage] APY calculation skipped:", { apysLoaded: !!apys, allocationsLength: allocations.length })
+			console.log("[ProductConfigPage] APY calculation skipped:", {
+				apysLoaded: !!apys,
+				allocationsLength: allocations.length,
+			})
 			return "0.00"
 		}
 
@@ -224,10 +229,10 @@ export function ProductConfigPage() {
 		}))
 
 		const result = calculateExpectedAPY(allocs)
-		console.log("[ProductConfigPage] Blended APY calculated:", { 
-			apys, 
-			allocations: allocs, 
-			blendedAPY: result 
+		console.log("[ProductConfigPage] Blended APY calculated:", {
+			apys,
+			allocations: allocs,
+			blendedAPY: result,
 		})
 		return result
 	}, [allocations, apys, calculateExpectedAPY])
@@ -846,7 +851,10 @@ Help them understand or refine their strategy.`
 						<h1 className="text-3xl font-bold text-gray-900 mb-2">Products</h1>
 						<p className="text-gray-600">Configure your product settings, strategies, and integrations</p>
 					</div>
-					<ProductSwitcher />
+					<div className="flex items-center gap-3">
+						<EnvironmentSelector />
+						<ProductSwitcher />
+					</div>
 				</div>
 
 				<div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -914,25 +922,20 @@ Help them understand or refine their strategy.`
 						{/* Investment Strategy Configuration */}
 						<div className="bg-white/90 backdrop-blur-md rounded-xl shadow-sm border border-gray-150 p-8">
 							<div className="border-b border-gray-150 pb-4 mb-6">
-								<h2 className="text-xl font-semibold text-gray-950 mb-1">Investment Strategy</h2>
-								<p className="text-sm text-gray-500">Configure how your funds are allocated across DeFi protocols</p>
-							</div>
-
-							{/* Available Balance */}
-							<div className="mb-6 bg-gray-50 rounded-lg p-4 border border-gray-200">
-								{balanceLoading ? (
-									<div className="animate-pulse flex items-center justify-between">
-										<div className="h-4 bg-gray-200 rounded w-24"></div>
-										<div className="h-6 bg-gray-200 rounded w-32"></div>
+								<div className="flex items-start justify-between">
+									<div className="flex-1">
+										<h2 className="text-xl font-semibold text-gray-950 mb-1">Investment Strategy</h2>
+										<p className="text-sm text-gray-500">
+											Configure how your funds are allocated across DeFi protocols
+										</p>
 									</div>
-								) : balance ? (
-									<div className="flex items-center justify-between">
-										<span className="text-sm text-gray-600">Available Balance</span>
-										<span className="text-xl font-bold text-gray-900">${balance.formatted}</span>
+									<div className="flex items-center gap-2 bg-blue-50 px-3 py-1.5 rounded-full">
+										<Info className="w-3.5 h-3.5 text-blue-600" />
+										<span className="text-xs text-blue-700 font-medium">
+											APY from {apiEnvironment === "sandbox" ? "Production (read-only)" : "Production"}
+										</span>
 									</div>
-								) : (
-									<p className="text-sm text-gray-400">Connect wallet to see balance</p>
-								)}
+								</div>
 							</div>
 
 							{/* Risk Profile Cards */}

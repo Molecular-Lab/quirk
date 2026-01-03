@@ -1,28 +1,30 @@
-import { useState, useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 
+import { useQueryClient } from "@tanstack/react-query"
 import { useSearch } from "@tanstack/react-router"
+import { ArrowDownToLine, ArrowUpFromLine, Info, Loader2, Settings } from "lucide-react"
 import { toast } from "sonner"
 
 import { getEffectiveProductStrategies } from "@/api/b2bClientHelpers"
+import AaveLogo from "@/assets/aave-aave-logo.svg"
+import CompoundLogo from "@/assets/compound-comp-logo.svg"
+import MorphoLogo from "@/assets/Morpho-token-icon.svg"
+import { EnvironmentSelector } from "@/components/EnvironmentSelector"
 import { ProductSwitcher } from "@/components/ProductSwitcher"
+import { useAPYCache } from "@/hooks/useAPYCache"
+import { useClientWalletBalance } from "@/hooks/useClientWalletBalance"
+import { type Allocation, useAPYCacheStore } from "@/store/apyCacheStore"
 import { useUserStore } from "@/store/userStore"
 
 import { CategorySection } from "../../components/market/CategorySection"
 import { ProtocolCard } from "../../components/market/ProtocolCard"
 import { useAllDeFiProtocols } from "../../hooks/useDeFiProtocols"
-import { useClientWalletBalance } from "@/hooks/useClientWalletBalance"
+
 import { EarnDepositModal } from "./EarnDepositModal"
-import { WithdrawalExecutionModal } from "./WithdrawalExecutionModal"
 import { TransactionHistory } from "./TransactionHistory"
-import { useQueryClient } from "@tanstack/react-query"
-import { ArrowDownToLine, ArrowUpFromLine, Info, Loader2, Settings } from "lucide-react"
-import { useAPYCache } from "@/hooks/useAPYCache"
-import { useAPYCacheStore, type Allocation } from "@/store/apyCacheStore"
+import { WithdrawalExecutionModal } from "./WithdrawalExecutionModal"
 
 // Import protocol logos
-import AaveLogo from "@/assets/aave-aave-logo.svg"
-import CompoundLogo from "@/assets/compound-comp-logo.svg"
-import MorphoLogo from "@/assets/Morpho-token-icon.svg"
 
 interface RiskPackage {
 	id: number
@@ -176,7 +178,7 @@ export function YieldDashboard() {
 				console.log(`[YieldDashboard] Loading strategy for product: ${activeProductId}`)
 
 				const { strategies, source } = await getEffectiveProductStrategies(activeProductId)
-				
+
 				console.log("[YieldDashboard] Loaded strategy:", { strategies, source })
 				setLoadedStrategy(strategies)
 
@@ -205,7 +207,7 @@ export function YieldDashboard() {
 
 	// Removed: Protocol allocations state (no longer needed, data comes from loadedStrategy)
 	// Removed: All configuration functions (now handled in ProductConfigPage)
-	// handlePackageSelect, updateAllocation, handleSave, handleSaveCustomStrategy, 
+	// handlePackageSelect, updateAllocation, handleSave, handleSaveCustomStrategy,
 	// loadCustomStrategy, deleteCustomStrategy, calculateBlendedAPY, createNewCustomStrategy
 
 	// Calculate stats
@@ -218,10 +220,14 @@ export function YieldDashboard() {
 			<div className="max-w-[1600px] mx-auto px-6 py-6">
 				{/* Header */}
 				<div className="mb-6">
-					<div className="flex items-center gap-4 mb-2">
-						<h1 className="text-3xl font-bold text-gray-900">Earn</h1>
-						{/* ✅ Product Switcher for multi-product support */}
-						{organizations.length > 0 && <ProductSwitcher />}
+					<div className="flex items-center justify-between mb-2">
+						<div className="flex items-center gap-4">
+							<h1 className="text-3xl font-bold text-gray-900">Earn</h1>
+							{/* ✅ Product Switcher for multi-product support */}
+							{organizations.length > 0 && <ProductSwitcher />}
+						</div>
+						{/* ✅ Environment Selector - switch between sandbox/production */}
+						<EnvironmentSelector />
 					</div>
 					<p className="text-gray-600">Explore protocols and manage your yield strategies</p>
 					{isLoadingStrategy && (
@@ -268,9 +274,7 @@ export function YieldDashboard() {
 							}`}
 						>
 							Transaction History
-							{activeTab === "history" && (
-								<div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600"></div>
-							)}
+							{activeTab === "history" && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-green-600"></div>}
 						</button>
 					</div>
 				</div>
@@ -473,12 +477,12 @@ export function YieldDashboard() {
 													</div>
 													<h3 className="text-2xl font-bold text-gray-900">Active Strategy</h3>
 												</div>
-												<p className="text-sm text-gray-600 ml-13">
-													{selectedPackage.name} Risk Profile
-												</p>
+												<p className="text-sm text-gray-600 ml-13">{selectedPackage.name} Risk Profile</p>
 											</div>
-											<span className={`px-3 py-1 ${loadedStrategy ? 'bg-green-600' : 'bg-gray-400'} text-white text-xs font-bold rounded-full shadow-md`}>
-												{loadedStrategy ? 'CONFIGURED' : 'UNCONFIGURED'}
+											<span
+												className={`px-3 py-1 ${loadedStrategy ? "bg-green-600" : "bg-gray-400"} text-white text-xs font-bold rounded-full shadow-md`}
+											>
+												{loadedStrategy ? "CONFIGURED" : "UNCONFIGURED"}
 											</span>
 										</div>
 
@@ -493,25 +497,31 @@ export function YieldDashboard() {
 															<img src={AaveLogo} alt="Aave" className="w-8 h-8" />
 															<span className="text-sm font-medium text-gray-700">Aave V3</span>
 														</div>
-														<span className="text-2xl font-bold text-gray-900">{loadedStrategy.lending?.aave || 0}%</span>
+														<span className="text-2xl font-bold text-gray-900">
+															{loadedStrategy.lending?.aave || 0}%
+														</span>
 													</div>
-													
+
 													{/* Compound */}
 													<div className="flex items-center justify-between">
 														<div className="flex items-center gap-3">
 															<img src={CompoundLogo} alt="Compound" className="w-8 h-8" />
 															<span className="text-sm font-medium text-gray-700">Compound V3</span>
 														</div>
-														<span className="text-2xl font-bold text-gray-900">{loadedStrategy.lending?.compound || 0}%</span>
+														<span className="text-2xl font-bold text-gray-900">
+															{loadedStrategy.lending?.compound || 0}%
+														</span>
 													</div>
-													
+
 													{/* Morpho */}
 													<div className="flex items-center justify-between">
 														<div className="flex items-center gap-3">
 															<img src={MorphoLogo} alt="Morpho" className="w-8 h-8" />
 															<span className="text-sm font-medium text-gray-700">Morpho</span>
 														</div>
-														<span className="text-2xl font-bold text-gray-900">{loadedStrategy.lending?.morpho || 0}%</span>
+														<span className="text-2xl font-bold text-gray-900">
+															{loadedStrategy.lending?.morpho || 0}%
+														</span>
 													</div>
 												</div>
 											</div>
@@ -562,8 +572,8 @@ export function YieldDashboard() {
 											<div>
 												<h4 className="font-semibold text-blue-900 mb-1">How It Works</h4>
 												<p className="text-sm text-blue-700 leading-relaxed">
-													Your deposits are automatically allocated across protocols according to this strategy. 
-													To change your risk profile or adjust allocations, click "Configure Risk Profile" above.
+													Your deposits are automatically allocated across protocols according to this strategy. To
+													change your risk profile or adjust allocations, click "Configure Risk Profile" above.
 												</p>
 											</div>
 										</div>
@@ -589,7 +599,6 @@ export function YieldDashboard() {
 									</div>
 								</div>
 							)}
-
 						</div>
 
 						{/* Right Side: Execute Actions (Deposit & Withdraw) */}
@@ -611,15 +620,24 @@ export function YieldDashboard() {
 									<>
 										<div className="mb-2">
 											<p className="text-4xl font-bold text-gray-900">
-												${balanceData.totalBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+												$
+												{balanceData.totalBalance.toLocaleString(undefined, {
+													minimumFractionDigits: 2,
+													maximumFractionDigits: 2,
+												})}
 												<span className="text-lg text-gray-500 ml-2 font-normal">USDC</span>
 											</p>
 										</div>
 										<p className="text-sm text-gray-600 mb-2">
-											Idle: ${balanceData.totalIdleBalance.toFixed(2)} • Earning: ${balanceData.totalEarningBalance.toFixed(2)}
+											Idle: ${balanceData.totalIdleBalance.toFixed(2)} • Earning: $
+											{balanceData.totalEarningBalance.toFixed(2)}
 										</p>
 										<p className="text-sm text-green-600 font-medium">
-											Yield Earned: ${balanceData.totalCumulativeYield.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+											Yield Earned: $
+											{balanceData.totalCumulativeYield.toLocaleString(undefined, {
+												minimumFractionDigits: 2,
+												maximumFractionDigits: 2,
+											})}
 										</p>
 									</>
 								) : (
@@ -630,9 +648,7 @@ export function YieldDashboard() {
 												<span className="text-lg text-gray-500 ml-2 font-normal">USDC</span>
 											</p>
 										</div>
-										<p className="text-sm text-gray-500">
-											No deposits yet. Click "Deposit" to start earning yield.
-										</p>
+										<p className="text-sm text-gray-500">No deposits yet. Click "Deposit" to start earning yield.</p>
 									</>
 								)}
 							</div>
@@ -641,7 +657,9 @@ export function YieldDashboard() {
 							<div className="space-y-4">
 								{/* Deposit Button */}
 								<button
-									onClick={() => setShowDepositModal(true)}
+									onClick={() => {
+										setShowDepositModal(true)
+									}}
 									disabled={balanceLoading || !balanceData || !loadedStrategy}
 									className="w-full group relative overflow-hidden bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 disabled:from-gray-300 disabled:to-gray-300 text-white rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed disabled:shadow-none"
 								>
@@ -671,7 +689,9 @@ export function YieldDashboard() {
 
 								{/* Withdraw Button */}
 								<button
-									onClick={() => setShowWithdrawModal(true)}
+									onClick={() => {
+										setShowWithdrawModal(true)
+									}}
 									disabled={balanceLoading || !balanceData || !loadedStrategy}
 									className="w-full group relative overflow-hidden bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 disabled:from-gray-300 disabled:to-gray-300 text-white rounded-2xl p-6 transition-all shadow-lg hover:shadow-xl disabled:cursor-not-allowed disabled:shadow-none"
 								>
@@ -736,7 +756,8 @@ export function YieldDashboard() {
 									<div>
 										<h4 className="font-semibold text-purple-900 mb-1 text-sm">Pro Tip</h4>
 										<p className="text-xs text-purple-700 leading-relaxed">
-											Deposits are processed instantly. Your funds start earning yield immediately according to your configured strategy.
+											Deposits are processed instantly. Your funds start earning yield immediately according to your
+											configured strategy.
 										</p>
 									</div>
 								</div>
@@ -744,7 +765,6 @@ export function YieldDashboard() {
 						</div>
 					</div>
 				)}
-
 
 				{/* Transaction History Tab */}
 				{activeTab === "history" && (
