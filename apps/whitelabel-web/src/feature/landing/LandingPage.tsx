@@ -7,7 +7,7 @@ import { Link, useNavigate } from "@tanstack/react-router"
 import { listOrganizationsByPrivyId } from "@/api/b2bClientHelpers"
 import quirkLogo from "@/assets/quirk-logo.svg"
 
-import { BusinessTypesSection } from "./BusinessTypesSection"
+import { ServicesShowcaseSection } from "./ServicesShowcaseSection"
 import { CTASection } from "./CTASection"
 import { CustomizeEarnSection } from "./CustomizeEarnSection"
 import { FAQSection } from "./FAQSection"
@@ -175,8 +175,8 @@ export function LandingPage() {
 			{/* How It Works */}
 			<HowItWorksSection />
 
-			{/* Business Types - Stripe-style showcase */}
-			<BusinessTypesSection />
+			{/* Services Showcase - 5 Core Features */}
+			<ServicesShowcaseSection />
 
 			{/* Partners & Protocols */}
 			<PartnersSection />
