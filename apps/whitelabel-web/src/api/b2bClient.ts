@@ -3,6 +3,7 @@ import { type AppRouter, type ClientArgs, type InitClientReturn, initClient } fr
 import { type AxiosInstance, type Method, isAxiosError } from "axios"
 
 import b2bAxiosClient from "@/config/axios"
+import { ENV } from "@/config/env"
 
 /**
  * Helper function to get Privy organization ID from localStorage
@@ -78,8 +79,6 @@ export function initB2BAPIClient<T extends AppRouter>(
 }
 
 // Export singleton instance with full type safety
-const B2B_API_BASE_URL = (import.meta.env.VITE_B2B_API_URL as string | undefined) ?? "http://localhost:3002"
-
-export const b2bApiClient = initB2BAPIClient(b2bAxiosClient, b2bContract, B2B_API_BASE_URL)
+export const b2bApiClient = initB2BAPIClient(b2bAxiosClient, b2bContract, ENV.API_URL)
 
 export default b2bApiClient

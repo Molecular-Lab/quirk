@@ -1,8 +1,10 @@
 import { useState } from "react"
-import axios from "axios"
-import { useFloatingConcierge } from "../../contexts/FloatingConciergeContext"
 
-const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8000"
+import axios from "axios"
+
+import { ENV } from "@/config/env"
+
+import { useFloatingConcierge } from "../../contexts/FloatingConciergeContext"
 
 interface ProtocolAllocation {
 	id: string
@@ -25,7 +27,12 @@ interface AIAnalysis {
 	timestamp: Date
 }
 
-export function ContextualAIPanel({ allocations, strategyMode, strategyName, isVisible = true }: ContextualAIPanelProps) {
+export function ContextualAIPanel({
+	allocations,
+	strategyMode,
+	strategyName,
+	isVisible = true,
+}: ContextualAIPanelProps) {
 	const { openWithContext } = useFloatingConcierge()
 	const [analysis, setAnalysis] = useState<AIAnalysis | null>(null)
 	const [isAnalyzing, setIsAnalyzing] = useState(false)
@@ -72,7 +79,7 @@ Please provide:
 Keep the response concise and actionable.`
 
 		try {
-			const response = await axios.post(`${AGENT_API_URL}/agent`, {
+			const response = await axios.post(`${ENV.AGENT_API_URL}/agent`, {
 				message: prompt,
 				session_id: sessionId,
 			})
@@ -166,11 +173,7 @@ Keep the response concise and actionable.`
 								"🔍 Analyze Strategy"
 							)}
 						</button>
-						{!isValid && (
-							<p className="text-xs text-amber-600 mt-2">
-								⚠ Allocation must total 100% to analyze
-							</p>
-						)}
+						{!isValid && <p className="text-xs text-amber-600 mt-2">⚠ Allocation must total 100% to analyze</p>}
 					</div>
 				)}
 
@@ -202,10 +205,7 @@ Keep the response concise and actionable.`
 
 						<div className="flex items-center justify-between text-xs text-gray-500">
 							<span>Analyzed at {analysis.timestamp.toLocaleTimeString()}</span>
-							<button
-								onClick={analyzeStrategy}
-								className="text-green-600 hover:text-green-700 font-medium"
-							>
+							<button onClick={analyzeStrategy} className="text-green-600 hover:text-green-700 font-medium">
 								↻ Re-analyze
 							</button>
 						</div>
@@ -265,21 +265,16 @@ Can you help me understand this strategy better and suggest any improvements?`
 						}}
 						disabled={!isValid}
 						className={`w-full py-3 rounded-xl transition-colors font-medium text-sm ${
-							isValid
-								? "bg-gray-100 text-gray-700 hover:bg-gray-200"
-								: "bg-gray-50 text-gray-400 cursor-not-allowed"
+							isValid ? "bg-gray-100 text-gray-700 hover:bg-gray-200" : "bg-gray-50 text-gray-400 cursor-not-allowed"
 						}`}
 					>
 						💬 Ask AI About This Strategy
 					</button>
 					{!isValid && (
-						<p className="text-xs text-amber-600 mt-2 text-center">
-							⚠ Complete your 100% allocation to ask AI
-						</p>
+						<p className="text-xs text-amber-600 mt-2 text-center">⚠ Complete your 100% allocation to ask AI</p>
 					)}
 				</div>
 			</div>
 		</div>
 	)
 }
-

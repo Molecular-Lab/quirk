@@ -145,25 +145,6 @@ export class ClientRepository {
 	 */
 	async getByProductId(productId: string): Promise<GetClientByProductIdRow | null> {
 		const result = await getClientByProductId(this.sql, { productId })
-
-		// DEBUG: Log raw SQLC query result to trace data flow
-		console.log('[ClientRepository] getByProductId RAW SQLC RESULT:', {
-			productId,
-			found: !!result,
-			id: result?.id,
-			companyName: result?.companyName,
-			businessType: result?.businessType,
-			description: result?.description,
-			clientRevenueSharePercent: result?.clientRevenueSharePercent,
-			platformFeePercent: result?.platformFeePercent,
-			performanceFee: result?.performanceFee,
-			supportedCurrencies: result?.supportedCurrencies,
-			bankAccounts: result?.bankAccounts,
-			strategiesPreferences: result?.strategiesPreferences,
-			strategiesCustomization: result?.strategiesCustomization,
-			customStrategy: result?.customStrategy,
-		})
-
 		return result
 	}
 
@@ -423,20 +404,12 @@ export class ClientRepository {
 		const isProduction = apiKey.startsWith('pk_live_')
 		const environment = isSandbox ? 'sandbox' : 'production'
 
-		console.log(`[validateApiKey] Step 1: Detected environment: ${environment}`, {
-			isSandbox,
-			isProduction,
-			keyPrefix: apiKey.substring(0, 16),
-		})
-
 		if (!isSandbox && !isProduction) {
-			console.log(`[validateApiKey] ❌ FAILED: Invalid API key format (must start with pk_test_ or pk_live_)`)
 			return null
 		}
 
 		// Step 2: Extract prefix for lookup (first 16 chars: "pk_test_" + 8 unique chars)
 		const keyPrefix = apiKey.substring(0, 16)
-		console.log(`[validateApiKey] Step 2: Looking up by ${environment} API key prefix: "${keyPrefix}"`)
 
 		// Step 3: Query by environment-specific key PREFIX (fast indexed lookup)
 		let client: GetClientBySandboxAPIKeyPrefixRow | GetClientByProductionAPIKeyPrefixRow | null = null
@@ -447,14 +420,7 @@ export class ClientRepository {
 			client = await this.getClientByProductionKeyPrefix(keyPrefix)
 		}
 
-		console.log(`[validateApiKey] Step 3: Prefix lookup result:`, {
-			found: !!client,
-			productId: client?.productId,
-			companyName: client?.companyName,
-		})
-
 		if (!client) {
-			console.log(`[validateApiKey] ❌ FAILED: No client found with ${environment} API key prefix "${keyPrefix}"`)
 			return null
 		}
 
@@ -474,17 +440,13 @@ export class ClientRepository {
 			return null
 		}
 
-		console.log(`[validateApiKey] Step 5: Verifying bcrypt hash...`)
 		const isValid = await verifyApiKey(apiKey, storedHash)
-		console.log(`[validateApiKey] Step 5 result: Hash ${isValid ? "✅ matches" : "❌ does NOT match"}`)
 
 		if (!isValid) {
-			console.log(`[validateApiKey] ❌ FAILED: Hash mismatch for ${environment} key`)
 			return null
 		}
 
 		// Step 6: Return client with environment info
-		console.log(`[validateApiKey] ✅ SUCCESS: API key validated for ${client.companyName} (${client.productId}) in ${environment} mode`)
 		return { ...client, environment }
 	}
 
@@ -794,7 +756,6 @@ export class ClientRepository {
 	 * @param environment - Optional environment filter (sandbox/production)
 	 */
 	async getTotalBalances(clientId: string, environment?: "sandbox" | "production"): Promise<GetClientTotalBalancesRow | null> {
-		console.log(`[ClientRepository] getTotalBalances - environment filter: ${environment || "all"}`)
 		return await getClientTotalBalances(this.sql, {
 			clientId,
 			environment: environment || null,
@@ -872,7 +833,6 @@ export class ClientRepository {
 		offset = 0,
 		environment?: "sandbox" | "production",
 	): Promise<ListRecentEndUserTransactionsRow[]> {
-		console.log(`[ClientRepository] getRecentEndUserTransactions - environment filter: ${environment || "all"}`)
 		return await listRecentEndUserTransactions(this.sql, {
 			clientId,
 			limit: limit.toString(),
@@ -887,7 +847,6 @@ export class ClientRepository {
 	 * @param environment - Optional environment filter (sandbox/production)
 	 */
 	async getEndUserGrowthMetrics(clientId: string, environment?: "sandbox" | "production"): Promise<GetEndUserGrowthMetricsRow | null> {
-		console.log(`[ClientRepository] getEndUserGrowthMetrics - environment filter: ${environment || "all"}`)
 		return await getEndUserGrowthMetrics(this.sql, {
 			id: clientId,
 			environment: environment || null,
@@ -949,7 +908,6 @@ export class ClientRepository {
 	 */
 	async getAggregatedDashboardSummary(privyOrganizationId: string, environment?: "sandbox" | "production"): Promise<GetAggregatedDashboardSummaryRow | null> {
 		try {
-			console.log(`[ClientRepository] getAggregatedDashboardSummary - environment filter: ${environment || "all"}`)
 			return await getAggregatedDashboardSummary(this.sql, {
 				privyOrganizationId,
 				environment: environment || null,

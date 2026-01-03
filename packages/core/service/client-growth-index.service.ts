@@ -76,13 +76,6 @@ export class ClientGrowthIndexService {
 		// client_growth_index = Σ(AUM × index) / Σ(AUM)
 		const clientGrowthIndex = weightedIndexSum.dividedBy(totalAUM).integerValue(BigNumber.ROUND_DOWN)
 
-		console.log("[ClientGrowthIndex] Calculated:", {
-			clientId,
-			vaultCount: vaults.length,
-			totalAUM: totalAUM.toString(),
-			clientGrowthIndex: clientGrowthIndex.toString(),
-		})
-
 		return clientGrowthIndex.toString()
 	}
 

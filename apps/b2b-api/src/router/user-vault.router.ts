@@ -77,8 +77,11 @@ export function createUserVaultRouter(
 			} catch (error) {
 				logger.error("Failed to list vault users", { error, vaultId: params.vaultId });
 				return {
-					status: 200 as const,
-					body: [],
+					status: 500 as const,
+					body: {
+						error: "Failed to list users by vault",
+						details: error instanceof Error ? error.message : String(error),
+					},
 				};
 			}
 		},

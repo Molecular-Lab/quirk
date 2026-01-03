@@ -3,6 +3,7 @@ import { useState } from "react"
 import { useSearch } from "@tanstack/react-router"
 import axios from "axios"
 
+import { ENV } from "@/config/env"
 import { useEnvironmentStore } from "@/store/environmentStore"
 import { useUserStore } from "@/store/userStore"
 
@@ -12,7 +13,7 @@ import { ProtocolCard } from "../../components/market/ProtocolCard"
 import { useAllDeFiProtocols } from "../../hooks/useDeFiProtocols"
 import { useUserBalance } from "../../hooks/useUserBalance"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8888/api/v1"
+const API_BASE_URL = ENV.API_URL
 
 interface ProtocolAllocation {
 	id: "aave" | "compound" | "morpho"

@@ -39,7 +39,7 @@ export class B2BUserUseCase {
 				throw new Error(`Client not found with productId: ${request.clientId}`)
 			}
 			clientId = client.id // Use the actual UUID
-			console.log(`[User Creation] Resolved productId ${request.clientId} to clientId ${clientId}`)
+
 		}
 
 		// Check if user exists
@@ -64,12 +64,11 @@ export class B2BUserUseCase {
 		// With environment separation, users can have TWO vaults per client:
 		// - One for sandbox (created on activation)
 		// - One for production (created on first production deposit)
-		console.log(`[User Creation] Sandbox vault will be created when user completes onboarding`)
 
 		// ✅ Increment total_end_users count in client_organizations
 		try {
 			await this.clientRepository.incrementEndUserCount(clientId)
-			console.log(`[User Creation] Incremented end-user count for client ${clientId}`)
+
 		} catch (countError) {
 			console.error(`[User Creation] Failed to increment end-user count:`, countError)
 			// Don't fail user creation if count increment fails
@@ -129,7 +128,6 @@ export class B2BUserUseCase {
 	 * Updates status from 'pending_onboarding' to 'active'
 	 */
 	async activateUser(userId: string, clientId: string) {
-		console.log("[UserUseCase] 🔍 activateUser called:", { userId, clientId });
 
 		// Verify user exists and belongs to the specified client
 		let user = null
@@ -140,26 +138,17 @@ export class B2BUserUseCase {
 		if (isUuid) {
 			try {
 				user = await this.userRepository.getById(userId)
-				console.log("[UserUseCase] 🔍 Found user by UUID:", {
-					userId: user?.id,
-					userClientId: user?.clientId,
-					requestedClientId: clientId,
-					match: user?.clientId === clientId,
-				});
+
 			} catch {
 				// UUID lookup failed, will try clientUserId lookup
-				console.log("[UserUseCase] ⚠️ UUID lookup failed, trying clientUserId lookup");
+
 			}
 		}
 
 		// Fallback: try looking up by client + user_id
 		if (!user) {
 			user = await this.userRepository.getByClientAndUserId(clientId, userId)
-			console.log("[UserUseCase] 🔍 Found user by clientId + userId:", {
-				userId: user?.id,
-				userClientId: user?.clientId,
-				requestedClientId: clientId,
-			});
+
 		}
 
 		if (!user) {
@@ -176,8 +165,6 @@ export class B2BUserUseCase {
 			});
 			throw new Error("User does not belong to this client")
 		}
-
-		console.log("[UserUseCase] ✅ User verified, proceeding with activation");
 
 		// Check current status
 		if (user.status === "active") {
@@ -202,7 +189,6 @@ export class B2BUserUseCase {
 		const existingVault = await this.vaultRepository.getEndUserVaultByClient(user.id, clientId, "sandbox")
 
 		if (!existingVault) {
-			console.log(`[User Activation] Creating sandbox vault for user ${user.userId}`)
 
 			// Get client growth index for initial entry index
 			const clientVaults = await this.vaultRepository.listClientVaults(clientId)
@@ -216,9 +202,8 @@ export class B2BUserUseCase {
 				environment: "sandbox",
 			})
 
-			console.log(`[User Activation] ✅ Sandbox vault created for user ${user.userId}`)
 		} else {
-			console.log(`[User Activation] Sandbox vault already exists for user ${user.userId}`)
+
 		}
 
 		// Audit log (use user.id for resourceId, user.userId for readable user identifier)

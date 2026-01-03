@@ -7,6 +7,8 @@ primary_region = "sjc"  # San Jose, California - change to your preferred region
 # Build configuration
 [build]
   dockerfile = "Dockerfile"
+  # Build from repository root to access apps/agent/ files
+  build-context = "../.."
 
 # Environment variables (non-secret)
 [env]
@@ -51,10 +53,14 @@ primary_region = "sjc"  # San Jose, California - change to your preferred region
     protocol = "http"
     tls_skip_verify = false
 
-# VM resources (Python agent needs more memory for AI processing)
+# VM resources - Demo/MVP configuration (Cost-optimized)
+# shared-cpu-1x with 512MB RAM (~$3.32/mo)
+# - Python runtime + AI models need more RAM than Node.js
+# - 512MB is minimum for comfortable Python + AI processing
+# - Upgrade to shared-cpu-2x with 1GB if AI response times are slow
 [vm]
   size = "shared-cpu-1x"
-  memory = "512mb"  # Python + AI models need more RAM
+  memory = "512mb"
 
 # Auto-scaling
 [scaling]

@@ -4,10 +4,7 @@
  */
 
 import { useQuery } from "@tanstack/react-query"
-import axios from "axios"
-
-// API Base URL - b2b-api runs on port 3001 with /api/v1 prefix
-const API_BASE_URL = import.meta.env.VITE_API_URL
+import { b2bApiClient } from "@/api/b2bClient"
 
 // Protocol Data Type (matching backend)
 export interface ProtocolData {
@@ -40,10 +37,13 @@ export function useAAVEData(token = "USDC", chainId = 8453) {
 	return useQuery({
 		queryKey: ["defi", "aave", token, chainId],
 		queryFn: async () => {
-			const { data } = await axios.get<ProtocolData>(`${API_BASE_URL}/defi/protocols/aave`, {
-				params: { token, chainId: chainId.toString() },
+			const response = await b2bApiClient.defiProtocol.getAAVE({
+				query: { token, chainId: chainId.toString() },
 			})
-			return data
+			if (response.status !== 200) {
+				throw new Error("Failed to fetch AAVE data")
+			}
+			return response.body
 		},
 		refetchInterval: 60000, // 1 minute
 		staleTime: 30000, // 30 seconds
@@ -57,10 +57,13 @@ export function useCompoundData(token = "USDC", chainId = 8453) {
 	return useQuery({
 		queryKey: ["defi", "compound", token, chainId],
 		queryFn: async () => {
-			const { data } = await axios.get<ProtocolData>(`${API_BASE_URL}/defi/protocols/compound`, {
-				params: { token, chainId: chainId.toString() },
+			const response = await b2bApiClient.defiProtocol.getCompound({
+				query: { token, chainId: chainId.toString() },
 			})
-			return data
+			if (response.status !== 200) {
+				throw new Error("Failed to fetch Compound data")
+			}
+			return response.body
 		},
 		refetchInterval: 60000, // 1 minute
 		staleTime: 30000, // 30 seconds
@@ -74,10 +77,13 @@ export function useMorphoData(token = "USDC", chainId = 8453) {
 	return useQuery({
 		queryKey: ["defi", "morpho", token, chainId],
 		queryFn: async () => {
-			const { data } = await axios.get<ProtocolData>(`${API_BASE_URL}/defi/protocols/morpho`, {
-				params: { token, chainId: chainId.toString() },
+			const response = await b2bApiClient.defiProtocol.getMorpho({
+				query: { token, chainId: chainId.toString() },
 			})
-			return data
+			if (response.status !== 200) {
+				throw new Error("Failed to fetch Morpho data")
+			}
+			return response.body
 		},
 		refetchInterval: 60000, // 1 minute
 		staleTime: 30000, // 30 seconds
@@ -91,10 +97,13 @@ export function useAllDeFiProtocolsCombined(token = "USDC", chainId = 8453) {
 	return useQuery({
 		queryKey: ["defi", "all", token, chainId],
 		queryFn: async () => {
-			const { data } = await axios.get<ProtocolsResponse>(`${API_BASE_URL}/defi/protocols`, {
-				params: { token, chainId: chainId.toString() },
+			const response = await b2bApiClient.defiProtocol.getAll({
+				query: { token, chainId: chainId.toString() },
 			})
-			return data
+			if (response.status !== 200) {
+				throw new Error("Failed to fetch all protocols")
+			}
+			return response.body
 		},
 		refetchInterval: 60000, // 1 minute
 		staleTime: 30000, // 30 seconds

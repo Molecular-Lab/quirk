@@ -3,9 +3,9 @@ import { useEffect, useRef, useState } from "react"
 import axios from "axios"
 import { Bot, Send, User, X } from "lucide-react"
 
-import { useFloatingConcierge } from "../../contexts/FloatingConciergeContext"
+import { ENV } from "@/config/env"
 
-const AGENT_API_URL = import.meta.env.VITE_AGENT_API_URL || "http://localhost:8000"
+import { useFloatingConcierge } from "../../contexts/FloatingConciergeContext"
 
 interface ChatMessage {
 	role: "user" | "assistant"
@@ -66,7 +66,7 @@ export function FloatingConcierge() {
 		setIsSending(true)
 
 		try {
-			const response = await axios.post(`${AGENT_API_URL}/agent`, {
+			const response = await axios.post(`${ENV.AGENT_API_URL}/agent`, {
 				message: messageText,
 				session_id: sessionId,
 			})

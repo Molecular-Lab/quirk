@@ -176,18 +176,6 @@ export class FiatOnRampService {
 		const networkConfig = NETWORK_CONFIG[networkKey]
 		const tokenConfig = networkConfig.token[params.targetToken]
 
-		console.log("[MOCK] Creating payment session:", {
-			clientId: params.clientId,
-			orderId: params.orderId,
-			amount: params.amount,
-			currency: params.currency,
-			method: params.paymentMethod,
-			network: networkConfig.name,
-			chainId,
-			targetToken: params.targetToken,
-			tokenAddress: tokenConfig?.address,
-		})
-
 		// Simulate 500ms delay
 		await new Promise((resolve) => setTimeout(resolve, 500))
 
@@ -234,17 +222,6 @@ export class FiatOnRampService {
 		if (!tokenConfig) {
 			throw new Error(`Token ${params.targetToken} not available on network ${networkKey}`)
 		}
-
-		console.log("[MOCK] Converting fiat to crypto:", {
-			fiatAmount: params.fiatAmount,
-			fiatCurrency: params.fiatCurrency,
-			network: networkConfig.name,
-			chainId,
-			targetToken: params.targetToken,
-			tokenAddress: tokenConfig.address,
-			tokenSymbol: tokenConfig.symbol,
-			destination: params.destinationAddress,
-		})
 
 		// Simulate 2 second conversion delay
 		await new Promise((resolve) => setTimeout(resolve, 2000))

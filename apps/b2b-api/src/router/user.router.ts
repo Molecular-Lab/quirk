@@ -218,8 +218,11 @@ export const createUserRouter = (
 			} catch (error) {
 				logger.error("Failed to list users", { error, clientId: params.clientId });
 				return {
-					status: 200 as const,
-					body: [],
+					status: 500 as const,
+					body: {
+						error: "Failed to list users",
+						details: error instanceof Error ? error.message : String(error),
+					},
 				};
 			}
 		},

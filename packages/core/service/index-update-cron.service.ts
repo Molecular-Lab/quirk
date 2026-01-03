@@ -37,20 +37,16 @@ export class IndexUpdateCronService {
 	 * Updates all client vault indexes based on DeFi protocol yields
 	 */
 	static async runDailyIndexUpdate(): Promise<VaultIndexUpdate[]> {
-		console.log("[IndexCron] ===== Starting Daily Index Update =====")
-		console.log("[IndexCron] Timestamp:", new Date().toISOString())
 
 		try {
 			// Step 1: Fetch current APYs from all DeFi protocols
 			const protocolAPYs = await YieldCalculationService.fetchProtocolAPYs()
-			console.log("[IndexCron] Fetched protocol APYs:", protocolAPYs)
 
 			// Step 2: Get all active client vaults from database
 			const activeVaults = await this.fetchActiveClientVaults()
-			console.log(`[IndexCron] Found ${activeVaults.length} active vaults to update`)
 
 			if (activeVaults.length === 0) {
-				console.log("[IndexCron] No active vaults found, skipping update")
+
 				return []
 			}
 
@@ -62,12 +58,6 @@ export class IndexUpdateCronService {
 					const update = await this.updateVaultIndex(vault, protocolAPYs)
 					updates.push(update)
 
-					console.log(`[IndexCron] ✅ Updated vault ${vault.id}:`, {
-						oldIndex: new Decimal(update.oldIndex).dividedBy(INDEX_SCALE).toFixed(6),
-						newIndex: new Decimal(update.newIndex).dividedBy(INDEX_SCALE).toFixed(6),
-						yieldGenerated: `$${update.yieldGenerated}`,
-						growthRate: `${update.dailyGrowthRate.toFixed(6)}%`,
-					})
 				} catch (error) {
 					console.error(`[IndexCron] ❌ Failed to update vault ${vault.id}:`, error)
 					// Continue with other vaults even if one fails
@@ -76,9 +66,6 @@ export class IndexUpdateCronService {
 
 			// Step 4: Update APY performance metrics (7d, 30d averages)
 			await this.updateAPYMetrics(updates)
-
-			console.log("[IndexCron] ===== Daily Index Update Complete =====")
-			console.log(`[IndexCron] Successfully updated ${updates.length}/${activeVaults.length} vaults`)
 
 			return updates
 		} catch (error) {
@@ -96,7 +83,7 @@ export class IndexUpdateCronService {
 	): Promise<VaultIndexUpdate> {
 		// Skip if no staked balance
 		if (new Decimal(vault.totalStakedBalance).lessThanOrEqualTo(0)) {
-			console.log(`[IndexCron] Skipping vault ${vault.id} - no staked balance`)
+
 			return {
 				vaultId: vault.id,
 				clientId: vault.clientId,
@@ -114,13 +101,6 @@ export class IndexUpdateCronService {
 
 		// Convert annual APY to daily APY
 		const dailyAPY = weightedAPY / 365
-
-		console.log(`[IndexCron] Vault ${vault.id} (${vault.tokenSymbol} on ${vault.chain}):`, {
-			totalStaked: `$${vault.totalStakedBalance}`,
-			weightedAPY: `${weightedAPY.toFixed(4)}%`,
-			dailyAPY: `${dailyAPY.toFixed(6)}%`,
-			strategies: vault.strategies.map((s) => `${s.protocol}: ${s.allocation}%`).join(", "),
-		})
 
 		// Calculate new index
 		const indexUpdate = YieldCalculationService.calculateNewIndex({
@@ -158,8 +138,6 @@ export class IndexUpdateCronService {
 		// Query: SELECT id, client_id, current_index, total_staked_balance, strategies, chain, token_symbol
 		//        FROM client_vaults
 		//        WHERE is_active = true AND total_staked_balance > 0
-
-		console.log("[IndexCron] TODO: Implement fetchActiveClientVaults() with PostgreSQL")
 
 		// Mock data for testing
 		return [
@@ -205,14 +183,6 @@ export class IndexUpdateCronService {
 		//            cumulative_yield = cumulative_yield + $2
 		//        WHERE id = $3
 
-		console.log("[IndexCron] TODO: Implement saveIndexUpdate() with PostgreSQL")
-		console.log("[IndexCron] Would update vault:", {
-			vaultId: params.vaultId,
-			newIndex: params.newIndex,
-			yieldGenerated: params.yieldGenerated,
-			growthRate: params.growthRate,
-		})
-
 		// Mock implementation
 		return Promise.resolve()
 	}
@@ -222,7 +192,6 @@ export class IndexUpdateCronService {
 	 * Calculates from historical index updates
 	 */
 	private static async updateAPYMetrics(updates: VaultIndexUpdate[]): Promise<void> {
-		console.log("[IndexCron] Updating APY performance metrics...")
 
 		for (const update of updates) {
 			try {
@@ -235,10 +204,6 @@ export class IndexUpdateCronService {
 				// Save to database
 				await this.saveAPYMetrics(update.vaultId, apy7d, apy30d)
 
-				console.log(`[IndexCron] APY metrics for vault ${update.vaultId}:`, {
-					apy7d: `${apy7d.toFixed(2)}%`,
-					apy30d: `${apy30d.toFixed(2)}%`,
-				})
 			} catch (error) {
 				console.error(`[IndexCron] Failed to update APY metrics for vault ${update.vaultId}:`, error)
 			}
@@ -255,8 +220,6 @@ export class IndexUpdateCronService {
 		//        AND last_index_update >= NOW() - INTERVAL '$2 days'
 		//        ORDER BY last_index_update ASC LIMIT 1
 
-		console.log(`[IndexCron] TODO: Implement calculateRollingAPY() for ${days} days`)
-
 		// Mock: Assume 5% annual APY
 		return 5.0
 	}
@@ -266,7 +229,7 @@ export class IndexUpdateCronService {
 	 */
 	private static async saveAPYMetrics(vaultId: string, apy7d: number, apy30d: number): Promise<void> {
 		// Query: UPDATE client_vaults SET apy_7d = $1, apy_30d = $2 WHERE id = $3
-		console.log("[IndexCron] TODO: Implement saveAPYMetrics() with PostgreSQL")
+
 	}
 
 	/**
@@ -274,7 +237,7 @@ export class IndexUpdateCronService {
 	 */
 	static async getCurrentIndex(vaultId: string): Promise<string> {
 		// Query: SELECT current_index FROM client_vaults WHERE id = $1
-		console.log("[IndexCron] TODO: Implement getCurrentIndex()")
+
 		return "1030000000000000000" // Mock
 	}
 
@@ -284,7 +247,6 @@ export class IndexUpdateCronService {
 	 */
 	static async updateTotalStakedBalance(vaultId: string, newBalance: string): Promise<void> {
 		// Query: UPDATE client_vaults SET total_staked_balance = $1 WHERE id = $2
-		console.log("[IndexCron] TODO: Implement updateTotalStakedBalance()")
-		console.log("[IndexCron] Vault", vaultId, "new balance:", newBalance)
+
 	}
 }

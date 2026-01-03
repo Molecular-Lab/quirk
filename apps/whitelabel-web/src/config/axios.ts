@@ -7,7 +7,7 @@ import { useClientContextStore } from "@/store/clientContextStore"
  * Following prod-ref-web pattern
  */
 export const b2bAxiosClient = axios.create({
-	timeout: 30000,
+	timeout: 90000, // ✅ Increased to 90 seconds for complex queries (organization loading, dashboard metrics, etc.)
 	headers: {
 		"Content-Type": "application/json",
 	},

@@ -68,13 +68,6 @@ export class B2BWithdrawalUseCase {
 		// Default to deducting fees (true) unless explicitly set to false
 		const shouldDeductFees = deductFees !== false
 
-		console.log("[Withdrawal] Creating withdrawal with environment:", {
-			environment: withdrawalEnvironment,
-			network: withdrawalNetwork,
-			oracleAddress,
-			deductFees: shouldDeductFees,
-		})
-
 		// Get end_user
 		const endUser = await this.userRepository.getByClientAndUserId(clientId, userId)
 		if (!endUser) {
@@ -83,12 +76,6 @@ export class B2BWithdrawalUseCase {
 
 		// ✅ STEP 1: Calculate client growth index (weighted average across all client vaults)
 		const clientGrowthIndex = await this.clientGrowthIndexService.calculateClientGrowthIndex(clientId)
-
-		console.log("[Withdrawal] Client Growth Index:", {
-			clientId,
-			growthIndex: clientGrowthIndex,
-			growthIndexDecimal: new BigNumber(clientGrowthIndex).dividedBy("1e18").toString(),
-		})
 
 		// ✅ STEP 2: Get end_user_vault for this environment (with row lock)
 		const userVault = await this.vaultRepository.getEndUserVaultByClientForUpdate(endUser.id, clientId, withdrawalEnvironment)
@@ -107,15 +94,6 @@ export class B2BWithdrawalUseCase {
 
 		const withdrawalAmount = new BigNumber(amount)
 		const totalDeposited = new BigNumber(userVault.totalDeposited)
-
-		console.log("[Withdrawal] Balance Check:", {
-			userId: endUser.id,
-			totalDeposited: userVault.totalDeposited,
-			entryIndex: userVault.weightedEntryIndex,
-			entryIndexDecimal: new BigNumber(userVault.weightedEntryIndex).dividedBy("1e18").toString(),
-			currentValue: currentValue.toString(),
-			requestedAmount: withdrawalAmount.toString(),
-		})
 
 		// ✅ STEP 4: Validate balance
 		if (withdrawalAmount.isGreaterThan(currentValue)) {
@@ -142,14 +120,6 @@ export class B2BWithdrawalUseCase {
 				totalYield.toString()
 			)
 
-			console.log("[Withdrawal] Fee Distribution:", {
-				totalYield: totalYield.toString(),
-				enduserRevenue: distribution.enduserRevenue,
-				clientRevenue: distribution.clientRevenue,
-				platformRevenue: distribution.platformRevenue,
-				deductFees: shouldDeductFees,
-			})
-
 			// Record revenue distribution
 			await this.revenueRepository.createDistribution({
 				withdrawalTransactionId: null, // Will update after withdrawal is created
@@ -169,13 +139,6 @@ export class B2BWithdrawalUseCase {
 				const userNetYield = new BigNumber(distribution.enduserRevenue)
 				actualWithdrawalAmount = totalDeposited.plus(userNetYield)
 
-				console.log("[Withdrawal] Fees deducted:", {
-					originalAmount: withdrawalAmount.toString(),
-					actualAmount: actualWithdrawalAmount.toString(),
-					platformFee: distribution.platformRevenue,
-					clientFee: distribution.clientRevenue,
-					userNetYield: userNetYield.toString(),
-				})
 			}
 
 			// Build fee breakdown for response
@@ -249,15 +212,6 @@ export class B2BWithdrawalUseCase {
 			},
 			ipAddress: null,
 			userAgent: null,
-		})
-
-		console.log("[Withdrawal] ✅ Withdrawal request created:", {
-			orderId,
-			userId: endUser.id,
-			clientId,
-			requestedAmount: amount,
-			actualAmount: actualWithdrawalAmount.toString(),
-			feesDeducted: shouldDeductFees,
 		})
 
 		return this.mapToResponse(withdrawal, feeBreakdown)

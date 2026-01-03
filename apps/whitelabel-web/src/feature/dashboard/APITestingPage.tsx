@@ -1727,7 +1727,7 @@ export function APITestingPage() {
 							<span className="text-gray-600">
 								Base URL:{" "}
 								<code className="px-2 py-1 bg-gray-100 rounded">
-									{(import.meta.env.VITE_B2B_API_URL as string | undefined) ?? "http://localhost:3002"}
+									{baseUrl}
 								</code>
 							</span>
 						</div>

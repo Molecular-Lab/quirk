@@ -16,6 +16,7 @@ WORKDIR /app
 
 
 # Install the project's dependencies using the lockfile and settings
+# Note: Build context is repository root, so we copy from apps/agent/
 COPY apps/agent/pyproject.toml apps/agent/uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev

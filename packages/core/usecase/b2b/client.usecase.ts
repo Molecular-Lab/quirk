@@ -57,23 +57,6 @@ export class B2BClientUseCase {
 	async getClientByProductId(productId: string): Promise<GetClientByProductIdRow | null> {
 		const client = await this.clientRepository.getByProductId(productId)
 
-		// DEBUG: Log data after repository call to trace data flow
-		console.log('[ClientUseCase] getClientByProductId AFTER REPOSITORY:', {
-			productId,
-			found: !!client,
-			id: client?.id,
-			companyName: client?.companyName,
-			businessType: client?.businessType,
-			description: client?.description,
-			clientRevenueSharePercent: client?.clientRevenueSharePercent,
-			platformFeePercent: client?.platformFeePercent,
-			supportedCurrencies: client?.supportedCurrencies,
-			bankAccounts: client?.bankAccounts,
-			strategiesPreferences: client?.strategiesPreferences,
-			strategiesCustomization: client?.strategiesCustomization,
-			isActive: client?.isActive,
-		})
-
 		if (!client) {
 			return null
 		}
@@ -118,7 +101,6 @@ export class B2BClientUseCase {
 		const apiKeyHash = await hashApiKey(apiKey)
 		const apiKeyPrefix = extractPrefix(apiKey)
 
-		console.log(`[Client UseCase] Regenerating ${environment} API key for client: ${client.id}, prefix: ${apiKeyPrefix}`)
 
 		// Update in database (old key is immediately invalidated)
 		if (isSandbox) {
@@ -169,7 +151,6 @@ export class B2BClientUseCase {
 		}
 	> {
 		// Check if product ID already exists
-		console.log("Creating client with product ID:", request)
 		const existing = await this.clientRepository.getByProductId(request.productId)
 		if (existing) {
 			throw new Error(`Product ID '${request.productId}' already exists`)
@@ -201,7 +182,6 @@ export class B2BClientUseCase {
 
 		// API keys will be generated only when user explicitly requests
 		// via regenerateApiKey() endpoint (triggered by "Generate Key" button)
-		console.log("[ClientUsecase] Client created without API keys - user will generate manually")
 
 		// Initialize balance
 		await this.clientRepository.createBalance({
@@ -781,15 +761,6 @@ export class B2BClientUseCase {
 	async getEffectiveProductStrategies(productId: string) {
 		const { preferences, customization } = await this.getProductStrategies(productId)
 
-		// DEBUG: Log strategies data flow
-		console.log('[ClientUseCase] getEffectiveProductStrategies:', {
-			productId,
-			preferences,
-			customization,
-			preferencesKeys: preferences ? Object.keys(preferences) : [],
-			customizationKeys: customization ? Object.keys(customization) : [],
-		})
-
 		// Return customization if it's not empty, otherwise return preferences
 		const hasCustomization = customization && Object.keys(customization).length > 0
 
@@ -797,13 +768,6 @@ export class B2BClientUseCase {
 			strategies: hasCustomization ? customization : preferences,
 			source: hasCustomization ? "customization" : "preferences",
 		}
-
-		console.log('[ClientUseCase] getEffectiveProductStrategies RESULT:', {
-			productId,
-			hasCustomization,
-			source: result.source,
-			strategies: result.strategies,
-		})
 
 		return result
 	}
@@ -1224,12 +1188,6 @@ export class B2BClientUseCase {
 				}
 			}
 
-			console.log("[B2BClientUseCase] Calculated expected APY from strategies:", {
-				strategies: parsedStrategies.map((s) => `${s.protocol}: ${s.percentage || s.allocation}%`),
-				protocolAPYs,
-				weightedAPY: weightedAPY.toFixed(2),
-				totalAllocation,
-			})
 
 			return totalAllocation > 0 ? weightedAPY.toFixed(2) : "0.00"
 		} catch (error) {

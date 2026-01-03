@@ -59,12 +59,6 @@ export class B2BDepositUseCase {
 		const environment = request.environment || "sandbox"
 		const network = request.network || (environment === "sandbox" ? "sepolia" : "mainnet")
 
-		console.log("[Deposit] Creating deposit with environment:", {
-			environment,
-			network,
-			oracleAddress: request.oracleAddress,
-		})
-
 		// Create deposit args
 		const args: CreateDepositArgs = {
 			orderId: request.orderId || `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -173,7 +167,6 @@ export class B2BDepositUseCase {
 		// Step 0.5: Verify token transfer on-chain
 		// In production, this checks the blockchain. In mock mode, it simulates verification.
 		if (request.transactionHash) {
-			console.log("[Deposit] Verifying token transfer on-chain...")
 
 			const verification = await this.tokenTransferService.verifyTransfer({
 				chain: request.chain,
@@ -189,11 +182,6 @@ export class B2BDepositUseCase {
 				throw new Error(`Token transfer verification failed: ${verification.error}`)
 			}
 
-			console.log("[Deposit] ✅ Token transfer verified:", {
-				amount: verification.actualAmount,
-				from: verification.from,
-				block: verification.blockNumber,
-			})
 		}
 
 		// Step 1: Mark deposit as completed
@@ -215,17 +203,7 @@ export class B2BDepositUseCase {
 			await this.clientGrowthIndexService.calculateClientGrowthIndex(deposit.clientId),
 		)
 
-		console.log("[Deposit] Client Growth Index:", {
-			clientId: deposit.clientId,
-			growthIndex: clientGrowthIndex.toString(),
-			growthIndexDecimal: clientGrowthIndex.dividedBy("1e18").toString(),
-		})
-
 		// Step 3: Get end_user record (with fallback lookup)
-		console.log("[Deposit] Looking up end user:", {
-			userId: deposit.userId,
-			clientId: deposit.clientId,
-		})
 
 		let endUser = null
 
@@ -237,13 +215,13 @@ export class B2BDepositUseCase {
 				endUser = await this.userRepository.getById(deposit.userId)
 			} catch (error) {
 				// UUID lookup failed, will try clientUserId lookup
-				console.log("[Deposit] UUID lookup failed, trying clientUserId lookup")
+
 			}
 		}
 
 		if (!endUser) {
 			// Fallback: try looking up by client + user_id (client-provided ID)
-			console.log("[Deposit] User not found by ID, trying clientId+userId lookup")
+
 			endUser = await this.userRepository.getByClientAndUserId(deposit.clientId, deposit.userId)
 		}
 
@@ -255,8 +233,6 @@ export class B2BDepositUseCase {
 			throw new Error(`End user not found: ${deposit.userId} for client ${deposit.clientId}`)
 		}
 
-		console.log("[Deposit] Found end user:", { id: endUser.id, userId: endUser.userId })
-
 		// Step 4: Get or create end_user_vault (with environment support)
 		const userVault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, deposit.clientId, environment)
 
@@ -265,7 +241,6 @@ export class B2BDepositUseCase {
 		if (!userVault) {
 			// ✅ First deposit - create vault with entry index = client growth index
 			// (This shouldn't happen often now that we create vaults on registration)
-			console.log("[Deposit] Creating new end-user vault (vault missing - should have been created on registration)")
 
 			const newVault = await this.vaultRepository.createEndUserVault({
 				endUserId: endUser.id,
@@ -279,19 +254,12 @@ export class B2BDepositUseCase {
 				throw new Error("Failed to create end-user vault")
 			}
 
-			console.log("[Deposit] ✅ Vault created:", {
-				vaultId: newVault.id,
-				totalDeposited: depositAmount.toString(),
-				entryIndex: clientGrowthIndex.toString(),
-				entryIndexDecimal: clientGrowthIndex.dividedBy("1e18").toString(),
-			})
 		} else {
 			const oldDeposited = new BigNumber(userVault.totalDeposited)
 			const oldEntryIndex = new BigNumber(userVault.weightedEntryIndex)
 
 			// Check if this is the first deposit (vault exists but has 0 balance from registration)
 			if (oldDeposited.isZero()) {
-				console.log("[Deposit] First deposit - updating vault created on registration")
 
 				// Set entry index to current client growth index
 				await this.vaultRepository.updateVaultDeposit(
@@ -300,15 +268,8 @@ export class B2BDepositUseCase {
 					clientGrowthIndex.toString(), // Entry index = current growth index
 				)
 
-				console.log("[Deposit] ✅ Vault updated (first deposit):", {
-					vaultId: userVault.id,
-					totalDeposited: depositAmount.toString(),
-					entryIndex: clientGrowthIndex.toString(),
-					entryIndexDecimal: clientGrowthIndex.dividedBy("1e18").toString(),
-				})
 			} else {
 				// ✅ DCA (Dollar-Cost Averaging) - recalculate weighted entry index
-				console.log("[Deposit] Updating existing vault (DCA)")
 
 				const totalDeposited = oldDeposited.plus(depositAmount)
 
@@ -319,18 +280,6 @@ export class B2BDepositUseCase {
 					.dividedBy(totalDeposited)
 					.integerValue(BigNumber.ROUND_DOWN)
 
-				console.log("[Deposit] DCA Calculation:", {
-					oldDeposited: oldDeposited.toString(),
-					oldEntryIndex: oldEntryIndex.toString(),
-					oldEntryIndexDecimal: oldEntryIndex.dividedBy("1e18").toString(),
-					newDeposited: depositAmount.toString(),
-					currentGrowthIndex: clientGrowthIndex.toString(),
-					currentGrowthIndexDecimal: clientGrowthIndex.dividedBy("1e18").toString(),
-					totalDeposited: totalDeposited.toString(),
-					newWeightedEntryIndex: newWeightedEntryIndex.toString(),
-					newWeightedEntryIndexDecimal: newWeightedEntryIndex.dividedBy("1e18").toString(),
-				})
-
 				// Update vault with new totals
 				await this.vaultRepository.updateVaultDeposit(
 					userVault.id,
@@ -338,7 +287,6 @@ export class B2BDepositUseCase {
 					newWeightedEntryIndex.toString(),
 				)
 
-				console.log("[Deposit] ✅ Vault updated (DCA)")
 			}
 		}
 
@@ -381,14 +329,6 @@ export class B2BDepositUseCase {
 			userAgent: null,
 		})
 
-		console.log("[Deposit] ✅ Deposit completed:", {
-			orderId: request.orderId,
-			userId: deposit.userId,
-			clientId: deposit.clientId,
-			amount: request.cryptoAmount,
-			chain: request.chain,
-			token: request.tokenSymbol,
-		})
 	}
 
 	/**
@@ -401,12 +341,6 @@ export class B2BDepositUseCase {
 	 * @returns Mint result with transaction hash
 	 */
 	async mintTokensToCustodial(chainId: string, tokenAddress: string, custodialWallet: string, amount: string) {
-		console.log("[Deposit] Minting tokens to custodial wallet:", {
-			chainId,
-			tokenAddress,
-			custodialWallet,
-			amount,
-		})
 
 		// Create MockUSDC client
 		const mockUSDC = new MockUSDCClient(chainId as MockTokenChainId, tokenAddress as `0x${string}`)
@@ -418,12 +352,6 @@ export class B2BDepositUseCase {
 			console.error("[Deposit] ❌ Mint failed:", result.error)
 			throw new Error(`Token mint failed: ${result.error}`)
 		}
-
-		console.log("[Deposit] ✅ Tokens minted:", {
-			txHash: result.txHash,
-			blockNumber: result.blockNumber?.toString(),
-			amount: result.amountMinted,
-		})
 
 		return result
 	}
@@ -452,12 +380,6 @@ export class B2BDepositUseCase {
 		privateKey: string,
 		rpcUrl?: string,
 	): Promise<TransferResult> {
-		console.log("[Deposit] Transferring USDC from oracle to custodial wallet:", {
-			chainId,
-			tokenAddress,
-			custodialWallet,
-			amount,
-		})
 
 		const result = await this.tokenTransferService.transferFromOracle({
 			chainId,
@@ -478,12 +400,7 @@ export class B2BDepositUseCase {
 				console.error("[Deposit] ❌ Transfer failed:", result.error)
 			}
 		} else {
-			console.log("[Deposit] ✅ USDC transferred:", {
-				txHash: result.txHash,
-				blockNumber: result.blockNumber?.toString(),
-				amount: result.amountTransferred,
-				oracleBalanceAfter: result.oracleBalanceAfter,
-			})
+
 		}
 
 		return result

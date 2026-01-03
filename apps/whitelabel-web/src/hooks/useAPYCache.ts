@@ -5,15 +5,16 @@
  * Features:
  * - Initial fetch on mount if cache is stale
  * - 5-minute auto-refresh in background
- * - Calls lightweight GET /defi/apys endpoint
+ * - Calls GET /defi/protocols endpoint and transforms to APY map
  * - Returns cached data for instant access
  */
 
-import { useEffect, useCallback, useRef } from "react"
-import axios from "axios"
-import { useAPYCacheStore, type APYMap } from "@/store/apyCacheStore"
+import { useCallback, useEffect, useRef } from "react"
 
-const API_BASE_URL = import.meta.env.VITE_API_URL
+import { b2bApiClient } from "@/api/b2bClient"
+import { type APYMap, useAPYCacheStore } from "@/store/apyCacheStore"
+
+
 const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
 
 export function useAPYCache(token = "USDC", chainId = 8453) {
@@ -32,7 +33,7 @@ export function useAPYCache(token = "USDC", chainId = 8453) {
 	// Track interval ID for cleanup
 	const intervalRef = useRef<NodeJS.Timeout | null>(null)
 
-	// Fetch function - calls lightweight /defi/apys endpoint
+	// Fetch function - calls /defi/protocols endpoint and transforms response
 	const fetchAPYs = useCallback(async () => {
 		// Prevent duplicate fetches
 		if (useAPYCacheStore.getState().isFetching) {
@@ -44,14 +45,28 @@ export function useAPYCache(token = "USDC", chainId = 8453) {
 		setError(null)
 
 		try {
-			console.log("[useAPYCache] Fetching APYs from /defi/apys...")
+			console.log("[useAPYCache] Fetching APYs from /defi/protocols...")
 
-			const response = await axios.get<APYMap>(`${API_BASE_URL}/defi/apys`, {
-				params: { token, chainId: chainId.toString() },
+			const response = await b2bApiClient.defiProtocol.getAll({
+				query: { token, chainId: chainId.toString() },
 			})
 
-			setAPYs(response.data)
-			console.log("[useAPYCache] APYs cached successfully:", response.data)
+			if (response.status !== 200) {
+				throw new Error("Failed to fetch protocols")
+			}
+
+			// Transform response to APYMap format
+			// Backend returns: { protocols: [{ protocol: "aave", supplyAPY: "3.64" }, ...], timestamp: "..." }
+			const protocols = response.body?.protocols || []
+			const apyMap: APYMap = {
+				aave: protocols.find((p: any) => p.protocol === "aave")?.supplyAPY || "0.00",
+				compound: protocols.find((p: any) => p.protocol === "compound")?.supplyAPY || "0.00",
+				morpho: protocols.find((p: any) => p.protocol === "morpho")?.supplyAPY || "0.00",
+				timestamp: response.body?.timestamp || new Date().toISOString(),
+			}
+
+			setAPYs(apyMap)
+			console.log("[useAPYCache] APYs cached successfully:", apyMap)
 		} catch (err) {
 			console.error("[useAPYCache] Failed to fetch APYs:", err)
 			setError(err instanceof Error ? err.message : "Failed to fetch APYs")

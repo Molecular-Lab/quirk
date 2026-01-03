@@ -668,7 +668,14 @@ export class MorphoAdapter implements IProtocolAdapter {
 		}
 
 		// Convert decimal APY to percentage string (e.g., 0.0525 -> "5.25")
-		const apyPercent = (json.data.vaultV2ByAddress.avgNetApy * 100).toFixed(2)
+		// Handle null/undefined APY values
+		const avgNetApy = json.data.vaultV2ByAddress.avgNetApy
+		if (avgNetApy === null || avgNetApy === undefined || isNaN(avgNetApy)) {
+			console.warn(`[Morpho] avgNetApy is ${avgNetApy} for vault ${vaultAddress}, returning 0.00`)
+			return '0.00'
+		}
+
+		const apyPercent = (avgNetApy * 100).toFixed(2)
 		return apyPercent
 	}
 
@@ -705,7 +712,14 @@ export class MorphoAdapter implements IProtocolAdapter {
 		}
 
 		// Convert decimal APY to percentage string (e.g., 0.0525 -> "5.25")
-		const apyPercent = (json.data.vaultByAddress.state.netApy * 100).toFixed(2)
+		// Handle null/undefined APY values
+		const netApy = json.data.vaultByAddress.state.netApy
+		if (netApy === null || netApy === undefined || isNaN(netApy)) {
+			console.warn(`[Morpho] netApy is ${netApy} for vault ${vaultAddress}, returning 0.00`)
+			return '0.00'
+		}
+
+		const apyPercent = (netApy * 100).toFixed(2)
 		return apyPercent
 	}
 }

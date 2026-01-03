@@ -54,14 +54,11 @@ export class VaultIndexUpdaterService {
 	 */
 	start() {
 		if (this.isRunning) {
-			console.log("[VaultIndexUpdater] Already running")
+
 			return
 		}
 
 		this.isRunning = true
-		console.log(
-			`[VaultIndexUpdater] Starting cron job (interval: ${this.updateIntervalMs / 1000 / 60}min)`,
-		)
 
 		// Run immediately on start
 		this.updateAllVaultIndexes().catch((error) => {
@@ -89,21 +86,18 @@ export class VaultIndexUpdaterService {
 			clearInterval(this.intervalHandle)
 			this.intervalHandle = undefined
 		}
-		console.log("[VaultIndexUpdater] Stopped")
+
 	}
 
 	/**
 	 * Update all vault indexes
 	 */
 	async updateAllVaultIndexes(): Promise<void> {
-		console.log("[VaultIndexUpdater] Starting vault index update...")
 
 		try {
 			// Get all vaults
 			// TODO: Add pagination for large datasets
 			const vaults = await this.vaultRepository.listAllVaults()
-
-			console.log(`[VaultIndexUpdater] Found ${vaults.length} vaults to update`)
 
 			for (const vault of vaults) {
 				try {
@@ -114,7 +108,6 @@ export class VaultIndexUpdaterService {
 				}
 			}
 
-			console.log("[VaultIndexUpdater] Completed vault index update")
 		} catch (error) {
 			console.error("[VaultIndexUpdater] Failed to update vault indexes:", error)
 			throw error
@@ -184,12 +177,6 @@ export class VaultIndexUpdaterService {
 			dailyApy: dailyAPY,
 		})
 
-		console.log(`[VaultIndexUpdater] Updated vault ${vaultId}:`, {
-			environment,
-			oldIndex: vault.currentIndex,
-			newIndex,
-			dailyAPY,
-		})
 	}
 
 	/**
@@ -235,14 +222,6 @@ export class VaultIndexUpdaterService {
 				custodialWallet,
 				protocolAllocations,
 			)
-
-			console.log(`[VaultIndexUpdater] On-chain balance for vault ${vault.id}:`, {
-				chain: vault.chain,
-				chainId,
-				custodialWallet,
-				onChainBalance: result.totalBalanceDecimal,
-				databaseBalance: new BigNumber(vault.totalStakedBalance).dividedBy(1e6).toString(),
-			})
 
 			return result.totalBalance
 		} catch (error) {

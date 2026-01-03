@@ -153,7 +153,6 @@ export class TokenTransferService {
 
 			// Skip owner verification for now - let the mint transaction fail if signer is not owner
 			// This allows us to get better error messages from the actual mint transaction
-			console.log("🔑 Using signer:", account.address)
 
 			// Check balance before
 			const balanceBefore = await publicClient.readContract({
@@ -163,11 +162,6 @@ export class TokenTransferService {
 				args: [params.custodialWallet as Address],
 			})
 
-			console.log("🏦 Minting MockUSDC to Custodial Wallet")
-			console.log("  To:", params.custodialWallet)
-			console.log("  Amount:", params.amount, "USDC")
-			console.log("  Balance before:", formatUnits(balanceBefore, decimals), "USDC")
-
 			// Mint tokens
 			const hash = await walletClient.writeContract({
 				address: params.tokenAddress as Address,
@@ -175,9 +169,6 @@ export class TokenTransferService {
 				functionName: "mint",
 				args: [params.custodialWallet as Address, amountInBaseUnits],
 			})
-
-			console.log("  Transaction hash:", hash)
-			console.log("  Waiting for confirmation...")
 
 			// Wait for transaction confirmation
 			const receipt = await publicClient.waitForTransactionReceipt({ hash })
@@ -198,10 +189,6 @@ export class TokenTransferService {
 			})
 
 			const minted = balanceAfter - balanceBefore
-
-			console.log("  ✅ Minted:", formatUnits(minted, decimals), "USDC")
-			console.log("  Balance after:", formatUnits(balanceAfter, decimals), "USDC")
-			console.log("  Block number:", receipt.blockNumber)
 
 			return {
 				success: true,
@@ -298,14 +285,6 @@ export class TokenTransferService {
 				},
 			] as const
 
-			console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-			console.log("🏦 PRODUCTION: Transfer USDC from Oracle")
-			console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-			console.log("  Oracle:", oracleAddress)
-			console.log("  To:", params.custodialWallet)
-			console.log("  Amount:", params.amount, "USDC")
-			console.log("  Chain:", chain.name, `(${params.chainId})`)
-
 			// Step 1: Check oracle wallet balance FIRST
 			const oracleBalance = await publicClient.readContract({
 				address: params.tokenAddress as Address,
@@ -315,14 +294,9 @@ export class TokenTransferService {
 			})
 
 			const oracleBalanceFormatted = formatUnits(oracleBalance, decimals)
-			console.log("  Oracle Balance:", oracleBalanceFormatted, "USDC")
 
 			// Step 2: If insufficient balance, return error with details
 			if (oracleBalance < requiredAmount) {
-				console.log("  ❌ Insufficient oracle balance!")
-				console.log("  Required:", params.amount, "USDC")
-				console.log("  Available:", oracleBalanceFormatted, "USDC")
-				console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
 				return {
 					success: false,
@@ -334,7 +308,6 @@ export class TokenTransferService {
 			}
 
 			// Step 3: Execute ERC20 transfer
-			console.log("  ✅ Balance sufficient, executing transfer...")
 
 			const hash = await walletClient.writeContract({
 				address: params.tokenAddress as Address,
@@ -343,15 +316,11 @@ export class TokenTransferService {
 				args: [params.custodialWallet as Address, requiredAmount],
 			})
 
-			console.log("  Transaction hash:", hash)
-			console.log("  Waiting for confirmation...")
-
 			// Wait for transaction confirmation
 			const receipt = await publicClient.waitForTransactionReceipt({ hash })
 
 			if (receipt.status !== "success") {
-				console.log("  ❌ Transaction failed!")
-				console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
 				return {
 					success: false,
 					status: "failed",
@@ -370,12 +339,6 @@ export class TokenTransferService {
 
 			const oracleBalanceAfterFormatted = formatUnits(oracleBalanceAfter, decimals)
 
-			console.log("  ✅ Transfer successful!")
-			console.log("  Amount transferred:", params.amount, "USDC")
-			console.log("  Oracle balance after:", oracleBalanceAfterFormatted, "USDC")
-			console.log("  Block number:", receipt.blockNumber)
-			console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
 			return {
 				success: true,
 				status: "completed",
@@ -387,7 +350,7 @@ export class TokenTransferService {
 			}
 		} catch (error) {
 			console.error("[TokenTransferService] Transfer error:", error)
-			console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+
 			return {
 				success: false,
 				status: "failed",
@@ -427,13 +390,6 @@ export class TokenTransferService {
 	 * Always returns successful verification
 	 */
 	private async mockVerifyTransfer(params: VerifyTransferParams): Promise<TransferVerificationResult> {
-		console.log("[MOCK] Token Transfer Verification:", {
-			chain: params.chain,
-			token: params.tokenAddress,
-			amount: params.expectedAmount,
-			txHash: params.transactionHash,
-			to: params.toAddress,
-		})
 
 		// Simulate 1 second delay (realistic blockchain query)
 		await new Promise((resolve) => setTimeout(resolve, 1000))

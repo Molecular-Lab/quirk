@@ -6,6 +6,7 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
 
+import { ENV } from "@/config/env"
 import { useUserStore } from "./userStore"
 
 export interface ApiTestRequest {
@@ -55,7 +56,7 @@ export interface ApiTestState {
 
 const initialState = {
 	apiKey: null,
-	baseUrl: "http://localhost:3002",
+	baseUrl: ENV.API_URL,
 	currentRequest: null,
 	isLoading: false,
 	error: null,

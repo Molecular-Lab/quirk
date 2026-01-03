@@ -30,32 +30,40 @@ primary_region = "sjc"  # San Jose, California - change to your preferred region
     port = 443
     handlers = ["tls", "http"]
 
-  # Health checks
+  # Concurrency limits optimized for shared-cpu-2x with 1GB RAM (Demo)
   [services.concurrency]
     type = "connections"
-    hard_limit = 100
-    soft_limit = 80
+    hard_limit = 150    # Max connections before rejecting
+    soft_limit = 120    # Start queuing at this threshold
 
+  # TCP health check - Fast, lightweight connection test
   [[services.tcp_checks]]
-    interval = "15s"
-    timeout = "2s"
-    grace_period = "10s"
+    interval = "15s"        # Check every 15 seconds
+    timeout = "2s"          # Fail if no response in 2s
+    grace_period = "30s"    # Wait 30s after deployment before checking
 
+  # HTTP health check - Application-level health verification
   [[services.http_checks]]
-    interval = "30s"
-    timeout = "5s"
-    grace_period = "10s"
+    interval = "15s"        # Check every 15 seconds
+    timeout = "3s"          # Fail if no response in 3s
+    grace_period = "30s"    # Wait 30s after deployment before checking
+    restart_limit = 0       # Don't auto-restart (let Fly.io handle it)
     method = "GET"
     path = "/health"
     protocol = "http"
     tls_skip_verify = false
     [services.http_checks.headers]
-      Content-Type = "application/json"
+      User-Agent = "Fly-Health-Check"
 
-# VM resources
+# VM resources - Demo/MVP configuration (Cost-optimized)
+# shared-cpu-2x with 1GB RAM (~$6.64/mo)
+# - 2 shared CPU cores for concurrent request handling
+# - 1GB RAM for Node.js + PostgreSQL/Redis clients + business logic
+# - Good for demo/staging with moderate traffic (50-100 req/min)
+# - Upgrade to shared-cpu-4x with 2GB for production scaling
 [vm]
-  size = "shared-cpu-1x"  # 256MB RAM, shared CPU
-  memory = "256mb"
+  size = "shared-cpu-2x"  # 2 shared CPU cores
+  memory = "1024mb"       # 1GB RAM
 
 # Auto-scaling
 [scaling]
