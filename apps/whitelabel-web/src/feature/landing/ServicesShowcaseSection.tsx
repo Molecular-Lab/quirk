@@ -1,4 +1,4 @@
-import { motion, useScroll, useTransform, useInView } from "framer-motion"
+import { motion, useScroll, useTransform } from "framer-motion"
 import { Code2, Bot, Shield, FileCheck, ArrowLeftRight } from "lucide-react"
 import { useRef } from "react"
 
@@ -68,8 +68,19 @@ const ServiceCard = ({ service, index, progress }: ServiceCardProps) => {
 	return (
 		<motion.div
 			style={{ opacity }}
-			className="absolute inset-0 flex items-center justify-center"
+			className="absolute inset-0 flex flex-col items-center justify-center"
 		>
+			{/* Header - shows on all cards */}
+			<div className="text-center mb-8">
+				<h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-2">
+					Explore Our Services
+				</h2>
+				<p className="text-lg text-gray-600">
+					Everything you need to embed yield infrastructure into your platform.
+				</p>
+			</div>
+
+			{/* Card */}
 			<div className="w-full px-4 lg:px-8" style={{ maxWidth: "90vw" }}>
 				<div className="bg-gray-50 rounded-3xl p-8 lg:p-14">
 					<div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-center">
@@ -111,8 +122,6 @@ const ServiceCard = ({ service, index, progress }: ServiceCardProps) => {
 
 export const ServicesShowcaseSection = () => {
 	const containerRef = useRef(null)
-	const headerRef = useRef(null)
-	const isHeaderInView = useInView(headerRef, { once: true, margin: "-100px" })
 
 	const { scrollYProgress } = useScroll({
 		target: containerRef,
@@ -121,28 +130,7 @@ export const ServicesShowcaseSection = () => {
 
 	return (
 		<section ref={containerRef} className="bg-white">
-			{/* Section Header */}
-			<div className="py-16 lg:py-24">
-				<motion.div
-					ref={headerRef}
-					className="max-w-7xl mx-auto px-6 text-center"
-					initial={{ opacity: 0, y: 30 }}
-					animate={
-						isHeaderInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }
-					}
-					transition={{ duration: 0.6 }}
-				>
-					<h2 className="text-4xl lg:text-6xl font-bold text-gray-900 mb-4">
-						Explore Our Services
-					</h2>
-					<p className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
-						Everything you need to embed yield infrastructure into your
-						platform.
-					</p>
-				</motion.div>
-			</div>
-
-			{/* Stacked Cards Container */}
+			{/* Stacked Cards Container - Header is inside sticky area */}
 			<div
 				className="relative"
 				style={{ height: `${services.length * 100}vh` }}
