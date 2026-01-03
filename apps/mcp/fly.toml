@@ -57,7 +57,10 @@ primary_region = "sjc"  # San Jose, California - change to your preferred region
     [services.http_checks.headers]
       User-Agent = "Fly-Health-Check"
 
-# VM resources
+# VM resources - Demo/MVP configuration (Cost-optimized)
+# shared-cpu-1x with 256MB RAM (~$2.02/mo)
+# - MCP server is lightweight (just proxies requests to agent)
+# - 256MB is sufficient for simple Node.js proxy
 [vm]
   size = "shared-cpu-1x"
   memory = "256mb"
