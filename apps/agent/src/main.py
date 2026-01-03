@@ -1,8 +1,12 @@
 import os
 import asyncio
 import subprocess
+import warnings
 from pathlib import Path
 from dotenv import load_dotenv
+
+# Suppress Pydantic v1 warnings from LangSmith
+warnings.filterwarnings("ignore", category=UserWarning, module="pydantic.v1.main")
 
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage, ToolMessage
