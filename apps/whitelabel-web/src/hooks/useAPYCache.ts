@@ -14,7 +14,6 @@ import { useCallback, useEffect, useRef } from "react"
 import { b2bApiClient } from "@/api/b2bClient"
 import { type APYMap, useAPYCacheStore } from "@/store/apyCacheStore"
 
-
 const AUTO_REFRESH_INTERVAL_MS = 5 * 60 * 1000 // 5 minutes
 
 export function useAPYCache(token = "USDC", chainId = 8453) {
@@ -62,7 +61,7 @@ export function useAPYCache(token = "USDC", chainId = 8453) {
 				aave: protocols.find((p: any) => p.protocol === "aave")?.supplyAPY || "0.00",
 				compound: protocols.find((p: any) => p.protocol === "compound")?.supplyAPY || "0.00",
 				morpho: protocols.find((p: any) => p.protocol === "morpho")?.supplyAPY || "0.00",
-				timestamp: response.body?.timestamp || new Date().toISOString(),
+				timestamp: response.body?.timestamp ? new Date(response.body.timestamp).toISOString() : new Date().toISOString(),
 			}
 
 			setAPYs(apyMap)

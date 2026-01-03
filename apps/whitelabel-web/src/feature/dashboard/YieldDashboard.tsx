@@ -5,7 +5,6 @@ import { toast } from "sonner"
 
 import { getEffectiveProductStrategies } from "@/api/b2bClientHelpers"
 import { ProductSwitcher } from "@/components/ProductSwitcher"
-import { useEnvironmentStore } from "@/store/environmentStore"
 import { useUserStore } from "@/store/userStore"
 
 import { CategorySection } from "../../components/market/CategorySection"

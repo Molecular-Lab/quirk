@@ -21,7 +21,7 @@ import {
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
-import { useTransactionHistory, type DefiTransaction } from "@/hooks/defi/useDefiExecution"
+import { useTransactionHistory } from "@/hooks/defi/useDefiExecution"
 
 // ============================================================================
 // Utility Functions
@@ -74,7 +74,7 @@ const PROTOCOL_INFO = {
 export function TransactionHistory() {
     // Pagination
     const [currentPage, setCurrentPage] = useState(1)
-    const offset = (currentPage - 1) * ITEMS_PER_PAGE
+    // const offset = (currentPage - 1) * ITEMS_PER_PAGE
 
     // Filtering
     const [filterType, setFilterType] = useState<OperationType>("all")

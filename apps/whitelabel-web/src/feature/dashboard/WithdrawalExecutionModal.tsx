@@ -225,7 +225,7 @@ export function WithdrawalExecutionModal({ isOpen, onClose, onComplete }: Withdr
                                 <div className="px-2">
                                     <Slider
                                         value={[percentage]}
-                                        onValueChange={([value]) => setPercentage(value)}
+                                        onValueChange={([value]: number[]) => setPercentage(value)}
                                         min={0}
                                         max={100}
                                         step={1}

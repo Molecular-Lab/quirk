@@ -24,6 +24,7 @@ import {
 import { useClientContextStore } from "@/store/clientContextStore"
 import { useEnvironmentStore } from "@/store/environmentStore"
 import { type Organization, useUserStore } from "@/store/userStore"
+import { ENV } from "@/config/env"
 
 // Type for client registration response
 interface ClientRegistrationResponse {
@@ -1727,7 +1728,7 @@ export function APITestingPage() {
 							<span className="text-gray-600">
 								Base URL:{" "}
 								<code className="px-2 py-1 bg-gray-100 rounded">
-									{baseUrl}
+									{ENV.API_URL}
 								</code>
 							</span>
 						</div>

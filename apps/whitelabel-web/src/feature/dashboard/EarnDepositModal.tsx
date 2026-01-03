@@ -52,11 +52,11 @@ const PROTOCOL_INFO = {
     morpho: { name: "Morpho", color: "#4B5563", description: "Optimized P2P lending" },
 }
 
-const RISK_LEVELS: { value: RiskLevel; label: string; description: string }[] = [
-    { value: "conservative", label: "Conservative", description: "Lower risk, stable returns (AAVE-heavy)" },
-    { value: "moderate", label: "Moderate", description: "Balanced risk-return profile" },
-    { value: "aggressive", label: "Aggressive", description: "Higher risk, higher potential returns" },
-]
+// const RISK_LEVELS: { value: RiskLevel; label: string; description: string }[] = [
+//     { value: "conservative", label: "Conservative", description: "Lower risk, stable returns (AAVE-heavy)" },
+//     { value: "moderate", label: "Moderate", description: "Balanced risk-return profile" },
+//     { value: "aggressive", label: "Aggressive", description: "Higher risk, higher potential returns" },
+// ]
 
 const MIN_DEPOSIT = 10 // Minimum $10 deposit
 
