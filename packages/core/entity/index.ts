@@ -29,6 +29,7 @@ export type {
 	CreateClientParams,
 	CreateEndUserDepositParams,
 	CreateVaultIndexParams,
+	DepositStatus,
 	EndUserDeposit,
 	KYBStatus,
 	RiskAllocation,

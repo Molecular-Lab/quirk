@@ -42,26 +42,16 @@
 
 // ===== Re-export types from @quirk/core =====
 export type {
-	// Deposit types
-	DepositRequest,
-	ExternalDepositRequest,
-	InternalDepositRequest,
-	DepositResponse,
-	ExternalDepositResponse,
-	InternalDepositResponse,
-	DepositStatus,
-	Deposit,
-	ExternalDeposit,
-	InternalDeposit,
-	ClientBalance as CoreClientBalance,
-	PaginatedDeposits,
-	APIResponse as CoreAPIResponse,
-	// SDK types (from core/sdk)
-	QuirkSDKConfig,
-} from '@quirk/core'
+	// Deposit DTO types
+	CreateDepositRequest,
+	CompleteDepositRequest,
+	FailDepositRequest,
+	GetDepositStatsRequest,
 
-// ===== Re-export SDK client from @quirk/core =====
-export { QuirkClient, QuirkError } from '@quirk/core'
+	// Old entity types still available
+	DepositStatus,
+	ClientBalance as CoreClientBalance,
+} from '@quirk/core'
 
 // ===== Client Management Types =====
 export type {

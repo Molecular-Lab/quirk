@@ -4,14 +4,13 @@
  */
 
 import type { AxiosInstance } from 'axios'
+import type { CreateDepositRequest, ClientBalance } from '@quirk/core'
 import type {
-	DepositRequest,
-	DepositResponse,
-	Deposit,
-	PaginatedDeposits,
-	ClientBalance,
 	APIResponse,
-} from '@quirk/core'
+	PaginatedResponse,
+	DepositSummary,
+	ClientBalance as LocalClientBalance,
+} from '../types/client.types'
 
 /**
  * Deposit Client
@@ -22,16 +21,19 @@ export class DepositClient {
 	/**
 	 * Create a new deposit (external or internal)
 	 */
-	async create(params: DepositRequest): Promise<DepositResponse> {
-		const response = await this.axios.post<DepositResponse>('/deposits', params)
-		return response.data
+	async create(params: CreateDepositRequest): Promise<DepositSummary> {
+		const response = await this.axios.post<APIResponse<DepositSummary>>(
+			'/deposits',
+			params
+		)
+		return response.data.data
 	}
 
 	/**
 	 * Get deposit status by order ID
 	 */
-	async getStatus(orderId: string): Promise<Deposit> {
-		const response = await this.axios.get<APIResponse<Deposit>>(
+	async getStatus(orderId: string): Promise<DepositSummary> {
+		const response = await this.axios.get<APIResponse<DepositSummary>>(
 			`/deposits/${orderId}`
 		)
 		return response.data.data
@@ -44,18 +46,21 @@ export class DepositClient {
 		userId: string,
 		page: number = 1,
 		limit: number = 20
-	): Promise<PaginatedDeposits> {
-		const response = await this.axios.get<PaginatedDeposits>('/deposits', {
-			params: { userId, page, limit },
-		})
+	): Promise<PaginatedResponse<DepositSummary>> {
+		const response = await this.axios.get<PaginatedResponse<DepositSummary>>(
+			'/deposits',
+			{
+				params: { userId, page, limit },
+			}
+		)
 		return response.data
 	}
 
 	/**
 	 * Get client's prepaid balance with Quirk
 	 */
-	async getClientBalance(): Promise<ClientBalance> {
-		const response = await this.axios.get<APIResponse<ClientBalance>>(
+	async getClientBalance(): Promise<LocalClientBalance> {
+		const response = await this.axios.get<APIResponse<LocalClientBalance>>(
 			'/deposits/client-balance'
 		)
 		return response.data.data
