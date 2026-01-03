@@ -161,7 +161,7 @@ export function privyAuth(
 				organizationId: privyOrgId,
 				products: (products || []).map(p => ({
 					...p,
-					privyWalletType: p.walletType as "custodial" | "non-custodial",
+					privyWalletType: p.walletType as "MANAGED" | "USER_OWNED",
 				})),
 			};
 
@@ -196,7 +196,7 @@ declare global {
 					isActive: boolean;
 					isSandbox: boolean;
 					privyOrganizationId: string;
-					privyWalletType: "custodial" | "non-custodial";
+					privyWalletType: "MANAGED" | "USER_OWNED";
 					createdAt: Date;
 					updatedAt: Date;
 				}>;

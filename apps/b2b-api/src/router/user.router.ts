@@ -31,7 +31,7 @@ export const createUserRouter = (
 				const user = await userService.getOrCreateUser({
 					clientId: apiKeyClient.id, // ✅ Use authenticated client ID (not from body)
 					userId: body.clientUserId,
-					userType: "custodial", // ✅ B2B escrow - we manage custodial wallets
+					userType: "MANAGED", // ✅ B2B escrow - we manage custodial wallets
 					userWalletAddress: body.walletAddress,
 					status: body.status, // ✅ Optional initial status (defaults to 'active')
 				});

@@ -14,7 +14,7 @@ export class UserService {
 	async getOrCreateUser(request: {
 		clientId: string;
 		userId: string;
-		userType: "custodial" | "non-custodial";
+		userType: "MANAGED" | "USER_OWNED";
 		userWalletAddress?: string;
 		status?: string; // Optional initial status (defaults to 'active')
 	}) {

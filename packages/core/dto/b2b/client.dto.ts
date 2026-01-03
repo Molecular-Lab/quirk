@@ -16,7 +16,7 @@ export interface CreateClientRequest {
 	privyOrganizationId: string
 	privyWalletAddress: string
 	privyEmail?: string
-	walletType: "custodial" | "non-custodial"
+	walletType: "MANAGED" | "USER_OWNED"
 
 	// Vault creation options (token-centric: each token supports ALL 5 chains)
 	vaultsToCreate?: "usdc" | "usdt" | "both" // Which token vaults to create, defaults to "both" (creates 10 vaults: 5 chains × 2 tokens)

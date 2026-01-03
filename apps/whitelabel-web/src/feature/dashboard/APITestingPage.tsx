@@ -295,7 +295,7 @@ const API_FLOWS: APIEndpoint[] = [
 				productId: "prod_1234567890",
 				companyName: "GrabPay",
 				businessType: "fintech",
-				walletType: "custodial",
+				walletType: "MANAGED",
 				privyOrganizationId: "privy:user:abc123",
 				isActive: true,
 				createdAt: "2024-01-15T10:00:00Z",

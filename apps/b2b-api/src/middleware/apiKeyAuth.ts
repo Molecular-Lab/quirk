@@ -132,7 +132,7 @@ declare global {
 				isActive: boolean;
 				isSandbox: boolean;
 				privyOrganizationId: string;
-				privyWalletType: "custodial" | "non-custodial";
+				privyWalletType: "MANAGED" | "USER_OWNED";
 				createdAt: Date;
 				updatedAt: Date;
 			};

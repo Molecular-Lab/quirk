@@ -50,7 +50,7 @@ export class B2BDepositUseCase {
 		const user = await this.userRepository.getOrCreate(
 			request.clientId,
 			request.userId,
-			"custodial", // Default userType
+			"MANAGED", // Default userType
 			undefined, // No wallet address yet
 		)
 
