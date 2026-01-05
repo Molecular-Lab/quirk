@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react"
+import { useRef } from "react"
 import { motion, useInView } from "framer-motion"
 
 import { usePrivy } from "@privy-io/react-auth"
@@ -10,30 +10,15 @@ import quirkLogo from "@/assets/quirk-logo.svg"
 import { CTASection } from "./CTASection"
 import { FAQSection } from "./FAQSection"
 import { HowItWorksSection } from "./HowItWorksSection"
-import { NewHeroSection } from "./NewHeroSection"
 import { PlatformsCarouselSection } from "./PlatformsCarouselSection"
 import { ServicesShowcaseSection } from "./ServicesShowcaseSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
-import { WhyQuirkSection } from "./WhyQuirkSection"
 import { WhyStablecoinSection } from "./WhyStablecoinSection"
 import { NewHeroSectionV2 } from "./NewHeroSectionV2"
 
 export function LandingPage() {
 	const { authenticated, ready, user } = usePrivy()
 	const navigate = useNavigate()
-	const [isScrolled, setIsScrolled] = useState(false)
-
-	// Scroll event listener for navbar backdrop blur (Luma-style)
-	useEffect(() => {
-		const handleScroll = () => {
-			setIsScrolled(window.scrollY > 10)
-		}
-
-		window.addEventListener("scroll", handleScroll)
-		return () => {
-			window.removeEventListener("scroll", handleScroll)
-		}
-	}, [])
 
 	const handleGetStarted = async () => {
 		// Wait for Privy to be ready
