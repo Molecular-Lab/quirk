@@ -43,7 +43,7 @@ interface ProductionVault {
 
 async function main() {
 	console.log('\n╔═══════════════════════════════════════════════════════════════╗')
-	console.log('║   Backfill Privy Wallets for Production Vaults               ║')
+	console.log('║   Backfill Privy Server Wallets for Production Vaults               ║')
 	console.log('╚═══════════════════════════════════════════════════════════════╝\n')
 
 	// 1. Check environment variables

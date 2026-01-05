@@ -723,6 +723,30 @@ export const createDeFiProtocolRouter = (
 					}
 				}
 
+				// Auto-sync balances after successful deposit
+				if (result.success && vault && vaultService) {
+					try {
+						console.log('[executeDeposit] Auto-syncing balances after deposit...')
+						const balances = await executionService.fetchAllProtocolBalances(
+							fromAddress,
+							'USDC',
+							chainId
+						)
+						// balances are already in smallest units
+						const totalOnChainBalance = balances.total
+						const currentDbBalance = parseFloat(vault.totalStakedBalance || '0')
+						const yieldAccrued = totalOnChainBalance - currentDbBalance
+						// Store as-is (already in smallest units)
+						const totalOnChainBalanceSmallest = Math.round(totalOnChainBalance).toString()
+						const yieldAccruedSmallest = Math.round(Math.max(0, yieldAccrued)).toString()
+						await vaultService.updateOnChainBalances(vault.id, totalOnChainBalanceSmallest, yieldAccruedSmallest)
+						console.log('[executeDeposit] Balances synced successfully')
+					} catch (syncError) {
+						console.error('[executeDeposit] Failed to auto-sync balances:', syncError)
+						// Don't fail the request - the deposit succeeded
+					}
+				}
+
 				return {
 					status: 200,
 					body: result,
@@ -845,10 +869,73 @@ export const createDeFiProtocolRouter = (
 				const privyWalletId = vault.privyWalletId || undefined
 
 				// Build withdrawals array - if protocol is specified, withdraw from that protocol only
-				// Otherwise, withdraw proportionally from all protocols
-				const withdrawals = body.protocol
-					? [{ protocol: body.protocol, amount: body.amount }]
-					: [] // Empty array will trigger proportional withdrawal in service
+				// Otherwise, fetch on-chain balances and withdraw proportionally from all protocols
+				let withdrawals: Array<{ protocol: 'aave' | 'compound' | 'morpho'; amount: string }> = []
+
+				if (body.protocol) {
+					// Single protocol withdrawal
+					withdrawals = [{ protocol: body.protocol, amount: body.amount }]
+				} else {
+					// Multi-protocol proportional withdrawal - fetch on-chain balances
+					console.log('[executeWithdrawal] Fetching on-chain balances for proportional withdrawal')
+
+					try {
+						const balances = await executionService.fetchAllProtocolBalances(
+							toAddress,
+							'USDC',
+							chainId
+						)
+
+						if (balances.total === 0) {
+							return {
+								status: 400,
+								body: {
+									success: false,
+									transactionHashes: [],
+									environment: body.environment,
+									error: 'No funds found in any DeFi protocol',
+								},
+							}
+						}
+
+						const withdrawalAmount = parseFloat(body.amount)
+						const USDC_DECIMALS = 6
+
+						// Calculate proportional amounts in decimal
+						const aaveAmount = (withdrawalAmount * balances.aave) / balances.total
+						const compoundAmount = (withdrawalAmount * balances.compound) / balances.total
+						const morphoAmount = (withdrawalAmount * balances.morpho) / balances.total
+
+						// Convert to smallest units (micro-USDC) for adapter execution
+						const aaveAmountSmallest = Math.round(aaveAmount * 10 ** USDC_DECIMALS).toString()
+						const compoundAmountSmallest = Math.round(compoundAmount * 10 ** USDC_DECIMALS).toString()
+						const morphoAmountSmallest = Math.round(morphoAmount * 10 ** USDC_DECIMALS).toString()
+
+						// Build withdrawals array (filter out zero amounts)
+						withdrawals = ([
+							{ protocol: 'aave' as const, amount: aaveAmountSmallest },
+							{ protocol: 'compound' as const, amount: compoundAmountSmallest },
+							{ protocol: 'morpho' as const, amount: morphoAmountSmallest },
+						] as Array<{ protocol: 'aave' | 'compound' | 'morpho'; amount: string }>).filter(w => parseFloat(w.amount) > 0)
+
+						console.log('[executeWithdrawal] Proportional withdrawal calculated', {
+							totalBalance: balances.total,
+							withdrawalAmount,
+							breakdown: withdrawals,
+						})
+					} catch (balanceError) {
+						console.error('[executeWithdrawal] Failed to fetch balances:', balanceError)
+						return {
+							status: 500,
+							body: {
+								success: false,
+								transactionHashes: [],
+								environment: body.environment,
+								error: 'Failed to query on-chain balances',
+							},
+						}
+					}
+				}
 
 				const result = await executionService.executeWithdrawal({
 					token: 'USDC',
@@ -862,11 +949,22 @@ export const createDeFiProtocolRouter = (
 				// Save transaction records to database
 				if (result.success && result.transactionHashes.length > 0 && defiTransactionsRepository) {
 					try {
-						const protocol = body.protocol || 'aave' // Default to aave if not specified
 						const USDC_DECIMALS = 6
-						const amountInSmallestUnits = (BigInt(Math.round(parseFloat(body.amount) * 10 ** USDC_DECIMALS))).toString()
 
-						for (const txHash of result.transactionHashes) {
+						// For multi-protocol withdrawals, each hash corresponds to a withdrawal in order
+						// For single protocol, use the protocol from body or default to aave
+						for (let i = 0; i < result.transactionHashes.length; i++) {
+							const txHash = result.transactionHashes[i]
+							// Get the protocol from the withdrawals array (matches transaction order)
+							const withdrawal = withdrawals[i]
+							const protocol = withdrawal?.protocol || body.protocol || 'aave'
+							const txAmount = withdrawal?.amount || body.amount
+							// Convert to smallest units if not already
+							const amountNum = parseFloat(txAmount)
+							const amountInSmallestUnits = amountNum > 1000
+								? txAmount // Already in smallest units
+								: (BigInt(Math.round(amountNum * 10 ** USDC_DECIMALS))).toString()
+
 							await defiTransactionsRepository.create({
 								clientId: client.id,
 								vaultId: vault?.id || null,
@@ -889,11 +987,36 @@ export const createDeFiProtocolRouter = (
 								executedAt: new Date(),
 								confirmedAt: new Date(),
 							})
+							console.log(`[executeWithdrawal] Saved transaction: ${txHash} for protocol: ${protocol}`)
 						}
 						console.log(`[executeWithdrawal] Saved ${result.transactionHashes.length} transaction records to database`)
 					} catch (dbError) {
 						console.error('[executeWithdrawal] Failed to save transactions to database:', dbError)
 						// Don't fail the request - the on-chain tx succeeded
+					}
+				}
+
+				// Auto-sync balances after successful withdrawal
+				if (result.success && vault && vaultService) {
+					try {
+						console.log('[executeWithdrawal] Auto-syncing balances after withdrawal...')
+						const balances = await executionService.fetchAllProtocolBalances(
+							toAddress,
+							'USDC',
+							chainId
+						)
+						// balances are already in smallest units
+						const totalOnChainBalance = balances.total
+						const currentDbBalance = parseFloat(vault.totalStakedBalance || '0')
+						const yieldAccrued = totalOnChainBalance - currentDbBalance
+						// Store as-is (already in smallest units)
+						const totalOnChainBalanceSmallest = Math.round(totalOnChainBalance).toString()
+						const yieldAccruedSmallest = Math.round(Math.max(0, yieldAccrued)).toString()
+						await vaultService.updateOnChainBalances(vault.id, totalOnChainBalanceSmallest, yieldAccruedSmallest)
+						console.log('[executeWithdrawal] Balances synced successfully')
+					} catch (syncError) {
+						console.error('[executeWithdrawal] Failed to auto-sync balances:', syncError)
+						// Don't fail the request - the withdrawal succeeded
 					}
 				}
 
@@ -964,20 +1087,31 @@ export const createDeFiProtocolRouter = (
 				return {
 					status: 200,
 					body: {
-						transactions: transactions.map(tx => ({
-							id: tx.id,
-							txHash: tx.txHash,
-							protocol: tx.protocol as 'aave' | 'compound' | 'morpho',
-							operationType: tx.operationType as 'deposit' | 'withdrawal' | 'approval',
-							tokenSymbol: tx.tokenSymbol,
-							amount: tx.amount,
-							gasCostUsd: tx.gasCostUsd,
-							status: tx.status as 'pending' | 'confirmed' | 'failed',
-							chain: tx.chain,
-							environment: tx.environment as 'sandbox' | 'production',
-							executedAt: tx.executedAt,
-							confirmedAt: tx.confirmedAt,
-						})),
+						transactions: transactions.map(tx => {
+							// Convert amount from smallest units to human-readable
+							// USDC has 6 decimals
+							const USDC_DECIMALS = 6
+							const rawAmount = parseFloat(tx.amount)
+							// If amount is > 1000, it's likely in smallest units
+							const humanReadableAmount = rawAmount > 1000
+								? (rawAmount / 10 ** USDC_DECIMALS).toString()
+								: tx.amount
+
+							return {
+								id: tx.id,
+								txHash: tx.txHash,
+								protocol: tx.protocol as 'aave' | 'compound' | 'morpho',
+								operationType: tx.operationType as 'deposit' | 'withdrawal' | 'approval',
+								tokenSymbol: tx.tokenSymbol,
+								amount: humanReadableAmount,
+								gasCostUsd: tx.gasCostUsd,
+								status: tx.status as 'pending' | 'confirmed' | 'failed',
+								chain: tx.chain,
+								environment: tx.environment as 'sandbox' | 'production',
+								executedAt: tx.executedAt,
+								confirmedAt: tx.confirmedAt,
+							}
+						}),
 						total,
 						limit,
 						offset,
@@ -990,6 +1124,121 @@ export const createDeFiProtocolRouter = (
 					body: {
 						error: 'Failed to fetch transactions',
 						message: error instanceof Error ? error.message : 'Unknown error',
+					},
+				}
+			}
+		},
+
+		// ========================================================================
+		// Balance Sync
+		// ========================================================================
+
+		syncBalances: async ({ headers }) => {
+			try {
+				if (!executionService || !clientService || !vaultService) {
+					return {
+						status: 500,
+						body: { success: false, error: 'Required services not configured' },
+					}
+				}
+
+				const productId = headers['x-privy-org-id'] as string
+				if (!productId) {
+					return {
+						status: 400,
+						body: { success: false, error: 'Missing x-privy-org-id header' },
+					}
+				}
+
+				const environment = (headers['x-environment'] as 'sandbox' | 'production') || 'sandbox'
+
+				// Get client
+				const client = await clientService.getClientByProductId(productId)
+				if (!client) {
+					return {
+						status: 400,
+						body: { success: false, error: 'Client not found' },
+					}
+				}
+
+				// Get chain configuration
+				const { chainId, usdcAddress } = getChainConfig(environment)
+
+				// Get vault
+				const vault = await vaultService.getVaultByToken(client.id, chainId.toString(), usdcAddress, environment)
+				if (!vault || !vault.custodialWalletAddress) {
+					return {
+						status: 400,
+						body: { success: false, error: 'Vault not found or custodial wallet not configured' },
+					}
+				}
+
+				console.log(`[syncBalances] Syncing balances for vault ${vault.id}, wallet: ${vault.custodialWalletAddress}`)
+
+				// Fetch current on-chain balances from all protocols
+				const balances = await executionService.fetchAllProtocolBalances(
+					vault.custodialWalletAddress,
+					'USDC',
+					chainId
+				)
+
+				// balances are already in smallest units (micro-USDC)
+				const totalOnChainBalance = balances.total
+
+				// Get current DB balance (also in smallest units)
+				const currentDbBalance = parseFloat(vault.totalStakedBalance || '0')
+
+				// Calculate yield accrued since last sync (in smallest units)
+				const yieldAccrued = totalOnChainBalance - currentDbBalance
+
+				const USDC_DECIMALS = 6
+				console.log(`[syncBalances] Balance comparison:`, {
+					dbBalance: (currentDbBalance / 10 ** USDC_DECIMALS).toFixed(6) + ' USDC',
+					onChainBalance: (totalOnChainBalance / 10 ** USDC_DECIMALS).toFixed(6) + ' USDC',
+					yieldAccrued: (yieldAccrued / 10 ** USDC_DECIMALS).toFixed(6) + ' USDC',
+					breakdown: {
+						aave: (balances.aave / 10 ** USDC_DECIMALS).toFixed(6),
+						compound: (balances.compound / 10 ** USDC_DECIMALS).toFixed(6),
+						morpho: (balances.morpho / 10 ** USDC_DECIMALS).toFixed(6),
+					},
+				})
+
+				// Store in DB as-is (already in smallest units)
+				const totalOnChainBalanceSmallest = Math.round(totalOnChainBalance).toString()
+				const yieldAccruedSmallest = Math.round(Math.max(0, yieldAccrued)).toString()
+
+				// Update vault with new on-chain balances
+				await vaultService.updateOnChainBalances(
+					vault.id,
+					totalOnChainBalanceSmallest,
+					yieldAccruedSmallest
+				)
+
+				console.log(`[syncBalances] Vault ${vault.id} synced successfully`)
+
+				return {
+					status: 200,
+					body: {
+						success: true,
+						vaultId: vault.id,
+						previousBalance: (currentDbBalance / 10 ** USDC_DECIMALS).toFixed(6),
+						currentBalance: (totalOnChainBalance / 10 ** USDC_DECIMALS).toFixed(6),
+						yieldAccrued: (yieldAccrued / 10 ** USDC_DECIMALS).toFixed(6),
+						breakdown: {
+							aave: (balances.aave / 10 ** USDC_DECIMALS).toFixed(6),
+							compound: (balances.compound / 10 ** USDC_DECIMALS).toFixed(6),
+							morpho: (balances.morpho / 10 ** USDC_DECIMALS).toFixed(6),
+						},
+						syncedAt: new Date().toISOString(),
+					},
+				}
+			} catch (error) {
+				console.error('[syncBalances] Error:', error)
+				return {
+					status: 500,
+					body: {
+						success: false,
+						error: error instanceof Error ? error.message : 'Unknown error',
 					},
 				}
 			}

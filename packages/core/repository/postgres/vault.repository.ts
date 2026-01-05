@@ -19,6 +19,8 @@ import {
 	addPendingDepositToVault,
 	movePendingToStaked,
 	reduceStakedBalance,
+	// On-Chain Balance Sync
+	updateVaultOnChainBalances,
 	// Revenue Tracking (NEW)
 	recordYieldDistribution,
 	// End User Vault Queries (✅ SIMPLIFIED - no multi-chain)
@@ -151,6 +153,20 @@ export class VaultRepository {
 
 	async reduceStaked(id: string, totalStakedBalance: string, totalShares: string): Promise<void> {
 		await reduceStakedBalance(this.sql, { id, totalStakedBalance, totalShares })
+	}
+
+	/**
+	 * Update vault balances from on-chain DeFi protocol data
+	 * @param id - Vault ID
+	 * @param newTotalStakedBalance - New total balance from on-chain (sum of Aave + Compound + Morpho)
+	 * @param yieldAccrued - Yield earned since last sync
+	 */
+	async updateOnChainBalances(id: string, newTotalStakedBalance: string, yieldAccrued: string): Promise<void> {
+		await updateVaultOnChainBalances(this.sql, {
+			id,
+			totalStakedBalance: newTotalStakedBalance,
+			cumulativeYield: yieldAccrued,
+		})
 	}
 
 	// ==========================================

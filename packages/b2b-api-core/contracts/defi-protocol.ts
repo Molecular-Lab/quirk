@@ -255,5 +255,38 @@ export const defiProtocolContract = c.router({
 		},
 		summary: 'Get DeFi transaction history for the client',
 	},
+
+	/**
+	 * Sync balances from on-chain DeFi protocols
+	 */
+	syncBalances: {
+		method: 'POST',
+		path: '/defi/sync-balances',
+		body: z.object({}),
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				vaultId: z.string().optional(),
+				previousBalance: z.string().optional(),
+				currentBalance: z.string().optional(),
+				yieldAccrued: z.string().optional(),
+				breakdown: z.object({
+					aave: z.string(),
+					compound: z.string(),
+					morpho: z.string(),
+				}).optional(),
+				syncedAt: z.string().optional(),
+			}),
+			400: z.object({
+				success: z.boolean(),
+				error: z.string(),
+			}),
+			500: z.object({
+				success: z.boolean(),
+				error: z.string(),
+			}),
+		},
+		summary: 'Sync vault balances from on-chain DeFi protocols',
+	},
 })
 

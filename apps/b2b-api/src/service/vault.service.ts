@@ -66,4 +66,11 @@ export class VaultService {
 	async markFundsAsStaked(vaultId: string, amount: string) {
 		return await this.vaultUseCase.markFundsAsStaked(vaultId, amount);
 	}
+
+	/**
+	 * Update vault balances from on-chain DeFi protocol data
+	 */
+	async updateOnChainBalances(vaultId: string, totalStakedBalance: string, yieldAccrued: string) {
+		return await this.vaultUseCase.updateOnChainBalances(vaultId, totalStakedBalance, yieldAccrued);
+	}
 }

@@ -222,6 +222,34 @@ export class B2BVaultUseCase {
 	}
 
 	/**
+	 * Update vault balances from on-chain DeFi protocol data
+	 * Called after syncing balances from blockchain
+	 */
+	async updateOnChainBalances(vaultId: string, totalStakedBalance: string, yieldAccrued: string): Promise<void> {
+		await this.vaultRepository.updateOnChainBalances(vaultId, totalStakedBalance, yieldAccrued)
+
+		const vault = await this.vaultRepository.getClientVaultById(vaultId)
+		if (!vault) return
+
+		// Audit log
+		await this.auditRepository.create({
+			clientId: vault.clientId,
+			userId: null,
+			actorType: "system",
+			action: "balances_synced",
+			resourceType: "client_vault",
+			resourceId: vaultId,
+			description: `Synced on-chain balances: ${totalStakedBalance} (yield: ${yieldAccrued})`,
+			metadata: {
+				totalStakedBalance,
+				yieldAccrued,
+			},
+			ipAddress: null,
+			userAgent: null,
+		})
+	}
+
+	/**
 	 * Get total value locked (TVL) across all vaults
 	 */
 	async getTotalValueLocked(): Promise<{ chain: string; token: string; tvl: string }[]> {
