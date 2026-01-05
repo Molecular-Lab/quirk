@@ -80,6 +80,16 @@ export const COMPOUND_MARKETS: Record<number, Record<string, CometMarketConfig>>
 			baseTokenDecimals: 6,
 		},
 	},
+	// Sepolia Testnet (Chain ID: 11155111)
+	11155111: {
+		USDC: {
+			chainId: 11155111,
+			cometAddress: '0xAec1F48e02Cfb822Be958B68C7957156EB3F0b6e', // cUSDCv3 Sepolia
+			baseToken: 'USDC',
+			baseTokenAddress: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', // Sepolia test USDC
+			baseTokenDecimals: 6,
+		},
+	},
 } as const
 
 /**

@@ -3,6 +3,7 @@ import {
 	AaveV3Polygon,
 	AaveV3Base,
 	AaveV3Arbitrum,
+	AaveV3Sepolia,
 } from '@bgd-labs/aave-address-book'
 
 /**
@@ -13,6 +14,8 @@ export const AAVE_POOL_ADDRESSES: Record<number, string> = {
 	137: AaveV3Polygon.POOL, // Polygon
 	8453: AaveV3Base.POOL, // Base
 	42161: AaveV3Arbitrum.POOL, // Arbitrum
+	// Testnets
+	11155111: AaveV3Sepolia.POOL, // Sepolia testnet
 }
 
 /**
@@ -23,6 +26,8 @@ export const AAVE_DATA_PROVIDER_ADDRESSES: Record<number, string> = {
 	137: AaveV3Polygon.AAVE_PROTOCOL_DATA_PROVIDER, // Polygon
 	8453: AaveV3Base.AAVE_PROTOCOL_DATA_PROVIDER, // Base
 	42161: AaveV3Arbitrum.AAVE_PROTOCOL_DATA_PROVIDER, // Arbitrum
+	// Testnets
+	11155111: AaveV3Sepolia.AAVE_PROTOCOL_DATA_PROVIDER, // Sepolia testnet
 }
 
 /**
@@ -93,6 +98,21 @@ export const AAVE_SUPPORTED_TOKENS = {
 			address: '0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9',
 			decimals: 6,
 			name: 'Tether USD',
+		},
+	},
+	// Sepolia Testnet (Chain ID: 11155111)
+	11155111: {
+		USDC: {
+			symbol: 'USDC',
+			address: '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8', // Sepolia test USDC
+			decimals: 6,
+			name: 'USD Coin (Sepolia)',
+		},
+		USDT: {
+			symbol: 'USDT',
+			address: '0xaA8E23Fb1079EA71e0a56F48a2aA51851D8433D0', // Sepolia test USDT
+			decimals: 6,
+			name: 'Tether USD (Sepolia)',
 		},
 	},
 } as const

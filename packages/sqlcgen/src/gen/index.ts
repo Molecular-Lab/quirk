@@ -16,6 +16,7 @@ export * from './mock_usdc_mints_sql';
 export * from './withdrawal_sql';
 export * from './end_user_sql';
 export * from './defi_sql';
+export * from './defi_transactions_sql';
 export * from './audit_sql';
 export * from './revenue_distribution_sql';
 export * from './off_ramp_sql';

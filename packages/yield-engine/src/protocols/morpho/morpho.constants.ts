@@ -44,6 +44,19 @@ export const MORPHO_VAULTS: Record<number, Record<string, MorphoMarketConfig>> =
 			baseTokenDecimals: 6,
 		},
 	},
+	// Sepolia Testnet (Chain ID: 11155111)
+	// NOTE: User must deploy their own Morpho vault on Sepolia and update vaultAddress
+	11155111: {
+		USDC: {
+			version: 'v2',
+			chainId: 11155111,
+			vaultAddress: '0x0000000000000000000000000000000000000000', // TODO: Replace with deployed Sepolia vault
+			vaultName: 'Test USDC Vault (Sepolia)',
+			baseToken: 'USDC',
+			baseTokenAddress: '0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8', // Use AAVE Sepolia USDC
+			baseTokenDecimals: 6,
+		},
+	},
 }
 
 /**

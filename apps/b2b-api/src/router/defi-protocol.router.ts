@@ -8,6 +8,7 @@ import type { DeFiProtocolService } from '../service/defi-protocol.service'
 import type { DeFiExecutionService } from '../service/defi-execution.service'
 import type { ClientService } from '../service/client.service'
 import type { VaultService } from '../service/vault.service'
+import type { DefiTransactionsRepository } from '@quirk/core'
 import { defiProtocolContract } from '@quirk/b2b-api-core'
 
 interface DeFiRouterServices {
@@ -15,12 +16,14 @@ interface DeFiRouterServices {
 	executionService?: DeFiExecutionService // Optional for backward compatibility
 	clientService?: ClientService // For wallet address lookup
 	vaultService?: VaultService // For privy wallet ID lookup
+	defiTransactionsRepository?: DefiTransactionsRepository // For transaction history
 }
 
 /**
  * Get chain configuration based on environment
  * @param environment - 'sandbox' or 'production'
  * @returns { chainId, usdcAddress }
+ * NOTE: Must match deposit.router.ts chain configuration!
  */
 function getChainConfig(environment: 'sandbox' | 'production'): { chainId: number; usdcAddress: string } {
 	if (environment === 'production') {
@@ -30,8 +33,8 @@ function getChainConfig(environment: 'sandbox' | 'production'): { chainId: numbe
 		}
 	} else {
 		return {
-			chainId: 84532, // Base Sepolia
-			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // Mock USDC on Base Sepolia
+			chainId: 11155111, // Ethereum Sepolia (matches deposit.router.ts)
+			usdcAddress: '0x2DA55f4c1eCEB0cEeB93ee598e852Bf24Abb8FcE', // MockUSDC on Ethereum Sepolia (matches deposit.router.ts)
 		}
 	}
 }
@@ -45,6 +48,8 @@ export const createDeFiProtocolRouter = (
 	const executionService = 'executionService' in services ? services.executionService : undefined
 	const clientService = 'clientService' in services ? services.clientService : undefined
 	const vaultService = 'vaultService' in services ? services.vaultService : undefined
+	const defiTransactionsRepository = 'defiTransactionsRepository' in services ? services.defiTransactionsRepository : undefined
+
 
 	return s.router(defiProtocolContract, {
 		// Get all protocols
@@ -466,6 +471,13 @@ export const createDeFiProtocolRouter = (
 				// Get chain configuration based on environment
 				const { chainId, usdcAddress } = getChainConfig(environment)
 
+				console.log('[estimateGas] Looking up vault:', {
+					clientId: client.id,
+					chainId: chainId.toString(),
+					usdcAddress,
+					environment
+				})
+
 				const vault = await vaultService.getVaultByToken(
 					client.id,
 					chainId.toString(),
@@ -473,12 +485,14 @@ export const createDeFiProtocolRouter = (
 					environment
 				)
 
+				console.log('[estimateGas] Vault result:', vault ? { id: vault.id, custodialWalletAddress: vault.custodialWalletAddress } : 'null')
+
 				if (!vault || !vault.custodialWalletAddress) {
 					return {
 						status: 400,
 						body: {
 							error: 'Vault not found. Please create a vault first.',
-							message: 'Vault or wallet address not found',
+							message: `No vault found for chain ${chainId}, token ${usdcAddress}, env ${environment}`,
 						},
 					}
 				}
@@ -648,15 +662,66 @@ export const createDeFiProtocolRouter = (
 				const fromAddress = vault.custodialWalletAddress
 				const privyWalletId = vault.privyWalletId || undefined
 
+				// Convert amount from human-readable (e.g., "10") to smallest units
+				// USDC has 6 decimals, so multiply by 10^6
+				const USDC_DECIMALS = 6
+				const amountInSmallestUnits = (BigInt(Math.round(parseFloat(body.amount) * 10 ** USDC_DECIMALS))).toString()
+
+				console.log('[executeDeposit] Amount conversion:', {
+					humanReadable: body.amount,
+					smallestUnits: amountInSmallestUnits,
+					decimals: USDC_DECIMALS,
+				})
+
 				const result = await executionService.executeDeposit({
 					token: 'USDC',
 					chainId,
-					amount: body.amount,
+					amount: amountInSmallestUnits,
 					fromAddress,
 					riskLevel: body.riskLevel,
 					environment: body.environment,
 					privyWalletId,
 				})
+
+				// Save transaction records to database
+				if (result.success && result.transactionHashes.length > 0 && defiTransactionsRepository) {
+					try {
+						// Get protocol allocation from the result (if available) or use default distribution
+						const protocols: ('aave' | 'compound' | 'morpho')[] = ['aave', 'compound', 'morpho']
+						const txCount = result.transactionHashes.length
+						const amountPerTx = (BigInt(amountInSmallestUnits) / BigInt(txCount)).toString()
+
+						for (let i = 0; i < txCount; i++) {
+							const protocol = protocols[i % protocols.length]
+							await defiTransactionsRepository.create({
+								clientId: client.id,
+								vaultId: vault?.id || null,
+								endUserId: null,
+								txHash: result.transactionHashes[i],
+								blockNumber: null,
+								chain: chainId.toString(),
+								operationType: 'deposit',
+								protocol,
+								tokenSymbol: 'USDC',
+								tokenAddress: usdcAddress,
+								amount: amountPerTx,
+								gasUsed: null,
+								gasPrice: null,
+								gasCostEth: null,
+								gasCostUsd: null,
+								status: 'confirmed', // Mark as confirmed since tx was broadcast
+								errorMessage: null,
+								environment: body.environment,
+								executedAt: new Date(),
+								confirmedAt: new Date(),
+							})
+						}
+						console.log(`[executeDeposit] Saved ${txCount} transaction records to database`)
+					} catch (dbError) {
+						console.error('[executeDeposit] Failed to save transactions to database:', dbError)
+						// Don't fail the request - the on-chain tx succeeded
+					}
+				}
 
 				return {
 					status: 200,
@@ -794,6 +859,44 @@ export const createDeFiProtocolRouter = (
 					privyWalletId,
 				})
 
+				// Save transaction records to database
+				if (result.success && result.transactionHashes.length > 0 && defiTransactionsRepository) {
+					try {
+						const protocol = body.protocol || 'aave' // Default to aave if not specified
+						const USDC_DECIMALS = 6
+						const amountInSmallestUnits = (BigInt(Math.round(parseFloat(body.amount) * 10 ** USDC_DECIMALS))).toString()
+
+						for (const txHash of result.transactionHashes) {
+							await defiTransactionsRepository.create({
+								clientId: client.id,
+								vaultId: vault?.id || null,
+								endUserId: null,
+								txHash,
+								blockNumber: null,
+								chain: chainId.toString(),
+								operationType: 'withdrawal',
+								protocol,
+								tokenSymbol: 'USDC',
+								tokenAddress: usdcAddress,
+								amount: amountInSmallestUnits,
+								gasUsed: null,
+								gasPrice: null,
+								gasCostEth: null,
+								gasCostUsd: null,
+								status: 'confirmed', // Mark as confirmed since tx was broadcast
+								errorMessage: null,
+								environment: body.environment,
+								executedAt: new Date(),
+								confirmedAt: new Date(),
+							})
+						}
+						console.log(`[executeWithdrawal] Saved ${result.transactionHashes.length} transaction records to database`)
+					} catch (dbError) {
+						console.error('[executeWithdrawal] Failed to save transactions to database:', dbError)
+						// Don't fail the request - the on-chain tx succeeded
+					}
+				}
+
 				return {
 					status: 200,
 					body: result,
@@ -807,6 +910,86 @@ export const createDeFiProtocolRouter = (
 						transactionHashes: [],
 						environment: body.environment,
 						error: error instanceof Error ? error.message : 'Unknown error',
+					},
+				}
+			}
+		},
+
+		// ========================================================================
+		// Transaction History
+		// ========================================================================
+
+		getTransactions: async ({ query, headers }) => {
+			try {
+				if (!defiTransactionsRepository || !clientService) {
+					return {
+						status: 500,
+						body: { error: 'Transaction history not configured', message: 'Missing dependencies' },
+					}
+				}
+
+				const productId = headers['x-privy-org-id'] as string
+				if (!productId) {
+					return {
+						status: 400,
+						body: { error: 'Missing x-privy-org-id header', message: 'Product ID is required' },
+					}
+				}
+
+				const environment = (headers['x-environment'] as 'sandbox' | 'production') || 'sandbox'
+
+				// Get client
+				const client = await clientService.getClientByProductId(productId)
+				if (!client) {
+					return {
+						status: 400,
+						body: { error: 'Client not found', message: 'Invalid product ID' },
+					}
+				}
+
+				const limit = query.limit ?? 20
+				const offset = query.offset ?? 0
+
+				// Fetch transactions
+				const transactions = await defiTransactionsRepository.listByClient(
+					client.id,
+					environment,
+					limit,
+					offset
+				)
+
+				// Get total count
+				const total = await defiTransactionsRepository.count(client.id, environment)
+
+				return {
+					status: 200,
+					body: {
+						transactions: transactions.map(tx => ({
+							id: tx.id,
+							txHash: tx.txHash,
+							protocol: tx.protocol as 'aave' | 'compound' | 'morpho',
+							operationType: tx.operationType as 'deposit' | 'withdrawal' | 'approval',
+							tokenSymbol: tx.tokenSymbol,
+							amount: tx.amount,
+							gasCostUsd: tx.gasCostUsd,
+							status: tx.status as 'pending' | 'confirmed' | 'failed',
+							chain: tx.chain,
+							environment: tx.environment as 'sandbox' | 'production',
+							executedAt: tx.executedAt,
+							confirmedAt: tx.confirmedAt,
+						})),
+						total,
+						limit,
+						offset,
+					},
+				}
+			} catch (error) {
+				console.error('Error fetching transactions:', error)
+				return {
+					status: 500,
+					body: {
+						error: 'Failed to fetch transactions',
+						message: error instanceof Error ? error.message : 'Unknown error',
 					},
 				}
 			}

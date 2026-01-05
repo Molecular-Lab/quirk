@@ -1,15 +1,17 @@
 import { createPublicClient, http, type PublicClient, type Chain } from 'viem'
-import { mainnet, polygon, base, arbitrum } from 'viem/chains'
+import { mainnet, polygon, base, arbitrum, sepolia } from 'viem/chains'
 import { RpcError } from '../types/common.types'
 
 /**
- * Map of supported chains
+ * Map of supported chains (includes testnets for sandbox environment)
  */
 export const SUPPORTED_CHAINS: Record<number, Chain> = {
 	1: mainnet,
 	137: polygon,
 	8453: base,
 	42161: arbitrum,
+	// Testnets
+	11155111: sepolia, // Ethereum Sepolia testnet
 }
 
 /**
@@ -20,6 +22,8 @@ const RPC_ENDPOINTS: Record<number, string> = {
 	137: process.env.POLYGON_RPC_URL || 'https://polygon-rpc.com',
 	8453: process.env.BASE_RPC_URL || 'https://mainnet.base.org',
 	42161: process.env.ARBITRUM_RPC_URL || 'https://arb1.arbitrum.io/rpc',
+	// Testnets
+	11155111: process.env.SEPOLIA_RPC_URL || 'https://rpc.sepolia.org',
 }
 
 /**

@@ -11,7 +11,15 @@
  *   - Database must be accessible via DATABASE_URL
  */
 
-import "dotenv/config"
+import dotenv from "dotenv"
+import path from "path"
+import { fileURLToPath } from "url"
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
+
+// Load .env from apps/b2b-api root (../../.env)
+dotenv.config({ path: path.resolve(__dirname, "../../.env") })
 import postgres from "postgres"
 import { PrivyWalletService } from "@quirk/core"
 
