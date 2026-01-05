@@ -242,9 +242,6 @@ export function useGasEstimate(params?: GasEstimateParams) {
 
 /**
  * Get DeFi transaction history
- *
- * TODO: Add /defi/transactions endpoint to b2b-api-core contract
- * For now, returning empty array to prevent 404 errors
  */
 export function useTransactionHistory(limit = 20, offset = 0) {
     const { activeProductId } = useProducts()
@@ -257,19 +254,28 @@ export function useTransactionHistory(limit = 20, offset = 0) {
         queryFn: async (): Promise<DefiTransaction[]> => {
             if (!productId) return []
 
-            // TODO: Once /defi/transactions endpoint is added to contract, use:
-            // const response = await b2bApiClient.defiProtocol.getTransactions({
-            //     query: { limit, offset },
-            //     headers: getAuthHeaders(productId, environment),
-            // })
-            // if (response.status !== 200) {
-            //     throw new Error(response.body.error || 'Failed to fetch transactions')
-            // }
-            // return response.body
+            const response = await b2bApiClient.defiProtocol.getTransactions({
+                query: { limit, offset },
+                extraHeaders: getAuthHeaders(productId, environment),
+            })
 
-            // Temporary: Return empty array to prevent 404 errors
-            console.warn('[useTransactionHistory] Endpoint /defi/transactions not yet implemented in contract')
-            return []
+            if (response.status !== 200) {
+                console.error('[useTransactionHistory] Failed to fetch transactions:', response)
+                throw new Error('Failed to fetch transactions')
+            }
+
+            // Map API response to frontend format
+            return response.body.transactions.map(tx => ({
+                id: tx.id,
+                txHash: tx.txHash,
+                protocol: tx.protocol as Protocol,
+                operationType: tx.operationType as 'deposit' | 'withdrawal' | 'approval',
+                tokenSymbol: tx.tokenSymbol,
+                amount: tx.amount,
+                gasCostUsd: tx.gasCostUsd || null,
+                status: tx.status as 'pending' | 'confirmed' | 'failed',
+                executedAt: new Date(tx.executedAt),
+            }))
         },
         enabled: Boolean(productId),
         staleTime: 60000, // 1 minute

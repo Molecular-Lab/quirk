@@ -233,13 +233,18 @@ export class DeFiExecutionService {
 		for (const alloc of allocations) {
 			const adapter = this.getAdapter(alloc.protocol, chainId)
 
-			// Get the spender address (protocol contract)
-			// For now, prepare approval with max amount
+			// Get the actual spender address for this protocol
+			const spender = await this.getProtocolSpender(alloc.protocol, token, chainId)
+
+			if (!spender) {
+				this.logger?.warn(`[DeFiExecution] No spender address found for ${alloc.protocol} on chain ${chainId}`)
+				continue
+			}
+
 			const approvalTx = await adapter.prepareApproval(
 				token,
 				chainId,
-				// Spender will be determined by the adapter internally
-				'', // The adapter will use the correct pool/comet/vault address
+				spender, // Use the actual protocol spender contract
 				alloc.amount,
 				fromAddress
 			)
@@ -418,7 +423,7 @@ export class DeFiExecutionService {
 			if (environment === 'sandbox') {
 				// Use ViemClientManager for sandbox (mock USDC)
 				const walletClient = ViemClientManager.getWalletClient(chainId.toString() as '11155111' | '84532')
-				
+
 				for (const tx of prepared.transactions) {
 					const adapter = this.getAdapter(tx.protocol, chainId)
 					const receipt = await adapter.executeDeposit(
@@ -442,6 +447,59 @@ export class DeFiExecutionService {
 					throw new Error('Privy wallet ID required for production execution')
 				}
 
+				// 2a. Check and execute approvals first
+				const allocationsForApproval = prepared.allocation.map(a => ({
+					protocol: a.protocol,
+					amount: a.amount,
+				}))
+
+				this.logger?.info('[DeFiExecution] Checking approvals...', { allocations: allocationsForApproval })
+
+				const approvalStatus = await this.checkApprovals(
+					token,
+					chainId,
+					fromAddress,
+					allocationsForApproval
+				)
+
+				// Execute any needed approvals
+				for (const status of approvalStatus) {
+					if (status.needsApproval) {
+						this.logger?.info('[DeFiExecution] Executing approval for', { protocol: status.protocol })
+
+						const approvalTxs = await this.prepareApprovals(
+							token,
+							chainId,
+							fromAddress,
+							[{ protocol: status.protocol, amount: allocationsForApproval.find(a => a.protocol === status.protocol)?.amount || '0' }]
+						)
+
+						for (const approvalTx of approvalTxs) {
+							const approvalValue = approvalTx.transaction.value
+								? (typeof approvalTx.transaction.value === 'string' && approvalTx.transaction.value.startsWith('0x'))
+									? approvalTx.transaction.value
+									: `0x${BigInt(approvalTx.transaction.value).toString(16)}`
+								: '0x0'
+
+							const approvalResult = await this.privyWalletService.sendTransaction({
+								walletId: privyWalletId,
+								chainId,
+								to: approvalTx.transaction.to,
+								data: approvalTx.transaction.data,
+								value: approvalValue,
+							})
+
+							this.logger?.info('[DeFiExecution] Approval executed', {
+								protocol: approvalTx.protocol,
+								hash: approvalResult.hash,
+							})
+
+							// Don't add approval hashes to return - only deposit hashes
+						}
+					}
+				}
+
+				// 2b. Now execute deposits
 				for (const tx of prepared.transactions) {
 					// Ensure value is properly formatted as hex string starting with 0x
 					const value = tx.transaction.value
@@ -500,7 +558,7 @@ export class DeFiExecutionService {
 			// 2. Execute based on environment
 			if (environment === 'sandbox') {
 				const walletClient = ViemClientManager.getWalletClient(chainId.toString() as '11155111' | '84532')
-				
+
 				for (const tx of prepared) {
 					const adapter = this.getAdapter(tx.protocol, chainId)
 					const receipt = await adapter.executeWithdrawal(

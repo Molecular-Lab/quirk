@@ -25,6 +25,8 @@ import {
 	DepositExecutionRequestDto,
 	WithdrawalExecutionRequestDto,
 	ExecutionResultDto,
+	// Transaction DTOs
+	TransactionHistoryResponseDto,
 } from '../dto/defi-protocol'
 
 const c = initContract()
@@ -231,6 +233,27 @@ export const defiProtocolContract = c.router({
 		},
 		summary: 'Execute withdrawal with backend-managed wallet signing',
 	},
-})
 
+	// ========================================================================
+	// Transaction History Endpoints
+	// ========================================================================
+
+	/**
+	 * Get transaction history
+	 */
+	getTransactions: {
+		method: 'GET',
+		path: '/defi/transactions',
+		query: z.object({
+			limit: z.coerce.number().optional().default(20),
+			offset: z.coerce.number().optional().default(0),
+		}),
+		responses: {
+			200: TransactionHistoryResponseDto,
+			400: ErrorResponseDto,
+			500: ErrorResponseDto,
+		},
+		summary: 'Get DeFi transaction history for the client',
+	},
+})
 

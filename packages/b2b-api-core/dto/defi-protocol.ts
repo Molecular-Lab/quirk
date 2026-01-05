@@ -297,3 +297,54 @@ export type CheckApprovalsResponse = z.infer<typeof CheckApprovalsResponseDto>
 export type DepositExecutionRequest = z.infer<typeof DepositExecutionRequestDto>
 export type WithdrawalExecutionRequest = z.infer<typeof WithdrawalExecutionRequestDto>
 export type ExecutionResult = z.infer<typeof ExecutionResultDto>
+
+// ============================================================================
+// Transaction History DTOs
+// ============================================================================
+
+/**
+ * DeFi Transaction record
+ */
+export const DefiTransactionDto = z.object({
+	id: z.string().uuid(),
+	txHash: z.string(),
+	protocol: z.enum(['aave', 'compound', 'morpho']),
+	operationType: z.enum(['deposit', 'withdrawal', 'approval']),
+	tokenSymbol: z.string(),
+	amount: z.string(),
+	gasCostUsd: z.string().nullable(),
+	status: z.enum(['pending', 'confirmed', 'failed']),
+	chain: z.string(),
+	environment: z.enum(['sandbox', 'production']),
+	executedAt: z.coerce.date(),
+	confirmedAt: z.coerce.date().nullable(),
+})
+
+/**
+ * Transaction history response
+ */
+export const TransactionHistoryResponseDto = z.object({
+	transactions: z.array(DefiTransactionDto),
+	total: z.number(),
+	limit: z.number(),
+	offset: z.number(),
+})
+
+/**
+ * Transaction stats
+ */
+export const TransactionStatsDto = z.object({
+	totalTransactions: z.number(),
+	confirmedCount: z.number(),
+	pendingCount: z.number(),
+	failedCount: z.number(),
+	totalGasCostUsd: z.string(),
+	totalDeposited: z.string(),
+	totalWithdrawn: z.string(),
+})
+
+// Type exports for transactions
+export type DefiTransaction = z.infer<typeof DefiTransactionDto>
+export type TransactionHistoryResponse = z.infer<typeof TransactionHistoryResponseDto>
+export type TransactionStats = z.infer<typeof TransactionStatsDto>
+

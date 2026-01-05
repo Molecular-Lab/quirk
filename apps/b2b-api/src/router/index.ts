@@ -4,6 +4,7 @@
 
 import type { initServer } from "@ts-rest/express";
 import { b2bContract } from "@quirk/b2b-api-core";
+import type { DefiTransactionsRepository } from "@quirk/core";
 import { createClientRouter } from "./client.router";
 import { createDashboardRouter } from "./dashboard.router";
 import { createDeFiProtocolRouter } from "./defi-protocol.router";
@@ -38,6 +39,7 @@ export const createMainRouter = (
 		userVaultService: UserVaultService;
 		privyAccountService: PrivyAccountService;
 		explorerService: ExplorerService;
+		defiTransactionsRepository?: DefiTransactionsRepository;
 	}
 ) => {
 	return s.router(b2bContract, {
@@ -48,6 +50,7 @@ export const createMainRouter = (
 			executionService: services.defiExecutionService,
 			clientService: services.clientService,
 			vaultService: services.vaultService,
+			defiTransactionsRepository: services.defiTransactionsRepository,
 		}) as any, // TS type path mismatch workaround
 		explorer: createExplorerRouter(s, services.explorerService),
 		vault: createVaultRouter(s, services.vaultService),

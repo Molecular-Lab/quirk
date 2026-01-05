@@ -32,6 +32,7 @@ import {
 	ViemClientManager, // ✅ Blockchain client for minting tokens (sandbox)
 	PrivyWalletService, // ✅ Privy server wallets (production)
 	RevenueService, // ✅ Revenue tracking service
+	DefiTransactionsRepository, // ✅ DeFi transaction history
 } from "@quirk/core";
 import { b2bContract } from "@quirk/b2b-api-core";
 import { createExpressEndpoints } from "@ts-rest/express";
@@ -102,6 +103,7 @@ async function main() {
 	const withdrawalRepository = new WithdrawalRepository(sql);
 	const auditRepository = new AuditRepository(sql);
 	const revenueRepository = new RevenueRepository(sql);
+	const defiTransactionsRepository = new DefiTransactionsRepository(sql);
 
 	logger.info("✅ Repositories initialized");
 
@@ -208,6 +210,7 @@ async function main() {
 		userVaultService,
 		privyAccountService,
 		explorerService,
+		defiTransactionsRepository,
 	});
 
 	logger.info("✅ Routers created");
