@@ -15,6 +15,8 @@ import { PlatformsCarouselSection } from "./PlatformsCarouselSection"
 import { ServicesShowcaseSection } from "./ServicesShowcaseSection"
 import { SupportedAssetsSection } from "./SupportedAssetsSection"
 import { WhyQuirkSection } from "./WhyQuirkSection"
+import { WhyStablecoinSection } from "./WhyStablecoinSection"
+import { NewHeroSectionV2 } from "./NewHeroSectionV2"
 
 export function LandingPage() {
 	const { authenticated, ready, user } = usePrivy()
@@ -97,37 +99,35 @@ export function LandingPage() {
 		<div className="min-h-screen bg-white">
 			{/* Header - Pure glass blur (no background color) */}
 			<motion.header
-				className={`fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl ${
-					isScrolled ? "border-b border-gray-200/30 shadow-sm" : "border-b border-transparent"
-				}`}
+				className="fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl"
 				initial={{ y: -100 }}
 				animate={{ y: 0 }}
 				transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
 			>
-				<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-					<Link to="/" className="flex items-center gap-3 group">
+				<div className="max-w-7xl mx-auto px-6 py-1.5 flex items-center justify-between">
+					<Link to="/" className="flex items-center gap-2 group">
 						<motion.div
-							className="relative p-2 -m-2 rounded-lg transition-all"
+							className="relative p-1.5 -m-1.5 rounded-lg transition-all"
 							whileHover={{ scale: 1.05 }}
 							whileTap={{ scale: 0.95 }}
 						>
-							<img src={quirkLogo} alt="Quirk Logo" className="size-16 cursor-pointer" />
+							<img src={quirkLogo} alt="Quirk Logo" className="size-10 cursor-pointer" />
 						</motion.div>
-						<span className="text-2xl font-bold text-gray-950">QUIRK</span>
+						<span className="text-lg font-bold text-gray-950">QUIRK</span>
 					</Link>
-					<nav className="hidden md:flex items-center gap-6">
+					<nav className="hidden md:flex items-center gap-5">
 						<motion.div
 							initial={{ opacity: 0, y: -10 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.2 }}
 						>
-							<Link to="/demo" className="text-lg text-gray-700 hover:text-gray-950 transition-colors font-medium">
+							<Link to="/demo" className="text-sm text-gray-700 hover:text-gray-950 transition-colors font-medium">
 								Demo
 							</Link>
 						</motion.div>
 						<motion.button
 							onClick={handleSignIn}
-							className="text-lg text-gray-700 hover:text-gray-950 transition-colors font-medium"
+							className="text-sm text-gray-700 hover:text-gray-950 transition-colors font-medium"
 							initial={{ opacity: 0, y: -10 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.3 }}
@@ -138,7 +138,7 @@ export function LandingPage() {
 						</motion.button>
 						<motion.button
 							onClick={handleGetStarted}
-							className="bg-gray-900 text-white px-8 py-3.5 text-lg rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm cursor-pointer"
+							className="bg-gray-900 text-white px-5 py-2 text-sm rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm cursor-pointer"
 							initial={{ opacity: 0, y: -10 }}
 							animate={{ opacity: 1, y: 0 }}
 							transition={{ delay: 0.4 }}
@@ -155,10 +155,11 @@ export function LandingPage() {
 			</motion.header>
 
 			{/* Hero */}
-			<NewHeroSection />
+			{/* <NewHeroSection /> */}
+			<NewHeroSectionV2 />
 
-			{/* Why Quirk - Round cards with phone mockup */}
-			<WhyQuirkSection />
+			{/* Why Quirk - Bento grid benefits */}
+			<WhyStablecoinSection />
 
 			{/* Explore our Services - 5 Core Features */}
 			<ServicesShowcaseSection />

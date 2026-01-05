@@ -1,6 +1,6 @@
 export function TrustComplianceSection() {
 	return (
-		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-blue-50/40 to-white flex items-center">
+		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-gray-50 to-white flex items-center">
 			<div className="max-w-7xl mx-auto px-6 w-full">
 				{/* Section Header */}
 				<div className="text-center mb-16">
@@ -112,8 +112,8 @@ export function TrustComplianceSection() {
 						<div className="text-4xl font-bold text-blue-600 mb-2">3-5%</div>
 						<div className="text-sm text-gray-600">Average APY</div>
 					</div>
-					<div className="relative text-center p-6 rounded-xl bg-white border-t-4 border-purple-500 shadow-sm hover:shadow-md transition-shadow">
-						<div className="text-4xl font-bold text-purple-600 mb-2">$300B+</div>
+					<div className="relative text-center p-6 rounded-xl bg-white border-t-4 border-gray-500 shadow-sm hover:shadow-md transition-shadow">
+						<div className="text-4xl font-bold text-gray-700 mb-2">$300B+</div>
 						<div className="text-sm text-gray-600">Addressable Market</div>
 					</div>
 					<div className="relative text-center p-6 rounded-xl bg-white border-t-4 border-green-500 shadow-sm hover:shadow-md transition-shadow">

@@ -75,7 +75,7 @@ export function TradingStrategiesSection() {
 			{
 				data: [allocations.lending, allocations.staking, allocations.arbitrage, allocations.cefi, allocations.liquidityProvider],
 				backgroundColor: [
-					"#A78BFA", // Softer purple for Lending
+					"#6B7280", // Gray-500 for Lending
 					"#60A5FA", // Softer blue for Staking
 					"#FBBF24", // Softer amber for Arbitrage
 					"#34D399", // Softer emerald for CeFi
@@ -201,7 +201,7 @@ export function TradingStrategiesSection() {
 	]
 
 	return (
-		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-purple-50/40 to-white flex items-center overflow-hidden">
+		<section className="min-h-[90vh] py-20 bg-gradient-to-b from-gray-50 to-white flex items-center overflow-hidden">
 			<motion.div
 				ref={ref}
 				variants={containerVariants}

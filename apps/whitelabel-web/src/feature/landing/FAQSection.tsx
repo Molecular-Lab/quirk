@@ -27,7 +27,7 @@ const faqItems: FAQItem[] = [
 	{
 		id: "4",
 		question: "How is custody handled?",
-		answer: "We use institutional-grade MPC (Multi-Party Computation) custody powered by Privy. This ensures that user funds are always protected with the highest security standards, while maintaining the flexibility for quick withdrawals."
+		answer: "We use institutional-grade custody solutions. User authentication is powered by Privy. This ensures that user funds are always protected with the highest security standards, while maintaining the flexibility for quick withdrawals."
 	},
 	{
 		id: "5",
@@ -149,7 +149,7 @@ export function FAQSection() {
 				{/* Section Header */}
 				<motion.div className="text-center mb-16" variants={titleVariants}>
 					<motion.h2
-						className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4"
+						className="text-4xl lg:text-5xl font-medium text-gray-900 mb-4"
 						variants={titleVariants}
 					>
 						Frequently Asked Questions
@@ -187,7 +187,9 @@ export function FAQSection() {
 				>
 					<p className="text-gray-600 mb-4">Still have questions?</p>
 					<motion.a
-						href="mailto:hello@quirk.finance"
+						href="https://tally.so/r/VLGvyj"
+						target="_blank"
+						rel="noopener noreferrer"
 						className="inline-block bg-gray-900 text-white px-8 py-3.5 rounded-lg hover:bg-gray-800 transition-colors font-medium"
 						whileHover={{
 							scale: 1.02,
@@ -195,7 +197,7 @@ export function FAQSection() {
 						}}
 						whileTap={{ scale: 0.98 }}
 					>
-						Contact Us
+						Join Waitlist
 					</motion.a>
 				</motion.div>
 			</motion.div>

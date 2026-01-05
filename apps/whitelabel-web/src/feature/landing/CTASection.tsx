@@ -41,11 +41,11 @@ export function CTASection() {
 								<div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center">
 									<img src={quirkLogo} alt="Quirk" className="w-8 h-8" />
 								</div>
-								<span className="text-2xl font-bold text-white">QUIRK</span>
+								<span className="text-2xl font-medium text-white">QUIRK</span>
 							</motion.div>
 
 							<motion.h2
-								className="text-3xl lg:text-4xl font-bold text-white mb-4"
+								className="text-3xl lg:text-4xl font-medium text-white mb-4"
 								initial={{ opacity: 0, y: 20 }}
 								animate={isInView ? { opacity: 1, y: 0 } : {}}
 								transition={{ delay: 0.3 }}

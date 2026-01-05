@@ -14,10 +14,10 @@ export function BusinessTypesSection() {
 				"User wallets and payment processing funds earn yield during settlement periods. Optimize treasury management with automated yield generation.",
 			icon: CreditCard,
 			secondaryIcon: TrendingUp,
-			bgGradient: "from-purple-100 to-purple-50",
-			accentColor: "purple",
-			tagBg: "bg-purple-100",
-			tagText: "text-purple-700",
+			bgGradient: "from-gray-100 to-gray-50",
+			accentColor: "gray",
+			tagBg: "bg-gray-100",
+			tagText: "text-gray-700",
 		},
 		{
 			tag: "Workforce Solutions",
@@ -50,10 +50,10 @@ export function BusinessTypesSection() {
 				"Escrow funds and driver earnings earn yield until payout. Better than 0% checking accounts, creating a competitive advantage.",
 			icon: Car,
 			secondaryIcon: PiggyBank,
-			bgGradient: "from-purple-100 to-purple-50",
-			accentColor: "purple",
-			tagBg: "bg-purple-100",
-			tagText: "text-purple-700",
+			bgGradient: "from-gray-100 to-gray-50",
+			accentColor: "gray",
+			tagBg: "bg-gray-100",
+			tagText: "text-gray-700",
 		},
 		{
 			tag: "Retail & Commerce",
@@ -232,11 +232,11 @@ export function BusinessTypesSection() {
 		accentColor: string
 	}) => {
 		const colorMap: Record<string, { primary: string; secondary: string; tertiary: string; bg: string }> = {
-			purple: {
-				primary: "from-purple-400 to-purple-500",
-				secondary: "bg-purple-200",
-				tertiary: "bg-purple-300",
-				bg: "from-purple-100/80 to-purple-50/50"
+			gray: {
+				primary: "from-gray-600 to-gray-700",
+				secondary: "bg-gray-200",
+				tertiary: "bg-gray-300",
+				bg: "from-gray-100/80 to-gray-50/50"
 			},
 			orange: {
 				primary: "from-orange-400 to-orange-500",
@@ -252,7 +252,7 @@ export function BusinessTypesSection() {
 			},
 		}
 
-		const colors = colorMap[accentColor] || colorMap.purple
+		const colors = colorMap[accentColor] || colorMap.gray
 
 		return (
 			<div className={`relative w-full h-48 rounded-2xl bg-gradient-to-br ${colors.bg} overflow-hidden`}>

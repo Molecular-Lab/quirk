@@ -82,7 +82,7 @@ export function SupportedAssetsSection() {
 				className="max-w-7xl mx-auto px-6"
 			>
 				<motion.div className="text-center mb-16" variants={titleVariants}>
-					<h2 className="text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+					<h2 className="text-4xl lg:text-5xl font-medium text-gray-900 mb-4">
 						Supported Assets
 					</h2>
 					<p className="text-xl text-gray-600">

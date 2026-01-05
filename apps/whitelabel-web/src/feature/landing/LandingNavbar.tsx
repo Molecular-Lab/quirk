@@ -61,10 +61,10 @@ export function LandingNavbar() {
 				isScrolled ? "border-b border-gray-200/30 shadow-sm" : "border-b border-transparent"
 			}`}
 		>
-			<div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+			<div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
 				<Link to="/" className="flex items-center gap-3 group">
 					<div className="relative p-2 -m-2 rounded-lg transition-all">
-						<img src={quirkLogo} alt="Quirk Logo" className="size-16 cursor-pointer" />
+						<img src={quirkLogo} alt="Quirk Logo" className="size-12 cursor-pointer" />
 					</div>
 				</Link>
 				<nav className="hidden md:flex items-center gap-6">
@@ -79,7 +79,7 @@ export function LandingNavbar() {
 					</button>
 					<button
 						onClick={handleAuthNavigation}
-						className="bg-gray-900 text-white px-8 py-3.5 text-lg rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm hover:shadow-md cursor-pointer"
+						className="bg-gray-900 text-white px-6 py-2.5 text-lg rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm hover:shadow-md cursor-pointer"
 					>
 						Get Started
 					</button>

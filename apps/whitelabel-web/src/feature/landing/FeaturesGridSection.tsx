@@ -31,7 +31,7 @@ export function FeaturesGridSection() {
 	}
 
 	return (
-		<section className="py-24 bg-gradient-to-b from-white to-purple-50/30 overflow-hidden">
+		<section className="py-24 bg-gradient-to-b from-white to-gray-50 overflow-hidden">
 			<motion.div
 				ref={ref}
 				variants={containerVariants}
@@ -42,7 +42,7 @@ export function FeaturesGridSection() {
 				{/* Section Header */}
 				<motion.div className="text-center mb-16" variants={itemVariants}>
 					<motion.span
-						className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-6"
+						className="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium mb-6"
 						whileHover={{ scale: 1.05 }}
 					>
 						<Zap className="w-4 h-4" />
@@ -51,7 +51,7 @@ export function FeaturesGridSection() {
 					<h2 className="text-5xl font-bold text-gray-950 mb-4">
 						Explore Our
 					</h2>
-					<h2 className="text-5xl font-bold text-purple-600">
+					<h2 className="text-5xl font-bold text-gray-700">
 						Standout Features
 					</h2>
 				</motion.div>
@@ -62,17 +62,17 @@ export function FeaturesGridSection() {
 					<motion.div
 						variants={itemVariants}
 						whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
-						className="lg:col-span-2 bg-gradient-to-br from-purple-100 to-purple-50 rounded-3xl p-8 relative overflow-hidden min-h-[320px]"
+						className="lg:col-span-2 bg-gradient-to-br from-gray-100 to-gray-50 rounded-3xl p-8 relative overflow-hidden min-h-[320px]"
 					>
 						{/* Decorative illustration */}
 						<div className="absolute right-0 top-0 w-1/2 h-full">
 							<motion.div
-								className="absolute top-8 right-8 w-32 h-32 bg-purple-200 rounded-3xl opacity-60"
+								className="absolute top-8 right-8 w-32 h-32 bg-gray-200 rounded-3xl opacity-60"
 								animate={{ rotate: [0, 5, 0], y: [0, -5, 0] }}
 								transition={{ duration: 4, repeat: Infinity }}
 							/>
 							<motion.div
-								className="absolute top-20 right-24 w-20 h-20 bg-purple-300 rounded-2xl opacity-50"
+								className="absolute top-20 right-24 w-20 h-20 bg-gray-300 rounded-2xl opacity-50"
 								animate={{ rotate: [0, -5, 0], y: [0, 5, 0] }}
 								transition={{ duration: 3, repeat: Infinity, delay: 0.5 }}
 							/>
@@ -81,10 +81,10 @@ export function FeaturesGridSection() {
 								animate={{ y: [0, -8, 0] }}
 								transition={{ duration: 2.5, repeat: Infinity }}
 							>
-								<TrendingUp className="w-10 h-10 text-purple-600" />
+								<TrendingUp className="w-10 h-10 text-gray-700" />
 							</motion.div>
 							<motion.div
-								className="absolute top-1/2 right-40 w-16 h-16 bg-purple-400 rounded-full opacity-40"
+								className="absolute top-1/2 right-40 w-16 h-16 bg-gray-400 rounded-full opacity-40"
 								animate={{ scale: [1, 1.1, 1] }}
 								transition={{ duration: 2, repeat: Infinity }}
 							/>
@@ -92,7 +92,7 @@ export function FeaturesGridSection() {
 
 						<div className="relative z-10 max-w-md">
 							<motion.div
-								className="w-14 h-14 bg-purple-500 rounded-2xl flex items-center justify-center mb-6"
+								className="w-14 h-14 bg-gray-900 rounded-2xl flex items-center justify-center mb-6"
 								whileHover={{ scale: 1.1, rotate: 5 }}
 							>
 								<TrendingUp className="w-7 h-7 text-white" />
@@ -161,7 +161,7 @@ export function FeaturesGridSection() {
 
 						<div className="flex items-end gap-2">
 							<motion.span
-								className="text-5xl font-bold text-purple-600"
+								className="text-5xl font-bold text-gray-700"
 								initial={{ opacity: 0, scale: 0.5 }}
 								animate={isInView ? { opacity: 1, scale: 1 } : {}}
 								transition={{ delay: 0.5, type: "spring" as const }}

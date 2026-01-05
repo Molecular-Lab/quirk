@@ -1,12 +1,12 @@
 import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
 
-export const WhyQuirkSection = () => {
+export const ExplanationQuirk = () => {
 	const sectionRef = useRef(null)
-	const isInView = useInView(sectionRef, { once: true, margin: "-100px" })
+	const isInView = useInView(sectionRef, { once: true, margin: "-50px" })
 
 	return (
-		<section ref={sectionRef} className="py-24 lg:py-32 bg-white">
+		<section ref={sectionRef} className="py-16 lg:py-20 bg-gray-50 mb-10">
 			<div className="px-4 lg:px-8">
 				{/* Content Card - 90vw width */}
 				<motion.div
@@ -16,20 +16,22 @@ export const WhyQuirkSection = () => {
 					animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
 					transition={{ duration: 0.6 }}
 				>
-					{/* Header */}
+					{/* Header - 3 lines centered */}
 					<motion.div
 						className="text-center mb-16"
 						initial={{ opacity: 0, y: 30 }}
 						animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
 						transition={{ duration: 0.6, delay: 0.1 }}
 					>
-						<h2 className="text-5xl lg:text-6xl font-semibold text-gray-900 mb-6">
-							Quirk
+						<h2 className="text-5xl lg:text-6xl font-semibold text-gray-900">
+							Quirk is an financial service provider
 						</h2>
-						<p className="text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-							Quirk is an embedded financial service provider for your platform
-							that helps your workers and users save better.
-						</p>
+						<h2 className="text-5xl lg:text-6xl font-semibold text-gray-900">
+							we helps you unlock
+						</h2>
+						<h2 className="text-5xl lg:text-6xl font-semibold text-gray-900 mb-6">
+							the instant revenue streams
+						</h2>
 						<p className="text-lg text-gray-500 mt-4 max-w-2xl mx-auto">
 							New seamless saving experiences — start right inside your apps and
 							help millions of workers.
@@ -43,10 +45,10 @@ export const WhyQuirkSection = () => {
 						animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
 						transition={{ duration: 0.7, delay: 0.3 }}
 					>
-						{/* EXPLORE Text Behind */}
+						{/* QU IRK Text Behind */}
 						<div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
 							<span className="text-[200px] lg:text-[300px] font-bold text-gray-200/50 tracking-tight select-none whitespace-nowrap">
-								EXPLORE
+								QU IRK
 							</span>
 						</div>
 

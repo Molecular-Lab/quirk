@@ -1,177 +1,134 @@
-import { motion, useAnimation } from "framer-motion"
-import { useEffect, useState, useRef } from "react"
+import { motion, useScroll, useTransform } from "framer-motion"
+import { useRef } from "react"
 import {
 	Smartphone,
 	Globe,
 	CreditCard,
 	Wallet,
 	Building2,
-	ShoppingCart,
-	Briefcase,
-	PenTool,
-	Video,
 } from "lucide-react"
 
 const platforms = [
 	{
-		title: "Mobile Wallets",
-		subtitle: "iOS & Android",
+		title: "E-Commerce",
+		subtitle: "Marketplaces",
 		description:
-			"Embed yield directly into your mobile wallet app. Users earn while they hold.",
-		icon: Smartphone,
-	},
-	{
-		title: "Web Apps",
-		subtitle: "DeFi & CeFi",
-		description:
-			"Add yield capabilities to any web platform. One SDK, instant infrastructure.",
+			"Enable buyers and sellers to earn on idle balances. Turn shopping platforms into earning platforms.",
 		icon: Globe,
 	},
 	{
-		title: "Payment Apps",
-		subtitle: "Fintech",
-		description:
-			"Turn idle balances into yield-generating assets for your users.",
-		icon: CreditCard,
-	},
-	{
-		title: "Custodial",
-		subtitle: "Institutional",
-		description:
-			"Offer yield to custody clients with enterprise-grade security.",
-		icon: Wallet,
-	},
-	{
-		title: "Banking",
-		subtitle: "TradFi",
-		description:
-			"Bridge traditional banking with DeFi yields. Compliant and scalable.",
-		icon: Building2,
-	},
-	{
-		title: "E-Commerce",
-		subtitle: "Retail",
-		description:
-			"Let customers earn on store credit and loyalty points.",
-		icon: ShoppingCart,
-	},
-	{
 		title: "Gig Workers",
-		subtitle: "Platforms",
+		subtitle: "On-Demand Economy",
 		description:
-			"Help gig workers earn yield on their earnings between payouts.",
-		icon: Briefcase,
-	},
-	{
-		title: "Freelancers",
-		subtitle: "Professionals",
-		description:
-			"Enable freelancers to grow their income with automated yield.",
-		icon: PenTool,
+			"Help gig workers earn yield on earnings between jobs. Financial stability for the flexible workforce.",
+		icon: Smartphone,
 	},
 	{
 		title: "Creators",
-		subtitle: "Content",
+		subtitle: "Content Platforms",
 		description:
-			"Let creators earn more from their revenue with embedded yield.",
-		icon: Video,
+			"Empower creators to grow their income passively. Earnings work harder while they create.",
+		icon: CreditCard,
 	},
+	{
+		title: "Freelancers",
+		subtitle: "Project-Based Work",
+		description:
+			"Give freelancers yield on project payments. Bridge the gap between gigs with passive income.",
+		icon: Wallet,
+	},
+	{
+		title: "Fintech Apps",
+		subtitle: "Digital Banking",
+		description:
+			"Integrate yield into digital wallets and banking apps. Competitive returns for modern finance.",
+		icon: Building2,
+	},
+
 ]
 
 export const PlatformsCarouselSection = () => {
-	const [currentIndex, setCurrentIndex] = useState(0)
 	const containerRef = useRef<HTMLDivElement>(null)
-	const controls = useAnimation()
 
-	// Auto-advance carousel
-	useEffect(() => {
-		const interval = setInterval(() => {
-			setCurrentIndex((prev) => (prev + 1) % platforms.length)
-		}, 4000)
-		return () => clearInterval(interval)
-	}, [])
+	// Scroll-based animation with tighter control
+	const { scrollYProgress } = useScroll({
+		target: containerRef,
+		offset: ["start start", "end end"], // Start when section enters top, end when it leaves
+	})
 
-	// Animate on index change
-	useEffect(() => {
-		controls.start({
-			x: -currentIndex * 100 + "%",
-			transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
-		})
-	}, [currentIndex, controls])
-
-	const goToSlide = (index: number) => {
-		setCurrentIndex(index)
-	}
-
-	const goNext = () => {
-		setCurrentIndex((prev) => (prev + 1) % platforms.length)
-	}
-
-	const goPrev = () => {
-		setCurrentIndex((prev) => (prev - 1 + platforms.length) % platforms.length)
-	}
+	// Map scroll progress to horizontal translation
+	// Container is 90vw - (p-6 lg:p-10) padding ≈ 86vw usable space
+	// Each card: 80vw + gap 1rem between = need to slide (80vw * 4 cards) + (1rem * 4 gaps)
+	const x = useTransform(
+		scrollYProgress,
+		[0.15, 0.85], // Only use middle 70% of scroll range for slower, smoother sliding
+		["0vw", "-320vw"] // Slide to show all 5 cards
+	)
 
 	return (
-		<section className="bg-white py-8">
-			<div className="flex items-center justify-center p-4">
-				{/* Full Card Container - 90vw x 90vh */}
+		<section ref={containerRef} className="bg-white" style={{ height: `${(platforms.length + 2) * 100}vh` }}>
+			<div className="sticky top-0 h-screen flex items-center justify-center p-4">
+				{/* Full Card Container - 90vw x 80vh */}
 				<div
 					className="bg-gray-900 rounded-3xl p-6 lg:p-10 flex flex-col overflow-hidden"
-					style={{ width: "90vw", height: "90vh", maxWidth: "90vw", maxHeight: "90vh" }}
+					style={{ width: "90vw", height: "80vh", maxWidth: "90vw", maxHeight: "80vh" }}
 				>
 					{/* Header */}
-					<div className="text-center mb-6 lg:mb-8 flex-shrink-0">
+					<div className="text-center mb-6 lg:mb-8 flex-shrink-0 z-10">
 						<p className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">
-							Quirk Everywhere
+							Quirk
 						</p>
-						<h2 className="text-3xl lg:text-5xl font-bold text-white">
+						<h2 className="text-3xl lg:text-5xl font-medium text-white">
 							Any Platform, Any Scale
 						</h2>
 					</div>
 
-					{/* Carousel Container */}
-					<div className="flex-1 relative overflow-hidden min-h-0">
+					{/* Scrollable Container */}
+					<div className="flex-1 relative overflow-hidden flex items-center">
 						<motion.div
-							ref={containerRef}
 							className="flex h-full"
-							animate={controls}
-							style={{ width: `${platforms.length * 100}%` }}
+							style={{
+								x,
+								gap: "1rem",
+								willChange: "transform",
+							}}
 						>
 							{platforms.map((platform, index) => {
 								const Icon = platform.icon
 								return (
 									<div
 										key={platform.title}
-										className="flex-shrink-0 h-full px-4"
-										style={{ width: `${100 / platforms.length}%` }}
+										className="flex-shrink-0 h-full"
+										style={{ width: "80vw" }}
 									>
-										<div className="h-full flex flex-col lg:flex-row items-center justify-center gap-8 lg:gap-16">
+										{/* Full height card content - constrained width */}
+										<div className="h-full w-full flex flex-col lg:flex-row items-center justify-center gap-6 lg:gap-10 px-4 lg:px-8">
 											{/* Left: Large Icon */}
 											<div className="flex-shrink-0">
-												<div className="w-40 h-40 lg:w-56 lg:h-56 bg-gray-800 rounded-3xl flex items-center justify-center">
+												<div className="w-32 h-32 lg:w-40 lg:h-40 bg-gray-800 rounded-3xl flex items-center justify-center">
 													<Icon
-														className="w-20 h-20 lg:w-28 lg:h-28 text-white"
+														className="w-16 h-16 lg:w-20 lg:h-20 text-white"
 														strokeWidth={1.2}
 													/>
 												</div>
 											</div>
 
-											{/* Center: Content */}
-											<div className="text-center lg:text-left max-w-lg">
+											{/* Center: Content - constrained width */}
+											<div className="text-center lg:text-left flex-1 max-w-md">
 												<span className="text-sm font-medium text-gray-500 uppercase tracking-wider">
 													{platform.subtitle}
 												</span>
-												<h3 className="text-4xl lg:text-6xl font-bold text-white mt-2 mb-4">
+												<h3 className="text-3xl lg:text-4xl font-medium text-white mt-2 mb-4">
 													{platform.title}
 												</h3>
-												<p className="text-gray-400 text-lg lg:text-xl leading-relaxed">
+												<p className="text-gray-400 text-base lg:text-lg leading-relaxed">
 													{platform.description}
 												</p>
 											</div>
 
 											{/* Right: Index number */}
 											<div className="flex-shrink-0 hidden lg:block">
-												<span className="text-[120px] lg:text-[180px] font-bold text-gray-800 leading-none">
+												<span className="text-[100px] lg:text-[120px] font-medium text-gray-800 leading-none">
 													{String(index + 1).padStart(2, "0")}
 												</span>
 											</div>
@@ -180,44 +137,6 @@ export const PlatformsCarouselSection = () => {
 								)
 							})}
 						</motion.div>
-					</div>
-
-					{/* Navigation */}
-					<div className="flex items-center justify-center gap-4 mt-6 flex-shrink-0">
-						{/* Prev Button */}
-						<button
-							onClick={goPrev}
-							className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
-						>
-							<svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-							</svg>
-						</button>
-
-						{/* Dots */}
-						<div className="flex gap-2">
-							{platforms.map((_, index) => (
-								<button
-									key={index}
-									onClick={() => goToSlide(index)}
-									className={`w-2 h-2 rounded-full transition-all duration-300 ${
-										index === currentIndex
-											? "bg-white w-8"
-											: "bg-gray-600 hover:bg-gray-500"
-									}`}
-								/>
-							))}
-						</div>
-
-						{/* Next Button */}
-						<button
-							onClick={goNext}
-							className="w-12 h-12 rounded-full bg-gray-800 hover:bg-gray-700 flex items-center justify-center transition-colors"
-						>
-							<svg className="w-6 h-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-								<path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-							</svg>
-						</button>
 					</div>
 				</div>
 			</div>

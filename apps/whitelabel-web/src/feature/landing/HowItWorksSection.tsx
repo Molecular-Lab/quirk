@@ -6,9 +6,9 @@ import { useRef, useEffect, useState } from "react"
 
 const milestones = [
 	{ id: 1, label: "Idle Capital" },
-	{ id: 2, label: "Connect Quirk" },
-	{ id: 3, label: "Earn Yield" },
-	{ id: 4, label: "Revenue" },
+	{ id: 2, label: "Earn Yield" },
+	{ id: 3, label: "Your Revenue" },
+	{ id: 4, label: "Revenue Share" },
 ]
 
 // Data for each step - what to show in cards
@@ -18,37 +18,61 @@ const stepData = [
 		quirk: { label: "Idle Capital", value: "$50M", subtext: "ready to earn" },
 	},
 	{
-		quirkless: { label: "Your Options", value: "0", subtext: "yield solutions" },
-		quirk: { label: "Integration", value: "1", subtext: "SDK to embed" },
-	},
-	{
 		quirkless: { label: "Annual Yield", value: "0%", subtext: "APY" },
-		quirk: { label: "Annual Yield", value: "5%", subtext: "APY", highlight: true },
+		quirk: { label: "Annual Yield", value: "5%", subtext: "APY" },
 	},
 	{
 		quirkless: { label: "Lost Revenue", value: "$0", subtext: "per year" },
-		quirk: { label: "Your Revenue", value: "$2.5M", subtext: "per year (90% share)", highlight: true },
+		quirk: { label: "Your Revenue", value: "$2.5M", subtext: "per year", highlight: true },
+	},
+	{
+		quirkless: { label: "Distribution", value: "0%", subtext: "for everyone" },
+		quirk: {
+			label: "Smart Distribution",
+			value: "",
+			subtext: "configurable revenue sharing",
+			breakdown: [
+				{ label: "End-User APY", value: "70%", color: "text-white" },
+				{ label: "Your Share", value: "20%", color: "text-white" },
+				{ label: "Platform Fee", value: "10%", color: "text-white" },
+			]
+		},
 	},
 ]
 
 export function HowItWorksSection() {
 	const containerRef = useRef<HTMLDivElement>(null)
-	const [activeStep, setActiveStep] = useState(0)
+	const [activeStep, setActiveStep] = useState(-1)  // Start with -1 (no step active)
 
 	const { scrollYProgress } = useScroll({
 		target: containerRef,
-		offset: ["start start", "end end"],
+		offset: ["start center", "end start"],  // Start activating when section center hits viewport center
 	})
 
 	useEffect(() => {
 		const unsubscribe = scrollYProgress.on("change", (value) => {
-			const step = Math.min(Math.floor(value * milestones.length), milestones.length - 1)
+			// Before scroll starts (value < 0.05), no step is active
+			if (value < 0.05) {
+				setActiveStep(-1)
+				return
+			}
+
+			// Map scroll progress to steps (0-4)
+			// Adjust value to start from 0 after initial threshold
+			const adjustedValue = (value - 0.05) / 0.95  // Normalize 0.05-1.0 to 0-1
+			const rawStep = adjustedValue * milestones.length
+
+			// Force last step at 75%+ to ensure it activates
+			const step = adjustedValue >= 0.75
+				? milestones.length - 1
+				: Math.min(Math.floor(rawStep), milestones.length - 1)
+
 			setActiveStep(step)
 		})
 		return unsubscribe
 	}, [scrollYProgress])
 
-	const currentData = stepData[activeStep]
+	const currentData = activeStep >= 0 ? stepData[activeStep] : null
 
 	return (
 		<section ref={containerRef} className="bg-white">
@@ -58,12 +82,12 @@ export function HowItWorksSection() {
 				<div className="sticky top-0 h-screen flex items-center justify-center p-4">
 					{/* Full Card Container - 90vw x 90vh */}
 					<div
-						className="bg-gray-100 rounded-3xl p-6 lg:p-10 flex flex-col"
-						style={{ width: "90vw", height: "90vh", maxWidth: "90vw", maxHeight: "90vh" }}
+						className="bg-gray-50 rounded-3xl p-6 lg:p-10 flex flex-col"
+						style={{ width: "90vw", height: "80vh", maxWidth: "90vw", maxHeight: "80vh" }}
 					>
 						{/* Header inside card */}
 						<div className="text-center mb-6 lg:mb-8">
-							<h2 className="text-4xl lg:text-6xl font-bold text-gray-900">
+							<h2 className="text-4xl lg:text-6xl font-medium text-gray-900">
 								How Quirk Works
 							</h2>
 						</div>
@@ -100,7 +124,7 @@ export function HowItWorksSection() {
 															: "border-gray-400 bg-white"
 													}`}
 												>
-													<span className={`text-sm font-bold ${index <= activeStep ? "text-white" : "text-gray-400"}`}>
+													<span className={`text-sm font-medium ${index <= activeStep ? "text-white" : "text-gray-400"}`}>
 														{index + 1}
 													</span>
 												</div>
@@ -121,56 +145,93 @@ export function HowItWorksSection() {
 							<div className="flex-1 grid lg:grid-cols-2 gap-4 lg:gap-6 min-h-0">
 								{/* QUIRKLESS Card - Static container */}
 								<div className="bg-white rounded-2xl p-6 lg:p-8 border border-gray-200 flex flex-col justify-center items-center text-center overflow-hidden">
-									<p className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+									<p className="text-xs font-medium text-gray-400 uppercase tracking-widest mb-4">
 										Quirkless
 									</p>
 
-									<p className="text-sm text-gray-500 mb-2">
-										{currentData.quirkless.label}
-									</p>
+									{currentData ? (
+										<>
+											<p className="text-sm text-gray-500 mb-2">
+												{currentData.quirkless.label}
+											</p>
 
-									{/* Only the number animates */}
-									<motion.p
-										className="text-6xl lg:text-8xl xl:text-9xl font-bold text-gray-300 leading-none"
-										key={`quirkless-value-${activeStep}`}
-										initial={{ opacity: 0, y: 20 }}
-										animate={{ opacity: 1, y: 0 }}
-										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
-									>
-										{currentData.quirkless.value}
-									</motion.p>
+											{/* Only the number animates */}
+											<motion.p
+												className="text-6xl lg:text-8xl xl:text-9xl font-medium text-gray-300 leading-none"
+												key={`quirkless-value-${activeStep}`}
+												initial={{ opacity: 0, y: 20 }}
+												animate={{ opacity: 1, y: 0 }}
+												transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
+											>
+												{currentData.quirkless.value}
+											</motion.p>
 
-									<p className="text-base text-gray-400 mt-4">
-										{currentData.quirkless.subtext}
-									</p>
+											<p className="text-base text-gray-400 mt-4">
+												{currentData.quirkless.subtext}
+											</p>
+										</>
+									) : (
+										<p className="text-gray-400 text-lg">Scroll to begin</p>
+									)}
 								</div>
 
 								{/* QUIRK Card - Static container */}
 								<div className="bg-gray-900 rounded-2xl p-6 lg:p-8 text-white flex flex-col justify-center items-center text-center overflow-hidden">
-									<p className="text-xs font-semibold text-gray-500 uppercase tracking-widest mb-4">
+									<p className="text-xs font-medium text-gray-500 uppercase tracking-widest mb-4">
 										Quirk
 									</p>
 
-									<p className="text-sm text-gray-400 mb-2">
-										{currentData.quirk.label}
-									</p>
+									{currentData ? (
+										<>
+											<p className="text-sm text-gray-400 mb-2">
+												{currentData.quirk.label}
+											</p>
 
-									{/* Only the number animates */}
-									<motion.p
-										className={`text-6xl lg:text-8xl xl:text-9xl font-bold leading-none ${
-											currentData.quirk.highlight ? "text-green-400" : "text-white"
-										}`}
-										key={`quirk-value-${activeStep}`}
-										initial={{ opacity: 0, y: 20 }}
-										animate={{ opacity: 1, y: 0 }}
-										transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
-									>
-										{currentData.quirk.value}
-									</motion.p>
+											{/* Conditional rendering: Breakdown or Single Value */}
+											{currentData.quirk.breakdown ? (
+												<motion.div
+													className="w-full space-y-4"
+													key={`quirk-breakdown-${activeStep}`}
+													initial={{ opacity: 0, y: 20 }}
+													animate={{ opacity: 1, y: 0 }}
+													transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
+												>
+													{currentData.quirk.breakdown.map((item, idx) => (
+														<motion.div
+															key={item.label}
+															className="flex justify-between items-center px-4 py-3 bg-gray-800/50 rounded-xl"
+															initial={{ opacity: 0, x: -20 }}
+															animate={{ opacity: 1, x: 0 }}
+															transition={{ delay: 0.1 * idx, duration: 0.3 }}
+														>
+															<span className="text-sm text-gray-400">{item.label}</span>
+															<span className={`text-2xl lg:text-3xl font-medium ${item.color}`}>
+																{item.value}
+															</span>
+														</motion.div>
+													))}
+												</motion.div>
+											) : (
+												<motion.p
+													className={`text-6xl lg:text-8xl xl:text-9xl font-medium leading-none ${
+														currentData.quirk.highlight ? "text-green-500" : "text-white"
+													}`}
+													key={`quirk-value-${activeStep}`}
+													initial={{ opacity: 0, y: 20 }}
+													animate={{ opacity: 1, y: 0 }}
+													transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
+												>
+													{currentData.quirk.value}
+												</motion.p>
+											)}
 
-									<p className="text-base text-gray-500 mt-4">
-										{currentData.quirk.subtext}
-									</p>
+											<p className="text-base text-gray-500 mt-4">
+												{currentData.quirk.subtext}
+											</p>
+										</>
+									) : (
+										<p className="text-gray-500 text-lg">Scroll to begin</p>
+									)}
 								</div>
 							</div>
 						</div>

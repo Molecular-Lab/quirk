@@ -39,7 +39,7 @@ export function PartnersSection() {
 	}
 
 	return (
-		<section className="py-20 bg-gradient-to-b from-purple-600 to-purple-700 overflow-hidden">
+		<section className="py-20 bg-gradient-to-b from-gray-900 to-gray-950 overflow-hidden">
 			<motion.div
 				ref={ref}
 				variants={containerVariants}

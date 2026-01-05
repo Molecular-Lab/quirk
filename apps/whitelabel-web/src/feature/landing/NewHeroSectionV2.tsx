@@ -2,7 +2,7 @@ import { motion, useInView, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 import { FloatingElement } from "@/components/animations"
 
-export function NewHeroSection() {
+export function NewHeroSectionV2() {
 	const containerRef = useRef<HTMLElement>(null)
 	const sectionRef = useRef<HTMLDivElement>(null)
 	const isInView = useInView(sectionRef, { once: true, margin: "-50px" })
@@ -13,9 +13,80 @@ export function NewHeroSection() {
 	})
 
 	const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"])
+	const textY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
+	const opacity = useTransform(scrollYProgress, [0, 0.5], [1, 0])
+
+	// Animation variants
+	const headlineVariants = {
+		hidden: { opacity: 0, y: 30 },
+		visible: (custom: number) => ({
+			opacity: 1,
+			y: 0,
+			transition: {
+				duration: 0.6,
+				delay: 0.3 + custom * 0.15,
+				ease: [0.22, 1, 0.36, 1] as const
+			}
+		})
+	}
+
+	const subtitleVariants = {
+		hidden: { opacity: 0, y: 20 },
+		visible: (custom: number) => ({
+			opacity: 1,
+			y: 0,
+			transition: {
+				duration: 0.6,
+				delay: 1.2 + custom * 0.1,
+				ease: [0.22, 1, 0.36, 1] as const
+			}
+		})
+	}
+
+	const buttonVariants = {
+		hidden: { opacity: 0, y: 20, scale: 0.9 },
+		visible: {
+			opacity: 1,
+			y: 0,
+			scale: 1,
+			transition: {
+				duration: 0.6,
+				delay: 1.5,
+				ease: [0.22, 1, 0.36, 1] as const
+			}
+		}
+	}
+
+	const phoneContainerVariants = {
+		hidden: { opacity: 0, x: 50 },
+		visible: {
+			opacity: 1,
+			x: 0,
+			transition: {
+				duration: 0.7,
+				delay: 1.8,
+				ease: [0.22, 1, 0.36, 1] as const
+			}
+		}
+	}
+
+	const balanceCardVariants = {
+		hidden: { scale: 0.95, opacity: 0 },
+		visible: {
+			scale: 1,
+			opacity: 1,
+			transition: {
+				delay: 2.0,
+				duration: 0.4
+			}
+		}
+	}
 
 	return (
-		<section ref={containerRef} className="relative py-16 lg:py-20 bg-gray-50 mb-10 overflow-hidden">
+		<section
+			ref={containerRef}
+			className="relative min-h-screen flex items-center overflow-hidden"
+		>
 			{/* Animated GIF background with parallax */}
 			<motion.div
 				className="absolute inset-0 opacity-10"
@@ -71,62 +142,81 @@ export function NewHeroSection() {
 				distance={20}
 				delay={0.8}
 			/>
-			<div className="relative z-10 px-4 lg:px-8">
-				{/* Content Card - 90vw width */}
-				<motion.div
-					ref={sectionRef}
-					className="bg-gray-50 rounded-3xl p-12 lg:p-20 mx-auto"
-					style={{ maxWidth: "90vw" }}
-					initial={{ opacity: 0, y: 30 }}
-					animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-					transition={{ duration: 0.6 }}
-				>
-					{/* Header */}
-					<motion.div
-						className="text-center mb-16"
-						initial={{ opacity: 0, y: 30 }}
-						animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
-						transition={{ duration: 0.6, delay: 0.1 }}
-					>
-						<h2 className="text-5xl lg:text-6xl font-normal text-gray-900 mb-6">
-							Quirk is an financial service provider
-						</h2>
-						<h2 className="text-5xl lg:text-6xl font-normal text-gray-900 mb-6">
-							we helps you unlock
-						</h2>
-						<h2 className="text-5xl lg:text-6xl font-normal text-gray-900 mb-6">
-							the instant revenue streams
-						</h2>
-						<p className="text-lg text-gray-500 mt-4 max-w-2xl mx-auto">
-							New seamless saving experiences
-						</p>
-						<p className="text-lg text-gray-500 mt-4 max-w-2xl mx-auto">
-							— start right inside your apps and help millions of users —
-						</p>
-					</motion.div>
-					{/* Phone Mockup - Centered & Large */}
-					<motion.div
-						className="relative flex justify-center"
-						initial={{ opacity: 0, y: 50 }}
-						animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-						transition={{ duration: 0.7, delay: 0.3 }}
-					>
-						{/* QUIRK Text Behind */}
-						<div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-							<span className="text-[200px] lg:text-[300px] font-bold text-gray-200/50 tracking-tight select-none whitespace-nowrap">
-								QU IRK
-							</span>
-						</div>
 
-						{/* Phone Frame */}
-						<div className="relative z-10 w-[320px] lg:w-[380px]">
+			{/* Two-column grid layout */}
+			<motion.div
+				ref={sectionRef}
+				className="relative z-10 max-w-7xl mx-auto px-6 w-full py-20"
+				style={{ y: textY, opacity }}
+			>
+				<div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+					{/* LEFT COLUMN: Text Content */}
+					<div className="flex flex-col items-center text-center">
+						{/* Headlines */}
+						<motion.h1
+							className="text-5xl lg:text-6xl font-normal text-gray-900 mb-2"
+							custom={0}
+							variants={headlineVariants}
+							initial="hidden"
+							animate={isInView ? "visible" : "hidden"}
+						>
+							Quirk is an financial service provider
+						</motion.h1>
+						<motion.h1
+							className="text-5xl lg:text-6xl font-normal text-gray-900 mb-2"
+							custom={1}
+							variants={headlineVariants}
+							initial="hidden"
+							animate={isInView ? "visible" : "hidden"}
+						>
+							we helps you unlock
+						</motion.h1>
+						<motion.h1
+							className="text-5xl lg:text-6xl font-normal text-gray-900 mb-8"
+							custom={2}
+							variants={headlineVariants}
+							initial="hidden"
+							animate={isInView ? "visible" : "hidden"}
+						>
+							the instant revenue streams
+						</motion.h1>
+
+						{/* Subtitles */}
+						<motion.p
+							className="text-lg text-gray-500 max-w-2xl"
+							custom={0}
+							variants={subtitleVariants}
+							initial="hidden"
+							animate={isInView ? "visible" : "hidden"}
+						>
+							New Seamless Saving Experiences
+						</motion.p>
+						<motion.p
+							className="text-3xl text-gray-800 mt-3 max-w-2xl"
+							custom={1}
+							variants={subtitleVariants}
+							initial="hidden"
+							animate={isInView ? "visible" : "hidden"}
+						>
+							Start Right Inside Your Apps and Help Millions of Users
+						</motion.p>
+					</div>
+
+					{/* RIGHT COLUMN: Phone Mockup */}
+					<motion.div
+						className="relative flex justify-center lg:justify-end"
+						variants={phoneContainerVariants}
+						initial="hidden"
+						animate={isInView ? "visible" : "hidden"}
+					>
+						{/* Phone Frame - Taller */}
+						<div className="relative z-10 w-[300px] lg:w-[360px]">
 							<motion.div
 								className="bg-gray-900 rounded-[3rem] p-3 relative"
-								whileHover={{ y: -8 }}
-								transition={{ type: "spring" as const, stiffness: 300, damping: 20 }}
 							>
 								{/* Phone Notch */}
-								<div className="absolute top-2 left-1/2 -translate-x-1/2 w-28 h-7 bg-gray-900 rounded-full z-[100]" />
+								<div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-7 bg-gray-900 rounded-full z-[100]" />
 
 								<div className="bg-gray-50 rounded-[2.5rem] overflow-hidden relative">
 									{/* Status Bar */}
@@ -147,9 +237,9 @@ export function NewHeroSection() {
 									<div className="p-8 pt-6 pb-6">
 										<motion.div
 											className="bg-gradient-to-br from-gray-900 to-gray-700 rounded-2xl p-6 text-white mb-6"
-											initial={{ scale: 0.95 }}
-											animate={isInView ? { scale: 1 } : { scale: 0.95 }}
-											transition={{ delay: 0.5, duration: 0.4 }}
+											variants={balanceCardVariants}
+											initial="hidden"
+											animate={isInView ? "visible" : "hidden"}
 										>
 											<p className="text-sm text-gray-300 mb-2">
 												Total Balance
@@ -171,6 +261,7 @@ export function NewHeroSection() {
 												{ type: "Yield Earned", amount: "+$12.50", time: "Today", color: "text-green-600", bg: "bg-white" },
 												{ type: "Transfer to Savings", amount: "-$500.00", time: "Yesterday", color: "text-gray-900", bg: "bg-white" },
 												{ type: "Yield Earned", amount: "+$11.80", time: "2 days ago", color: "text-green-600", bg: "bg-white" },
+												{ type: "Deposit", amount: "+$1,000.00", time: "3 days ago", color: "text-gray-900", bg: "bg-white" },
 											].map((transaction, i) => (
 												<motion.div
 													key={i}
@@ -181,7 +272,7 @@ export function NewHeroSection() {
 															? { opacity: 1, y: 0 }
 															: { opacity: 0, y: 10 }
 													}
-													transition={{ delay: 0.6 + i * 0.1 }}
+													transition={{ delay: 2.2 + i * 0.1 }}
 												>
 													<div className="flex items-center gap-3">
 														<div className="w-2 h-2 bg-gray-900 rounded-full" />
@@ -199,17 +290,31 @@ export function NewHeroSection() {
 													</span>
 												</motion.div>
 											))}
+
+											{/* Join Waitlist Button */}
+											<motion.a
+												href="https://tally.so/r/VLGvyj"
+												target="_blank"
+												rel="noopener noreferrer"
+												className="block bg-gray-900 text-white text-center py-3 px-4 rounded-xl font-medium text-sm shadow-lg hover:bg-gray-800 transition-colors mt-3"
+												initial={{ opacity: 0, y: 10 }}
+												animate={
+													isInView
+														? { opacity: 1, y: 0 }
+														: { opacity: 0, y: 10 }
+												}
+												transition={{ delay: 2.7 }}
+											>
+												Join Our Waitlist
+											</motion.a>
 										</div>
 									</div>
 								</div>
 							</motion.div>
-
-							{/* Bottom Gradient Fade (Outside Phone) */}
-							<div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-gray-50 via-gray-50 to-transparent pointer-events-none" />
 						</div>
 					</motion.div>
-				</motion.div>
-			</div>
+				</div>
+			</motion.div>
 		</section>
 	)
 }

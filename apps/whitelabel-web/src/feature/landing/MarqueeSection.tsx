@@ -6,7 +6,7 @@ export function MarqueeSection() {
 	const repeatedText = Array(10).fill(marqueeText).join("")
 
 	return (
-		<section className="py-16 bg-gradient-to-r from-purple-600 via-purple-500 to-purple-600 overflow-hidden relative">
+		<section className="py-16 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 overflow-hidden relative">
 			{/* Background pattern */}
 			<div className="absolute inset-0 opacity-10">
 				<div className="absolute inset-0" style={{
