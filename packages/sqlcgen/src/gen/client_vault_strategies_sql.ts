@@ -6,7 +6,7 @@ SET
   strategies = $2::jsonb,
   updated_at = now()
 WHERE id = $1
-RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at, privy_wallet_id`;
+RETURNING id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at, privy_wallet_id, last_balance_sync_at`;
 
 export interface UpdateVaultStrategiesArgs {
     id: string;
@@ -35,6 +35,7 @@ export interface UpdateVaultStrategiesRow {
     createdAt: Date;
     updatedAt: Date;
     privyWalletId: string | null;
+    lastBalanceSyncAt: Date | null;
 }
 
 export async function updateVaultStrategies(sql: Sql, args: UpdateVaultStrategiesArgs): Promise<UpdateVaultStrategiesRow | null> {
@@ -64,12 +65,13 @@ export async function updateVaultStrategies(sql: Sql, args: UpdateVaultStrategie
         isActive: row[17],
         createdAt: row[18],
         updatedAt: row[19],
-        privyWalletId: row[20]
+        privyWalletId: row[20],
+        lastBalanceSyncAt: row[21]
     };
 }
 
 export const getVaultWithStrategiesQuery = `-- name: GetVaultWithStrategies :one
-SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at, privy_wallet_id FROM client_vaults
+SELECT id, client_id, chain, token_address, token_symbol, total_shares, current_index, last_index_update, last_successful_index_update, pending_deposit_balance, total_staked_balance, cumulative_yield, apy_7d, apy_30d, strategies, environment, custodial_wallet_address, is_active, created_at, updated_at, privy_wallet_id, last_balance_sync_at FROM client_vaults
 WHERE id = $1`;
 
 export interface GetVaultWithStrategiesArgs {
@@ -98,6 +100,7 @@ export interface GetVaultWithStrategiesRow {
     createdAt: Date;
     updatedAt: Date;
     privyWalletId: string | null;
+    lastBalanceSyncAt: Date | null;
 }
 
 export async function getVaultWithStrategies(sql: Sql, args: GetVaultWithStrategiesArgs): Promise<GetVaultWithStrategiesRow | null> {
@@ -127,7 +130,8 @@ export async function getVaultWithStrategies(sql: Sql, args: GetVaultWithStrateg
         isActive: row[17],
         createdAt: row[18],
         updatedAt: row[19],
-        privyWalletId: row[20]
+        privyWalletId: row[20],
+        lastBalanceSyncAt: row[21]
     };
 }
 

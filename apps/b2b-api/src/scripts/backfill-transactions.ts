@@ -16,7 +16,15 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") })
 // Configuration
 const DATABASE_URL = process.env.DATABASE_URL
 const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' // Base Mainnet USDC
-const RPC_URL = process.env.BASE_MAINNET_RPC_URL || 'https://mainnet.base.org'
+const RPC_URL = process.env.BASE_RPC_URL
+
+// Since transactions are recent (yesterday), scan last 2 days only
+// Base: ~2 second block time = ~43,200 blocks per day
+const LOOKBACK_BLOCKS = 43_200n * 1n // ~2 days
+
+// Alchemy free tier: 10 block range limit
+// Paid tier: 10,000 block range recommended
+const CHUNK_SIZE = 10000n // Adjust based on your RPC tier
 
 // Protocol Addresses (Spenders)
 const PROTOCOLS = {
@@ -48,24 +56,48 @@ async function main() {
         console.log('🔍 Fetching vaults...')
         const vaults = await sql`
             SELECT id, client_id, custodial_wallet_address, created_at 
-            FROM vault 
+            FROM client_vaults 
             WHERE custodial_wallet_address IS NOT NULL
+              AND environment = 'production'
+              AND chain = '8453'
         `
 
-        console.log(`found ${vaults.length} vaults with custodial wallets`)
+        console.log(`Found ${vaults.length} production vaults with custodial wallets on Base`)
+        if (vaults.length === 0) {
+            console.log('✅ No vaults to process')
+            await sql.end()
+            return
+        }
+
+        // Get current block number
+        const currentBlock = await client.getBlockNumber()
+        const fromBlock = currentBlock > LOOKBACK_BLOCKS ? currentBlock - LOOKBACK_BLOCKS : 0n
+        console.log(`\n📊 Scanning from block ${fromBlock} to ${currentBlock} (~${LOOKBACK_BLOCKS / 1_296_000n} months)`)
 
         for (const vault of vaults) {
-            console.log(`\nProcessing vault: ${vault.id} (${vault.custodial_wallet_address})`)
+            console.log(`\n📦 Processing vault: ${vault.id}`)
+            console.log(`   Wallet: ${vault.custodial_wallet_address}`)
 
             // 2. Fetch USDC Transfers FROM the vault (Deposits)
-            const depositLogs = await client.getLogs({
-                address: USDC_ADDRESS,
-                event: parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)'),
-                args: {
-                    from: vault.custodial_wallet_address as `0x${string}`
-                },
-                fromBlock: 0n // Or a specific start block for Base
-            })
+            console.log('   🔍 Fetching deposit transactions...')
+
+            // Chunk the block range to avoid RPC limits
+            const depositLogs = []
+            for (let start = fromBlock; start <= currentBlock; start += CHUNK_SIZE) {
+                const end = start + CHUNK_SIZE - 1n > currentBlock ? currentBlock : start + CHUNK_SIZE - 1n
+                console.log(`      Scanning blocks ${start} to ${end}...`)
+
+                const chunk = await client.getLogs({
+                    address: USDC_ADDRESS,
+                    event: parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)'),
+                    args: {
+                        from: vault.custodial_wallet_address as `0x${string}`
+                    },
+                    fromBlock: start,
+                    toBlock: end
+                })
+                depositLogs.push(...chunk)
+            }
 
             console.log(`Found ${depositLogs.length} outgoing USDC transfers`)
 
@@ -79,14 +111,20 @@ async function main() {
                 else if (to === PROTOCOLS.MORPHO_VAULT.toLowerCase()) protocol = 'morpho'
 
                 if (protocol) {
-                    // Check if exists
-                    const exists = await repo.getByHash(log.transactionHash)
-                    if (exists) {
-                        console.log(`Skipping existing tx: ${log.transactionHash}`)
-                        continue
+                    // Check if exists (using list query since we don't have getByHash)
+                    try {
+                        const existing = await sql`
+                            SELECT id FROM defi_transactions WHERE tx_hash = ${log.transactionHash} LIMIT 1
+                        `
+                        if (existing.length > 0) {
+                            console.log(`   ⏭️  Skipping existing tx: ${log.transactionHash}`)
+                            continue
+                        }
+                    } catch (err) {
+                        console.error(`   ⚠️  Error checking tx ${log.transactionHash}:`, err)
                     }
 
-                    console.log(`Backfilling DEPOSIT to ${protocol}: ${log.transactionHash}`)
+                    console.log(`   💰 Backfilling DEPOSIT to ${protocol}: ${log.transactionHash}`)
 
                     const block = await client.getBlock({ blockHash: log.blockHash })
 
@@ -116,14 +154,25 @@ async function main() {
             }
 
             // 3. Fetch USDC Transfers TO the vault (Withdrawals)
-            const withdrawalLogs = await client.getLogs({
-                address: USDC_ADDRESS,
-                event: parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)'),
-                args: {
-                    to: vault.custodial_wallet_address as `0x${string}`
-                },
-                fromBlock: 0n
-            })
+            console.log('   🔍 Fetching withdrawal transactions...')
+
+            // Chunk the block range to avoid RPC limits
+            const withdrawalLogs = []
+            for (let start = fromBlock; start <= currentBlock; start += CHUNK_SIZE) {
+                const end = start + CHUNK_SIZE - 1n > currentBlock ? currentBlock : start + CHUNK_SIZE - 1n
+                console.log(`      Scanning blocks ${start} to ${end}...`)
+
+                const chunk = await client.getLogs({
+                    address: USDC_ADDRESS,
+                    event: parseAbiItem('event Transfer(address indexed from, address indexed to, uint256 value)'),
+                    args: {
+                        to: vault.custodial_wallet_address as `0x${string}`
+                    },
+                    fromBlock: start,
+                    toBlock: end
+                })
+                withdrawalLogs.push(...chunk)
+            }
 
             console.log(`Found ${withdrawalLogs.length} incoming USDC transfers`)
 
@@ -140,13 +189,20 @@ async function main() {
                 else if (from === PROTOCOLS.MORPHO_VAULT.toLowerCase()) protocol = 'morpho'
 
                 if (protocol) {
-                    const exists = await repo.getByHash(log.transactionHash)
-                    if (exists) {
-                        console.log(`Skipping existing tx: ${log.transactionHash}`)
-                        continue
+                    // Check if exists
+                    try {
+                        const existing = await sql`
+                            SELECT id FROM defi_transactions WHERE tx_hash = ${log.transactionHash} LIMIT 1
+                        `
+                        if (existing.length > 0) {
+                            console.log(`   ⏭️  Skipping existing tx: ${log.transactionHash}`)
+                            continue
+                        }
+                    } catch (err) {
+                        console.error(`   ⚠️  Error checking tx ${log.transactionHash}:`, err)
                     }
 
-                    console.log(`Backfilling WITHDRAWAL from ${protocol}: ${log.transactionHash}`)
+                    console.log(`   🏧 Backfilling WITHDRAWAL from ${protocol}: ${log.transactionHash}`)
 
                     const block = await client.getBlock({ blockHash: log.blockHash })
 

@@ -4,7 +4,7 @@
  */
 
 import { AuditRepository, ClientRepository, PrivyAccountRepository, VaultRepository } from "../../repository"
-import { RevenueService } from "../../service"
+import { RevenueService, PrivyWalletService } from "../../service"
 import { extractPrefix, generateApiKey, hashApiKey } from "../../utils/apiKey"
 import { YieldAggregator } from "@quirk/yield-engine"
 
@@ -42,7 +42,8 @@ export class B2BClientUseCase {
 		private readonly auditRepository: AuditRepository,
 		private readonly vaultRepository: VaultRepository,
 		private readonly revenueService: RevenueService,
-	) {}
+		private readonly privyWalletService?: PrivyWalletService, // Optional: for production vault wallet creation
+	) { }
 
 	/**
 	 * Get client by ID (internal)
@@ -310,6 +311,7 @@ export class B2BClientUseCase {
 
 	/**
 	 * Get or create vault for client (idempotent, environment-aware)
+	 * For production + Base chain + USDC vaults, automatically creates Privy server wallet
 	 */
 	private async getOrCreateVault(params: {
 		clientId: string
@@ -323,6 +325,28 @@ export class B2BClientUseCase {
 		let vault = await this.vaultRepository.getClientVault(params.clientId, params.chain, params.tokenAddress, params.environment)
 
 		if (!vault) {
+			// For production + Base (8453) + USDC, create Privy server wallet
+			let privyWalletId: string | null = null
+			let walletAddress: string | null = params.custodialWalletAddress || null
+
+			const isProductionBaseUsdc =
+				params.environment === "production" &&
+				params.chain === "8453" &&
+				params.tokenSymbol === "USDC"
+
+			if (isProductionBaseUsdc && this.privyWalletService) {
+				try {
+					console.log(`✅ Creating Privy server wallet for production Base USDC vault...`)
+					const privyWallet = await this.privyWalletService.createServerWallet()
+					privyWalletId = privyWallet.walletId
+					walletAddress = privyWallet.address
+					console.log(`✅ Privy wallet created: ${privyWalletId} (${walletAddress})`)
+				} catch (error) {
+					console.error(`⚠️ Failed to create Privy wallet for production Base USDC vault:`, error)
+					// Continue without Privy wallet - can be backfilled later
+				}
+			}
+
 			// Create new vault with index = 1.0e18 for this environment
 			vault = await this.vaultRepository.createClientVault({
 				clientId: params.clientId,
@@ -335,8 +359,8 @@ export class B2BClientUseCase {
 				totalStakedBalance: "0",
 				cumulativeYield: "0",
 				environment: params.environment,
-				custodialWalletAddress: params.custodialWalletAddress || null,
-				privyWalletId: null, // Will be set when creating Privy server wallet
+				custodialWalletAddress: walletAddress,
+				privyWalletId, // Set for production Base USDC, null for others
 			})
 
 			if (!vault) {
@@ -351,8 +375,8 @@ export class B2BClientUseCase {
 				action: "vault_created",
 				resourceType: "client_vault",
 				resourceId: vault.id,
-				description: `Default vault created: ${params.tokenSymbol} on ${params.chain}`,
-				metadata: { chain: params.chain, tokenAddress: params.tokenAddress },
+				description: `Default vault created: ${params.tokenSymbol} on ${params.chain}${privyWalletId ? " with Privy wallet" : ""}`,
+				metadata: { chain: params.chain, tokenAddress: params.tokenAddress, privyWalletId, walletAddress },
 				ipAddress: null,
 				userAgent: null,
 			})
@@ -910,13 +934,21 @@ export class B2BClientUseCase {
 			}
 		}
 
+		// Convert from smallest units (micro-USDC) to human-readable format
+		// DB stores in smallest units (6 decimals for USDC), API returns human-readable
+		const DECIMALS = 6
+		const convertToHumanReadable = (value: string) => {
+			const num = parseFloat(value || "0")
+			return (num / 10 ** DECIMALS).toFixed(DECIMALS)
+		}
+
 		return {
-			totalIdleBalance: balances.totalPendingBalance || "0", // Pending = Idle
-			totalEarningBalance: balances.totalEarningBalance || "0",
+			totalIdleBalance: convertToHumanReadable(balances.totalPendingBalance || "0"), // Pending = Idle
+			totalEarningBalance: convertToHumanReadable(balances.totalEarningBalance || "0"),
 			totalClientRevenue: "0", // Will need to get from revenue summary
 			totalPlatformRevenue: "0", // Will need to get from revenue summary
 			totalEnduserRevenue: "0", // Will need to get from revenue summary
-			totalCumulativeYield: balances.totalCumulativeYield || "0",
+			totalCumulativeYield: convertToHumanReadable(balances.totalCumulativeYield || "0"),
 		}
 	}
 
@@ -1106,7 +1138,7 @@ export class B2BClientUseCase {
 			if (strategies) {
 				try {
 					const parsed = typeof strategies === "string" ? JSON.parse(strategies) : strategies
-					
+
 					// Handle two possible formats:
 					// Format 1: Array of strategies [{ protocol: "aave", percentage: 40 }, ...]
 					// Format 2: Object with categories { lending: { aave: 40, compound: 35 }, lp: {}, staking: {} }

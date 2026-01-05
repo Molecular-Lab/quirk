@@ -140,7 +140,8 @@ async function main() {
 		privyAccountRepository,
 		auditRepository,
 		vaultRepository,
-		revenueService // ✅ Added for revenue tracking
+		revenueService, // ✅ Added for revenue tracking
+		privyWalletService // ✅ Added for auto-creating Privy wallet on product creation
 	);
 	const vaultUseCase = new B2BVaultUseCase(vaultRepository, auditRepository, privyWalletService); // ✅ Pass PrivyWalletService
 	const userUseCase = new B2BUserUseCase(

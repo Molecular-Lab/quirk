@@ -440,3 +440,17 @@ LEFT JOIN withdrawal_transactions wt ON c.id = wt.client_id
   AND (sqlc.narg('environment')::varchar IS NULL OR wt.environment = sqlc.narg('environment')::varchar)
 WHERE c.id = $1
 GROUP BY c.id;
+
+-- ============================================
+-- ON-CHAIN BALANCE SYNC
+-- ============================================
+
+-- name: UpdateVaultOnChainBalances :exec
+-- Update vault balances from on-chain DeFi protocol data
+-- This syncs real-time balances and calculates yield accrued
+UPDATE client_vaults
+SET total_staked_balance = $2,  -- New on-chain balance total
+    cumulative_yield = cumulative_yield + $3,  -- Yield accrued since last sync
+    last_balance_sync_at = now(),
+    updated_at = now()
+WHERE id = $1;

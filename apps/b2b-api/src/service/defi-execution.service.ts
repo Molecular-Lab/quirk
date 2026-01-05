@@ -162,6 +162,62 @@ export class DeFiExecutionService {
 	}
 
 	/**
+	 * Fetch user's balances across all DeFi protocols
+	 * @param walletAddress - User's wallet address
+	 * @param token - Token symbol (e.g., "USDC")
+	 * @param chainId - Chain ID
+	 * @returns Balance breakdown and total
+	 */
+	async fetchAllProtocolBalances(
+		walletAddress: string,
+		token: string,
+		chainId: number
+	): Promise<{
+		aave: number
+		compound: number
+		morpho: number
+		total: number
+	}> {
+		const results = await Promise.allSettled([
+			new AaveAdapter(chainId).getUserPosition(walletAddress, token, chainId),
+			new CompoundAdapter(chainId).getUserPosition(walletAddress, token, chainId),
+			new MorphoAdapter(chainId).getUserPosition(walletAddress, token, chainId),
+		])
+
+		const aaveBalance =
+			results[0].status === 'fulfilled' && results[0].value
+				? parseFloat(results[0].value.amount)
+				: 0
+		const compoundBalance =
+			results[1].status === 'fulfilled' && results[1].value
+				? parseFloat(results[1].value.amount)
+				: 0
+		const morphoBalance =
+			results[2].status === 'fulfilled' && results[2].value
+				? parseFloat(results[2].value.amount)
+				: 0
+
+		const total = aaveBalance + compoundBalance + morphoBalance
+
+		this.logger?.info('[DeFiExecution] Fetched protocol balances', {
+			walletAddress,
+			token,
+			chainId,
+			aave: aaveBalance,
+			compound: compoundBalance,
+			morpho: morphoBalance,
+			total,
+		})
+
+		return {
+			aave: aaveBalance,
+			compound: compoundBalance,
+			morpho: morphoBalance,
+			total,
+		}
+	}
+
+	/**
 	 * Prepare deposit transactions
 	 * Returns transaction data for all protocols based on risk-adjusted allocation
 	 */
