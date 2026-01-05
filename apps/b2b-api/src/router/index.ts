@@ -53,7 +53,7 @@ export const createMainRouter = (
 		vault: createVaultRouter(s, services.vaultService),
 		user: createUserRouter(s, services.userService, services.userVaultService),
 		userVault: createUserVaultRouter(s, services.userVaultService),
-		deposit: createDepositRouter(s, services.depositService, services.clientService),
+		deposit: createDepositRouter(s, services.depositService, services.clientService, services.vaultService),
 		withdrawal: createWithdrawalRouter(s, services.withdrawalService),
 		privyAccount: createPrivyAccountRouter(s, services.privyAccountService),
 	});

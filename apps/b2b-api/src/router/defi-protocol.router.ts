@@ -21,6 +21,7 @@ interface DeFiRouterServices {
  * Get chain configuration based on environment
  * @param environment - 'sandbox' or 'production'
  * @returns { chainId, usdcAddress }
+ * NOTE: Must match deposit.router.ts chain configuration!
  */
 function getChainConfig(environment: 'sandbox' | 'production'): { chainId: number; usdcAddress: string } {
 	if (environment === 'production') {
@@ -30,8 +31,8 @@ function getChainConfig(environment: 'sandbox' | 'production'): { chainId: numbe
 		}
 	} else {
 		return {
-			chainId: 84532, // Base Sepolia
-			usdcAddress: '0x036CbD53842c5426634e7929541eC2318f3dCF7e', // Mock USDC on Base Sepolia
+			chainId: 11155111, // Ethereum Sepolia (matches deposit.router.ts)
+			usdcAddress: '0x2DA55f4c1eCEB0cEeB93ee598e852Bf24Abb8FcE', // MockUSDC on Ethereum Sepolia (matches deposit.router.ts)
 		}
 	}
 }
@@ -466,6 +467,13 @@ export const createDeFiProtocolRouter = (
 				// Get chain configuration based on environment
 				const { chainId, usdcAddress } = getChainConfig(environment)
 
+				console.log('[estimateGas] Looking up vault:', {
+					clientId: client.id,
+					chainId: chainId.toString(),
+					usdcAddress,
+					environment
+				})
+
 				const vault = await vaultService.getVaultByToken(
 					client.id,
 					chainId.toString(),
@@ -473,12 +481,14 @@ export const createDeFiProtocolRouter = (
 					environment
 				)
 
+				console.log('[estimateGas] Vault result:', vault ? { id: vault.id, custodialWalletAddress: vault.custodialWalletAddress } : 'null')
+
 				if (!vault || !vault.custodialWalletAddress) {
 					return {
 						status: 400,
 						body: {
 							error: 'Vault not found. Please create a vault first.',
-							message: 'Vault or wallet address not found',
+							message: `No vault found for chain ${chainId}, token ${usdcAddress}, env ${environment}`,
 						},
 					}
 				}

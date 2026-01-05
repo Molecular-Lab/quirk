@@ -37,7 +37,14 @@ export function initB2BAPIClient<T extends AppRouter>(
 	baseUrl: string,
 ): B2BAPIClient<T> {
 	// Auto-inject x-privy-org-id header for dashboard requests
+	// BUT don't overwrite if caller explicitly provided one (e.g., product ID for SDK calls)
 	axiosInstance.interceptors.request.use((config) => {
+		// Skip auto-injection if header was explicitly set by caller
+		if (config.headers["x-privy-org-id"]) {
+			console.log("[b2bApiClient] Using provided x-privy-org-id:", (config.headers["x-privy-org-id"] as string).substring(0, 20) + "...")
+			return config
+		}
+
 		const privyOrgId = getPrivyOrgId()
 		if (privyOrgId) {
 			config.headers["x-privy-org-id"] = privyOrgId

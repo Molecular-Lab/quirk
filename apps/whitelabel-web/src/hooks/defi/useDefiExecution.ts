@@ -215,6 +215,8 @@ export function useGasEstimate(params?: GasEstimateParams) {
                 return { totalGas: '0', perProtocol: [] }
             }
 
+            console.log('[useGasEstimate] Calling API with:', { productId, environment, amount: params.amount })
+
             const response = await b2bApiClient.defiProtocol.estimateGas({
                 body: {
                     amount: params.amount,

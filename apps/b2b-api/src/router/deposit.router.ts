@@ -5,9 +5,12 @@
 import type { initServer } from "@ts-rest/express";
 import { randomBytes } from "crypto";
 import { b2bContract } from "@quirk/b2b-api-core";
-import { getMockUSDCAddress, NETWORK_CONFIG } from "@quirk/core/constants";
+// Chain configuration constants
+const BASE_MAINNET_USDC = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913'; // Real USDC on Base Mainnet
+const ETH_SEPOLIA_MOCK_USDC = '0x2DA55f4c1eCEB0cEeB93ee598e852Bf24Abb8FcE'; // MockUSDC on Ethereum Sepolia
 import type { DepositService } from "../service/deposit.service";
 import type { ClientService } from "../service/client.service";
+import type { VaultService } from "../service/vault.service";
 import { mapDepositToDto, mapDepositsToDto } from "../mapper/deposit.mapper";
 import { logger } from "../logger";
 import { BankAccountService, getExchangeRate } from "../service/bank-account.service";
@@ -16,7 +19,8 @@ import { ENV } from "../env";
 export function createDepositRouter(
 	s: ReturnType<typeof initServer>,
 	depositService: DepositService,
-	clientService: ClientService
+	clientService: ClientService,
+	vaultService: VaultService
 ) {
 	return s.router(b2bContract.deposit, {
 		// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -482,21 +486,30 @@ export function createDepositRouter(
 					};
 				}
 
-				// 6. Get client custodial wallet address
-				const client = await clientService.getById(clientId);
+				// 6. Get vault custodial wallet address
+				// Production: Base Mainnet (best DeFi yields)
+				// Sandbox: Ethereum Sepolia (where MockUSDC is deployed)
+				const chainId = batchEnvironment === "production" ? "8453" : "11155111"; // Base Mainnet : Ethereum Sepolia
+				const usdcAddress = batchEnvironment === "production"
+					? BASE_MAINNET_USDC // Real USDC on Base Mainnet
+					: ETH_SEPOLIA_MOCK_USDC; // MockUSDC on Ethereum Sepolia
 
-				if (!client || !client.privyWalletAddress) {
-					logger.error("Client or custodial wallet not found", { clientId });
+				const vault = await vaultService.getVaultByToken(clientId, chainId, usdcAddress, batchEnvironment);
+
+				if (!vault || !vault.custodialWalletAddress) {
+					logger.error("Vault or custodial wallet not found", { clientId, chainId, usdcAddress, batchEnvironment });
 					return {
 						status: 400 as const,
 						body: {
 							success: false,
-							error: "Client custodial wallet not configured",
+							error: "Vault custodial wallet not configured. Please ensure vault is created with a Privy server wallet.",
+							details: `clientId: ${clientId}, environment: ${batchEnvironment}`,
 						},
 					};
 				}
 
-				const custodialWallet = client.privyWalletAddress;
+				const custodialWallet = vault.custodialWalletAddress;
+				logger.info(`✅ Using vault custodial wallet for ${batchEnvironment}: ${custodialWallet}`);
 
 				// 7. Update Product Idle Balances (BEFORE blockchain mint)
 				logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -540,13 +553,13 @@ export function createDepositRouter(
 
 				if (batchEnvironment === "production") {
 					// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-					// PRODUCTION: Transfer real USDC from oracle wallet
+					// PRODUCTION: Transfer real USDC from oracle wallet (Base Mainnet)
 					// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 					logger.info("🏦 PRODUCTION: Transfer USDC from Oracle");
 					logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-					const mainnetChainId = "1"; // Ethereum Mainnet
-					const mainnetUSDCAddress = NETWORK_CONFIG.eth_mainnet.token.usdc.address;
+					const baseMainnetChainId = "8453"; // Base Mainnet (matches DeFi execution)
+					const baseMainnetUSDCAddress = BASE_MAINNET_USDC; // Real USDC on Base
 					const mainnetOracleKey = ENV.MAINNET_ORACLE_PRIVATE_KEY;
 
 					if (!mainnetOracleKey) {
@@ -563,17 +576,17 @@ export function createDepositRouter(
 
 					logger.info(`📤 Transferring ${totalUSDC.toFixed(2)} USDC (PRODUCTION)`);
 					logger.info(`📍 To: ${custodialWallet}`);
-					logger.info(`🔗 Chain: Ethereum Mainnet (Chain ID: ${mainnetChainId})`);
-					logger.info(`💰 Token: USDC - ${mainnetUSDCAddress}`);
+					logger.info(`🔗 Chain: Base Mainnet (Chain ID: ${baseMainnetChainId})`);
+					logger.info(`💰 Token: USDC - ${baseMainnetUSDCAddress}`);
 					logger.info(`📦 Orders processed: ${completedOrders.length}`);
 
 					const transferResult = await depositService.transferFromOracle(
-						mainnetChainId,
-						mainnetUSDCAddress,
+						baseMainnetChainId,
+						baseMainnetUSDCAddress,
 						custodialWallet,
 						totalUSDC.toFixed(2),
 						mainnetOracleKey,
-						ENV.MAINNET_RPC_URL,
+						ENV.DEFI_RPC_URL || 'https://mainnet.base.org', // Base Mainnet RPC
 					);
 
 					if (!transferResult.success) {
@@ -613,24 +626,24 @@ export function createDepositRouter(
 
 				} else {
 					// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-					// SANDBOX: Mint MockUSDC on testnet
+					// SANDBOX: Mint MockUSDC on Ethereum Sepolia
 					// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-					logger.info("🏦 SANDBOX: Minting MockUSDC (USDQ)");
+					logger.info("🏦 SANDBOX: Minting MockUSDC");
 					logger.info("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
 
-					const chainId = String(ENV.CHAIN_ID); // Ethereum Sepolia (11155111)
-					const mockUSDCAddress = getMockUSDCAddress(ENV.CHAIN_ID as 11155111);
+					const ethSepoliaChainId = "11155111"; // Ethereum Sepolia (where MockUSDC is deployed)
+					const mockUSDCAddress = ETH_SEPOLIA_MOCK_USDC;
 
 					logger.info(`📤 Minting ${totalUSDC.toFixed(2)} USDC (SANDBOX)`);
 					logger.info(`📍 To: ${custodialWallet}`);
-					logger.info(`🔗 Chain: Sepolia Testnet (Chain ID: ${chainId})`);
-					logger.info(`💰 Token: MockUSDC (USDQ) - ${mockUSDCAddress}`);
+					logger.info(`🔗 Chain: Ethereum Sepolia (Chain ID: ${ethSepoliaChainId})`);
+					logger.info(`💰 Token: MockUSDC - ${mockUSDCAddress}`);
 					logger.info(`📦 Orders processed: ${completedOrders.length}`);
 
 					let mintResult;
 					try {
 						mintResult = await depositService.mintTokensToCustodial(
-							chainId,
+							ethSepoliaChainId,
 							mockUSDCAddress,
 							custodialWallet,
 							totalUSDC.toFixed(2)
@@ -638,7 +651,7 @@ export function createDepositRouter(
 					} catch (error) {
 						logger.error("❌ Mint to custodial failed:", {
 							error: error instanceof Error ? error.message : String(error),
-							chainId,
+							chainId: ethSepoliaChainId,
 							tokenAddress: mockUSDCAddress,
 							custodialWallet,
 							amount: totalUSDC.toFixed(2),

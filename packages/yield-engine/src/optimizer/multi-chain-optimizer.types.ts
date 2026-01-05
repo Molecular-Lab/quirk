@@ -9,8 +9,9 @@ import type { Protocol, YieldOpportunity } from '../types/common.types'
 
 /**
  * Supported chain IDs for multi-chain optimization
+ * Includes testnets for sandbox environment
  */
-export const SUPPORTED_CHAINS = [1, 8453, 42161, 137] as const
+export const SUPPORTED_CHAINS = [1, 8453, 42161, 137, 11155111] as const
 export type SupportedChainId = (typeof SUPPORTED_CHAINS)[number]
 
 /**
@@ -21,6 +22,8 @@ export const CHAIN_INFO: Record<SupportedChainId, { name: string; nativeSymbol: 
     8453: { name: 'Base', nativeSymbol: 'ETH' },
     42161: { name: 'Arbitrum', nativeSymbol: 'ETH' },
     137: { name: 'Polygon', nativeSymbol: 'MATIC' },
+    // Testnets
+    11155111: { name: 'Sepolia', nativeSymbol: 'ETH' },
 }
 
 /**
@@ -44,6 +47,8 @@ export const DEFAULT_NATIVE_PRICES: Record<SupportedChainId, number> = {
     8453: 3000,  // ETH (Base uses ETH)
     42161: 3000, // ETH (Arbitrum uses ETH)
     137: 0.85,   // MATIC
+    // Testnets (use low price for testing)
+    11155111: 0, // Sepolia ETH has no value
 }
 
 /**
