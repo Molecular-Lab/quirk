@@ -1,6 +1,7 @@
 import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
 import { AnimatedButton, FloatingElement } from "@/components/animations"
+import { AsciiGlobe2D } from "./AsciiGlobe"
 
 export function NewHeroSection() {
 	const containerRef = useRef(null)
@@ -182,6 +183,20 @@ export function NewHeroSection() {
 							Join Our Waitlist
 						</AnimatedButton>
 					</motion.div>
+				</div>
+			</motion.div>
+
+			{/* ASCII Globe - positioned at bottom, showing partial sphere */}
+			<motion.div
+				className="absolute bottom-0 left-0 right-0 h-[50vh] overflow-hidden pointer-events-none"
+				initial={{ opacity: 0, y: 50 }}
+				animate={{ opacity: 1, y: 0 }}
+				transition={{ delay: 1.2, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+			>
+				{/* Gradient fade at top to blend with hero content */}
+				<div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white to-transparent z-10" />
+				<div className="w-full h-[80vh] translate-y-[30%]">
+					<AsciiGlobe2D className="opacity-60" />
 				</div>
 			</motion.div>
 
