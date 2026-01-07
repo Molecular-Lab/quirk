@@ -34,8 +34,8 @@ export function ContactPage() {
 						transition={{ duration: 0.6 }}
 						className="text-center mb-12"
 					>
-						<h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">See Quirk in Action</h1>
-						<p className="text-xl text-gray-600 max-w-2xl mx-auto">
+						<h1 className="text-2xl md:text-4xl font-medium text-gray-900 mb-6">See Quirk in Action</h1>
+						<p className="text-sm md:text-md text-gray-600 max-w-2xl mx-auto">
 							Watch how Quirk helps businesses like yours integrate DeFi yield in minutes
 						</p>
 					</motion.div>
