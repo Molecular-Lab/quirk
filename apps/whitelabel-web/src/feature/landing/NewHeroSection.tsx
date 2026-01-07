@@ -18,7 +18,7 @@ export function NewHeroSection() {
 			</div>
 
 			{/* Claude brand gradient overlay - warm orange to cream */}
-			<div className="absolute inset-0 bg-gradient-to-b from-claude-orange-300/70 via-claude-orange-200/80 to-claude-bg-100/95" />
+			<div className="absolute inset-0 bg-gradient-to-b from-claude-orange-200/85 via-claude-orange-100/70 to-claude-bg-50" />
 
 			{/* Claude-inspired soft decorative gradients - official brand palette */}
 			<div className="absolute top-20 -right-20 w-[700px] h-[700px] bg-gradient-to-br from-claude-orange-200/30 via-claude-orange-100/25 to-claude-orange-50/15 rounded-full blur-[120px]" />
