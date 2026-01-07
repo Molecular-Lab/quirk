@@ -202,68 +202,20 @@ export function EndUserOnboardingPage() {
 	}
 
 	// Show loading while checking user status or activating
-	return (
-		<div className="min-h-screen gradient-bg flex items-center justify-center">
-			<div className="flex flex-col items-center gap-4">
-				<Loader2 className="h-8 w-8 animate-spin text-violet-500" />
-				<p className="text-muted-foreground">
-					{isCheckingStatus ? "Checking account status..." : "Activating your account..."}
-				</p>
+	if (isCheckingStatus || isActivating) {
+		return (
+			<div className="min-h-screen gradient-bg flex items-center justify-center">
+				<div className="flex flex-col items-center gap-4">
+					<Loader2 className="h-8 w-8 animate-spin text-violet-500" />
+					<p className="text-muted-foreground">
+						{isCheckingStatus ? "Checking account status..." : "Activating your account..."}
+					</p>
+				</div>
 			</div>
 		)
 	}
 
-	return (
-		<div className="min-h-screen gradient-bg flex flex-col">
-			{/* Header */}
-			<header className="flex items-center justify-center px-4 py-6">
-				<OnboardingStepper currentStep={currentStep} totalSteps={TOTAL_STEPS} />
-			</header>
-
-			{/* Content */}
-			<main className="flex-1 flex flex-col px-6 pb-8 pt-4 overflow-y-auto">
-				<div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">{renderStep()}</div>
-			</main>
-
-			{/* Footer */}
-			<footer className="px-6 pb-8 pt-4">
-				<div className="max-w-md mx-auto w-full space-y-3">
-					{currentStep < TOTAL_STEPS ? (
-						<>
-							<Button variant="onboarding" size="xl" className="w-full" onClick={handleNext}>
-								Continue
-								<ArrowRight className="w-5 h-5" />
-							</Button>
-							{currentStep > 1 && (
-								<Button variant="onboarding-secondary" size="xl" className="w-full" onClick={handlePrevious}>
-									<ArrowLeft className="w-4 h-4" />
-									Go Back
-								</Button>
-							)}
-						</>
-					) : (
-						<Button
-							variant="onboarding"
-							size="xl"
-							className="w-full"
-							onClick={handleOpenAccount}
-							disabled={isActivating}
-						>
-							{isActivating ? (
-								<>
-									<div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-									Activating...
-								</>
-							) : (
-								<>
-									<Check className="w-5 h-5" />
-									Get Started
-								</>
-							)}
-						</Button>
-					)}
-				</div>
-			</footer>
-		</div>
-	)
+	// This page only shows loading state - no interactive UI needed
+	// The actual onboarding happens automatically via API call
+	return null
 }
