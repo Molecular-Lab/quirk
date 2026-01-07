@@ -360,6 +360,16 @@ export class ClientRepository {
 	}
 
 	/**
+	 * Deduct from client's idle balance
+	 * ✅ Called when: Withdrawal from DeFi system
+	 */
+	async deductFromIdleBalance(clientId: string, amount: string): Promise<void> {
+		// Deduct by adding a negative amount
+		const negativeAmount = `-${amount}`;
+		await addToClientIdleBalance(this.sql, { id: clientId, idleBalance: negativeAmount })
+	}
+
+	/**
 	 * Move from idle to earning balance
 	 * ✅ Called when: Staking funds to DeFi protocols
 	 */

@@ -88,4 +88,10 @@ export const ENV = {
 
 	// Base Mainnet (8453) for DeFi protocols (AAVE, Compound, Morpho)
 	DEFI_CHAIN_ID: parseInt(parsedEnv.data.DEFI_CHAIN_ID, 10),
+
+	// Aliases for backward compatibility
+	SANDBOX_CUSTODIAL_PRIVATE_KEY: parsedEnv.data.SANDBOX_ORACLE_PRIVATE_KEY,
+	PROD_CUSTODIAL_PRIVATE_KEY: parsedEnv.data.MAINNET_ORACLE_PRIVATE_KEY,
+	SANDBOX_ORACLE_ADDRESS: parsedEnv.data.ORACLE_SANDBOX,
+	MAINNET_ORACLE_ADDRESS: parsedEnv.data.ORACLE_PROD,
 };

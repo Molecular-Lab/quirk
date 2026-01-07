@@ -526,6 +526,28 @@ export class B2BClientUseCase {
 	}
 
 	/**
+	 * Deduct from idle balance (after withdrawal)
+	 * Called when funds leave the DeFi system via withdrawal
+	 */
+	async deductFromIdleBalance(clientId: string, amount: string): Promise<void> {
+		await this.clientRepository.deductFromIdleBalance(clientId, amount)
+
+		// Audit log
+		await this.auditRepository.create({
+			clientId,
+			userId: null,
+			actorType: "system",
+			action: "idle_balance_deducted",
+			resourceType: "client_organization",
+			resourceId: clientId,
+			description: `Deducted ${amount} from idle balance after withdrawal`,
+			metadata: { amount },
+			ipAddress: null,
+			userAgent: null,
+		})
+	}
+
+	/**
 	 * Get client statistics
 	 */
 	async getStats(clientId: string): Promise<GetClientStatsRow | null> {

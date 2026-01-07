@@ -19,6 +19,7 @@ interface OffRampModalProps {
 		userId: string
 		requestedAmount: string
 		destination_currency?: string
+		createdAt?: string
 	}[]
 	onComplete: () => void
 }
@@ -87,8 +88,10 @@ export function OffRampModal({ isOpen, onClose, selectedWithdrawalIds, withdrawa
 		onClose()
 	}
 
-	// Calculate amounts
-	const selectedWithdrawals = withdrawals.filter((w) => selectedWithdrawalIds.includes(w.id))
+	// Calculate amounts - sort by createdAt descending (latest first)
+	const selectedWithdrawals = withdrawals
+		.filter((w) => selectedWithdrawalIds.includes(w.id))
+		.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
 	const usdcAmount = selectedWithdrawals.reduce((sum, w) => sum + parseFloat(w.requestedAmount), 0)
 
 	// Currency selection
@@ -199,9 +202,8 @@ export function OffRampModal({ isOpen, onClose, selectedWithdrawalIds, withdrawa
 						<div className="space-y-4">
 							{/* Environment Indicator */}
 							<div
-								className={`rounded-xl p-3 border-2 ${
-									isSandbox ? "bg-yellow-50 border-yellow-300" : "bg-red-50 border-red-300"
-								}`}
+								className={`rounded-xl p-3 border-2 ${isSandbox ? "bg-yellow-50 border-yellow-300" : "bg-red-50 border-red-300"
+									}`}
 							>
 								<div className="flex items-center justify-between">
 									<div className="flex items-center gap-2">

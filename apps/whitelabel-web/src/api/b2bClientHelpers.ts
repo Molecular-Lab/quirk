@@ -700,34 +700,25 @@ export async function completeWithdrawal(withdrawalId: string, transactionHash: 
 }
 
 /**
- * Batch complete withdrawals
+ * Batch complete withdrawals (with blockchain transfers)
  */
 export async function batchCompleteWithdrawals(withdrawalIds: string[], destinationCurrency: string) {
-	// Process withdrawals sequentially for now
-	const results = []
-	for (const id of withdrawalIds) {
-		try {
-			// Generate mock transaction hash for demo
-			const txHash = `0x${Math.random().toString(16).slice(2)}${Date.now().toString(16)}`
-			const result = await completeWithdrawal(id, txHash)
-			results.push({ id, success: true, data: result })
-		} catch (error) {
-			results.push({ id, success: false, error: error instanceof Error ? error.message : "Unknown error" })
-		}
+	const { status, body } = await b2bApiClient.withdrawal.batchCompleteWithdrawals({
+		body: {
+			withdrawalIds,
+			destinationCurrency,
+		},
+	})
+
+	if (status === 200) {
+		return body
 	}
 
-	const successCount = results.filter((r) => r.success).length
-	const totalAmount = results
-		.filter((r) => r.success)
-		.reduce((sum, r) => sum + parseFloat((r.data as any)?.requestedAmount || "0"), 0)
-
-	return {
-		completedWithdrawals: results.filter((r) => r.success),
-		failedWithdrawals: results.filter((r) => !r.success),
-		totalProcessed: successCount,
-		totalAmount: totalAmount.toFixed(2),
-		destinationCurrency,
+	if (status === 400 || status === 500) {
+		throw new Error(body.error || "Failed to batch complete withdrawals")
 	}
+
+	throw new Error("Failed to batch complete withdrawals")
 }
 
 // ============================================
