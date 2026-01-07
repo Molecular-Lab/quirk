@@ -20,3 +20,4 @@ export * from './defi_transactions_sql';
 export * from './audit_sql';
 export * from './revenue_distribution_sql';
 export * from './off_ramp_sql';
+export * from './demo_request_sql';

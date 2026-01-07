@@ -8,6 +8,7 @@ import type { DefiTransactionsRepository } from "@quirk/core";
 import { createClientRouter } from "./client.router";
 import { createDashboardRouter } from "./dashboard.router";
 import { createDeFiProtocolRouter } from "./defi-protocol.router";
+import { createDemoRequestRouter } from "./demo-request.router";
 import { createVaultRouter } from "./vault.router";
 import { createUserRouter } from "./user.router";
 import { createDepositRouter } from "./deposit.router";
@@ -25,6 +26,7 @@ import type { WithdrawalService } from "../service/withdrawal.service";
 import type { UserVaultService } from "../service/user-vault.service";
 import type { PrivyAccountService } from "../service/privy-account.service";
 import type { ExplorerService } from "../service/explorer.service";
+import type { DemoRequestUsecase } from "@quirk/core/usecase/demo-request.usecase";
 
 export const createMainRouter = (
 	s: ReturnType<typeof initServer>,
@@ -32,6 +34,7 @@ export const createMainRouter = (
 		clientService: ClientService;
 		defiProtocolService: DeFiProtocolService;
 		defiExecutionService: DeFiExecutionService;
+		demoRequestUsecase: DemoRequestUsecase;
 		vaultService: VaultService;
 		userService: UserService;
 		depositService: DepositService;
@@ -52,6 +55,7 @@ export const createMainRouter = (
 			vaultService: services.vaultService,
 			defiTransactionsRepository: services.defiTransactionsRepository,
 		}) as any, // TS type path mismatch workaround
+		demoRequest: createDemoRequestRouter(s, services.demoRequestUsecase),
 		explorer: createExplorerRouter(s, services.explorerService),
 		vault: createVaultRouter(s, services.vaultService),
 		user: createUserRouter(s, services.userService, services.userVaultService),

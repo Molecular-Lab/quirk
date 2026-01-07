@@ -15,6 +15,7 @@ import postgres from "postgres";
 import { initServer } from "@ts-rest/express";
 import {
 	ClientRepository,
+	DemoRequestRepository,
 	PrivyAccountRepository,
 	VaultRepository,
 	UserRepository,
@@ -33,6 +34,7 @@ import {
 	PrivyWalletService, // ✅ Privy server wallets (production)
 	RevenueService, // ✅ Revenue tracking service
 	DefiTransactionsRepository, // ✅ DeFi transaction history
+	DemoRequestUsecase,
 } from "@quirk/core";
 import { b2bContract } from "@quirk/b2b-api-core";
 import { createExpressEndpoints } from "@ts-rest/express";
@@ -96,6 +98,7 @@ async function main() {
 
 	// 2. Initialize Repositories
 	const clientRepository = new ClientRepository(sql);
+	const demoRequestRepository = new DemoRequestRepository(sql);
 	const privyAccountRepository = new PrivyAccountRepository(sql);
 	const vaultRepository = new VaultRepository(sql);
 	const userRepository = new UserRepository(sql);
@@ -177,6 +180,10 @@ async function main() {
 		auditRepository,
 		clientGrowthIndexService
 	);
+	const demoRequestUsecase = new DemoRequestUsecase({
+		demoRequestRepository,
+		sql,
+	});
 
 	logger.info("✅ UseCases initialized");
 
@@ -204,6 +211,7 @@ async function main() {
 		clientService,
 		defiProtocolService,
 		defiExecutionService,
+		demoRequestUsecase,
 		vaultService,
 		userService,
 		depositService,

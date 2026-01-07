@@ -67,8 +67,8 @@ export interface DefiTransaction {
 	status: "pending" | "confirmed" | "failed"
 	gasUsed?: string
 	gasCostUsd?: string
-	executedAt: string
-	confirmedAt?: string
+	executedAt: Date
+	confirmedAt?: Date
 }
 
 // ============================================================================
@@ -272,9 +272,9 @@ export function useTransactionHistory(limit = 20, offset = 0) {
 				operationType: tx.operationType as "deposit" | "withdrawal" | "approval",
 				tokenSymbol: tx.tokenSymbol,
 				amount: tx.amount,
-				gasCostUsd: tx.gasCostUsd || null,
+				gasCostUsd: tx.gasCostUsd || undefined,
 				status: tx.status as "pending" | "confirmed" | "failed",
-				executedAt: new Date(tx.executedAt),
+				executedAt: tx.executedAt,
 			}))
 		},
 		enabled: Boolean(productId),
