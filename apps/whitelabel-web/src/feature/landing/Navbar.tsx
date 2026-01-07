@@ -11,36 +11,6 @@ export function Navbar() {
 	const { authenticated, ready, user } = usePrivy()
 	const navigate = useNavigate()
 
-	const handleGetStarted = async () => {
-		// Wait for Privy to be ready
-		if (!ready) {
-			await navigate({ to: "/login" })
-			return
-		}
-
-		// Check if user is authenticated
-		if (!authenticated || !user) {
-			await navigate({ to: "/login" })
-			return
-		}
-
-		// User is authenticated - check if they have products
-		try {
-			const clients = await listOrganizationsByPrivyId(user.id)
-
-			if (clients.length > 0) {
-				// User has products → Dashboard
-				await navigate({ to: "/dashboard" })
-			} else {
-				// User has no products → Onboarding
-				await navigate({ to: "/onboarding/create-product" })
-			}
-		} catch (error) {
-			// On error, redirect to onboarding
-			await navigate({ to: "/onboarding/create-product" })
-		}
-	}
-
 	const handleSignIn = async () => {
 		// Wait for Privy to be ready
 		if (!ready) {

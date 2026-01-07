@@ -4,7 +4,6 @@
  */
 
 import { b2bApiClient } from "./b2bClient"
-import type { CreateDemoRequestDto, DemoRequestDto } from "@quirk/b2b-api-core"
 
 export interface SubmitDemoRequestParams {
 	firstName: string
