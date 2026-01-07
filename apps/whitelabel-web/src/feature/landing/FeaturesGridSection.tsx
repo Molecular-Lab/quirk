@@ -201,7 +201,7 @@ export function FeaturesGridSection() {
 					<motion.div
 						variants={itemVariants}
 						whileHover={{ y: -5, boxShadow: "0 20px 40px rgba(0,0,0,0.1)" }}
-						className="md:col-span-2 lg:col-span-3 bg-claude-bg-200/60  rounded-3xl p-8 relative overflow-hidden md:min-h-[180px]"
+						className="md:col-span-2 lg:col-span-3 bg-claude-bg-200/55  rounded-3xl p-8 relative overflow-hidden md:min-h-[180px]"
 					>
 						<div className="flex flex-col md:flex-row items-center justify-between gap-8">
 							<div className="flex-1">

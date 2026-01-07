@@ -42,7 +42,7 @@ export function HowItWorksWeb() {
 				<div className="sticky top-0 h-screen flex items-center justify-center p-4">
 					{/* Full Card Container - 90vw x 90vh */}
 					<div
-						className="bg-claude-bg-200/90 rounded-3xl p-6 lg:p-10 flex flex-col"
+						className="bg-claude-bg-100 rounded-3xl p-6 lg:p-10 flex flex-col"
 						style={{ width: "90vw", height: "80vh", maxWidth: "90vw", maxHeight: "80vh" }}
 					>
 						{/* Header inside card */}
