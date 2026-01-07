@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react"
-import { User, Mail, Building2, Globe, Users, DollarSign, Briefcase, TrendingUp } from "lucide-react"
+import { User, Mail, Building2, Globe, Users, DollarSign, Briefcase } from "lucide-react"
 import { motion } from "framer-motion"
 import { toast } from "sonner"
 

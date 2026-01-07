@@ -1,6 +1,7 @@
-import { motion, useScroll, useTransform } from "framer-motion"
 import { useRef } from "react"
-import { Smartphone, Globe, CreditCard, Wallet, Building2 } from "lucide-react"
+
+import { motion, useScroll, useTransform } from "framer-motion"
+import { Building2, CreditCard, Globe, Smartphone, Wallet } from "lucide-react"
 
 const platforms = [
 	{
