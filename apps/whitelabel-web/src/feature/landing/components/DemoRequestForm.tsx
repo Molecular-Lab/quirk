@@ -5,15 +5,16 @@
  */
 
 import { useState } from "react"
-import { User, Mail, Building2, Globe, Users, DollarSign, Briefcase } from "lucide-react"
+
 import { motion } from "framer-motion"
+import { Briefcase, Building2, DollarSign, Globe, Mail, User, Users } from "lucide-react"
 import { toast } from "sonner"
 
+import { type SubmitDemoRequestParams, submitDemoRequest } from "@/api/demoRequestHelpers"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { submitDemoRequest, type SubmitDemoRequestParams } from "@/api/demoRequestHelpers"
 
 const COMPANY_SIZES = [
 	{ value: "1-10", label: "1-10 employees" },
@@ -200,7 +201,9 @@ export function DemoRequestForm() {
 						type="text"
 						placeholder="John"
 						value={formData.firstName}
-						onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+						onChange={(e) => {
+							setFormData({ ...formData, firstName: e.target.value })
+						}}
 						className={errors.firstName ? "border-red-500" : ""}
 					/>
 					{errors.firstName && <p className="text-red-500 text-sm mt-1">{errors.firstName}</p>}
@@ -217,7 +220,9 @@ export function DemoRequestForm() {
 						type="text"
 						placeholder="Doe"
 						value={formData.lastName}
-						onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+						onChange={(e) => {
+							setFormData({ ...formData, lastName: e.target.value })
+						}}
 						className={errors.lastName ? "border-red-500" : ""}
 					/>
 					{errors.lastName && <p className="text-red-500 text-sm mt-1">{errors.lastName}</p>}
@@ -235,7 +240,9 @@ export function DemoRequestForm() {
 					type="email"
 					placeholder="john.doe@company.com"
 					value={formData.email}
-					onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+					onChange={(e) => {
+						setFormData({ ...formData, email: e.target.value })
+					}}
 					className={errors.email ? "border-red-500" : ""}
 				/>
 				{errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
@@ -252,7 +259,9 @@ export function DemoRequestForm() {
 					type="text"
 					placeholder="Acme Corporation"
 					value={formData.companyName}
-					onChange={(e) => setFormData({ ...formData, companyName: e.target.value })}
+					onChange={(e) => {
+						setFormData({ ...formData, companyName: e.target.value })
+					}}
 					className={errors.companyName ? "border-red-500" : ""}
 				/>
 				{errors.companyName && <p className="text-red-500 text-sm mt-1">{errors.companyName}</p>}
@@ -266,7 +275,12 @@ export function DemoRequestForm() {
 						<Globe className="w-4 h-4" />
 						Country
 					</Label>
-					<Select value={formData.country} onValueChange={(value) => setFormData({ ...formData, country: value })}>
+					<Select
+						value={formData.country}
+						onValueChange={(value) => {
+							setFormData({ ...formData, country: value })
+						}}
+					>
 						<SelectTrigger className={errors.country ? "border-red-500" : ""}>
 							<SelectValue placeholder="Select country" />
 						</SelectTrigger>
@@ -289,9 +303,9 @@ export function DemoRequestForm() {
 					</Label>
 					<Select
 						value={formData.companySize}
-						onValueChange={(value) =>
+						onValueChange={(value) => {
 							setFormData({ ...formData, companySize: value as SubmitDemoRequestParams["companySize"] })
-						}
+						}}
 					>
 						<SelectTrigger className={errors.companySize ? "border-red-500" : ""}>
 							<SelectValue placeholder="Select company size" />
@@ -319,7 +333,9 @@ export function DemoRequestForm() {
 					type="text"
 					placeholder="1000000"
 					value={formData.capitalVolume}
-					onChange={(e) => setFormData({ ...formData, capitalVolume: e.target.value })}
+					onChange={(e) => {
+						setFormData({ ...formData, capitalVolume: e.target.value })
+					}}
 					className={errors.capitalVolume ? "border-red-500" : ""}
 				/>
 				{errors.capitalVolume && <p className="text-red-500 text-sm mt-1">{errors.capitalVolume}</p>}
@@ -334,9 +350,9 @@ export function DemoRequestForm() {
 				</Label>
 				<Select
 					value={formData.industry}
-					onValueChange={(value) =>
+					onValueChange={(value) => {
 						setFormData({ ...formData, industry: value as SubmitDemoRequestParams["industry"] })
-					}
+					}}
 				>
 					<SelectTrigger className={errors.industry ? "border-red-500" : ""}>
 						<SelectValue placeholder="Select industry" />
@@ -356,12 +372,12 @@ export function DemoRequestForm() {
 			<div className="pt-4">
 				<Button
 					type="submit"
-					className="w-full bg-gray-900 hover:bg-gray-800 text-white py-6 text-lg font-medium rounded-xl"
+					className="w-full bg-gray-900 hover:bg-gray-800 text-white py-6 text-sm md:text-md font-medium rounded-xl"
 					disabled={isSubmitting}
 				>
 					{isSubmitting ? (
 						<div className="flex items-center justify-center gap-3">
-							<div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+							<div className="size-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
 							Submitting...
 						</div>
 					) : (

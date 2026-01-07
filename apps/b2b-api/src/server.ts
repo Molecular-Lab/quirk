@@ -273,7 +273,8 @@ async function main() {
 				(req.originalUrl === "/api/v1/privy-accounts" && req.method === "POST") || // Privy account creation (first-time onboarding)
 				req.originalUrl.startsWith("/api/v1/defi/") || // Public DeFi metrics
 				req.originalUrl === "/api/v1/health" || // Health check
-				(/^\/api\/v1\/users\/[^/]+\/activate$/.test(req.originalUrl) && req.method === "POST") // User activation (onboarding completion)
+				(/^\/api\/v1\/users\/[^/]+\/activate$/.test(req.originalUrl) && req.method === "POST") || // User activation (onboarding completion)
+				(req.originalUrl === "/api/v1/demo-requests" && req.method === "POST") // Demo request submission (public contact form)
 			) {
 				return next();
 			}
