@@ -34,7 +34,14 @@ export function EndUserOnboardingPage() {
 	const productId = (search as any)?.productId || storedProductId // Fallback to store
 	const returnPath = (search as any)?.returnPath || "/demo"
 
-	console.log("[EndUserOnboardingPage] productId:", productId, "from URL:", (search as any)?.productId, "from store:", storedProductId)
+	console.log(
+		"[EndUserOnboardingPage] productId:",
+		productId,
+		"from URL:",
+		(search as any)?.productId,
+		"from store:",
+		storedProductId,
+	)
 
 	// Parse Static Key from URL to restore persona and platform state
 	// This ensures when redirecting back from onboarding, the demo page knows which persona/platform to show
@@ -148,7 +155,7 @@ export function EndUserOnboardingPage() {
 			})
 
 			// DEBUG: Check what's in localStorage
-			const localStorageData = localStorage.getItem('proxify-demo-state')
+			const localStorageData = localStorage.getItem("proxify-demo-state")
 			console.log("[EndUserOnboardingPage] 🔍 localStorage data:", localStorageData)
 
 			// CRITICAL FIX: Manually flush critical state to localStorage
@@ -174,10 +181,10 @@ export function EndUserOnboardingPage() {
 			}
 
 			console.log("[EndUserOnboardingPage] 💾 Manually flushing state to localStorage:", stateToFlush)
-			localStorage.setItem('proxify-demo-state', JSON.stringify({ state: stateToFlush, version: 5 }))
+			localStorage.setItem("proxify-demo-state", JSON.stringify({ state: stateToFlush, version: 5 }))
 
 			// Verify it was written
-			const verified = localStorage.getItem('proxify-demo-state')
+			const verified = localStorage.getItem("proxify-demo-state")
 			console.log("[EndUserOnboardingPage] ✅ localStorage verified:", verified ? JSON.parse(verified) : null)
 
 			toast.success("Account activated successfully! Welcome aboard!")
@@ -203,6 +210,60 @@ export function EndUserOnboardingPage() {
 					{isCheckingStatus ? "Checking account status..." : "Activating your account..."}
 				</p>
 			</div>
+		)
+	}
+
+	return (
+		<div className="min-h-screen gradient-bg flex flex-col">
+			{/* Header */}
+			<header className="flex items-center justify-center px-4 py-6">
+				<OnboardingStepper currentStep={currentStep} totalSteps={TOTAL_STEPS} />
+			</header>
+
+			{/* Content */}
+			<main className="flex-1 flex flex-col px-6 pb-8 pt-4 overflow-y-auto">
+				<div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">{renderStep()}</div>
+			</main>
+
+			{/* Footer */}
+			<footer className="px-6 pb-8 pt-4">
+				<div className="max-w-md mx-auto w-full space-y-3">
+					{currentStep < TOTAL_STEPS ? (
+						<>
+							<Button variant="onboarding" size="xl" className="w-full" onClick={handleNext}>
+								Continue
+								<ArrowRight className="w-5 h-5" />
+							</Button>
+							{currentStep > 1 && (
+								<Button variant="onboarding-secondary" size="xl" className="w-full" onClick={handlePrevious}>
+									<ArrowLeft className="w-4 h-4" />
+									Go Back
+								</Button>
+							)}
+						</>
+					) : (
+						<Button
+							variant="onboarding"
+							size="xl"
+							className="w-full"
+							onClick={handleOpenAccount}
+							disabled={isActivating}
+						>
+							{isActivating ? (
+								<>
+									<div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+									Activating...
+								</>
+							) : (
+								<>
+									<Check className="w-5 h-5" />
+									Get Started
+								</>
+							)}
+						</Button>
+					)}
+				</div>
+			</footer>
 		</div>
 	)
 }

@@ -174,9 +174,7 @@ export function ProductSelectionModal({ open, onProductSelected }: ProductSelect
 
 													{/* Product ID */}
 													<div className="flex items-center gap-2 text-xs text-gray-500">
-														<code className="px-1.5 py-0.5 bg-gray-100 rounded font-mono">
-															{product.productId}
-														</code>
+														<code className="px-1.5 py-0.5 bg-gray-100 rounded font-mono">{product.productId}</code>
 														{product.apiKeyPrefix && (
 															<span className="text-xs text-gray-400">Key: {product.apiKeyPrefix}***</span>
 														)}

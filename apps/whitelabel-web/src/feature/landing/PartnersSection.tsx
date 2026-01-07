@@ -21,9 +21,9 @@ export function PartnersSection() {
 			opacity: 1,
 			transition: {
 				staggerChildren: 0.1,
-				delayChildren: 0.2
-			}
-		}
+				delayChildren: 0.2,
+			},
+		},
 	}
 
 	const itemVariants = {
@@ -33,9 +33,9 @@ export function PartnersSection() {
 			y: 0,
 			transition: {
 				duration: 0.5,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	return (
@@ -48,20 +48,14 @@ export function PartnersSection() {
 				className="max-w-7xl mx-auto px-6"
 			>
 				{/* Header */}
-				<motion.div
-					className="text-center mb-12"
-					variants={itemVariants}
-				>
+				<motion.div className="text-center mb-12" variants={itemVariants}>
 					<p className="text-white/90 text-xl md:text-2xl max-w-2xl mx-auto">
 						Integrated with leading protocols to provide seamless yield generation
 					</p>
 				</motion.div>
 
 				{/* Logos Grid */}
-				<motion.div
-					className="flex flex-wrap justify-center items-center gap-8 md:gap-16"
-					variants={containerVariants}
-				>
+				<motion.div className="flex flex-wrap justify-center items-center gap-8 md:gap-16" variants={containerVariants}>
 					{partners.map((partner, index) => (
 						<motion.div
 							key={index}
@@ -92,14 +86,11 @@ export function PartnersSection() {
 						transition={{
 							duration: 30,
 							repeat: Infinity,
-							ease: "linear"
+							ease: "linear",
 						}}
 					>
 						{[...partners, ...partners].map((partner, index) => (
-							<div
-								key={index}
-								className="flex-shrink-0 text-white/30 text-xl font-semibold whitespace-nowrap"
-							>
+							<div key={index} className="flex-shrink-0 text-white/30 text-xl font-semibold whitespace-nowrap">
 								{partner.name}
 							</div>
 						))}

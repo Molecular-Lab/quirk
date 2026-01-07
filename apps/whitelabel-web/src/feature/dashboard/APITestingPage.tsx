@@ -1298,7 +1298,13 @@ export function APITestingPage() {
 					}
 
 					// eslint-disable-next-line no-console
-					console.log("[API Test] Regenerating API key for organization:", activeProductId, "in", apiEnvironment, "mode")
+					console.log(
+						"[API Test] Regenerating API key for organization:",
+						activeProductId,
+						"in",
+						apiEnvironment,
+						"mode",
+					)
 
 					// Call backend API to regenerate API key with current environment
 					data = await regenerateApiKey(activeProductId, apiEnvironment)
@@ -1726,10 +1732,7 @@ export function APITestingPage() {
 						<div className="flex items-center gap-2">
 							<div className="w-3 h-3 rounded-full bg-green-500"></div>
 							<span className="text-gray-600">
-								Base URL:{" "}
-								<code className="px-2 py-1 bg-gray-100 rounded">
-									{ENV.API_URL}
-								</code>
+								Base URL: <code className="px-2 py-1 bg-gray-100 rounded">{ENV.API_URL}</code>
 							</span>
 						</div>
 						<div className="flex items-center gap-2">

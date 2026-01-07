@@ -21,7 +21,8 @@ const buttonVariants = cva(
 				green: "bg-green-600 text-white hover:bg-green-700 shadow-sm",
 				// Onboarding flow variants
 				onboarding: "bg-gray-900 text-white hover:bg-gray-800 rounded-2xl font-semibold shadow-lg",
-				"onboarding-secondary": "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 rounded-2xl font-medium",
+				"onboarding-secondary":
+					"bg-white text-gray-700 hover:bg-gray-50 border border-gray-200 rounded-2xl font-medium",
 			},
 			size: {
 				default: "h-10 px-4 py-2",
@@ -39,8 +40,7 @@ const buttonVariants = cva(
 )
 
 export interface ButtonProps
-	extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-		VariantProps<typeof buttonVariants> {
+	extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
 	asChild?: boolean
 }
 

@@ -60,6 +60,77 @@
   --color-warning-light: #FEF3C7;
   --color-error: #EF4444;
   --color-error-light: #FEE2E2;
+
+  /* Claude Brand Color Palette */
+  /* Claude Orange - Primary brand color */
+  --color-claude-orange-50: #FDF2EE;
+  --color-claude-orange-100: #FAE4DC;
+  --color-claude-orange-200: #F5C8B9;
+  --color-claude-orange-300: #EFAB95;
+  --color-claude-orange-400: #E98E73;
+  --color-claude-orange-500: #DE7356;
+  --color-claude-orange-600: #C55A3D;
+  --color-claude-orange-700: #A4432C;
+  --color-claude-orange-800: #853625;
+  --color-claude-orange-900: #6D2E21;
+  --color-claude-orange-950: #3A160E;
+
+  /* Claude Background - Warm neutral backgrounds */
+  --color-claude-bg-50: #FAF9F6;
+  --color-claude-bg-100: #F0EFEA;
+  --color-claude-bg-200: #E3E1D7;
+  --color-claude-bg-300: #D1CEC1;
+  --color-claude-bg-400: #BDB9A9;
+  --color-claude-bg-500: #A6A192;
+  --color-claude-bg-600: #8D8979;
+  --color-claude-bg-700: #757163;
+  --color-claude-bg-800: #5E5B4F;
+  --color-claude-bg-900: #48463D;
+  --color-claude-bg-950: #2E2D27;
+
+  /* Claude Gray - Main text and UI elements */
+  --color-claude-gray-50: #F2F2F2;
+  --color-claude-gray-100: #E6E5E3;
+  --color-claude-gray-200: #D1CFCD;
+  --color-claude-gray-300: #B0AEA9;
+  --color-claude-gray-400: #94918A;
+  --color-claude-gray-500: #76746E;
+  --color-claude-gray-600: #5C5B56;
+  --color-claude-gray-700: #464541;
+  --color-claude-gray-800: #33322F;
+  --color-claude-gray-900: #141413;
+  --color-claude-gray-950: #0A0A09;
+
+  /* Complementary Colors for Service Cards */
+  /* Teal/Cyan - Modern tech aesthetic */
+  --color-claude-teal-50: #F0FDFA;
+  --color-claude-teal-100: #CCFBF1;
+  --color-claude-teal-200: #99F6E4;
+  --color-claude-teal-300: #5EEAD4;
+  --color-claude-teal-400: #2DD4BF;
+  --color-claude-teal-500: #14B8A6;
+  --color-claude-teal-600: #0D9488;
+  --color-claude-teal-700: #0F766E;
+
+  /* Purple - Innovation & technology */
+  --color-claude-purple-50: #FAF5FF;
+  --color-claude-purple-100: #F3E8FF;
+  --color-claude-purple-200: #E9D5FF;
+  --color-claude-purple-300: #D8B4FE;
+  --color-claude-purple-400: #C084FC;
+  --color-claude-purple-500: #A855F7;
+  --color-claude-purple-600: #9333EA;
+  --color-claude-purple-700: #7E22CE;
+
+  /* Green - Growth & success */
+  --color-claude-green-50: #F0FDF4;
+  --color-claude-green-100: #DCFCE7;
+  --color-claude-green-200: #BBF7D0;
+  --color-claude-green-300: #86EFAC;
+  --color-claude-green-400: #4ADE80;
+  --color-claude-green-500: #22C55E;
+  --color-claude-green-600: #16A34A;
+  --color-claude-green-700: #15803D;
 }
 
 :root {

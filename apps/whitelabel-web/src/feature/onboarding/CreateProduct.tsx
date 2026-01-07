@@ -149,7 +149,7 @@ export function CreateProduct() {
 				strategyRanking: formData.strategyRanking,
 				clientRevenueSharePercent: formData.clientRevenueSharePercent,
 				platformFeePercent: formData.platformFeePercent,
-			supportedCurrencies: formData.currencies as Currency[],
+				supportedCurrencies: formData.currencies as Currency[],
 				bankAccounts: bankAccountsArray.length > 0 ? bankAccountsArray : undefined,
 			}
 

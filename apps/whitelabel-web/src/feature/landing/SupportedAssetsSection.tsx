@@ -82,19 +82,12 @@ export function SupportedAssetsSection() {
 				className="max-w-7xl mx-auto px-6"
 			>
 				<motion.div className="text-center mb-16" variants={titleVariants}>
-					<h2 className="text-4xl lg:text-5xl font-medium text-gray-900 mb-4">
-						Supported Assets
-					</h2>
-					<p className="text-xl text-gray-600">
-						Start earning yield on major stablecoins
-					</p>
+					<h2 className="text-4xl lg:text-5xl font-medium text-gray-900 mb-4">Supported Assets</h2>
+					<p className="text-xl text-gray-600">Start earning yield on major stablecoins</p>
 				</motion.div>
 
 				{/* Asset Cards */}
-				<motion.div
-					className="flex flex-wrap gap-6 justify-center"
-					variants={containerVariants}
-				>
+				<motion.div className="flex flex-wrap gap-6 justify-center" variants={containerVariants}>
 					{protocols.map((protocol, idx) => (
 						<motion.div
 							key={idx}
@@ -119,11 +112,7 @@ export function SupportedAssetsSection() {
 									className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center"
 								>
 									{protocol.logo ? (
-										<img
-											src={protocol.logo}
-											alt={protocol.name}
-											className="w-10 h-10"
-										/>
+										<img src={protocol.logo} alt={protocol.name} className="w-10 h-10" />
 									) : protocol.icon === "+" ? (
 										<motion.span
 											className="text-3xl font-bold text-gray-400"
@@ -143,9 +132,7 @@ export function SupportedAssetsSection() {
 									)}
 								</motion.div>
 								<div className="text-center">
-									<span className="block text-lg font-semibold text-gray-900">
-										{protocol.name}
-									</span>
+									<span className="block text-lg font-semibold text-gray-900">{protocol.name}</span>
 									{protocol.description && (
 										<motion.span
 											className="text-sm text-gray-500 mt-1 block"

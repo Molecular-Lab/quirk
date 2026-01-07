@@ -533,8 +533,7 @@ const store = create<DemoStore>()(
 					// Migrate old Static Keys (3-part) to new format (4-part with environment)
 					if (state.endUserClientUserId) {
 						const hasEnvironmentSuffix =
-							state.endUserClientUserId.endsWith(":sandbox") ||
-							state.endUserClientUserId.endsWith(":production")
+							state.endUserClientUserId.endsWith(":sandbox") || state.endUserClientUserId.endsWith(":production")
 
 						if (!hasEnvironmentSuffix) {
 							// Old 3-part format detected, append :sandbox
@@ -604,22 +603,20 @@ export const useDemoStore = store
 
 // Subscribe to hydration completion
 // This ensures _hasHydrated is set even if onRehydrateStorage doesn't fire
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
 	// Wait for next tick to ensure persist middleware is initialized
 	setTimeout(() => {
-		const unsubscribe = store.subscribe(
-			(state) => {
-				if (!state._hasHydrated) {
-					console.log('[demoStore] 🔧 Manually setting _hasHydrated = true')
-					store.setState({ _hasHydrated: true })
-					unsubscribe()
-				}
+		const unsubscribe = store.subscribe((state) => {
+			if (!state._hasHydrated) {
+				console.log("[demoStore] 🔧 Manually setting _hasHydrated = true")
+				store.setState({ _hasHydrated: true })
+				unsubscribe()
 			}
-		)
+		})
 		// Give it 100ms, then force hydration complete if not already set
 		setTimeout(() => {
 			if (!store.getState()._hasHydrated) {
-				console.log('[demoStore] ⚡ Force-setting _hasHydrated = true after timeout')
+				console.log("[demoStore] ⚡ Force-setting _hasHydrated = true after timeout")
 				store.setState({ _hasHydrated: true })
 			}
 		}, 100)

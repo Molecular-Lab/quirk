@@ -59,7 +59,12 @@ export function useDemoBalance({
 		setBalanceError(null)
 
 		try {
-			console.log(`[${platformName} Demo] Fetching real balance for user:`, endUserClientUserId, "environment:", selectedEnvironment)
+			console.log(
+				`[${platformName} Demo] Fetching real balance for user:`,
+				endUserClientUserId,
+				"environment:",
+				selectedEnvironment,
+			)
 			const response = await getUserBalance(endUserClientUserId, { environment: selectedEnvironment })
 
 			if (response.found && response.data) {

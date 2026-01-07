@@ -1,53 +1,56 @@
 import { motion, useInView } from "framer-motion"
 import { useRef } from "react"
-import {
-	TrendingUp,
-	DollarSign,
-	Zap,
-	PieChart,
-	Globe,
-	Check
-} from "lucide-react"
+import { TrendingUp, DollarSign, Zap, PieChart, Globe, Check } from "lucide-react"
 
 const benefits = {
 	growth: {
-		id: 'growth',
-		title: '30× Stablecoin Growth',
+		id: "growth",
+		title: "30× Stablecoin Growth",
 		icon: TrendingUp,
 	},
 	dormant: {
-		id: 'dormant',
-		title: 'Turn $135B Idle Capital into Revenue',
+		id: "dormant",
+		title: "Turn $135B Idle Capital into Revenue",
 		icon: DollarSign,
 	},
 	sdk: {
-		id: 'sdk',
-		title: 'Plug & Play SDK Integration',
+		id: "sdk",
+		title: "Plug & Play SDK Integration",
 		icon: Zap,
 	},
 	yield: {
-		id: 'yield',
-		title: 'Multi-Strategy DeFi Yields',
+		id: "yield",
+		title: "Multi-Strategy DeFi Yields",
 		icon: PieChart,
 	},
 	borderless: {
-		id: 'borderless',
-		title: '24/7 Borderless Finance',
+		id: "borderless",
+		title: "24/7 Borderless Finance",
 		icon: Globe,
-	}
+	},
 }
 
 const comparisonData = [
-	{ feature: 'Yield Earning', fiat: '0.1% savings account', stablecoin: '5% DeFi yield', advantage: true },
-	{ feature: 'Transfer Speed', fiat: '1-3 business days', stablecoin: '< 1 minute', advantage: true },
-	{ feature: 'Global Access', fiat: 'Limited by banks & borders', stablecoin: '180+ countries instantly', advantage: true },
-	{ feature: 'Operating Hours', fiat: '9am-5pm weekdays', stablecoin: '24/7/365', advantage: true },
-	{ feature: 'Cross-Border Fees', fiat: '3-7% fees + delays', stablecoin: '< 0.1% fees', advantage: true },
-	{ feature: 'Programmable Money', fiat: 'No', stablecoin: 'Smart contracts', advantage: true },
-	{ feature: 'Transparency', fiat: 'Opaque intermediaries', stablecoin: 'On-chain, auditable', advantage: true },
-	{ feature: 'Settlement', fiat: 'T+2 to T+5 days', stablecoin: 'Instant finality', advantage: true },
-	{ feature: 'Idle Capital', fiat: 'Loses to inflation (7-14 days)', stablecoin: 'Earns yield automatically', advantage: true },
-	{ feature: 'Integration', fiat: 'Complex banking APIs', stablecoin: 'Simple plug & play SDK', advantage: true }
+	{ feature: "Yield Earning", fiat: "0.1% savings account", stablecoin: "5% DeFi yield", advantage: true },
+	{ feature: "Transfer Speed", fiat: "1-3 business days", stablecoin: "< 1 minute", advantage: true },
+	{
+		feature: "Global Access",
+		fiat: "Limited by banks & borders",
+		stablecoin: "180+ countries instantly",
+		advantage: true,
+	},
+	{ feature: "Operating Hours", fiat: "9am-5pm weekdays", stablecoin: "24/7/365", advantage: true },
+	{ feature: "Cross-Border Fees", fiat: "3-7% fees + delays", stablecoin: "< 0.1% fees", advantage: true },
+	{ feature: "Programmable Money", fiat: "No", stablecoin: "Smart contracts", advantage: true },
+	{ feature: "Transparency", fiat: "Opaque intermediaries", stablecoin: "On-chain, auditable", advantage: true },
+	{ feature: "Settlement", fiat: "T+2 to T+5 days", stablecoin: "Instant finality", advantage: true },
+	{
+		feature: "Idle Capital",
+		fiat: "Loses to inflation (7-14 days)",
+		stablecoin: "Earns yield automatically",
+		advantage: true,
+	},
+	{ feature: "Integration", fiat: "Complex banking APIs", stablecoin: "Simple plug & play SDK", advantage: true },
 ]
 
 interface BenefitCardProps {
@@ -59,7 +62,7 @@ interface BenefitCardProps {
 	className?: string
 }
 
-const BenefitCard = ({ benefit, className = '' }: BenefitCardProps) => {
+const BenefitCard = ({ benefit, className = "" }: BenefitCardProps) => {
 	const Icon = benefit.icon
 
 	const itemVariants = {
@@ -67,8 +70,8 @@ const BenefitCard = ({ benefit, className = '' }: BenefitCardProps) => {
 		visible: {
 			opacity: 1,
 			y: 0,
-			transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }
-		}
+			transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
+		},
 	}
 
 	return (
@@ -81,9 +84,7 @@ const BenefitCard = ({ benefit, className = '' }: BenefitCardProps) => {
 				<div className="w-20 h-20 bg-gray-900 rounded-2xl flex items-center justify-center mx-auto mb-6">
 					<Icon className="w-10 h-10 text-white" />
 				</div>
-				<h3 className="text-2xl lg:text-3xl font-normal text-gray-900 leading-tight">
-					{benefit.title}
-				</h3>
+				<h3 className="text-2xl lg:text-3xl font-normal text-gray-900 leading-tight">{benefit.title}</h3>
 			</div>
 		</motion.div>
 	)
@@ -95,19 +96,14 @@ const ComparisonTableCard = () => {
 		visible: {
 			opacity: 1,
 			y: 0,
-			transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }
-		}
+			transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
+		},
 	}
 
 	return (
-		<motion.div
-			variants={itemVariants}
-			className="lg:col-span-3 bg-gray-900 rounded-2xl p-8 lg:p-12"
-		>
+		<motion.div variants={itemVariants} className="lg:col-span-3 bg-gray-900 rounded-2xl p-8 lg:p-12">
 			<div className="text-center mb-8">
-				<h3 className="text-3xl lg:text-4xl font-medium text-white">
-					Stablecoins vs Traditional Finance
-				</h3>
+				<h3 className="text-3xl lg:text-4xl font-medium text-white">Stablecoins vs Traditional Finance</h3>
 			</div>
 
 			<div className="overflow-x-auto">
@@ -155,9 +151,9 @@ export function WhyStablecoinSection() {
 			opacity: 1,
 			transition: {
 				staggerChildren: 0.1,
-				delayChildren: 0.2
-			}
-		}
+				delayChildren: 0.2,
+			},
+		},
 	}
 
 	const titleVariants = {
@@ -167,9 +163,9 @@ export function WhyStablecoinSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	return (
@@ -183,9 +179,7 @@ export function WhyStablecoinSection() {
 			>
 				{/* Header */}
 				<motion.div className="text-center mb-16" variants={titleVariants}>
-					<h2 className="text-4xl lg:text-5xl font-medium text-gray-900">
-						WHY QUIRK?
-					</h2>
+					<h2 className="text-4xl lg:text-5xl font-medium text-gray-900">WHY QUIRK?</h2>
 				</motion.div>
 
 				{/* Row 1: Stablecoin (35%) + Stacked Cards (65%) */}

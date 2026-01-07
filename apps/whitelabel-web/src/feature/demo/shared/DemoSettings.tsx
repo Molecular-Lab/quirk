@@ -32,7 +32,8 @@ export function DemoSettings() {
 	}>({ open: false, productName: "" })
 
 	const { selectedPersona, personaData, selectedEnvironment, setEnvironment } = useDemoStore()
-	const { selectedProduct, selectedProductId, visualizationType, availableProducts, selectProduct } = useDemoProductStore()
+	const { selectedProduct, selectedProductId, visualizationType, availableProducts, selectProduct } =
+		useDemoProductStore()
 
 	const personas = getAllPersonas()
 
@@ -196,21 +197,24 @@ export function DemoSettings() {
 					{/* Environment Selector */}
 					<div>
 						<label className="block text-sm font-medium text-gray-700 mb-2">Environment</label>
-						<Select value={selectedEnvironment} onValueChange={(value) => {
-							const newEnv = value as "sandbox" | "production"
-							setEnvironment(newEnv)
+						<Select
+							value={selectedEnvironment}
+							onValueChange={(value) => {
+								const newEnv = value as "sandbox" | "production"
+								setEnvironment(newEnv)
 
-							// Re-sync API key for new environment
-							if (selectedProductId) {
-								const { apiKeys } = useDemoProductStore.getState()
-								const envKey = apiKeys[`${selectedProductId}_${newEnv}`] || apiKeys[selectedProductId]
+								// Re-sync API key for new environment
+								if (selectedProductId) {
+									const { apiKeys } = useDemoProductStore.getState()
+									const envKey = apiKeys[`${selectedProductId}_${newEnv}`] || apiKeys[selectedProductId]
 
-								if (envKey) {
-									// Re-select product to sync new API key to clientContextStore
-									selectProduct(selectedProductId)
+									if (envKey) {
+										// Re-select product to sync new API key to clientContextStore
+										selectProduct(selectedProductId)
+									}
 								}
-							}
-						}}>
+							}}
+						>
 							<SelectTrigger>
 								<SelectValue />
 							</SelectTrigger>
@@ -239,9 +243,7 @@ export function DemoSettings() {
 						) : (
 							<div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg">
 								<p className="text-xs font-semibold text-green-900 mb-1">✓ Sandbox Mode</p>
-								<p className="text-xs text-green-800">
-									Using mock tokens for testing. No real money involved.
-								</p>
+								<p className="text-xs text-green-800">Using mock tokens for testing. No real money involved.</p>
 							</div>
 						)}
 					</div>
@@ -270,16 +272,12 @@ export function DemoSettings() {
 											</div>
 										</div>
 										<div className="text-right">
-											<p className="text-sm font-semibold text-gray-900">
-												${persona.balance.toLocaleString()}
-											</p>
+											<p className="text-sm font-semibold text-gray-900">${persona.balance.toLocaleString()}</p>
 											<p className="text-xs text-gray-500">{persona.riskProfile}</p>
 										</div>
 									</div>
 									{selectedPersona === persona.id && personaData && (
-										<p className="text-xs text-blue-600 mt-2 font-mono">
-											ID: {personaData.clientUserId}
-										</p>
+										<p className="text-xs text-blue-600 mt-2 font-mono">ID: {personaData.clientUserId}</p>
 									)}
 								</button>
 							))}
@@ -297,9 +295,7 @@ export function DemoSettings() {
 			{/* Product Change Confirmation Dialog */}
 			<ConfirmDialog
 				open={productConfirmDialog.open}
-				onOpenChange={(open) =>
-					setProductConfirmDialog({ open, productId: "", productName: "" })
-				}
+				onOpenChange={(open) => setProductConfirmDialog({ open, productId: "", productName: "" })}
 				title={`Switch to ${productConfirmDialog.productName}?`}
 				description="This will reload the demo and reset all progress."
 				onConfirm={confirmProductChange}
@@ -309,9 +305,7 @@ export function DemoSettings() {
 			{/* Persona Change Confirmation Dialog */}
 			<ConfirmDialog
 				open={personaConfirmDialog.open}
-				onOpenChange={(open) =>
-					setPersonaConfirmDialog({ open, persona: null, personaName: "" })
-				}
+				onOpenChange={(open) => setPersonaConfirmDialog({ open, persona: null, personaName: "" })}
 				title={`Switch to ${personaConfirmDialog.personaName}?`}
 				description="This will reload the demo and reset all progress."
 				onConfirm={confirmPersonaChange}

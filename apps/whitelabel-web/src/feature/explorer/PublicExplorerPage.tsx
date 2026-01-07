@@ -155,11 +155,7 @@ export function PublicExplorerPage() {
 									<div
 										key={index}
 										className={`flex items-center justify-center text-sm font-medium text-white ${
-											index === 0
-												? "bg-blue-500"
-												: index === 1
-												? "bg-purple-500"
-												: "bg-green-500"
+											index === 0 ? "bg-blue-500" : index === 1 ? "bg-purple-500" : "bg-green-500"
 										}`}
 										style={{ width: `${allocation.allocation}%` }}
 									>
@@ -175,11 +171,7 @@ export function PublicExplorerPage() {
 										<div className="flex items-center gap-4">
 											<div
 												className={`h-3 w-3 rounded-full ${
-													index === 0
-														? "bg-blue-500"
-														: index === 1
-														? "bg-purple-500"
-														: "bg-green-500"
+													index === 0 ? "bg-blue-500" : index === 1 ? "bg-purple-500" : "bg-green-500"
 												}`}
 											/>
 											<div>
@@ -200,12 +192,10 @@ export function PublicExplorerPage() {
 					{/* Info Footer */}
 					<div className="rounded-lg bg-blue-50 p-6 text-center">
 						<p className="text-sm text-gray-700">
-							<strong className="text-gray-900">🔒 Transparency by Design:</strong> All user funds are visible
-							on-chain. This page shows real-time allocation and performance data.
+							<strong className="text-gray-900">🔒 Transparency by Design:</strong> All user funds are visible on-chain.
+							This page shows real-time allocation and performance data.
 						</p>
-						<p className="mt-2 text-xs text-gray-500">
-							Last updated: {new Date(data.lastUpdated).toLocaleString()}
-						</p>
+						<p className="mt-2 text-xs text-gray-500">Last updated: {new Date(data.lastUpdated).toLocaleString()}</p>
 					</div>
 				</div>
 			</div>

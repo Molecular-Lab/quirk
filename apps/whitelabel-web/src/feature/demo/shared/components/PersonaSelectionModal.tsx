@@ -72,7 +72,12 @@ export function PersonaSelectionModal({
 			}
 
 			// Generate Static Key for this persona
-			const clientUserId = generateDemoClientUserId(privyUserId, visualizationType, persona.id, selectedEnvironment || "sandbox")
+			const clientUserId = generateDemoClientUserId(
+				privyUserId,
+				visualizationType,
+				persona.id,
+				selectedEnvironment || "sandbox",
+			)
 
 			console.log(`[PersonaSelectionModal] 🔑 Generated Static Key:`, clientUserId)
 
@@ -155,9 +160,7 @@ export function PersonaSelectionModal({
 								onClick={() => handleSelectPersona(persona)}
 								disabled={isCreating}
 								className={`relative p-6 rounded-xl border-2 text-left transition-all ${
-									isSelected
-										? "border-blue-500 bg-blue-50"
-										: "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+									isSelected ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
 								} ${isCreating ? "opacity-50 cursor-not-allowed" : ""}`}
 							>
 								{/* Avatar */}
@@ -167,12 +170,8 @@ export function PersonaSelectionModal({
 								<div className="mb-3">
 									<div className="flex items-center gap-2 mb-1">
 										<h3 className="text-xl font-bold text-gray-900">{persona.name}</h3>
-										{isSelected && !isLoading && (
-											<Check className="w-5 h-5 text-blue-500" />
-										)}
-										{isLoading && (
-											<Loader2 className="w-5 h-5 animate-spin text-blue-500" />
-										)}
+										{isSelected && !isLoading && <Check className="w-5 h-5 text-blue-500" />}
+										{isLoading && <Loader2 className="w-5 h-5 animate-spin text-blue-500" />}
 									</div>
 									<p className="text-sm text-gray-600">{persona.email}</p>
 								</div>
@@ -182,20 +181,22 @@ export function PersonaSelectionModal({
 
 								{/* Risk Profile Badge */}
 								<div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-xs font-medium text-gray-700">
-									<span className={`w-2 h-2 rounded-full ${
-										persona.riskProfile === "conservative" ? "bg-green-500" :
-										persona.riskProfile === "moderate" ? "bg-yellow-500" :
-										"bg-red-500"
-									}`}></span>
+									<span
+										className={`w-2 h-2 rounded-full ${
+											persona.riskProfile === "conservative"
+												? "bg-green-500"
+												: persona.riskProfile === "moderate"
+													? "bg-yellow-500"
+													: "bg-red-500"
+										}`}
+									></span>
 									{persona.riskProfile.charAt(0).toUpperCase() + persona.riskProfile.slice(1)} Risk
 								</div>
 
 								{/* Starting Balance */}
 								<div className="mt-4 pt-4 border-t border-gray-200">
 									<p className="text-xs text-gray-500">Starting Balance</p>
-									<p className="text-lg font-bold text-gray-900">
-										${persona.balance.toLocaleString()}
-									</p>
+									<p className="text-lg font-bold text-gray-900">${persona.balance.toLocaleString()}</p>
 								</div>
 
 								{/* Loading Overlay */}

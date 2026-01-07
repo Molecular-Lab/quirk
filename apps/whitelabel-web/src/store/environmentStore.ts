@@ -26,7 +26,10 @@ export const ENV_CONFIG: Record<Environment, EnvironmentConfig> = {
 	dev: {
 		chainId: NETWORK_CONFIG.eth_sepolia.chainId,
 		name: NETWORK_CONFIG.eth_sepolia.name,
-		rpcUrl: NETWORK_CONFIG.eth_sepolia.rpcUrl || import.meta.env.VITE_SEPOLIA_RPC_URL || "https://eth-sepolia.g.alchemy.com/v2/demo",
+		rpcUrl:
+			NETWORK_CONFIG.eth_sepolia.rpcUrl ||
+			import.meta.env.VITE_SEPOLIA_RPC_URL ||
+			"https://eth-sepolia.g.alchemy.com/v2/demo",
 		explorerUrl: NETWORK_CONFIG.eth_sepolia.explorerUrl,
 		enabled: true,
 		networkKey: "eth_sepolia",

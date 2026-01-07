@@ -53,7 +53,6 @@ export function ProductAndApiKeyStep({ onComplete }: ProductAndApiKeyStepProps) 
 	const handleNext = () => {
 		if (!selectedProductId || !selectedEnvironment) return
 
-
 		onComplete({
 			productId: selectedProductId,
 			environment: selectedEnvironment,

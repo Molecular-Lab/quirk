@@ -123,9 +123,7 @@ export function ProductStrategyConfig({ productId, onStrategyChange }: ProductSt
 							setSelectedTemplate(template)
 						}}
 						className={`p-4 rounded-xl border-1 transition-all cursor-pointer ${
-							selectedTemplate === template
-								? "border-gray-200 shadow-md ring-1 ring-gray-100"
-								: ""
+							selectedTemplate === template ? "border-gray-200 shadow-md ring-1 ring-gray-100" : ""
 						}`}
 					>
 						<div className="font-semibold capitalize text-gray-950">{template}</div>

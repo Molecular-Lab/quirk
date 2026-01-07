@@ -1,7 +1,7 @@
 /**
  * React Query hooks for fetching DeFi protocol data
  * Separate query keys for independent caching per protocol
- * 
+ *
  * Optimization: Uses lightweight APY cache for instant display,
  * then enriches with full protocol details in background
  */
@@ -118,7 +118,7 @@ export function useAllDeFiProtocolsCombined(token = "USDC", chainId = 8453) {
 /**
  * Fetch all protocols using separate hooks (recommended for better granularity)
  * This allows independent caching and error handling per protocol
- * 
+ *
  * LEGACY: Use useAllDeFiProtocolsOptimized for better performance
  */
 export function useAllDeFiProtocols(token = "USDC", chainId = 8453) {
@@ -152,12 +152,12 @@ export function useAllDeFiProtocols(token = "USDC", chainId = 8453) {
 
 /**
  * OPTIMIZED: Fetch all protocols with instant APY display
- * 
+ *
  * Strategy:
  * 1. Use lightweight APY cache (shared, instant, 5-min refresh)
  * 2. Fetch full protocol details in parallel (TVL, liquidity, health)
  * 3. Merge APY cache with full data for complete view
- * 
+ *
  * Benefits:
  * - Instant APY display from cache
  * - Single combined API call instead of 3 separate calls
@@ -192,7 +192,7 @@ export function useAllDeFiProtocolsOptimized(token = "USDC", chainId = 8453) {
 	const protocols = useMemo(() => {
 		const now = new Date()
 		const protocolIds: Array<"aave" | "compound" | "morpho"> = ["aave", "compound", "morpho"]
-		
+
 		// Create a map of full protocol data by protocol ID
 		const fullDataMap = new Map<string, ProtocolData>()
 		if (fullDataQuery.data?.protocols) {
@@ -203,38 +203,46 @@ export function useAllDeFiProtocolsOptimized(token = "USDC", chainId = 8453) {
 
 		// Smart merge: For each protocol, use full data if available, otherwise use APY cache
 		if (apys || fullDataQuery.data?.protocols) {
-			console.log("[useDeFiProtocolsOptimized] Smart merge - APYs:", !!apys, "Full data:", fullDataMap.size, "protocols")
-			
-			return protocolIds.map((protocolId) => {
-				// If we have full data for this protocol, use it
-				if (fullDataMap.has(protocolId)) {
-					const fullData = fullDataMap.get(protocolId)!
-					console.log(`[useDeFiProtocolsOptimized] Using full data for ${protocolId}`)
-					return fullData
-				}
+			console.log(
+				"[useDeFiProtocolsOptimized] Smart merge - APYs:",
+				!!apys,
+				"Full data:",
+				fullDataMap.size,
+				"protocols",
+			)
 
-				// Otherwise, use APY cache (if available) to show at least the APY
-				if (apys) {
-					console.log(`[useDeFiProtocolsOptimized] Using APY cache for ${protocolId} (full data not available)`)
-					return {
-						protocol: protocolId,
-						token,
-						chainId,
-						supplyAPY: apys[protocolId],
-						tvl: "N/A",
-						liquidity: "N/A",
-						totalSupplied: "0",
-						utilization: "0",
-						risk: protocolId === "morpho" ? ("Medium" as const) : ("Low" as const),
-						status: "healthy" as const,
-						lastUpdate: now,
-						protocolHealth: 100,
-					} as ProtocolData
-				}
+			return protocolIds
+				.map((protocolId) => {
+					// If we have full data for this protocol, use it
+					if (fullDataMap.has(protocolId)) {
+						const fullData = fullDataMap.get(protocolId)!
+						console.log(`[useDeFiProtocolsOptimized] Using full data for ${protocolId}`)
+						return fullData
+					}
 
-				// Fallback: No data available for this protocol
-				return null
-			}).filter(Boolean) as ProtocolData[]
+					// Otherwise, use APY cache (if available) to show at least the APY
+					if (apys) {
+						console.log(`[useDeFiProtocolsOptimized] Using APY cache for ${protocolId} (full data not available)`)
+						return {
+							protocol: protocolId,
+							token,
+							chainId,
+							supplyAPY: apys[protocolId],
+							tvl: "N/A",
+							liquidity: "N/A",
+							totalSupplied: "0",
+							utilization: "0",
+							risk: protocolId === "morpho" ? ("Medium" as const) : ("Low" as const),
+							status: "healthy" as const,
+							lastUpdate: now,
+							protocolHealth: 100,
+						} as ProtocolData
+					}
+
+					// Fallback: No data available for this protocol
+					return null
+				})
+				.filter(Boolean) as ProtocolData[]
 		}
 
 		return []

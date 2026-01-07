@@ -41,7 +41,10 @@ export function initB2BAPIClient<T extends AppRouter>(
 	axiosInstance.interceptors.request.use((config) => {
 		// Skip auto-injection if header was explicitly set by caller
 		if (config.headers["x-privy-org-id"]) {
-			console.log("[b2bApiClient] Using provided x-privy-org-id:", (config.headers["x-privy-org-id"] as string).substring(0, 20) + "...")
+			console.log(
+				"[b2bApiClient] Using provided x-privy-org-id:",
+				(config.headers["x-privy-org-id"] as string).substring(0, 20) + "...",
+			)
 			return config
 		}
 

@@ -482,7 +482,8 @@ export function StrategiesPage() {
 							</div>
 							{totalAllocation !== 100 && (
 								<p className="text-xs text-red-600 mt-4">
-									Must equal 100% (currently {totalAllocation > 100 ? "over" : "under"} by {Math.abs(100 - totalAllocation)}%)
+									Must equal 100% (currently {totalAllocation > 100 ? "over" : "under"} by{" "}
+									{Math.abs(100 - totalAllocation)}%)
 								</p>
 							)}
 						</div>

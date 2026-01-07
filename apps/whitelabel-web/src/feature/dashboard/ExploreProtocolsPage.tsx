@@ -101,9 +101,7 @@ export function ExploreProtocolsPage() {
 						<h1 className="text-3xl font-bold text-gray-900 mb-2">Explore Protocols</h1>
 						<p className="text-gray-600">
 							Discover DeFi and CeFi yield opportunities
-							{isRefreshing && (
-								<span className="ml-2 text-xs text-blue-600 animate-pulse">● Updating details...</span>
-							)}
+							{isRefreshing && <span className="ml-2 text-xs text-blue-600 animate-pulse">● Updating details...</span>}
 						</p>
 					</div>
 					<div className="text-right bg-white px-6 py-4 rounded-2xl border border-gray-200 shadow-sm">
@@ -145,7 +143,9 @@ export function ExploreProtocolsPage() {
 										`$${(totalTVL / 1_000_000).toFixed(1)}M`
 									)}
 								</span>
-								<span className={`text-sm font-medium ${isRefreshing ? "text-blue-600 animate-pulse" : "text-green-600"}`}>
+								<span
+									className={`text-sm font-medium ${isRefreshing ? "text-blue-600 animate-pulse" : "text-green-600"}`}
+								>
 									{isRefreshing ? "Refreshing..." : "Live"}
 								</span>
 							</div>

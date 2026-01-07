@@ -1,6 +1,17 @@
 import { useRef, useEffect, useState } from "react"
 import { motion, useInView } from "framer-motion"
-import { ShoppingBag, CreditCard, Briefcase, Palette, Car, TrendingUp, Coins, Wallet, PiggyBank, Store } from "lucide-react"
+import {
+	ShoppingBag,
+	CreditCard,
+	Briefcase,
+	Palette,
+	Car,
+	TrendingUp,
+	Coins,
+	Wallet,
+	PiggyBank,
+	Store,
+} from "lucide-react"
 
 export function BusinessTypesSection() {
 	const sectionRef = useRef(null)
@@ -202,9 +213,9 @@ export function BusinessTypesSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	const cardVariants = {
@@ -216,16 +227,16 @@ export function BusinessTypesSection() {
 			transition: {
 				duration: 0.5,
 				delay: index * 0.1,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		})
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		}),
 	}
 
 	// Decorative illustration component
 	const CardIllustration = ({
 		icon: Icon,
 		secondaryIcon: SecondaryIcon,
-		accentColor
+		accentColor,
 	}: {
 		icon: React.ElementType
 		secondaryIcon: React.ElementType
@@ -236,19 +247,19 @@ export function BusinessTypesSection() {
 				primary: "from-gray-600 to-gray-700",
 				secondary: "bg-gray-200",
 				tertiary: "bg-gray-300",
-				bg: "from-gray-100/80 to-gray-50/50"
+				bg: "from-gray-100/80 to-gray-50/50",
 			},
 			orange: {
 				primary: "from-orange-400 to-orange-500",
 				secondary: "bg-orange-200",
 				tertiary: "bg-orange-300",
-				bg: "from-orange-100/80 to-orange-50/50"
+				bg: "from-orange-100/80 to-orange-50/50",
 			},
 			blue: {
 				primary: "from-blue-400 to-blue-500",
 				secondary: "bg-blue-200",
 				tertiary: "bg-blue-300",
-				bg: "from-blue-100/80 to-blue-50/50"
+				bg: "from-blue-100/80 to-blue-50/50",
 			},
 		}
 
@@ -311,16 +322,10 @@ export function BusinessTypesSection() {
 			>
 				{/* Section Header */}
 				<motion.div className="mb-12 text-center" variants={titleVariants}>
-					<motion.h2
-						className="text-5xl font-bold text-gray-950 mb-6"
-						variants={titleVariants}
-					>
+					<motion.h2 className="text-5xl font-bold text-gray-950 mb-6" variants={titleVariants}>
 						Support Any Platform
 					</motion.h2>
-					<motion.p
-						className="text-xl text-gray-700 max-w-3xl mx-auto"
-						variants={titleVariants}
-					>
+					<motion.p className="text-xl text-gray-700 max-w-3xl mx-auto" variants={titleVariants}>
 						From fintech to creators, scale with Quirk's infrastructure.
 					</motion.p>
 				</motion.div>
@@ -378,8 +383,8 @@ export function BusinessTypesSection() {
 										transition: {
 											type: "spring" as const,
 											stiffness: 300,
-											damping: 20
-										}
+											damping: 20,
+										},
 									}}
 									className={`snap-center flex-shrink-0 w-[380px] sm:w-[420px] lg:w-[460px] bg-gradient-to-br ${type.bgGradient} rounded-3xl overflow-hidden border border-white/50 cursor-pointer`}
 									onMouseEnter={(e) => handleCardHover(e.currentTarget)}
@@ -410,9 +415,7 @@ export function BusinessTypesSection() {
 										<h3 className="text-2xl font-bold text-gray-950 mb-3">{type.title}</h3>
 
 										{/* Description */}
-										<p className="text-gray-600 text-base leading-relaxed line-clamp-3">
-											{type.description}
-										</p>
+										<p className="text-gray-600 text-base leading-relaxed line-clamp-3">{type.description}</p>
 									</div>
 								</motion.div>
 							)

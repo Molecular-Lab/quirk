@@ -852,6 +852,15 @@ Help them understand or refine their strategy.`
 						<p className="text-gray-600">Configure your product settings, strategies, and integrations</p>
 					</div>
 					<div className="flex items-center gap-3">
+						<Button
+							onClick={() => {
+								window.location.href = "/demo"
+							}}
+							className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg font-medium shadow-sm transition-all cursor-pointer flex items-center gap-2"
+						>
+							<Rocket className="w-4 h-4" />
+							Test Demo
+						</Button>
 						<EnvironmentSelector />
 						<ProductSwitcher />
 					</div>

@@ -109,11 +109,7 @@ export function PrivateExplorerPage() {
 						</div>
 						<Badge
 							variant={data.status === "active" ? "default" : "secondary"}
-							className={
-								data.status === "active"
-									? "bg-green-500 text-white"
-									: "bg-yellow-500 text-white"
-							}
+							className={data.status === "active" ? "bg-green-500 text-white" : "bg-yellow-500 text-white"}
 						>
 							{data.status === "active" ? (
 								<>
@@ -205,9 +201,7 @@ export function PrivateExplorerPage() {
 								<div className="rounded-lg bg-gray-50 p-4">
 									<p className="text-sm text-gray-600">Last Activity</p>
 									<p className="mt-1 text-lg font-semibold text-gray-900">
-										{data.lastActivityAt
-											? new Date(data.lastActivityAt).toLocaleDateString()
-											: "Never"}
+										{data.lastActivityAt ? new Date(data.lastActivityAt).toLocaleDateString() : "Never"}
 									</p>
 								</div>
 							</div>
@@ -230,11 +224,7 @@ export function PrivateExplorerPage() {
 									<div
 										key={index}
 										className={`flex items-center justify-center text-sm font-medium text-white ${
-											index === 0
-												? "bg-blue-500"
-												: index === 1
-												? "bg-purple-500"
-												: "bg-green-500"
+											index === 0 ? "bg-blue-500" : index === 1 ? "bg-purple-500" : "bg-green-500"
 										}`}
 										style={{ width: `${allocation.allocation}%` }}
 									>
@@ -250,11 +240,7 @@ export function PrivateExplorerPage() {
 										<div className="flex items-center gap-4">
 											<div
 												className={`h-3 w-3 rounded-full ${
-													index === 0
-														? "bg-blue-500"
-														: index === 1
-														? "bg-purple-500"
-														: "bg-green-500"
+													index === 0 ? "bg-blue-500" : index === 1 ? "bg-purple-500" : "bg-green-500"
 												}`}
 											/>
 											<div>
@@ -275,12 +261,10 @@ export function PrivateExplorerPage() {
 					{/* Info Footer */}
 					<div className="rounded-lg bg-blue-50 p-6 text-center">
 						<p className="text-sm text-gray-700">
-							<strong className="text-gray-900">🎯 Your Earnings:</strong> You've earned $
-							{data.totalYieldEarned} ({yieldPercentage}% return) since your first deposit. Keep it up!
+							<strong className="text-gray-900">🎯 Your Earnings:</strong> You've earned ${data.totalYieldEarned} (
+							{yieldPercentage}% return) since your first deposit. Keep it up!
 						</p>
-						<p className="mt-2 text-xs text-gray-500">
-							Last updated: {new Date(data.lastUpdated).toLocaleString()}
-						</p>
+						<p className="mt-2 text-xs text-gray-500">Last updated: {new Date(data.lastUpdated).toLocaleString()}</p>
 					</div>
 				</div>
 			</div>

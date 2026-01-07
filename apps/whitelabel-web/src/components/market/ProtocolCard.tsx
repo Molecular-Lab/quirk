@@ -55,12 +55,13 @@ export function ProtocolCard({ data }: ProtocolCardProps) {
 						</div>
 					</div>
 					<div
-						className={`text-xs font-medium px-2 py-1 rounded-full ${data.risk === "Low"
-							? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-							: data.risk === "Medium"
-								? "bg-amber-50 text-amber-700 border border-amber-200"
-								: "bg-rose-50 text-rose-700 border border-rose-200"
-							}`}
+						className={`text-xs font-medium px-2 py-1 rounded-full ${
+							data.risk === "Low"
+								? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+								: data.risk === "Medium"
+									? "bg-amber-50 text-amber-700 border border-amber-200"
+									: "bg-rose-50 text-rose-700 border border-rose-200"
+						}`}
 					>
 						{data.risk} Risk
 					</div>
@@ -78,25 +79,20 @@ export function ProtocolCard({ data }: ProtocolCardProps) {
 			</div>
 
 			{/* Content */}
-			<div className="p-4">
-				{viewMode === "overview" ? (
-					<OverviewView data={data} />
-				) : (
-					<RawDataView data={data} />
-				)}
-			</div>
+			<div className="p-4">{viewMode === "overview" ? <OverviewView data={data} /> : <RawDataView data={data} />}</div>
 
 			{/* Footer */}
 			<div className="px-4 pb-4 pt-2 border-t border-gray-100 flex justify-between items-center">
 				<span className="text-xs text-gray-500">TVL: {tvlFormatted}</span>
 				<div className="flex items-center gap-2">
 					<span
-						className={`text-xs font-medium ${data.status === "healthy"
-							? "text-emerald-600"
-							: data.status === "warning"
-								? "text-amber-600"
-								: "text-rose-600"
-							}`}
+						className={`text-xs font-medium ${
+							data.status === "healthy"
+								? "text-emerald-600"
+								: data.status === "warning"
+									? "text-amber-600"
+									: "text-rose-600"
+						}`}
 					>
 						{data.status === "healthy" ? "✓" : data.status === "warning" ? "⚠" : "✗"} {data.status}
 					</span>
@@ -135,8 +131,9 @@ function OverviewView({ data }: { data: ProtocolData }) {
 				</div>
 				<div className="w-full bg-gray-200 rounded-full h-2">
 					<div
-						className={`h-2 rounded-full transition-all ${data.protocolHealth >= 80 ? "bg-emerald-400" : data.protocolHealth >= 60 ? "bg-amber-400" : "bg-rose-400"
-							}`}
+						className={`h-2 rounded-full transition-all ${
+							data.protocolHealth >= 80 ? "bg-emerald-400" : data.protocolHealth >= 60 ? "bg-amber-400" : "bg-rose-400"
+						}`}
 						style={{ width: `${data.protocolHealth}%` }}
 					></div>
 				</div>
@@ -196,8 +193,9 @@ function RawDataView({ data }: { data: ProtocolData }) {
 				<div>
 					<p className="text-gray-500">Risk</p>
 					<p
-						className={`font-mono ${data.risk === "Low" ? "text-emerald-600" : data.risk === "Medium" ? "text-amber-600" : "text-rose-600"
-							}`}
+						className={`font-mono ${
+							data.risk === "Low" ? "text-emerald-600" : data.risk === "Medium" ? "text-amber-600" : "text-rose-600"
+						}`}
 					>
 						{data.risk}
 					</p>
@@ -205,12 +203,13 @@ function RawDataView({ data }: { data: ProtocolData }) {
 				<div>
 					<p className="text-gray-500">Status</p>
 					<p
-						className={`font-mono ${data.status === "healthy"
-							? "text-emerald-600"
-							: data.status === "warning"
-								? "text-amber-600"
-								: "text-rose-600"
-							}`}
+						className={`font-mono ${
+							data.status === "healthy"
+								? "text-emerald-600"
+								: data.status === "warning"
+									? "text-amber-600"
+									: "text-rose-600"
+						}`}
 					>
 						{data.status}
 					</p>

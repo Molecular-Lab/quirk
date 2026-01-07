@@ -171,7 +171,10 @@ export function OffRampModal({ isOpen, onClose, selectedWithdrawalIds, withdrawa
 								<div className="flex items-center gap-3">
 									<input
 										type="text"
-										value={netFiatAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+										value={netFiatAmount.toLocaleString("en-US", {
+											minimumFractionDigits: 2,
+											maximumFractionDigits: 2,
+										})}
 										readOnly
 										className="text-2xl font-bold bg-transparent border-none outline-none flex-1 text-gray-900"
 									/>
@@ -250,7 +253,10 @@ export function OffRampModal({ isOpen, onClose, selectedWithdrawalIds, withdrawa
 										<span className="font-semibold text-gray-900">Users will receive:</span>
 										<span className="font-bold text-gray-900">
 											{fiatSymbol}
-											{netFiatAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{" "}
+											{netFiatAmount.toLocaleString("en-US", {
+												minimumFractionDigits: 2,
+												maximumFractionDigits: 2,
+											})}{" "}
 											{fiatCurrency}
 										</span>
 									</div>
@@ -260,8 +266,8 @@ export function OffRampModal({ isOpen, onClose, selectedWithdrawalIds, withdrawa
 							{/* Bank Transfer Info */}
 							<div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
 								<p className="text-sm text-blue-700">
-									<strong>💳 Bank Transfer:</strong> Fiat will be sent to each user's registered bank account. Ensure bank
-									details are configured in Product Config.
+									<strong>💳 Bank Transfer:</strong> Fiat will be sent to each user's registered bank account. Ensure
+									bank details are configured in Product Config.
 								</p>
 							</div>
 

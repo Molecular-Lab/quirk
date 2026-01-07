@@ -10,8 +10,8 @@ export const fadeInUp: Variants = {
 	visible: {
 		opacity: 1,
 		y: 0,
-		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
-	}
+		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+	},
 }
 
 export const fadeInDown: Variants = {
@@ -19,16 +19,16 @@ export const fadeInDown: Variants = {
 	visible: {
 		opacity: 1,
 		y: 0,
-		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
-	}
+		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+	},
 }
 
 export const fadeIn: Variants = {
 	hidden: { opacity: 0 },
 	visible: {
 		opacity: 1,
-		transition: { duration: 0.5, ease: "easeOut" }
-	}
+		transition: { duration: 0.5, ease: "easeOut" },
+	},
 }
 
 export const scaleIn: Variants = {
@@ -36,8 +36,8 @@ export const scaleIn: Variants = {
 	visible: {
 		opacity: 1,
 		scale: 1,
-		transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const }
-	}
+		transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] as const },
+	},
 }
 
 export const slideInLeft: Variants = {
@@ -45,8 +45,8 @@ export const slideInLeft: Variants = {
 	visible: {
 		opacity: 1,
 		x: 0,
-		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
-	}
+		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+	},
 }
 
 export const slideInRight: Variants = {
@@ -54,8 +54,8 @@ export const slideInRight: Variants = {
 	visible: {
 		opacity: 1,
 		x: 0,
-		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }
-	}
+		transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+	},
 }
 
 // Staggered container for children
@@ -65,9 +65,9 @@ export const staggerContainer: Variants = {
 		opacity: 1,
 		transition: {
 			staggerChildren: 0.1,
-			delayChildren: 0.1
-		}
-	}
+			delayChildren: 0.1,
+		},
+	},
 }
 
 // ============================================================================
@@ -90,7 +90,7 @@ export function AnimatedSection({
 	className = "",
 	delay = 0,
 	threshold = 0.2,
-	once = true
+	once = true,
 }: AnimatedSectionProps) {
 	const ref = useRef(null)
 	const isInView = useInView(ref, { once, amount: threshold })
@@ -125,7 +125,7 @@ export function StaggeredContainer({
 	className = "",
 	staggerDelay = 0.1,
 	threshold = 0.2,
-	once = true
+	once = true,
 }: StaggeredContainerProps) {
 	const ref = useRef(null)
 	const isInView = useInView(ref, { once, amount: threshold })
@@ -141,9 +141,9 @@ export function StaggeredContainer({
 					opacity: 1,
 					transition: {
 						staggerChildren: staggerDelay,
-						delayChildren: 0.1
-					}
-				}
+						delayChildren: 0.1,
+					},
+				},
 			}}
 			className={className}
 		>
@@ -188,7 +188,7 @@ export function TextReveal({
 	delay = 0,
 	staggerDelay = 0.05,
 	threshold = 0.3,
-	once = true
+	once = true,
 }: TextRevealProps) {
 	const ref = useRef(null)
 	const isInView = useInView(ref, { once, amount: threshold })
@@ -200,16 +200,16 @@ export function TextReveal({
 			opacity: 1,
 			transition: {
 				staggerChildren: staggerDelay,
-				delayChildren: delay
-			}
-		}
+				delayChildren: delay,
+			},
+		},
 	}
 
 	const wordVariant: Variants = {
 		hidden: {
 			opacity: 0,
 			y: 20,
-			filter: "blur(4px)"
+			filter: "blur(4px)",
 		},
 		visible: {
 			opacity: 1,
@@ -217,9 +217,9 @@ export function TextReveal({
 			filter: "blur(0px)",
 			transition: {
 				duration: 0.4,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	return (
@@ -233,11 +233,7 @@ export function TextReveal({
 		>
 			<Component className={className}>
 				{words.map((word, index) => (
-					<motion.span
-						key={index}
-						variants={wordVariant}
-						className="inline-block mr-[0.25em]"
-					>
+					<motion.span key={index} variants={wordVariant} className="inline-block mr-[0.25em]">
 						{word}
 					</motion.span>
 				))}
@@ -266,7 +262,7 @@ export function CharacterReveal({
 	delay = 0,
 	staggerDelay = 0.02,
 	threshold = 0.3,
-	once = true
+	once = true,
 }: CharacterRevealProps) {
 	const ref = useRef(null)
 	const isInView = useInView(ref, { once, amount: threshold })
@@ -278,24 +274,24 @@ export function CharacterReveal({
 			opacity: 1,
 			transition: {
 				staggerChildren: staggerDelay,
-				delayChildren: delay
-			}
-		}
+				delayChildren: delay,
+			},
+		},
 	}
 
 	const charVariant: Variants = {
 		hidden: {
 			opacity: 0,
-			y: 10
+			y: 10,
 		},
 		visible: {
 			opacity: 1,
 			y: 0,
 			transition: {
 				duration: 0.3,
-				ease: "easeOut"
-			}
-		}
+				ease: "easeOut",
+			},
+		},
 	}
 
 	return (
@@ -338,7 +334,7 @@ export function FloatingElement({
 	className = "",
 	duration = 4,
 	distance = 10,
-	delay = 0
+	delay = 0,
 }: FloatingElementProps) {
 	return (
 		<motion.div
@@ -351,7 +347,7 @@ export function FloatingElement({
 				repeat: Infinity,
 				repeatType: "loop",
 				ease: "easeInOut",
-				delay
+				delay,
 			}}
 		>
 			{children}
@@ -369,16 +365,11 @@ interface ParallaxProps {
 /**
  * Parallax - Creates a parallax scroll effect
  */
-export function Parallax({
-	children,
-	className = "",
-	speed = 0.5,
-	direction = "up"
-}: ParallaxProps) {
+export function Parallax({ children, className = "", speed = 0.5, direction = "up" }: ParallaxProps) {
 	const ref = useRef(null)
 	const { scrollYProgress } = useScroll({
 		target: ref,
-		offset: ["start end", "end start"]
+		offset: ["start end", "end start"],
 	})
 
 	const multiplier = direction === "up" ? -1 : 1
@@ -403,7 +394,7 @@ export function ScaleOnScroll({ children, className = "" }: ScaleOnScrollProps) 
 	const ref = useRef(null)
 	const { scrollYProgress } = useScroll({
 		target: ref,
-		offset: ["start end", "center center"]
+		offset: ["start end", "center center"],
 	})
 
 	const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1])
@@ -428,47 +419,30 @@ interface AnimatedButtonProps {
 /**
  * AnimatedButton - Button with hover and tap animations
  */
-export function AnimatedButton({
-	children,
-	className = "",
-	onClick,
-	href,
-	target,
-	rel
-}: AnimatedButtonProps) {
+export function AnimatedButton({ children, className = "", onClick, href, target, rel }: AnimatedButtonProps) {
 	const buttonMotionProps = {
 		whileHover: {
 			scale: 1.02,
-			boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)"
+			boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
 		},
 		whileTap: { scale: 0.98 },
 		transition: {
 			type: "spring" as const,
 			stiffness: 400,
-			damping: 17
-		}
+			damping: 17,
+		},
 	}
 
 	if (href) {
 		return (
-			<motion.a
-				href={href}
-				target={target}
-				rel={rel}
-				className={className}
-				{...buttonMotionProps}
-			>
+			<motion.a href={href} target={target} rel={rel} className={className} {...buttonMotionProps}>
 				{children}
 			</motion.a>
 		)
 	}
 
 	return (
-		<motion.button
-			onClick={onClick}
-			className={className}
-			{...buttonMotionProps}
-		>
+		<motion.button onClick={onClick} className={className} {...buttonMotionProps}>
 			{children}
 		</motion.button>
 	)
@@ -484,25 +458,20 @@ interface AnimatedCardProps {
 /**
  * AnimatedCard - Card with smooth hover effects
  */
-export function AnimatedCard({
-	children,
-	className = "",
-	hoverScale = 1.02,
-	onClick
-}: AnimatedCardProps) {
+export function AnimatedCard({ children, className = "", hoverScale = 1.02, onClick }: AnimatedCardProps) {
 	return (
 		<motion.div
 			className={className}
 			whileHover={{
 				scale: hoverScale,
 				y: -5,
-				boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)"
+				boxShadow: "0 20px 40px rgba(0, 0, 0, 0.1)",
 			}}
 			whileTap={{ scale: 0.98 }}
 			transition={{
 				type: "spring" as const,
 				stiffness: 300,
-				damping: 20
+				damping: 20,
 			}}
 			onClick={onClick}
 		>
@@ -535,7 +504,7 @@ export function CountUp({
 	delay = 0,
 	className = "",
 	threshold = 0.3,
-	once = true
+	once = true,
 }: CountUpProps) {
 	const ref = useRef(null)
 	const isInView = useInView(ref, { once, amount: threshold })
@@ -548,19 +517,8 @@ export function CountUp({
 			animate={isInView ? { opacity: 1 } : { opacity: 0 }}
 		>
 			{prefix}
-			<motion.span
-				initial={{ opacity: 0 }}
-				animate={isInView ? { opacity: 1 } : { opacity: 0 }}
-				transition={{ delay }}
-			>
-				{isInView && (
-					<CountNumber
-						value={value}
-						decimals={decimals}
-						duration={duration}
-						delay={delay}
-					/>
-				)}
+			<motion.span initial={{ opacity: 0 }} animate={isInView ? { opacity: 1 } : { opacity: 0 }} transition={{ delay }}>
+				{isInView && <CountNumber value={value} decimals={decimals} duration={duration} delay={delay} />}
 			</motion.span>
 			{suffix}
 		</motion.span>
@@ -571,7 +529,7 @@ function CountNumber({
 	value,
 	decimals,
 	duration,
-	delay
+	delay,
 }: {
 	value: number
 	decimals: number
@@ -581,31 +539,15 @@ function CountNumber({
 	const ref = useRef<HTMLSpanElement>(null)
 
 	return (
-		<motion.span
-			ref={ref}
-			initial={{ opacity: 0 }}
-			animate={{ opacity: 1 }}
-			transition={{ delay }}
-		>
-			<motion.span
-				initial={{ opacity: 1 }}
-				animate={{ opacity: 1 }}
-			>
+		<motion.span ref={ref} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay }}>
+			<motion.span initial={{ opacity: 1 }} animate={{ opacity: 1 }}>
 				<AnimatedDigits value={value} decimals={decimals} duration={duration} />
 			</motion.span>
 		</motion.span>
 	)
 }
 
-function AnimatedDigits({
-	value,
-	decimals,
-	duration
-}: {
-	value: number
-	decimals: number
-	duration: number
-}) {
+function AnimatedDigits({ value, decimals, duration }: { value: number; decimals: number; duration: number }) {
 	const [displayValue, setDisplayValue] = useState(0)
 
 	useEffect(() => {
@@ -636,7 +578,7 @@ function AnimatedDigits({
 		}
 		return val.toLocaleString(undefined, {
 			minimumFractionDigits: decimals,
-			maximumFractionDigits: decimals
+			maximumFractionDigits: decimals,
 		})
 	}
 

@@ -1,168 +1,35 @@
 import { useRef } from "react"
+
 import { motion, useInView } from "framer-motion"
 
-import { usePrivy } from "@privy-io/react-auth"
-import { Link, useNavigate } from "@tanstack/react-router"
-
-import { listOrganizationsByPrivyId } from "@/api/b2bClientHelpers"
-import quirkLogo from "@/assets/quirk-logo.svg"
-
-import { CTASection } from "./CTASection"
+import { BenefitsSection } from "./BenefitsSection"
 import { FAQSection } from "./FAQSection"
 import { HowItWorksSection } from "./HowItWorksSection"
-import { PlatformsCarouselSection } from "./PlatformsCarouselSection"
-import { ServicesShowcaseSection } from "./ServicesShowcaseSection"
-import { SupportedAssetsSection } from "./SupportedAssetsSection"
-import { WhyStablecoinSection } from "./WhyStablecoinSection"
-import { NewHeroSectionV2 } from "./NewHeroSectionV2"
+import { Navbar } from "./Navbar"
+import { NewHeroSection } from "./NewHeroSection"
+import { CoreServicesSection } from "./ServicesShowcaseSection"
 
 export function LandingPage() {
-	const { authenticated, ready, user } = usePrivy()
-	const navigate = useNavigate()
-
-	const handleGetStarted = async () => {
-		// Wait for Privy to be ready
-		if (!ready) {
-			await navigate({ to: "/login" })
-			return
-		}
-
-		// Check if user is authenticated
-		if (!authenticated || !user) {
-			await navigate({ to: "/login" })
-			return
-		}
-
-		// User is authenticated - check if they have products
-		try {
-			const clients = await listOrganizationsByPrivyId(user.id)
-
-			if (clients.length > 0) {
-				// User has products → Dashboard
-				await navigate({ to: "/dashboard" })
-			} else {
-				// User has no products → Onboarding
-				await navigate({ to: "/onboarding/create-product" })
-			}
-		} catch (error) {
-			// On error, redirect to onboarding
-			await navigate({ to: "/onboarding/create-product" })
-		}
-	}
-
-	const handleSignIn = async () => {
-		// Wait for Privy to be ready
-		if (!ready) {
-			await navigate({ to: "/login" })
-			return
-		}
-
-		// Check if user is already authenticated
-		if (!authenticated || !user) {
-			await navigate({ to: "/login" })
-			return
-		}
-
-		// User is already authenticated - check if they have products
-		try {
-			const clients = await listOrganizationsByPrivyId(user.id)
-
-			if (clients.length > 0) {
-				// User has products → Dashboard
-				await navigate({ to: "/dashboard" })
-			} else {
-				// User has no products → Onboarding
-				await navigate({ to: "/onboarding/create-product" })
-			}
-		} catch (error) {
-			// On error, redirect to onboarding
-			await navigate({ to: "/onboarding/create-product" })
-		}
-	}
-
 	return (
-		<div className="min-h-screen bg-white">
+		<div className="min-h-screen bg-claude-bg-50">
 			{/* Header - Pure glass blur (no background color) */}
-			<motion.header
-				className="fixed top-0 w-full z-50 transition-all duration-300 backdrop-blur-xl"
-				initial={{ y: -100 }}
-				animate={{ y: 0 }}
-				transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] as const }}
-			>
-				<div className="max-w-7xl mx-auto px-6 py-1.5 flex items-center justify-between">
-					<Link to="/" className="flex items-center gap-2 group">
-						<motion.div
-							className="relative p-1.5 -m-1.5 rounded-lg transition-all"
-							whileHover={{ scale: 1.05 }}
-							whileTap={{ scale: 0.95 }}
-						>
-							<img src={quirkLogo} alt="Quirk Logo" className="size-10 cursor-pointer" />
-						</motion.div>
-						<span className="text-lg font-bold text-gray-950">QUIRK</span>
-					</Link>
-					<nav className="hidden md:flex items-center gap-5">
-						<motion.div
-							initial={{ opacity: 0, y: -10 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.2 }}
-						>
-							<Link to="/demo" className="text-sm text-gray-700 hover:text-gray-950 transition-colors font-medium">
-								Demo
-							</Link>
-						</motion.div>
-						<motion.button
-							onClick={handleSignIn}
-							className="text-sm text-gray-700 hover:text-gray-950 transition-colors font-medium"
-							initial={{ opacity: 0, y: -10 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.3 }}
-							whileHover={{ scale: 1.02 }}
-							whileTap={{ scale: 0.98 }}
-						>
-							Sign In
-						</motion.button>
-						<motion.button
-							onClick={handleGetStarted}
-							className="bg-gray-900 text-white px-5 py-2 text-sm rounded-lg hover:bg-gray-800 transition-all font-medium shadow-sm cursor-pointer"
-							initial={{ opacity: 0, y: -10 }}
-							animate={{ opacity: 1, y: 0 }}
-							transition={{ delay: 0.4 }}
-							whileHover={{
-								scale: 1.02,
-								boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)"
-							}}
-							whileTap={{ scale: 0.98 }}
-						>
-							Get Started
-						</motion.button>
-					</nav>
-				</div>
-			</motion.header>
+			<Navbar />
 
-			{/* Hero */}
-			{/* <NewHeroSection /> */}
-			<NewHeroSectionV2 />
+			{/* 1. Hero */}
+			<NewHeroSection />
 
-			{/* Why Quirk - Bento grid benefits */}
-			<WhyStablecoinSection />
+			{/* 2. Solution Overview - Header + 4 solution cards */}
+			<CoreServicesSection />
 
-			{/* Explore our Services - 5 Core Features */}
-			<ServicesShowcaseSection />
+			{/* 3. Benefits - Stats + Platform showcase */}
+			<BenefitsSection />
+			{/* <PlatformShowcaseSection /> */}
 
-			{/* How It Works */}
+			{/* 4. How It Works */}
 			<HowItWorksSection />
 
-			{/* Platforms - Quirk Everywhere */}
-			<PlatformsCarouselSection />
-
-			{/* Supported Assets */}
-			<SupportedAssetsSection />
-
-			{/* FAQ Section */}
+			{/* 5. FAQ */}
 			<FAQSection />
-
-			{/* CTA Section */}
-			<CTASection />
 
 			{/* Footer */}
 			<AnimatedFooter />
@@ -180,9 +47,9 @@ function AnimatedFooter() {
 			opacity: 1,
 			transition: {
 				staggerChildren: 0.1,
-				delayChildren: 0.1
-			}
-		}
+				delayChildren: 0.1,
+			},
+		},
 	}
 
 	const itemVariants = {
@@ -192,9 +59,9 @@ function AnimatedFooter() {
 			y: 0,
 			transition: {
 				duration: 0.5,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	const linkVariants = {
@@ -204,9 +71,9 @@ function AnimatedFooter() {
 			x: 0,
 			transition: {
 				duration: 0.4,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	return (
@@ -218,106 +85,39 @@ function AnimatedFooter() {
 			animate={isInView ? "visible" : "hidden"}
 		>
 			<div className="max-w-7xl mx-auto px-6">
-				<motion.div
-					className="grid md:grid-cols-4 gap-8 mb-12"
-					variants={containerVariants}
-				>
+				<motion.div className="grid md:grid-cols-3 gap-12 mb-12" variants={containerVariants}>
 					<motion.div variants={itemVariants}>
-						<h4 className="font-bold text-gray-950 mb-4 text-2xl">Quirk</h4>
-						<p className="text-lg text-gray-700">White-label DeFi yield infrastructure for apps</p>
+						<h4 className="font-medium text-claude-gray-900 mb-4 text-2xl">Quirk</h4>
+						<p className="text-base text-claude-gray-700 leading-relaxed">
+							White-label DeFi yield infrastructure for apps
+						</p>
 					</motion.div>
 					<motion.div variants={itemVariants}>
-						<h4 className="font-semibold text-gray-950 mb-4 text-xl">Product</h4>
-						<ul className="space-y-2 text-base text-gray-700">
+						<h4 className="font-medium text-claude-gray-900 mb-4 text-lg">Navigation</h4>
+						<ul className="space-y-3 text-base text-claude-gray-700">
 							<motion.li variants={linkVariants}>
-								<motion.a
-									href="#"
-									className="hover:text-gray-950 transition-colors"
-									whileHover={{ x: 3 }}
-								>
-									Solutions
+								<motion.a href="/contact" className="hover:text-claude-gray-900 transition-colors" whileHover={{ x: 3 }}>
+									Get in Touch
 								</motion.a>
 							</motion.li>
 							<motion.li variants={linkVariants}>
-								<motion.a
-									href="#"
-									className="hover:text-gray-950 transition-colors"
-									whileHover={{ x: 3 }}
-								>
-									Strategies
-								</motion.a>
-							</motion.li>
-							<motion.li variants={linkVariants}>
-								<motion.a
-									href="#"
-									className="hover:text-gray-950 transition-colors"
-									whileHover={{ x: 3 }}
-								>
-									Pricing
+								<motion.a href="/login" className="hover:text-claude-gray-900 transition-colors" whileHover={{ x: 3 }}>
+									Log In
 								</motion.a>
 							</motion.li>
 						</ul>
 					</motion.div>
 					<motion.div variants={itemVariants}>
-						<h4 className="font-semibold text-gray-950 mb-4 text-xl">Company</h4>
-						<ul className="space-y-2 text-base text-gray-700">
+						<h4 className="font-medium text-claude-gray-900 mb-4 text-lg">Legal</h4>
+						<ul className="space-y-3 text-base text-claude-gray-700">
 							<motion.li variants={linkVariants}>
-								<motion.a
-									href="#"
-									className="hover:text-gray-950 transition-colors"
-									whileHover={{ x: 3 }}
-								>
-									About
+								<motion.a href="#" className="hover:text-claude-gray-900 transition-colors" whileHover={{ x: 3 }}>
+									Privacy Policy
 								</motion.a>
 							</motion.li>
 							<motion.li variants={linkVariants}>
-								<motion.a
-									href="#"
-									className="hover:text-gray-950 transition-colors"
-									whileHover={{ x: 3 }}
-								>
-									Careers
-								</motion.a>
-							</motion.li>
-							<motion.li variants={linkVariants}>
-								<motion.a
-									href="#"
-									className="hover:text-gray-950 transition-colors"
-									whileHover={{ x: 3 }}
-								>
-									Contact
-								</motion.a>
-							</motion.li>
-						</ul>
-					</motion.div>
-					<motion.div variants={itemVariants}>
-						<h4 className="font-semibold text-gray-950 mb-4 text-xl">Legal</h4>
-						<ul className="space-y-2 text-base text-gray-700">
-							<motion.li variants={linkVariants}>
-								<motion.a
-									href="#"
-									className="hover:text-gray-950 transition-colors"
-									whileHover={{ x: 3 }}
-								>
-									Privacy
-								</motion.a>
-							</motion.li>
-							<motion.li variants={linkVariants}>
-								<motion.a
-									href="#"
-									className="hover:text-gray-950 transition-colors"
-									whileHover={{ x: 3 }}
-								>
-									Terms
-								</motion.a>
-							</motion.li>
-							<motion.li variants={linkVariants}>
-								<motion.a
-									href="#"
-									className="hover:text-gray-950 transition-colors"
-									whileHover={{ x: 3 }}
-								>
-									Security
+								<motion.a href="#" className="hover:text-claude-gray-900 transition-colors" whileHover={{ x: 3 }}>
+									Terms of Service
 								</motion.a>
 							</motion.li>
 						</ul>

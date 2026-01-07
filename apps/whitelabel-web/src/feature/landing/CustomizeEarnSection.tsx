@@ -12,9 +12,9 @@ export function CustomizeEarnSection() {
 			opacity: 1,
 			transition: {
 				staggerChildren: 0.15,
-				delayChildren: 0.2
-			}
-		}
+				delayChildren: 0.2,
+			},
+		},
 	}
 
 	const titleVariants = {
@@ -24,9 +24,9 @@ export function CustomizeEarnSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	const cardVariants = {
@@ -36,9 +36,9 @@ export function CustomizeEarnSection() {
 			y: 0,
 			transition: {
 				duration: 0.5,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	const iconVariants = {
@@ -50,32 +50,32 @@ export function CustomizeEarnSection() {
 				type: "spring" as const,
 				stiffness: 200,
 				damping: 15,
-				delay: 0.2
-			}
-		}
+				delay: 0.2,
+			},
+		},
 	}
 
 	const features = [
 		{
 			icon: Zap,
 			title: "Fast Integration",
-			description: "Embed our SDK in minutes. Start offering yield without complex infrastructure."
+			description: "Embed our SDK in minutes. Start offering yield without complex infrastructure.",
 		},
 		{
 			icon: Shield,
 			title: "Secure Custody",
-			description: "Institutional-grade MPC custody powered by Privy. Funds are always protected."
+			description: "Institutional-grade MPC custody powered by Privy. Funds are always protected.",
 		},
 		{
 			icon: LayoutDashboard,
 			title: "White-Label Dashboard",
-			description: "Fully branded analytics and portfolio tracking for your clients."
+			description: "Fully branded analytics and portfolio tracking for your clients.",
 		},
 		{
 			icon: Bot,
 			title: "Agent Analytics",
-			description: "AI-powered market insights and predictive modeling to optimize yield."
-		}
+			description: "AI-powered market insights and predictive modeling to optimize yield.",
+		},
 	]
 
 	return (
@@ -89,36 +89,27 @@ export function CustomizeEarnSection() {
 					className="grid lg:grid-cols-2 gap-20 items-start"
 				>
 					{/* Left Column: Text Content */}
-					<motion.div
-						className="flex flex-col space-y-12 max-w-2xl"
-						variants={titleVariants}
-					>
+					<motion.div className="flex flex-col space-y-12 max-w-2xl" variants={titleVariants}>
 						<motion.h2
 							className="text-6xl font-bold tracking-tight text-gray-900 leading-[1.1]"
 							variants={titleVariants}
 						>
 							Customize Earn Solution At Scale
 						</motion.h2>
-						<motion.p
-							className="text-xl text-gray-600 leading-relaxed max-w-xl"
-							variants={titleVariants}
-						>
+						<motion.p className="text-xl text-gray-600 leading-relaxed max-w-xl" variants={titleVariants}>
 							Build your own yield product with our institutional-grade infrastructure.
 						</motion.p>
 					</motion.div>
 
 					{/* Right Column: Feature Cards Grid */}
-					<motion.div
-						className="grid sm:grid-cols-2 gap-x-12 gap-y-16"
-						variants={containerVariants}
-					>
+					<motion.div className="grid sm:grid-cols-2 gap-x-12 gap-y-16" variants={containerVariants}>
 						{features.map((feature, index) => (
 							<motion.div
 								key={index}
 								variants={cardVariants}
 								whileHover={{
 									x: 5,
-									transition: { duration: 0.2 }
+									transition: { duration: 0.2 },
 								}}
 								className="group flex flex-col items-start space-y-6 border-l-2 border-gray-200 pl-8 hover:border-gray-400 transition-colors duration-300"
 							>
@@ -127,7 +118,7 @@ export function CustomizeEarnSection() {
 									whileHover={{
 										scale: 1.1,
 										rotate: 5,
-										transition: { type: "spring" as const, stiffness: 400 }
+										transition: { type: "spring" as const, stiffness: 400 },
 									}}
 									className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-2 group-hover:bg-gray-100 group-hover:shadow-md transition-all duration-300"
 								>
@@ -137,9 +128,7 @@ export function CustomizeEarnSection() {
 									<h3 className="text-3xl font-normal text-gray-900 group-hover:text-gray-700 transition-colors">
 										{feature.title}
 									</h3>
-									<p className="text-gray-500 text-lg leading-relaxed">
-										{feature.description}
-									</p>
+									<p className="text-gray-500 text-lg leading-relaxed">{feature.description}</p>
 								</div>
 							</motion.div>
 						))}

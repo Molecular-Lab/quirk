@@ -58,12 +58,7 @@ export interface TokenBalance {
  * })
  * ```
  */
-export function useUserBalance({
-	walletAddress,
-	environment,
-	token = "usdc",
-	enabled = true,
-}: UseUserBalanceOptions) {
+export function useUserBalance({ walletAddress, environment, token = "usdc", enabled = true }: UseUserBalanceOptions) {
 	// Get environment from store if not provided
 	const storeEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
 	const activeEnvironment = environment ?? storeEnvironment
@@ -148,7 +143,7 @@ export function useMockUSDCBalance(walletAddress: string | undefined | null) {
 export function useCustodialBalance(
 	custodialWalletAddress: string | undefined | null,
 	environment: ApiEnvironment = "sandbox",
-	token: TokenKey = "usdc"
+	token: TokenKey = "usdc",
 ) {
 	return useUserBalance({
 		walletAddress: custodialWalletAddress,

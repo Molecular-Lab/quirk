@@ -58,8 +58,7 @@ export function CTASection() {
 								animate={isInView ? { opacity: 1, y: 0 } : {}}
 								transition={{ delay: 0.4 }}
 							>
-								Join the platforms already earning yield on their idle balances.
-								Integration takes minutes.
+								Join the platforms already earning yield on their idle balances. Integration takes minutes.
 							</motion.p>
 						</div>
 
@@ -78,10 +77,7 @@ export function CTASection() {
 								whileTap={{ scale: 0.98 }}
 							>
 								Join Waitlist
-								<motion.div
-									animate={{ x: [0, 5, 0] }}
-									transition={{ duration: 1.5, repeat: Infinity }}
-								>
+								<motion.div animate={{ x: [0, 5, 0] }} transition={{ duration: 1.5, repeat: Infinity }}>
 									<ArrowRight className="w-5 h-5" />
 								</motion.div>
 							</motion.a>

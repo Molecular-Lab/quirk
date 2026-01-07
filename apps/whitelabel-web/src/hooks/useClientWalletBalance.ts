@@ -63,4 +63,3 @@ export function useClientWalletBalance(enabled = true) {
 		refetchInterval: 60000, // Refetch every 60 seconds
 	})
 }
-

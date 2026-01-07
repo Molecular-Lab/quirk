@@ -89,12 +89,22 @@ export function EnvironmentToggle() {
 							Switch to Production Mode?
 						</AlertDialogTitle>
 						<AlertDialogDescription className="space-y-3">
-							<p>You are about to enable <strong>Production Mode</strong>. This will:</p>
+							<p>
+								You are about to enable <strong>Production Mode</strong>. This will:
+							</p>
 							<ul className="list-disc list-inside space-y-1 text-sm">
-								<li>Use <strong>live API keys</strong> (pk_live_xxx)</li>
-								<li>Process transactions on the <strong>production network</strong></li>
-								<li>Use <strong>real USDC</strong> and incur real gas fees</li>
-								<li>Affect <strong>real user funds</strong></li>
+								<li>
+									Use <strong>live API keys</strong> (pk_live_xxx)
+								</li>
+								<li>
+									Process transactions on the <strong>production network</strong>
+								</li>
+								<li>
+									Use <strong>real USDC</strong> and incur real gas fees
+								</li>
+								<li>
+									Affect <strong>real user funds</strong>
+								</li>
 							</ul>
 							<p className="text-red-600 font-semibold">
 								⚠️ Only enable production mode when you're ready to handle real money!
@@ -103,10 +113,7 @@ export function EnvironmentToggle() {
 					</AlertDialogHeader>
 					<AlertDialogFooter>
 						<AlertDialogCancel>Cancel</AlertDialogCancel>
-						<AlertDialogAction
-							onClick={confirmProductionSwitch}
-							className="bg-red-600 hover:bg-red-700 text-white"
-						>
+						<AlertDialogAction onClick={confirmProductionSwitch} className="bg-red-600 hover:bg-red-700 text-white">
 							Enable Production Mode
 						</AlertDialogAction>
 					</AlertDialogFooter>

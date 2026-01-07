@@ -23,16 +23,13 @@ export const WhyQuirkSection = () => {
 						animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
 						transition={{ duration: 0.6, delay: 0.1 }}
 					>
-						<h2 className="text-5xl lg:text-6xl font-semibold text-gray-900 mb-6">
-							Quirk
-						</h2>
+						<h2 className="text-5xl lg:text-6xl font-semibold text-gray-900 mb-6">Quirk</h2>
 						<p className="text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-							Quirk is an embedded financial service provider for your platform
-							that helps your workers and users save better.
+							Quirk is an embedded financial service provider for your platform that helps your workers and users save
+							better.
 						</p>
 						<p className="text-lg text-gray-500 mt-4 max-w-2xl mx-auto">
-							New seamless saving experiences — start right inside your apps and
-							help millions of workers.
+							New seamless saving experiences — start right inside your apps and help millions of workers.
 						</p>
 					</motion.div>
 
@@ -78,9 +75,7 @@ export const WhyQuirkSection = () => {
 											<div className="w-10 h-10 bg-gray-900 rounded-xl flex items-center justify-center">
 												<span className="text-white text-sm font-bold">Q</span>
 											</div>
-											<span className="text-xl font-semibold text-gray-900">
-												Wallet
-											</span>
+											<span className="text-xl font-semibold text-gray-900">Wallet</span>
 										</div>
 									</div>
 
@@ -92,17 +87,11 @@ export const WhyQuirkSection = () => {
 											animate={isInView ? { scale: 1 } : { scale: 0.95 }}
 											transition={{ delay: 0.5, duration: 0.4 }}
 										>
-											<p className="text-sm text-gray-300 mb-2">
-												Total Balance
-											</p>
+											<p className="text-sm text-gray-300 mb-2">Total Balance</p>
 											<p className="text-4xl font-bold mb-3">$12,450.00</p>
 											<div className="flex items-center gap-3">
-												<span className="text-sm bg-white/20 px-3 py-1.5 rounded-full">
-													+5.2% APY
-												</span>
-												<span className="text-sm text-gray-300">
-													Earning yield
-												</span>
+												<span className="text-sm bg-white/20 px-3 py-1.5 rounded-full">+5.2% APY</span>
+												<span className="text-sm text-gray-300">Earning yield</span>
 											</div>
 										</motion.div>
 
@@ -113,17 +102,11 @@ export const WhyQuirkSection = () => {
 													key={action}
 													className="bg-gray-100 rounded-xl p-4 text-center"
 													initial={{ opacity: 0, y: 10 }}
-													animate={
-														isInView
-															? { opacity: 1, y: 0 }
-															: { opacity: 0, y: 10 }
-													}
+													animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
 													transition={{ delay: 0.6 + i * 0.1 }}
 												>
 													<div className="w-10 h-10 bg-gray-200 rounded-full mx-auto mb-2" />
-													<span className="text-sm text-gray-600">
-														{action}
-													</span>
+													<span className="text-sm text-gray-600">{action}</span>
 												</motion.div>
 											))}
 										</div>

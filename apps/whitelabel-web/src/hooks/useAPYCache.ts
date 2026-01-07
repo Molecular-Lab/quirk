@@ -61,7 +61,9 @@ export function useAPYCache(token = "USDC", chainId = 8453) {
 				aave: protocols.find((p: any) => p.protocol === "aave")?.supplyAPY || "0.00",
 				compound: protocols.find((p: any) => p.protocol === "compound")?.supplyAPY || "0.00",
 				morpho: protocols.find((p: any) => p.protocol === "morpho")?.supplyAPY || "0.00",
-				timestamp: response.body?.timestamp ? new Date(response.body.timestamp).toISOString() : new Date().toISOString(),
+				timestamp: response.body?.timestamp
+					? new Date(response.body.timestamp).toISOString()
+					: new Date().toISOString(),
 			}
 
 			setAPYs(apyMap)

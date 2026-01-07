@@ -24,13 +24,13 @@ import { getUserBalance } from "@/api/b2bClientHelpers"
 import { useEnvironmentStore } from "@/store/environmentStore"
 
 export interface CustodialBalance {
-  balance: number           // Total effective balance as number (USD)
-  yieldEarned: number      // Yield earned as number (USD)
-  apy: string              // Annual percentage yield as string (e.g., "3.5%")
-  currency: string         // Currency code (e.g., "USD")
-  status: string           // Account status ("active" | "inactive")
-  entryIndex: string       // User's weighted entry index
-  currentIndex: string     // Current client growth index
+	balance: number // Total effective balance as number (USD)
+	yieldEarned: number // Yield earned as number (USD)
+	apy: string // Annual percentage yield as string (e.g., "3.5%")
+	currency: string // Currency code (e.g., "USD")
+	status: string // Account status ("active" | "inactive")
+	entryIndex: string // User's weighted entry index
+	currentIndex: string // Current client growth index
 }
 
 /**
@@ -40,37 +40,37 @@ export interface CustodialBalance {
  * @returns React Query result with CustodialBalance data
  */
 export function useCustodialBalance(enabled = true) {
-  const { user, authenticated } = usePrivy()
-  const apiEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
+	const { user, authenticated } = usePrivy()
+	const apiEnvironment = useEnvironmentStore((state) => state.apiEnvironment)
 
-  return useQuery({
-    queryKey: ["custodialBalance", user?.id, apiEnvironment],
-    queryFn: async (): Promise<CustodialBalance | null> => {
-      if (!user?.id) {
-        throw new Error("User not authenticated")
-      }
+	return useQuery({
+		queryKey: ["custodialBalance", user?.id, apiEnvironment],
+		queryFn: async (): Promise<CustodialBalance | null> => {
+			if (!user?.id) {
+				throw new Error("User not authenticated")
+			}
 
-      const response = await getUserBalance(user.id, {
-        environment: apiEnvironment,
-      })
+			const response = await getUserBalance(user.id, {
+				environment: apiEnvironment,
+			})
 
-      if (!response.found || !response.data) {
-        return null
-      }
+			if (!response.found || !response.data) {
+				return null
+			}
 
-      // Parse string values to numbers for easier display
-      return {
-        balance: parseFloat(response.data.balance),
-        yieldEarned: parseFloat(response.data.yield_earned),
-        apy: response.data.apy,
-        currency: response.data.currency,
-        status: response.data.status,
-        entryIndex: response.data.entry_index,
-        currentIndex: response.data.current_index,
-      }
-    },
-    enabled: enabled && authenticated && !!user?.id,
-    staleTime: 30000,  // 30 seconds - data is considered fresh for this duration
-    refetchInterval: 60000,  // Refetch every 60 seconds for fresh balance data
-  })
+			// Parse string values to numbers for easier display
+			return {
+				balance: parseFloat(response.data.balance),
+				yieldEarned: parseFloat(response.data.yield_earned),
+				apy: response.data.apy,
+				currency: response.data.currency,
+				status: response.data.status,
+				entryIndex: response.data.entry_index,
+				currentIndex: response.data.current_index,
+			}
+		},
+		enabled: enabled && authenticated && !!user?.id,
+		staleTime: 30000, // 30 seconds - data is considered fresh for this duration
+		refetchInterval: 60000, // Refetch every 60 seconds for fresh balance data
+	})
 }

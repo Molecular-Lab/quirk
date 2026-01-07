@@ -9,7 +9,7 @@ export function NewHeroSectionV2() {
 
 	const { scrollYProgress } = useScroll({
 		target: containerRef,
-		offset: ["start start", "end start"]
+		offset: ["start start", "end start"],
 	})
 
 	const backgroundY = useTransform(scrollYProgress, [0, 1], ["0%", "30%"])
@@ -25,9 +25,9 @@ export function NewHeroSectionV2() {
 			transition: {
 				duration: 0.6,
 				delay: 0.3 + custom * 0.15,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		})
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		}),
 	}
 
 	const subtitleVariants = {
@@ -38,9 +38,9 @@ export function NewHeroSectionV2() {
 			transition: {
 				duration: 0.6,
 				delay: 1.2 + custom * 0.1,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		})
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		}),
 	}
 
 	const phoneContainerVariants = {
@@ -51,9 +51,9 @@ export function NewHeroSectionV2() {
 			transition: {
 				duration: 0.7,
 				delay: 1.8,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	const balanceCardVariants = {
@@ -63,26 +63,16 @@ export function NewHeroSectionV2() {
 			opacity: 1,
 			transition: {
 				delay: 2.0,
-				duration: 0.4
-			}
-		}
+				duration: 0.4,
+			},
+		},
 	}
 
 	return (
-		<section
-			ref={containerRef}
-			className="relative min-h-screen flex items-center overflow-hidden"
-		>
+		<section ref={containerRef} className="relative min-h-screen flex items-center overflow-hidden">
 			{/* Animated GIF background with parallax */}
-			<motion.div
-				className="absolute inset-0 opacity-10"
-				style={{ y: backgroundY }}
-			>
-				<img
-					src="/Loop Background GIF by Trakto.gif"
-					className="w-full h-full object-cover"
-					alt=""
-				/>
+			<motion.div className="absolute inset-0 opacity-10" style={{ y: backgroundY }}>
+				<img src="/Loop Background GIF by Trakto.gif" className="w-full h-full object-cover" alt="" />
 			</motion.div>
 
 			{/* Overlay to soften with gray tones */}
@@ -136,7 +126,6 @@ export function NewHeroSectionV2() {
 				style={{ y: textY, opacity }}
 			>
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-
 					{/* LEFT COLUMN: Text Content */}
 					<div className="flex flex-col items-center text-center">
 						{/* Headlines */}
@@ -198,9 +187,7 @@ export function NewHeroSectionV2() {
 					>
 						{/* Phone Frame - Taller */}
 						<div className="relative z-10 w-[300px] lg:w-[360px]">
-							<motion.div
-								className="bg-gray-900 rounded-[3rem] p-3 relative"
-							>
+							<motion.div className="bg-gray-900 rounded-[3rem] p-3 relative">
 								{/* Phone Notch */}
 								<div className="absolute top-6 left-1/2 -translate-x-1/2 w-28 h-7 bg-gray-900 rounded-full z-[100]" />
 
@@ -227,53 +214,61 @@ export function NewHeroSectionV2() {
 											initial="hidden"
 											animate={isInView ? "visible" : "hidden"}
 										>
-											<p className="text-sm text-gray-300 mb-2">
-												Total Balance
-											</p>
+											<p className="text-sm text-gray-300 mb-2">Total Balance</p>
 											<p className="text-4xl font-bold mb-3">$12,450.00</p>
 											<div className="flex items-center gap-3">
-												<span className="text-sm bg-white/20 px-3 py-1.5 rounded-full">
-													+5.2% APY
-												</span>
-												<span className="text-sm text-gray-300">
-													Earning yield
-												</span>
+												<span className="text-sm bg-white/20 px-3 py-1.5 rounded-full">+5.2% APY</span>
+												<span className="text-sm text-gray-300">Earning yield</span>
 											</div>
 										</motion.div>
 
 										{/* Transaction List */}
 										<div className="space-y-3">
 											{[
-												{ type: "Yield Earned", amount: "+$12.50", time: "Today", color: "text-green-600", bg: "bg-white" },
-												{ type: "Transfer to Savings", amount: "-$500.00", time: "Yesterday", color: "text-gray-900", bg: "bg-white" },
-												{ type: "Yield Earned", amount: "+$11.80", time: "2 days ago", color: "text-green-600", bg: "bg-white" },
-												{ type: "Deposit", amount: "+$1,000.00", time: "3 days ago", color: "text-gray-900", bg: "bg-white" },
+												{
+													type: "Yield Earned",
+													amount: "+$12.50",
+													time: "Today",
+													color: "text-green-600",
+													bg: "bg-white",
+												},
+												{
+													type: "Transfer to Savings",
+													amount: "-$500.00",
+													time: "Yesterday",
+													color: "text-gray-900",
+													bg: "bg-white",
+												},
+												{
+													type: "Yield Earned",
+													amount: "+$11.80",
+													time: "2 days ago",
+													color: "text-green-600",
+													bg: "bg-white",
+												},
+												{
+													type: "Deposit",
+													amount: "+$1,000.00",
+													time: "3 days ago",
+													color: "text-gray-900",
+													bg: "bg-white",
+												},
 											].map((transaction, i) => (
 												<motion.div
 													key={i}
 													className={`${transaction.bg} rounded-xl p-4 flex items-center justify-between`}
 													initial={{ opacity: 0, y: 10 }}
-													animate={
-														isInView
-															? { opacity: 1, y: 0 }
-															: { opacity: 0, y: 10 }
-													}
+													animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
 													transition={{ delay: 2.2 + i * 0.1 }}
 												>
 													<div className="flex items-center gap-3">
 														<div className="w-2 h-2 bg-gray-900 rounded-full" />
 														<div>
-															<p className="text-sm font-medium text-gray-900">
-																{transaction.type}
-															</p>
-															<p className="text-xs text-gray-500">
-																{transaction.time}
-															</p>
+															<p className="text-sm font-medium text-gray-900">{transaction.type}</p>
+															<p className="text-xs text-gray-500">{transaction.time}</p>
 														</div>
 													</div>
-													<span className={`text-sm font-semibold ${transaction.color}`}>
-														{transaction.amount}
-													</span>
+													<span className={`text-sm font-semibold ${transaction.color}`}>{transaction.amount}</span>
 												</motion.div>
 											))}
 
@@ -284,11 +279,7 @@ export function NewHeroSectionV2() {
 												rel="noopener noreferrer"
 												className="block bg-gray-900 text-white text-center py-3 px-4 rounded-xl font-medium text-sm shadow-lg hover:bg-gray-800 transition-colors mt-3"
 												initial={{ opacity: 0, y: 10 }}
-												animate={
-													isInView
-														? { opacity: 1, y: 0 }
-														: { opacity: 0, y: 10 }
-												}
+												animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
 												transition={{ delay: 2.7 }}
 											>
 												Join Our Waitlist

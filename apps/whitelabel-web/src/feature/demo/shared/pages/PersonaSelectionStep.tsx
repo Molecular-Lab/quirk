@@ -223,9 +223,7 @@ export function PersonaSelectionStep({
 											<CardDescription className="text-xs mt-1">{persona.email}</CardDescription>
 										</div>
 									</div>
-									{isSelected && !isThisLoading && (
-										<Check className="w-5 h-5 text-accent" />
-									)}
+									{isSelected && !isThisLoading && <Check className="w-5 h-5 text-accent" />}
 								</div>
 							</CardHeader>
 
@@ -267,8 +265,8 @@ export function PersonaSelectionStep({
 			{/* Info */}
 			<div className="mt-6 p-4 bg-blue-50 rounded-lg">
 				<p className="text-sm text-blue-900">
-					<strong>💡 How it works:</strong> Each persona has a unique account in the selected environment. Your
-					data is isolated from other environments and platforms.
+					<strong>💡 How it works:</strong> Each persona has a unique account in the selected environment. Your data is
+					isolated from other environments and platforms.
 				</p>
 			</div>
 		</div>

@@ -45,12 +45,7 @@ interface AccordionItemComponentProps {
 	index: number
 }
 
-function AccordionItemComponent({
-	item,
-	isOpen,
-	onToggle,
-	index
-}: AccordionItemComponentProps) {
+function AccordionItemComponent({ item, isOpen, onToggle, index }: AccordionItemComponentProps) {
 	return (
 		<motion.div
 			initial={{ opacity: 0, y: 20 }}
@@ -64,9 +59,7 @@ function AccordionItemComponent({
 				whileHover={{ backgroundColor: "rgba(249, 250, 251, 0.5)" }}
 				transition={{ duration: 0.2 }}
 			>
-				<span className="text-lg font-medium text-gray-900 pr-4">
-					{item.question}
-				</span>
+				<span className="text-lg font-medium text-gray-900 pr-4">{item.question}</span>
 				<motion.div
 					animate={{ rotate: isOpen ? 180 : 0 }}
 					transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
@@ -84,7 +77,7 @@ function AccordionItemComponent({
 						exit={{ height: 0, opacity: 0 }}
 						transition={{
 							height: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const },
-							opacity: { duration: 0.2, delay: 0.1 }
+							opacity: { duration: 0.2, delay: 0.1 },
 						}}
 					>
 						<div className="px-6 pb-5">

@@ -1,5 +1,6 @@
-import { motion, useInView, AnimatePresence } from "framer-motion"
 import { useRef, useState } from "react"
+
+import { AnimatePresence, motion, useInView } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 
 interface FAQItem {
@@ -12,40 +13,46 @@ const faqItems: FAQItem[] = [
 	{
 		id: "1",
 		question: "What is Quirk?",
-		answer: "Quirk is a white-label DeFi yield infrastructure that allows platforms to offer institutional-grade yield products to their users. We provide secure custody, automated yield strategies, and a fully branded dashboard for your clients."
+		answer:
+			"Quirk is a white-label DeFi yield infrastructure that allows platforms to offer institutional-grade yield products to their users. We provide secure custody, automated yield strategies, and a fully branded dashboard for your clients.",
 	},
 	{
 		id: "2",
 		question: "How does the integration work?",
-		answer: "Integration is simple and fast. You can embed our SDK in minutes and start offering yield to your users without complex infrastructure setup. We handle the custody, yield generation, and compliance while you focus on your core product."
+		answer:
+			"Integration is simple and fast. You can embed our SDK in minutes and start offering yield to your users without complex infrastructure setup. We handle the custody, yield generation, and compliance while you focus on your core product.",
 	},
 	{
 		id: "3",
 		question: "What kind of yields can users expect?",
-		answer: "Our institutional-grade strategies offer competitive stablecoin yields of up to 5% APY. Yields are generated through diversified DeFi strategies including lending, staking, and liquidity provision, all optimized by our AI-powered agent."
+		answer:
+			"Our institutional-grade strategies offer competitive stablecoin yields of up to 5% APY. Yields are generated through diversified DeFi strategies including lending, staking, and liquidity provision, all optimized by our AI-powered agent.",
 	},
 	{
 		id: "4",
 		question: "How is custody handled?",
-		answer: "We use institutional-grade custody solutions. User authentication is powered by Privy. This ensures that user funds are always protected with the highest security standards, while maintaining the flexibility for quick withdrawals."
+		answer:
+			"We use institutional-grade custody solutions. User authentication is powered by Privy. This ensures that user funds are always protected with the highest security standards, while maintaining the flexibility for quick withdrawals.",
 	},
 	{
 		id: "5",
 		question: "What platforms can use Quirk?",
-		answer: "Quirk is designed for any platform handling user funds - fintech apps, freelance platforms, creator platforms, gig worker platforms, and e-commerce marketplaces. Any business with idle balances can turn them into revenue streams."
+		answer:
+			"Quirk is designed for any platform handling user funds - fintech apps, freelance platforms, creator platforms, gig worker platforms, and e-commerce marketplaces. Any business with idle balances can turn them into revenue streams.",
 	},
 	{
 		id: "6",
 		question: "How does revenue sharing work?",
-		answer: "Platforms keep 90% of the yield generated while Quirk takes only 10%. This means if your users generate $2.5M in yield, your platform keeps $2.25M and Quirk takes $250k."
-	}
+		answer:
+			"Platforms keep 90% of the yield generated while Quirk takes only 10%. This means if your users generate $2.5M in yield, your platform keeps $2.25M and Quirk takes $250k.",
+	},
 ]
 
 function AccordionItem({
 	item,
 	isOpen,
 	onToggle,
-	index
+	index,
 }: {
 	item: FAQItem
 	isOpen: boolean
@@ -65,9 +72,7 @@ function AccordionItem({
 				whileHover={{ backgroundColor: "rgba(249, 250, 251, 0.5)" }}
 				transition={{ duration: 0.2 }}
 			>
-				<span className="text-lg font-medium text-gray-900 pr-4">
-					{item.question}
-				</span>
+				<span className="text-lg font-medium text-claude-gray-900 pr-4">{item.question}</span>
 				<motion.div
 					animate={{ rotate: isOpen ? 180 : 0 }}
 					transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] as const }}
@@ -85,7 +90,7 @@ function AccordionItem({
 						exit={{ height: 0, opacity: 0 }}
 						transition={{
 							height: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const },
-							opacity: { duration: 0.2, delay: 0.1 }
+							opacity: { duration: 0.2, delay: 0.1 },
 						}}
 					>
 						<div className="px-6 pb-5">
@@ -93,7 +98,7 @@ function AccordionItem({
 								initial={{ y: -10 }}
 								animate={{ y: 0 }}
 								transition={{ duration: 0.2, delay: 0.1 }}
-								className="text-gray-600 leading-relaxed"
+								className="text-claude-gray-800 leading-relaxed"
 							>
 								{item.answer}
 							</motion.p>
@@ -120,9 +125,9 @@ export function FAQSection() {
 			opacity: 1,
 			transition: {
 				staggerChildren: 0.1,
-				delayChildren: 0.2
-			}
-		}
+				delayChildren: 0.2,
+			},
+		},
 	}
 
 	const titleVariants = {
@@ -132,13 +137,13 @@ export function FAQSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	return (
-		<section className="py-24 lg:py-32 bg-white overflow-hidden">
+		<section className="py-24 lg:py-32 bg-claude-bg-50 overflow-hidden">
 			<motion.div
 				ref={ref}
 				variants={containerVariants}
@@ -148,31 +153,24 @@ export function FAQSection() {
 			>
 				{/* Section Header */}
 				<motion.div className="text-center mb-16" variants={titleVariants}>
-					<motion.h2
-						className="text-4xl lg:text-5xl font-medium text-gray-900 mb-4"
-						variants={titleVariants}
-					>
+					<motion.h2 className="text-2xl lg:text-4xl font-normal text-claude-gray-900 mb-4" variants={titleVariants}>
 						Frequently Asked Questions
 					</motion.h2>
-					<motion.p
-						className="text-xl text-gray-600 max-w-2xl mx-auto"
-						variants={titleVariants}
-					>
+					<motion.p className="text-base text-claude-gray-800 max-w-2xl mx-auto" variants={titleVariants}>
 						Everything you need to know about Quirk
 					</motion.p>
 				</motion.div>
 
 				{/* FAQ Accordion */}
-				<motion.div
-					className="space-y-4"
-					variants={containerVariants}
-				>
+				<motion.div className="space-y-4" variants={containerVariants}>
 					{faqItems.map((item, index) => (
 						<AccordionItem
 							key={item.id}
 							item={item}
 							isOpen={openId === item.id}
-							onToggle={() => toggleItem(item.id)}
+							onToggle={() => {
+								toggleItem(item.id)
+							}}
 							index={index}
 						/>
 					))}
@@ -185,7 +183,7 @@ export function FAQSection() {
 					animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
 					transition={{ delay: 0.8, duration: 0.5 }}
 				>
-					<p className="text-gray-600 mb-4">Still have questions?</p>
+					<p className="text-claude-gray-800 mb-4">Still have questions?</p>
 					<motion.a
 						href="https://tally.so/r/VLGvyj"
 						target="_blank"
@@ -193,11 +191,11 @@ export function FAQSection() {
 						className="inline-block bg-gray-900 text-white px-8 py-3.5 rounded-lg hover:bg-gray-800 transition-colors font-medium"
 						whileHover={{
 							scale: 1.02,
-							boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)"
+							boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
 						}}
 						whileTap={{ scale: 0.98 }}
 					>
-						Join Waitlist
+						Let's Talk
 					</motion.a>
 				</motion.div>
 			</motion.div>

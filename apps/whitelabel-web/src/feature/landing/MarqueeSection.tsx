@@ -9,15 +9,18 @@ export function MarqueeSection() {
 		<section className="py-16 bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 overflow-hidden relative">
 			{/* Background pattern */}
 			<div className="absolute inset-0 opacity-10">
-				<div className="absolute inset-0" style={{
-					backgroundImage: `repeating-linear-gradient(
+				<div
+					className="absolute inset-0"
+					style={{
+						backgroundImage: `repeating-linear-gradient(
 						90deg,
 						transparent,
 						transparent 50px,
 						rgba(255,255,255,0.1) 50px,
 						rgba(255,255,255,0.1) 51px
-					)`
-				}} />
+					)`,
+					}}
+				/>
 			</div>
 
 			{/* Marquee container */}
@@ -29,12 +32,10 @@ export function MarqueeSection() {
 					transition={{
 						duration: 20,
 						repeat: Infinity,
-						ease: "linear"
+						ease: "linear",
 					}}
 				>
-					<span className="text-6xl md:text-8xl font-bold text-white/20 tracking-wider">
-						{repeatedText}
-					</span>
+					<span className="text-6xl md:text-8xl font-bold text-white/20 tracking-wider">{repeatedText}</span>
 				</motion.div>
 
 				{/* Center content overlay */}
@@ -46,12 +47,8 @@ export function MarqueeSection() {
 						transition={{ duration: 0.6 }}
 						className="text-center"
 					>
-						<h2 className="text-4xl md:text-6xl font-bold text-white mb-2">
-							WHY QUIRK?
-						</h2>
-						<p className="text-white/80 text-lg md:text-xl">
-							The infrastructure that powers yield
-						</p>
+						<h2 className="text-4xl md:text-6xl font-bold text-white mb-2">WHY QUIRK?</h2>
+						<p className="text-white/80 text-lg md:text-xl">The infrastructure that powers yield</p>
 					</motion.div>
 				</div>
 			</div>

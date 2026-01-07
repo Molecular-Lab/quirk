@@ -126,9 +126,7 @@ export function SetupWizardModal({ open, onComplete, onClose }: SetupWizardModal
 				<DialogHeader>
 					<DialogTitle>Demo Setup</DialogTitle>
 					<DialogDescription>
-						{currentStep === 1
-							? "Configure your product and API key"
-							: "Choose your demo user persona"}
+						{currentStep === 1 ? "Configure your product and API key" : "Choose your demo user persona"}
 					</DialogDescription>
 				</DialogHeader>
 

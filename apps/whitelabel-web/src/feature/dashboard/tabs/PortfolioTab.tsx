@@ -8,7 +8,6 @@ import { ExternalLink, TrendingUp } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
-
 // Mock data - will be replaced with real data from API
 const MOCK_PORTFOLIOS = [
 	{
@@ -58,7 +57,10 @@ export default function PortfolioTab(): React.JSX.Element {
 					{/* Strategy Breakdown */}
 					<div className="space-y-4">
 						{MOCK_STRATEGIES.map((strategy, index) => (
-							<div key={index} className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors">
+							<div
+								key={index}
+								className="flex items-center justify-between p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors"
+							>
 								<div className="flex items-center gap-3">
 									<div className={`w-3 h-3 rounded-full ${strategy.color}`}></div>
 									<div>

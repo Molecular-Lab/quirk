@@ -27,9 +27,7 @@ export function TradingStrategiesSection() {
 
 		if (diff === 0) return
 
-		const otherStrategies = Object.keys(allocations).filter(
-			(key) => key !== strategy,
-		) as (keyof typeof allocations)[]
+		const otherStrategies = Object.keys(allocations).filter((key) => key !== strategy) as (keyof typeof allocations)[]
 
 		// Calculate how much we need to take from/give to other sliders
 		const otherTotal = otherStrategies.reduce((sum, key) => sum + allocations[key], 0)
@@ -73,7 +71,13 @@ export function TradingStrategiesSection() {
 		labels: ["Lending", "Staking", "Arbitrage", "CeFi", "Liquidity Provider"],
 		datasets: [
 			{
-				data: [allocations.lending, allocations.staking, allocations.arbitrage, allocations.cefi, allocations.liquidityProvider],
+				data: [
+					allocations.lending,
+					allocations.staking,
+					allocations.arbitrage,
+					allocations.cefi,
+					allocations.liquidityProvider,
+				],
 				backgroundColor: [
 					"#6B7280", // Gray-500 for Lending
 					"#60A5FA", // Softer blue for Staking
@@ -121,9 +125,9 @@ export function TradingStrategiesSection() {
 			opacity: 1,
 			transition: {
 				staggerChildren: 0.1,
-				delayChildren: 0.2
-			}
-		}
+				delayChildren: 0.2,
+			},
+		},
 	}
 
 	const titleVariants = {
@@ -133,9 +137,9 @@ export function TradingStrategiesSection() {
 			y: 0,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	const cardVariants = {
@@ -146,9 +150,9 @@ export function TradingStrategiesSection() {
 			scale: 1,
 			transition: {
 				duration: 0.6,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	const sliderVariants = {
@@ -159,9 +163,9 @@ export function TradingStrategiesSection() {
 			transition: {
 				duration: 0.4,
 				delay: 0.3 + index * 0.1,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		})
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		}),
 	}
 
 	const chartVariants = {
@@ -172,9 +176,9 @@ export function TradingStrategiesSection() {
 			rotate: 0,
 			transition: {
 				duration: 0.8,
-				ease: [0.22, 1, 0.36, 1] as const
-			}
-		}
+				ease: [0.22, 1, 0.36, 1] as const,
+			},
+		},
 	}
 
 	// Animated percentage in center
@@ -185,7 +189,7 @@ export function TradingStrategiesSection() {
 		if (isInView) {
 			animate(count, totalAllocation, {
 				duration: 1,
-				ease: [0.22, 1, 0.36, 1] as const
+				ease: [0.22, 1, 0.36, 1] as const,
 			})
 		}
 
@@ -197,7 +201,7 @@ export function TradingStrategiesSection() {
 		{ key: "staking" as const, label: "Staking", color: "#60A5FA" },
 		{ key: "arbitrage" as const, label: "Arbitrage", color: "#FBBF24" },
 		{ key: "cefi" as const, label: "CeFi", color: "#34D399" },
-		{ key: "liquidityProvider" as const, label: "Liquidity Provider", color: "#F472B6" }
+		{ key: "liquidityProvider" as const, label: "Liquidity Provider", color: "#F472B6" },
 	]
 
 	return (
@@ -210,10 +214,7 @@ export function TradingStrategiesSection() {
 				className="max-w-7xl mx-auto px-6 w-full"
 			>
 				<motion.div className="text-center mb-16" variants={titleVariants}>
-					<motion.h2
-						className="text-6xl font-bold text-gray-950"
-						variants={titleVariants}
-					>
+					<motion.h2 className="text-6xl font-bold text-gray-950" variants={titleVariants}>
 						Institutional Earn Strategies
 					</motion.h2>
 				</motion.div>
@@ -223,7 +224,7 @@ export function TradingStrategiesSection() {
 					whileHover={{
 						y: -5,
 						boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.1)",
-						transition: { duration: 0.3 }
+						transition: { duration: 0.3 },
 					}}
 					className="relative bg-white/90 backdrop-blur-md rounded-xl p-12 shadow-sm border border-gray-150 overflow-hidden"
 				>
@@ -283,12 +284,7 @@ export function TradingStrategiesSection() {
 							</motion.div>
 							<div className="space-y-5">
 								{strategies.map((strategy, index) => (
-									<motion.div
-										key={strategy.key}
-										className="space-y-2"
-										custom={index}
-										variants={sliderVariants}
-									>
+									<motion.div key={strategy.key} className="space-y-2" custom={index} variants={sliderVariants}>
 										<div className="flex items-center justify-between">
 											<label className="text-gray-950 font-semibold text-lg">{strategy.label}</label>
 											<motion.div
