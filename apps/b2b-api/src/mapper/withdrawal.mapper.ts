@@ -18,6 +18,7 @@ export function mapWithdrawalToDto(
 		sharesBurned: undefined, // Not stored in withdrawal_transactions table
 		finalAmount: withdrawal.actualAmount || undefined,
 		status: mapWithdrawalStatus(withdrawal.status),
+		environment: withdrawal.environment as "sandbox" | "production" | undefined,
 		transactionHash: withdrawal.gatewayOrderId || undefined,
 		createdAt: withdrawal.createdAt.toISOString(),
 	};

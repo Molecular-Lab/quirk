@@ -136,6 +136,7 @@ export function RampOperationsPage() {
 			if (response && typeof response === "object" && "withdrawals" in response) {
 				const withdrawalList = (response as any).withdrawals
 				console.log("[OperationsDashboard] Withdrawals array:", withdrawalList)
+				console.log(`[OperationsDashboard] Found ${withdrawalList?.length || 0} withdrawals for environment: ${apiEnvironment}`)
 
 				const mappedWithdrawals: WithdrawalOrder[] = (Array.isArray(withdrawalList) ? withdrawalList : []).map(
 					(w: any) => ({
@@ -150,6 +151,7 @@ export function RampOperationsPage() {
 				)
 
 				console.log("[OperationsDashboard] Mapped withdrawals:", mappedWithdrawals)
+				console.log(`[OperationsDashboard] Setting ${mappedWithdrawals.length} withdrawals in state`)
 				setWithdrawals(mappedWithdrawals)
 			} else {
 				setWithdrawals([])

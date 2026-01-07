@@ -19,6 +19,8 @@ export interface EnvironmentConfig {
 /**
  * Environment configuration using centralized NETWORK_CONFIG
  * Maps UI environment (dev/prod) to network configuration
+ * ✅ Sandbox → Ethereum Sepolia (testnet)
+ * ✅ Production → Base Mainnet (mainnet)
  */
 export const ENV_CONFIG: Record<Environment, EnvironmentConfig> = {
 	dev: {
@@ -31,13 +33,13 @@ export const ENV_CONFIG: Record<Environment, EnvironmentConfig> = {
 		isTestnet: NETWORK_CONFIG.eth_sepolia.isTestnet,
 	},
 	prod: {
-		chainId: NETWORK_CONFIG.eth_mainnet.chainId,
-		name: NETWORK_CONFIG.eth_mainnet.name,
-		rpcUrl: NETWORK_CONFIG.eth_mainnet.rpcUrl || import.meta.env.VITE_MAINNET_RPC_URL || "https://eth.llamarpc.com",
-		explorerUrl: NETWORK_CONFIG.eth_mainnet.explorerUrl,
+		chainId: NETWORK_CONFIG.base_mainnet.chainId,
+		name: NETWORK_CONFIG.base_mainnet.name,
+		rpcUrl: NETWORK_CONFIG.base_mainnet.rpcUrl || import.meta.env.VITE_BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
+		explorerUrl: NETWORK_CONFIG.base_mainnet.explorerUrl,
 		enabled: true, // Enabled for production testing
-		networkKey: "eth_mainnet",
-		isTestnet: NETWORK_CONFIG.eth_mainnet.isTestnet,
+		networkKey: "base_mainnet",
+		isTestnet: NETWORK_CONFIG.base_mainnet.isTestnet,
 	},
 }
 

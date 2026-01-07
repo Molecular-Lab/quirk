@@ -20,6 +20,7 @@ import BigNumber from "bignumber.js"
 
 import { ClientGrowthIndexService } from "../../service/client-growth-index.service"
 import { RevenueService } from "../../service/revenue.service"
+import { TokenTransferService, type TransferResult } from "../../service/token-transfer.service"
 
 import type { CreateWithdrawalRequest, WithdrawalResponse } from "../../dto/b2b"
 import type { AuditRepository } from "../../repository/postgres/audit.repository"
@@ -36,6 +37,8 @@ import type {
 } from "@quirk/sqlcgen"
 
 export class B2BWithdrawalUseCase {
+	private tokenTransferService: TokenTransferService
+
 	constructor(
 		private readonly withdrawalRepository: WithdrawalRepository,
 		private readonly vaultRepository: VaultRepository,
@@ -44,7 +47,9 @@ export class B2BWithdrawalUseCase {
 		private readonly revenueRepository: RevenueRepository,
 		private readonly clientGrowthIndexService: ClientGrowthIndexService,
 		private readonly revenueService: RevenueService,
-	) {}
+	) {
+		this.tokenTransferService = new TokenTransferService()
+	}
 
 	/**
 	 * Request withdrawal (FLOW 8 - SIMPLIFIED with environment support)
@@ -179,6 +184,7 @@ export class B2BWithdrawalUseCase {
 			withdrawal.id,
 			userVault.id,
 			actualWithdrawalAmount.toString(), // Use actual amount after fee deduction
+			clientGrowthIndex, // Pass growth index to calculate shares
 		)
 
 		// ✅ STEP 7: Update end_user_vault.total_withdrawn
@@ -319,25 +325,84 @@ export class B2BWithdrawalUseCase {
 
 	/**
 	 * Create withdrawal queue (crypto unstaking plan)
-	 * ✅ SIMPLIFIED: No shares tracking, just fiat amounts
+	 * Calculates shares to burn based on withdrawal amount and client growth index
 	 */
 	private async createWithdrawalQueue(
 		clientId: string,
 		withdrawalTransactionId: string,
 		endUserVaultId: string,
 		estimatedAmount: string,
+		clientGrowthIndex: string,
 	): Promise<void> {
+		// Convert USD amount to USDC units (6 decimals)
+		// e.g., "10" USD → "10000000" USDC units
+		const amountInUSDCUnits = new BigNumber(estimatedAmount)
+			.multipliedBy(1e6)
+			.toFixed(0)
+
+		// Calculate shares to burn using the client growth index
+		const sharesToBurn = this.vaultRepository.calculateSharesForWithdrawal(
+			amountInUSDCUnits,
+			clientGrowthIndex
+		)
+
 		// TODO: Query vault_protocol_balances to determine optimal unstaking
 		await this.withdrawalRepository.createQueueItem({
 			clientId,
 			withdrawalTransactionId,
 			endUserVaultId,
-			sharesToBurn: "0", // ✅ No shares in simplified architecture
+			sharesToBurn, // ✅ Calculated shares based on growth index
 			estimatedAmount,
 			protocolsToUnstake: null,
 			priority: 1,
-			status: "pending",
+			status: "queued", // ✅ Must be 'queued' not 'pending' per DB constraint
 		})
+	}
+
+	/**
+	 * Transfer tokens from custodial wallet back to oracle (for off-ramp)
+	 *
+	 * This is the REVERSE of deposit flow:
+	 * - Deposit: Oracle/Minter → Custodial
+	 * - Withdrawal: Custodial → Oracle
+	 *
+	 * @param chainId - Chain ID (Sepolia: 11155111, Base Mainnet: 8453)
+	 * @param tokenAddress - Token contract address
+	 * @param oracleAddress - Oracle wallet address (destination)
+	 * @param amount - Amount to transfer (in USDC, e.g., "1000.50")
+	 * @param custodialPrivateKey - Custodial wallet private key (to sign the transfer)
+	 * @param rpcUrl - Optional custom RPC URL
+	 * @returns Transfer result with status and transaction hash
+	 */
+	async transferFromCustodialToOracle(
+		chainId: string,
+		tokenAddress: string,
+		oracleAddress: string,
+		amount: string,
+		custodialPrivateKey: string,
+		rpcUrl?: string,
+	): Promise<TransferResult> {
+		const result = await this.tokenTransferService.transferFromCustodialToOracle({
+			chainId,
+			tokenAddress,
+			custodialWallet: oracleAddress, // In this case, custodialWallet param is the destination (oracle)
+			amount,
+			privateKey: custodialPrivateKey,
+			rpcUrl,
+		})
+
+		if (!result.success) {
+			if (result.status === "insufficient_balance") {
+				console.error("[Withdrawal] ❌ Insufficient custodial balance:", {
+					available: result.oracleBalance,
+					required: result.requiredAmount,
+				})
+			} else {
+				console.error("[Withdrawal] ❌ Transfer failed:", result.error)
+			}
+		}
+
+		return result
 	}
 
 	/**

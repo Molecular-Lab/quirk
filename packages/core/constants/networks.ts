@@ -156,6 +156,102 @@ export const NETWORK_CONFIG = {
 			},
 		},
 	},
+
+	base_mainnet: {
+		chainId: 8453,
+		name: "Base Mainnet",
+		shortName: "base",
+		nativeCurrency: {
+			name: "Ether",
+			symbol: "ETH",
+			decimals: 18,
+		},
+		rpcUrl: process.env.BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
+		explorerUrl: "https://basescan.org",
+		isTestnet: false,
+		token: {
+			eth: {
+				address: "0x0000000000000000000000000000000000000000",
+				symbol: "ETH",
+				decimals: 18,
+				type: TOKEN_TYPE.NATIVE,
+				isNative: true,
+			},
+			weth: {
+				address: "0x4200000000000000000000000000000000000006",
+				symbol: "WETH",
+				decimals: 18,
+				type: TOKEN_TYPE.WRAPPED_NATIVE,
+				isNative: false,
+			},
+			usdc: {
+				address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+				symbol: "USDC",
+				decimals: 6,
+				type: TOKEN_TYPE.STABLECOIN,
+				isNative: false,
+			},
+			usdt: {
+				address: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+				symbol: "USDT",
+				decimals: 6,
+				type: TOKEN_TYPE.STABLECOIN,
+				isNative: false,
+			},
+			mock_usdc: null, // Not available on mainnet
+		},
+	},
+
+	base_sepolia: {
+		chainId: 84532,
+		name: "Base Sepolia",
+		shortName: "base",
+		nativeCurrency: {
+			name: "Sepolia Ether",
+			symbol: "ETH",
+			decimals: 18,
+		},
+		rpcUrl: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
+		explorerUrl: "https://sepolia.basescan.org",
+		isTestnet: true,
+		token: {
+			eth: {
+				address: "0x0000000000000000000000000000000000000000",
+				symbol: "ETH",
+				decimals: 18,
+				type: TOKEN_TYPE.NATIVE,
+				isNative: true,
+			},
+			weth: {
+				address: "0x4200000000000000000000000000000000000006",
+				symbol: "WETH",
+				decimals: 18,
+				type: TOKEN_TYPE.WRAPPED_NATIVE,
+				isNative: false,
+			},
+			usdc: {
+				address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // Mock USDC
+				symbol: "USDC",
+				decimals: 6,
+				type: TOKEN_TYPE.MOCK,
+				isNative: false,
+			},
+			usdt: {
+				address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // Same as Mock USDC for now
+				symbol: "USDT",
+				decimals: 6,
+				type: TOKEN_TYPE.MOCK,
+				isNative: false,
+			},
+			mock_usdc: {
+				address: "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+				symbol: "MOCK_USDC",
+				decimals: 6,
+				type: TOKEN_TYPE.MOCK,
+				isNative: false,
+			},
+		},
+	},
 } as const
 
 // Type helpers

@@ -209,6 +209,14 @@ export class ClientService {
 	}
 
 	/**
+	 * Deduct from idle balance (after withdrawal)
+	 * Called when funds leave the DeFi system via withdrawal
+	 */
+	async deductFromIdleBalance(clientId: string, amount: string): Promise<void> {
+		await this.clientUseCase.deductFromIdleBalance(clientId, amount);
+	}
+
+	/**
 	 * Get complete dashboard summary
 	 * Combines balances, revenue, end-users, and recent transactions
 	 */

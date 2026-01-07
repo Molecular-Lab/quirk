@@ -30,6 +30,7 @@ export interface WithdrawalResponse {
 	currency: string
 	status: string
 	destinationType: string
+	environment?: "sandbox" | "production"
 	createdAt: Date
 	completedAt: Date | null
 	// Fee breakdown (if withdrawal processed)

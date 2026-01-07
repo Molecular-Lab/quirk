@@ -12,14 +12,18 @@ import { useEffect, useMemo, useState } from "react"
 import { useNavigate } from "@tanstack/react-router"
 import { Home, Loader2, RefreshCw, TrendingUp, Wallet } from "lucide-react"
 
+import { NETWORK_CONFIG } from "@quirk/core/constants"
+
 import { createFiatDeposit, createUser, createWithdrawal, getUserByClientUserId } from "@/api/b2bClientHelpers"
 import { LandingNavbar } from "@/feature/landing/LandingNavbar"
 import { useClientContextStore } from "@/store/clientContextStore"
 import { useDemoProductStore } from "@/store/demoProductStore"
 import { useDemoStore, useHydrated } from "@/store/demoStore"
+import { useEnvironmentStore } from "@/store/environmentStore"
 
 import { DemoSettings } from "../DemoSettings"
 import { DepositModal } from "../DepositModal"
+import { WithdrawModal } from "../WithdrawModal"
 import { useDemoBalance } from "../hooks/useDemoBalance"
 
 import { SetupWizardModal } from "./SetupWizardModal"
@@ -37,6 +41,7 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 
 	const [currentCardIndex, setCurrentCardIndex] = useState(0)
 	const [isDepositModalOpen, setIsDepositModalOpen] = useState(false)
+	const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false)
 	const [touchStart, setTouchStart] = useState(0)
 	const [touchEnd, setTouchEnd] = useState(0)
 
@@ -47,6 +52,10 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 
 	// Get selected product info
 	const { hasSelectedProduct } = useDemoProductStore()
+
+	// Get environment config for vaultId construction
+	const { getConfig } = useEnvironmentStore()
+	const networkConfig = getConfig()
 
 	// Get demo-specific state from demoStore
 	const {
@@ -353,7 +362,7 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 		}
 	}
 
-	const handleWithdraw = async () => {
+	const handleWithdraw = () => {
 		if (!endUserId || !endUserClientUserId) {
 			setError("No end-user account found. Please create an account first.")
 			return
@@ -366,28 +375,36 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 			return
 		}
 
-		// Prompt for withdrawal amount
-		const amountStr = window.prompt(`Enter withdrawal amount (Available: $${currentBalance.toFixed(2)}):`)
-		if (!amountStr) return // User cancelled
+		// Open withdraw modal
+		setIsWithdrawModalOpen(true)
+	}
 
-		const amount = parseFloat(amountStr)
-		if (isNaN(amount) || amount <= 0) {
-			setError("Please enter a valid amount.")
-			return
-		}
-
-		if (amount > currentBalance) {
-			setError(`Withdrawal amount ($${amount.toFixed(2)}) exceeds available balance ($${currentBalance.toFixed(2)}).`)
-			return
+	const handleWithdrawSubmit = async (amount: number) => {
+		if (!endUserClientUserId) {
+			throw new Error("No end-user account found. Please create an account first.")
 		}
 
 		setIsDepositing(true) // Reuse deposit loading state
 		setError(null)
 
 		try {
+			// Determine vaultId based on environment using network config
+			// Format: "chainId-tokenAddress"
+			const chainId = networkConfig.chainId
+			const usdcAddress = NETWORK_CONFIG[networkConfig.networkKey].token.usdc?.address
+			
+			if (!usdcAddress) {
+				throw new Error(`USDC address not configured for ${networkConfig.name}`)
+			}
+			
+			const vaultId = `${chainId}-${usdcAddress}`
+
 			console.log(`[${config.platformName} Demo] Creating withdrawal:`, {
 				userId: endUserClientUserId,
 				amount: amount.toString(),
+				vaultId,
+				chainId,
+				network: networkConfig.name,
 				environment: selectedEnvironment,
 			})
 
@@ -395,23 +412,39 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 			const response = await createWithdrawal({
 				userId: endUserClientUserId,
 				amount: amount.toString(),
-				withdrawal_method: "fiat_to_end_user",
+				vaultId,
+				withdrawal_method: "fiat_to_client",
 				destination_currency: "USD",
 				environment: selectedEnvironment,
 			})
 
-			console.log(`[${config.platformName} Demo] Withdrawal successful:`, response)
+			console.log(`[${config.platformName} Demo] Withdrawal created successfully:`, {
+				withdrawalId: (response as any)?.id,
+				orderId: (response as any)?.orderId,
+				status: (response as any)?.status,
+				amount: (response as any)?.requestedAmount,
+				environment: selectedEnvironment,
+			})
 
 			// Refetch balance after successful withdrawal
 			setTimeout(() => {
 				refetchBalance()
 			}, 1000)
-
-			// Show success message
-			alert(`✅ Withdrawal of $${amount.toFixed(2)} initiated successfully!`)
 		} catch (err) {
 			console.error(`[${config.platformName} Demo] Failed to create withdrawal:`, err)
-			setError(err instanceof Error ? err.message : "Failed to create withdrawal. Please try again.")
+			
+			// Extract detailed error message
+			let errorMessage = "Failed to create withdrawal. Please try again."
+			if (err instanceof Error) {
+				errorMessage = err.message
+			} else if (typeof err === "object" && err !== null && "body" in err) {
+				const errorBody = err.body as any
+				errorMessage = errorBody?.error || errorMessage
+			}
+			
+			console.error(`[${config.platformName} Demo] Detailed error:`, errorMessage)
+			setError(errorMessage)
+			throw new Error(errorMessage)
 		} finally {
 			setIsDepositing(false)
 		}
@@ -682,6 +715,16 @@ export function BaseDemoApp({ config }: BaseDemoAppProps) {
 				}}
 				onDeposit={handleDeposit}
 				merchantBalance={platformBalance}
+			/>
+
+			{/* Withdraw Modal */}
+			<WithdrawModal
+				isOpen={isWithdrawModalOpen}
+				onClose={() => {
+					setIsWithdrawModalOpen(false)
+				}}
+				onWithdraw={handleWithdrawSubmit}
+				currentBalance={realBalance ? parseFloat(realBalance.balance) : 0}
 			/>
 
 			{/* Demo Settings */}

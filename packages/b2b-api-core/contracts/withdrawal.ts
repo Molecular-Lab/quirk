@@ -39,6 +39,15 @@ const CreateWithdrawalSchema = z.object({
 
 	// ✅ Fee deduction control (default: true)
 	deductFees: z.boolean().optional().default(true),
+
+	// ✅ Environment selection (default: sandbox)
+	environment: z.enum(["sandbox", "production"]).optional().default("sandbox"),
+
+	// ✅ Network selection (e.g., "sepolia", "mainnet")
+	network: z.string().optional(),
+
+	// ✅ Oracle address for withdrawals
+	oracleAddress: z.string().optional(),
 });
 
 const CompleteWithdrawalSchema = z.object({
@@ -64,6 +73,7 @@ const WithdrawalResponseSchema = z.object({
 	withdrawal_method: z.enum(["crypto", "fiat_to_client", "fiat_to_end_user"]).optional(),
 	destination_currency: z.string().optional(),
 	destination_address: z.string().optional(),
+	environment: z.enum(["sandbox", "production"]).optional(),
 
 	// Transaction info
 	transactionHash: z.string().optional(),
@@ -106,45 +116,7 @@ export const withdrawalContract = c.router({
 		summary: "Request a new withdrawal",
 	},
 
-	// Get withdrawal by ID
-	getById: {
-		method: "GET",
-		path: "/withdrawals/:id",
-		responses: {
-			200: z.object({
-				found: z.boolean(),
-				data: WithdrawalResponseSchema.nullable(),
-				message: z.string().optional(),
-			}),
-			500: z.object({ success: z.boolean(), error: z.string() }),
-		},
-		summary: "Get withdrawal by ID",
-	},
-
-	// Complete withdrawal
-	complete: {
-		method: "POST",
-		path: "/withdrawals/:id/complete",
-		responses: {
-			200: WithdrawalResponseSchema,
-			400: z.object({ error: z.string() }),
-		},
-		body: CompleteWithdrawalSchema,
-		summary: "Mark withdrawal as completed",
-	},
-
-	// Fail withdrawal
-	fail: {
-		method: "POST",
-		path: "/withdrawals/:id/fail",
-		responses: {
-			200: WithdrawalResponseSchema,
-			400: z.object({ error: z.string() }),
-		},
-		body: FailWithdrawalSchema,
-		summary: "Mark withdrawal as failed and restore shares",
-	},
-
+	// ⚠️ IMPORTANT: Specific routes MUST come before generic /:id routes
 	// List pending withdrawals (Operations Dashboard)
 	listPending: {
 		method: "GET",
@@ -201,5 +173,96 @@ export const withdrawalContract = c.router({
 			200: WithdrawalStatsSchema,
 		},
 		summary: "Get withdrawal statistics for a client",
+	},
+
+	/**
+	 * Batch complete withdrawals (Operations Dashboard)
+	 * Completes multiple withdrawals and transfers USDC from custodial wallet back to oracle
+	 */
+	batchCompleteWithdrawals: {
+		method: "POST",
+		path: "/withdrawals/batch-complete",
+		responses: {
+			200: z.object({
+				success: z.boolean(),
+				status: z.string().optional(),
+				environment: z.enum(["sandbox", "production"]).optional(),
+				completedWithdrawals: z.array(z.object({
+					withdrawalId: z.string(),
+					status: z.string(),
+					fiatAmount: z.string(),
+					transferTxHash: z.string().optional(),
+				})),
+				failedWithdrawals: z.array(z.object({
+					withdrawalId: z.string(),
+					error: z.string(),
+				})).optional(),
+				totalProcessed: z.number(),
+				totalAmount: z.string(),
+				destinationCurrency: z.string(),
+				transferTxHash: z.string().optional(),
+				custodialBalance: z.string().optional(),
+				custodialBalanceAfter: z.string().optional(),
+				note: z.string().optional(),
+			}),
+			400: z.object({
+				success: z.boolean(),
+				error: z.string(),
+				details: z.string().optional(),
+			}),
+			401: z.object({
+				error: z.string(),
+			}),
+			500: z.object({
+				success: z.boolean(),
+				error: z.string(),
+				details: z.string().optional(),
+			}),
+		},
+		body: z.object({
+			withdrawalIds: z.array(z.string()).min(1).describe("Array of withdrawal IDs to complete"),
+			destinationCurrency: z.string().describe("Destination fiat currency (e.g., USD, SGD)"),
+		}),
+		summary: "Batch complete withdrawals (Operations Dashboard)",
+	},
+
+	// ⚠️ Generic routes with :id params MUST come LAST
+	// Get withdrawal by ID
+	getById: {
+		method: "GET",
+		path: "/withdrawals/:id",
+		responses: {
+			200: z.object({
+				found: z.boolean(),
+				data: WithdrawalResponseSchema.nullable(),
+				message: z.string().optional(),
+			}),
+			500: z.object({ success: z.boolean(), error: z.string() }),
+		},
+		summary: "Get withdrawal by ID",
+	},
+
+	// Complete withdrawal
+	complete: {
+		method: "POST",
+		path: "/withdrawals/:id/complete",
+		responses: {
+			200: WithdrawalResponseSchema,
+			400: z.object({ error: z.string() }),
+		},
+		body: CompleteWithdrawalSchema,
+		summary: "Mark withdrawal as completed",
+	},
+
+	// Fail withdrawal
+	fail: {
+		method: "POST",
+		path: "/withdrawals/:id/fail",
+		responses: {
+			200: WithdrawalResponseSchema,
+			400: z.object({ error: z.string() }),
+		},
+		body: FailWithdrawalSchema,
+		summary: "Mark withdrawal as failed and restore shares",
 	},
 });

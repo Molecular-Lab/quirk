@@ -206,6 +206,161 @@ export class TokenTransferService {
 	}
 
 	/**
+	 * Transfer tokens from custodial wallet back to oracle (for off-ramp)
+	 * This is the REVERSE of transferFromOracle - used for withdrawals
+	 *
+	 * Flow:
+	 * 1. Check custodial wallet balance
+	 * 2. If insufficient → return error
+	 * 3. Execute ERC20 transfer from custodial → oracle
+	 * 4. Return result with transaction details
+	 */
+	async transferFromCustodialToOracle(params: TransferFromOracleParams): Promise<TransferResult> {
+		try {
+			const decimals = params.decimals || 6 // USDC has 6 decimals
+			const requiredAmount = parseUnits(params.amount, decimals)
+
+			// Get chain config
+			const chain = this.getChainConfig(params.chainId)
+			if (!chain) {
+				return {
+					success: false,
+					status: "failed",
+					error: `Unsupported chain ID: ${params.chainId}`,
+				}
+			}
+
+			// Validate custodial wallet private key format
+			if (!params.privateKey) {
+				return {
+					success: false,
+					status: "failed",
+					error: "Custodial wallet private key is required",
+				}
+			}
+
+			if (!params.privateKey.startsWith("0x")) {
+				return {
+					success: false,
+					status: "failed",
+					error: "Custodial wallet private key must start with 0x",
+				}
+			}
+
+			// Create account from custodial wallet private key
+			const custodialAccount = privateKeyToAccount(params.privateKey as Hex)
+			const custodialAddress = custodialAccount.address
+
+			// Oracle address is the destination (params.custodialWallet is actually oracle address in this case)
+			const oracleAddress = params.custodialWallet as Address
+
+			// Create clients with optional custom RPC
+			const transport = params.rpcUrl ? http(params.rpcUrl) : http()
+
+			const publicClient = createPublicClient({
+				chain,
+				transport,
+			})
+
+			const walletClient = createWalletClient({
+				account: custodialAccount,
+				chain,
+				transport,
+			})
+
+			// ERC20 ABI (only the functions we need)
+			const erc20Abi = [
+				{
+					name: "transfer",
+					type: "function",
+					stateMutability: "nonpayable",
+					inputs: [
+						{ name: "to", type: "address" },
+						{ name: "amount", type: "uint256" },
+					],
+					outputs: [{ name: "", type: "bool" }],
+				},
+				{
+					name: "balanceOf",
+					type: "function",
+					stateMutability: "view",
+					inputs: [{ name: "account", type: "address" }],
+					outputs: [{ name: "", type: "uint256" }],
+				},
+			] as const
+
+			// Step 1: Check custodial wallet balance FIRST
+			const custodialBalance = await publicClient.readContract({
+				address: params.tokenAddress as Address,
+				abi: erc20Abi,
+				functionName: "balanceOf",
+				args: [custodialAddress],
+			})
+
+			const custodialBalanceFormatted = formatUnits(custodialBalance, decimals)
+
+			// Step 2: If insufficient balance, return error with details
+			if (custodialBalance < requiredAmount) {
+				return {
+					success: false,
+					status: "insufficient_balance",
+					error: `Insufficient custodial balance. Required: ${params.amount} USDC, Available: ${custodialBalanceFormatted} USDC.`,
+					oracleBalance: custodialBalanceFormatted, // Reusing field name for custodial balance
+					requiredAmount: params.amount,
+				}
+			}
+
+			// Step 3: Execute ERC20 transfer from custodial → oracle
+			const hash = await walletClient.writeContract({
+				address: params.tokenAddress as Address,
+				abi: erc20Abi,
+				functionName: "transfer",
+				args: [oracleAddress, requiredAmount],
+			})
+
+			// Wait for transaction confirmation
+			const receipt = await publicClient.waitForTransactionReceipt({ hash })
+
+			if (receipt.status !== "success") {
+				return {
+					success: false,
+					status: "failed",
+					error: "Transaction failed on-chain",
+					txHash: hash,
+				}
+			}
+
+			// Step 4: Get balance after transfer
+			const custodialBalanceAfter = await publicClient.readContract({
+				address: params.tokenAddress as Address,
+				abi: erc20Abi,
+				functionName: "balanceOf",
+				args: [custodialAddress],
+			})
+
+			const custodialBalanceAfterFormatted = formatUnits(custodialBalanceAfter, decimals)
+
+			return {
+				success: true,
+				status: "completed",
+				txHash: hash,
+				blockNumber: receipt.blockNumber,
+				amountTransferred: params.amount,
+				oracleBalance: custodialBalanceFormatted,
+				oracleBalanceAfter: custodialBalanceAfterFormatted,
+			}
+		} catch (error) {
+			console.error("[TokenTransferService] Transfer from custodial error:", error)
+
+			return {
+				success: false,
+				status: "failed",
+				error: error instanceof Error ? error.message : "Unknown error",
+			}
+		}
+	}
+
+	/**
 	 * Transfer USDC from oracle wallet to custodial wallet (for mainnet/production)
 	 *
 	 * Flow:

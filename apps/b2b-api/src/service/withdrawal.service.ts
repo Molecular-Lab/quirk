@@ -16,6 +16,9 @@ export class WithdrawalService {
 		orderId: string;
 		destinationType: "client_balance" | "bank_account" | "debit_card" | "crypto_wallet";
 		destinationDetails?: any;
+		environment?: "sandbox" | "production"; // ✅ Environment support
+		network?: string; // ✅ Network support (e.g., "sepolia", "mainnet")
+		oracleAddress?: string; // ✅ Oracle address
 		deductFees?: boolean; // ✅ Optional fee deduction control (default: true)
 	}) {
 		return await this.withdrawalUseCase.requestWithdrawal(request);
@@ -54,5 +57,23 @@ export class WithdrawalService {
 			return await this.withdrawalUseCase.listPendingWithdrawalsByClientAndEnvironment(clientId, environment);
 		}
 		return await this.withdrawalUseCase.listWithdrawalsByClient(clientId);
+	}
+
+	async transferFromCustodialToOracle(
+		chainId: string,
+		tokenAddress: string,
+		oracleAddress: string,
+		amount: string,
+		custodialPrivateKey: string,
+		rpcUrl?: string
+	) {
+		return await this.withdrawalUseCase.transferFromCustodialToOracle(
+			chainId,
+			tokenAddress,
+			oracleAddress,
+			amount,
+			custodialPrivateKey,
+			rpcUrl
+		);
 	}
 }
