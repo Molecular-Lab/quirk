@@ -24,7 +24,7 @@ export const CoreServicesSection = () => {
 					<p className="text-base lg:text-lg text-claude-gray-800 max-w-2xl mx-auto px-4">
 						Quirk makes it effortless to bring your business into on-chain
 					</p>
-					<p className="text-md lg:text-lg text-claude-gray-800 max-w-2xl mx-auto px-4 mb-1">
+					<p className="text-sm lg:text-lg text-gray-600 md:text-claude-gray-800 max-w-2xl mx-auto px-4 mb-1">
 						Abstracting away complexity so you can activate new revenue streams globally
 					</p>
 				</motion.div>
