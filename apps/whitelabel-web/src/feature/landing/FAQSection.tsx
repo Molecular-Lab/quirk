@@ -1,5 +1,6 @@
 import { useRef, useState } from "react"
 
+import { Link } from "@tanstack/react-router"
 import { AnimatePresence, motion, useInView } from "framer-motion"
 import { ChevronDown } from "lucide-react"
 
@@ -184,18 +185,18 @@ export function FAQSection() {
 					transition={{ delay: 0.8, duration: 0.5 }}
 				>
 					<p className="text-claude-gray-800 mb-4">Still have questions?</p>
-					<motion.a
-						href="/contact"
-						rel="noopener noreferrer"
-						className="inline-block bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium"
-						whileHover={{
-							scale: 1.02,
-							boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
-						}}
-						whileTap={{ scale: 0.98 }}
-					>
-						Let's Talk
-					</motion.a>
+					<Link to="/contact">
+						<motion.button
+							className="inline-block bg-gray-900 text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition-colors font-medium cursor-pointer"
+							whileHover={{
+								scale: 1.02,
+								boxShadow: "0 10px 40px rgba(0, 0, 0, 0.15)",
+							}}
+							whileTap={{ scale: 0.98 }}
+						>
+							Let's Talk
+						</motion.button>
+					</Link>
 				</motion.div>
 			</motion.div>
 		</section>

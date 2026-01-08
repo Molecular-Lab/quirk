@@ -1,5 +1,6 @@
 import { useRef } from "react"
 
+import { Link } from "@tanstack/react-router"
 import { motion, useInView } from "framer-motion"
 
 import { BenefitsSection } from "./BenefitsSection"
@@ -100,14 +101,18 @@ function AnimatedFooter() {
 						<h4 className="font-medium text-claude-gray-900 mb-4 text-lg">Navigation</h4>
 						<ul className="space-y-3 text-base text-claude-gray-700">
 							<motion.li variants={linkVariants}>
-								<motion.a href="/contact" className="hover:text-claude-gray-900 transition-colors" whileHover={{ x: 3 }}>
-									Get in Touch
-								</motion.a>
+								<Link to="/contact">
+									<motion.span className="hover:text-claude-gray-900 transition-colors cursor-pointer inline-block" whileHover={{ x: 3 }}>
+										Get in Touch
+									</motion.span>
+								</Link>
 							</motion.li>
 							<motion.li variants={linkVariants}>
-								<motion.a href="/login" className="hover:text-claude-gray-900 transition-colors" whileHover={{ x: 3 }}>
-									Log In
-								</motion.a>
+								<Link to="/login">
+									<motion.span className="hover:text-claude-gray-900 transition-colors cursor-pointer inline-block" whileHover={{ x: 3 }}>
+										Log In
+									</motion.span>
+								</Link>
 							</motion.li>
 						</ul>
 					</motion.div>
