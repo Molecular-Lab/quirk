@@ -448,8 +448,8 @@ export function createWithdrawalRouter(
 
 				// Process each withdrawal
 				for (const withdrawalId of body.withdrawalIds) {
-					// 1. Get withdrawal from withdrawal_transactions table
-					const withdrawal = await withdrawalService.getWithdrawalByOrderId(withdrawalId);
+					// 1. Get withdrawal from withdrawal_transactions table (by UUID id, not orderId)
+					const withdrawal = await withdrawalService.getWithdrawalById(withdrawalId);
 					if (!withdrawal) {
 						logger.warn(`Withdrawal not found: ${withdrawalId}`);
 						failedWithdrawals.push({
@@ -532,8 +532,8 @@ export function createWithdrawalRouter(
 					const fiatAmount = parseFloat(withdrawal.requestedAmount);
 					totalFiat += fiatAmount;
 
-					// 6. Mark withdrawal as completed
-					await withdrawalService.completeWithdrawal(withdrawalId);
+					// 6. Mark withdrawal as completed (pass orderId, not UUID id)
+					await withdrawalService.completeWithdrawal(withdrawal.orderId);
 
 					completedWithdrawals.push({
 						withdrawalId,
@@ -595,7 +595,7 @@ export function createWithdrawalRouter(
 				const withdrawalsByProduct = new Map<string, number>();
 
 				for (const item of completedWithdrawals) {
-					const withdrawal = await withdrawalService.getWithdrawalByOrderId(item.withdrawalId);
+					const withdrawal = await withdrawalService.getWithdrawalById(item.withdrawalId);
 					if (withdrawal) {
 						const current = withdrawalsByProduct.get(withdrawal.clientId) || 0;
 						withdrawalsByProduct.set(

@@ -16,15 +16,15 @@ WORKDIR /app
 
 
 # Install the project's dependencies using the lockfile and settings
-# Note: Build context is repository root, so we copy from apps/agent/
-COPY apps/agent/pyproject.toml apps/agent/uv.lock ./
+# Note: Build context is apps/agent directory (set in docker-compose.yml)
+COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
 
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
-COPY apps/agent/src ./src
+COPY src ./src
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
@@ -41,8 +41,8 @@ RUN useradd -m -u 1000 appuser
 
 WORKDIR /app
 
-# Copy the environment from the builder stage
-# We copy the entire .venv directory
+# Copy the environment and source code from the builder stage
+# We copy the entire .venv directory and the installed source
 COPY --from=builder --chown=appuser:appuser /app/.venv /app/.venv
 COPY --from=builder --chown=appuser:appuser /app/src /app/src
 

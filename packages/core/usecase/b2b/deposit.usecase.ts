@@ -61,7 +61,7 @@ export class B2BDepositUseCase {
 
 		// Create deposit args
 		const args: CreateDepositArgs = {
-			orderId: request.orderId || `DEP-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+			orderId: request.orderId || `DEP-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
 			clientId: request.clientId,
 			userId: user.id,
 			depositType: request.depositType,
@@ -236,7 +236,13 @@ export class B2BDepositUseCase {
 		// Step 4: Get or create end_user_vault (with environment support)
 		const userVault = await this.vaultRepository.getEndUserVaultByClient(endUser.id, deposit.clientId, environment)
 
+		// ✅ Convert deposit amount from human-readable to smallest units (micro-USDC: 6 decimals)
+		// request.cryptoAmount is in human-readable format (e.g., "10.00")
+		// We need to store in smallest units (e.g., "10000000")
+		const DECIMALS = 6
 		const depositAmount = new BigNumber(request.cryptoAmount)
+			.multipliedBy(10 ** DECIMALS)
+			.integerValue(BigNumber.ROUND_DOWN)
 
 		if (!userVault) {
 			// ✅ First deposit - create vault with entry index = client growth index
@@ -293,9 +299,10 @@ export class B2BDepositUseCase {
 		// Step 5: Update client_vault (add pending deposit balance)
 		// Note: Client vaults still track shares internally for their own accounting
 		// End users don't see shares, they see fiat balance
+		// depositAmount is already in smallest units from Step 4
 		await this.vaultRepository.addPendingDeposit(
 			clientVault.id,
-			request.cryptoAmount,
+			depositAmount.toString(), // Already in smallest units (e.g., 10 USDC = 10,000,000)
 			clientVault.totalShares, // Keep existing shares unchanged
 		)
 

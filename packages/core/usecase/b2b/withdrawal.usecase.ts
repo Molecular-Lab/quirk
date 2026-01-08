@@ -97,12 +97,20 @@ export class B2BWithdrawalUseCase {
 			),
 		)
 
+		// ✅ Convert withdrawal amount from human-readable to smallest units (micro-USDC: 6 decimals)
+		// amount parameter is in human-readable format (e.g., "10.00")
+		// We need to convert to smallest units for comparison with vault balances
+		const DECIMALS = 6
 		const withdrawalAmount = new BigNumber(amount)
+			.multipliedBy(10 ** DECIMALS)
+			.integerValue(BigNumber.ROUND_DOWN)
 		const totalDeposited = new BigNumber(userVault.totalDeposited)
 
 		// ✅ STEP 4: Validate balance
 		if (withdrawalAmount.isGreaterThan(currentValue)) {
-			throw new Error(`Insufficient balance. Requested: ${amount}, Available: ${currentValue.toString()}`)
+			// Convert back to human-readable for error message
+			const availableHumanReadable = currentValue.dividedBy(10 ** DECIMALS).toFixed(6)
+			throw new Error(`Insufficient balance. Requested: ${amount}, Available: ${availableHumanReadable}`)
 		}
 
 		// ✅ STEP 4.5: Calculate yield and revenue split
@@ -146,12 +154,12 @@ export class B2BWithdrawalUseCase {
 
 			}
 
-			// Build fee breakdown for response
+			// Build fee breakdown for response (convert to human-readable)
 			feeBreakdown = {
-				totalYield: totalYield.toString(),
-				platformFee: distribution.platformRevenue,
-				clientFee: distribution.clientRevenue,
-				userNetYield: distribution.enduserRevenue,
+				totalYield: new BigNumber(totalYield).dividedBy(10 ** DECIMALS).toFixed(6),
+				platformFee: new BigNumber(distribution.platformRevenue).dividedBy(10 ** DECIMALS).toFixed(6),
+				clientFee: new BigNumber(distribution.clientRevenue).dividedBy(10 ** DECIMALS).toFixed(6),
+				userNetYield: new BigNumber(distribution.enduserRevenue).dividedBy(10 ** DECIMALS).toFixed(6),
 				feesDeducted: shouldDeductFees,
 				platformFeePercent: distribution.platformFeePercent,
 				clientFeePercent: distribution.clientRevenuePercent,
@@ -204,10 +212,10 @@ export class B2BWithdrawalUseCase {
 			description: `Withdrawal: ${amount} USD (${withdrawalEnvironment})${shouldDeductFees ? " with fees deducted" : " fees deferred"}`,
 			metadata: {
 				requestedAmount: amount,
-				actualAmount: actualWithdrawalAmount.toString(),
-				currentValue: currentValue.toString(),
-				totalDeposited: totalDeposited.toString(),
-				totalYield: totalYield.toString(),
+				actualAmount: new BigNumber(actualWithdrawalAmount).dividedBy(10 ** DECIMALS).toFixed(6),
+				currentValue: new BigNumber(currentValue).dividedBy(10 ** DECIMALS).toFixed(6),
+				totalDeposited: new BigNumber(totalDeposited).dividedBy(10 ** DECIMALS).toFixed(6),
+				totalYield: new BigNumber(totalYield).dividedBy(10 ** DECIMALS).toFixed(6),
 				clientGrowthIndex,
 				clientGrowthIndexDecimal: new BigNumber(clientGrowthIndex).dividedBy("1e18").toString(),
 				environment: withdrawalEnvironment,
@@ -221,6 +229,14 @@ export class B2BWithdrawalUseCase {
 		})
 
 		return this.mapToResponse(withdrawal, feeBreakdown)
+	}
+
+	/**
+	 * Get withdrawal by ID (UUID)
+	 */
+	async getWithdrawalById(id: string): Promise<WithdrawalResponse | null> {
+		const withdrawal = await this.withdrawalRepository.getById(id)
+		return withdrawal ? this.mapToResponse(withdrawal) : null
 	}
 
 	/**

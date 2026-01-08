@@ -1,6 +1,6 @@
 import { useState } from "react"
 
-import { useMutation } from "@tanstack/react-query"
+import { useMutation, useQueryClient } from "@tanstack/react-query"
 import { ArrowDown, Check } from "lucide-react"
 
 import { batchCompleteWithdrawals } from "@/api/b2bClientHelpers"
@@ -38,6 +38,9 @@ export function OffRampModal({ isOpen, onClose, selectedWithdrawalIds, withdrawa
 	const [step, setStep] = useState<"select" | "summary" | "processing" | "success" | "error">("select")
 	const [errorMessage, setErrorMessage] = useState("")
 
+	// Query client for cache invalidation
+	const queryClient = useQueryClient()
+
 	// Get environment from store
 	const { apiEnvironment, getConfig } = useEnvironmentStore()
 	const networkConfig = getConfig()
@@ -64,6 +67,10 @@ export function OffRampModal({ isOpen, onClose, selectedWithdrawalIds, withdrawa
 		onSuccess: (data) => {
 			console.log("[OffRampModal] Mutation success:", data)
 			console.log("[OffRampModal] ✅ Off-ramp completed - Fiat transfer initiated")
+
+			// Invalidate balance cache to refresh after withdrawal completes
+			queryClient.invalidateQueries({ queryKey: ["userBalance"] })
+			console.log("[OffRampModal] ✅ Balance cache invalidated")
 
 			// Show success after brief delay
 			setTimeout(() => {

@@ -73,10 +73,10 @@ export class B2BUserVaultUseCase {
 				userId,
 				clientId,
 				environment,
-				totalDeposited: "0",
-				totalWithdrawn: "0",
-				effectiveBalance: "0",
-				yieldEarned: "0",
+				totalDeposited: "0.000000", // Human-readable format with 6 decimals
+				totalWithdrawn: "0.000000",
+				effectiveBalance: "0.000000",
+				yieldEarned: "0.000000",
 				weightedEntryIndex: "1.0",
 				isActive: endUser.status === "active",
 				lastDepositAt: null,
@@ -118,9 +118,9 @@ export class B2BUserVaultUseCase {
 			return {
 				userId,
 				clientId,
-				totalDeposited: "0",
-				totalEffectiveBalance: "0",
-				totalYieldEarned: "0",
+				totalDeposited: "0.000000", // Human-readable format with 6 decimals
+				totalEffectiveBalance: "0.000000",
+				totalYieldEarned: "0.000000",
 				vault: null,
 			}
 		}
@@ -193,6 +193,7 @@ export class B2BUserVaultUseCase {
 
 	/**
 	 * Map database row to response
+	 * ✅ CONVERTS from micro-USDC (database) to human-readable USD (API response)
 	 */
 	private mapToBalanceResponse(
 		vault: GetEndUserVaultByClientRow,
@@ -208,14 +209,20 @@ export class B2BUserVaultUseCase {
 		)
 		const yieldEarned = this.calculateYieldEarned(effectiveBalance, vault.totalDeposited)
 
+		// Helper to convert from smallest units (micro-USDC: 6 decimals) to human-readable
+		const DECIMALS = 6
+		const convertToHumanReadable = (value: string) => {
+			return new BigNumber(value).dividedBy(10 ** DECIMALS).toFixed(DECIMALS)
+		}
+
 		return {
 			userId,
 			clientId,
 			environment,
-			totalDeposited: vault.totalDeposited,
-			totalWithdrawn: vault.totalWithdrawn,
-			effectiveBalance,
-			yieldEarned,
+			totalDeposited: convertToHumanReadable(vault.totalDeposited),
+			totalWithdrawn: convertToHumanReadable(vault.totalWithdrawn),
+			effectiveBalance: convertToHumanReadable(effectiveBalance),
+			yieldEarned: convertToHumanReadable(yieldEarned),
 			weightedEntryIndex: vault.weightedEntryIndex,
 			isActive: vault.isActive,
 			lastDepositAt: vault.lastDepositAt,

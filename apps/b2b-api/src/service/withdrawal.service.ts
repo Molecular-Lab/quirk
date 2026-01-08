@@ -24,6 +24,11 @@ export class WithdrawalService {
 		return await this.withdrawalUseCase.requestWithdrawal(request);
 	}
 
+	async getWithdrawalById(id: string) {
+		const withdrawal = await this.withdrawalUseCase.getWithdrawalById(id);
+		return withdrawal;
+	}
+
 	async getWithdrawalByOrderId(orderId: string) {
 		return await this.withdrawalUseCase.getWithdrawalByOrderId(orderId);
 	}

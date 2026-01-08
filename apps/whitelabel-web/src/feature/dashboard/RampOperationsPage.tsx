@@ -97,7 +97,7 @@ export function RampOperationsPage() {
 				const mappedOrders: DepositOrder[] = (Array.isArray(deposits) ? deposits : []).map((dep: any) => ({
 					orderId: dep.orderId || dep.id || "",
 					userId: dep.userId || "",
-					amount: dep.amount || "0",
+					amount: dep.fiatAmount || dep.cryptoAmount || dep.amount || "0", // ✅ Use fiatAmount (human-readable USD)
 					currency: "USD", // From fiat deposit
 					status: dep.status || "pending",
 					createdAt: dep.createdAt || new Date().toISOString(),

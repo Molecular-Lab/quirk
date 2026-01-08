@@ -1112,17 +1112,24 @@ export class B2BClientUseCase {
 			}
 		}
 
-		// Map database columns to response format
+		// Helper to convert from smallest units (micro-USDC) to human-readable
+		const DECIMALS = 6
+		const convertToHumanReadable = (value: string | number | null | undefined) => {
+			const num = parseFloat(value?.toString() || "0")
+			return (num / 10 ** DECIMALS).toFixed(DECIMALS)
+		}
+
+		// Map database columns to response format (with unit conversion)
 		return {
 			productId: "aggregate", // Special identifier for aggregate mode
 			companyName: aggregatedData.companyName || "All Products",
 			avgAPY,
 			balances: {
-				totalIdleBalance: aggregatedData.totalIdleBalance?.toString() || "0",
-				totalEarningBalance: aggregatedData.totalEarningBalance?.toString() || "0",
-				totalClientRevenue: aggregatedData.totalClientRevenue?.toString() || "0",
-				totalPlatformRevenue: aggregatedData.totalPlatformRevenue?.toString() || "0",
-				totalEnduserRevenue: aggregatedData.totalEnduserRevenue?.toString() || "0",
+				totalIdleBalance: convertToHumanReadable(aggregatedData.totalIdleBalance),
+				totalEarningBalance: convertToHumanReadable(aggregatedData.totalEarningBalance),
+				totalClientRevenue: convertToHumanReadable(aggregatedData.totalClientRevenue),
+				totalPlatformRevenue: convertToHumanReadable(aggregatedData.totalPlatformRevenue),
+				totalEnduserRevenue: convertToHumanReadable(aggregatedData.totalEnduserRevenue),
 			},
 			revenue: {
 				monthlyRecurringRevenue: aggregatedData.monthlyRecurringRevenue?.toString() || "0",
