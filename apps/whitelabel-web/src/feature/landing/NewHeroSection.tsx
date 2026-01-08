@@ -9,7 +9,7 @@ export function NewHeroSection() {
 	const sectionRef = useRef<HTMLDivElement>(null)
 	const isInView = useInView(sectionRef, { once: true, margin: "-50px" })
 
-	const { isMd } = useResponsive()
+	const {} = useResponsive()
 	return (
 		<section className="relative min-h-screen overflow-hidden h-[120vh] rounded-t-none">
 			{/* Animated gradient background - Grayscale base for Claude orange overlay */}
@@ -34,22 +34,11 @@ export function NewHeroSection() {
 							animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 30 }}
 							transition={{ duration: 0.6, delay: 0.1 }}
 						>
-							<motion.button
-								whileHover={{ scale: 1.02 }}
-								whileTap={{ scale: 0.96 }}
-								className="inline-flex items-center gap-1 mb-4 px-4 py-1 rounded-full bg-claude-orange-100/60 border border-white/20 text-claude-orange-400 text-xs font-medium cursor-pointer hover:scale-[1.03] transition-all"
-							>
-								The <div className="font-medium text-claude-orange-500/80">New</div> Financial Service Layer
-							</motion.button>
-							<h2 className="text-lg md:text-4xl font-normal text-claude-gray-900">
-								Turn Idle Capital into Active Revenue Streams
-								{!isMd && "With Institutional-Grade Custody"}
+							<h2 className="text-lg sm:text-3xl md:text-5xl lg:text-7xl font-normal text-claude-gray-900 mb-2">
+								Plug-and-Play Stablecoin Yield Infrastructure
 							</h2>
-							<h2 className="text-lg md:text-4xl font-normal text-claude-gray-900 mb-2 md:mb-6">
-								{isMd && "With Institutional-Grade Custody"}
-							</h2>
-							<p className="text-xs md:text-sm text-claude-gray-800 mt-4 max-w-2xl mx-auto">
-								Start Right Inside Your Apps and Help Millions of Users
+							<p className="text-xs md:text-xl text-claude-gray-900 mt-4 max-w-3xl mx-auto">
+								Quirk turn idle capital into active revenue streams with institutional-grade custody
 							</p>
 
 							{/* Get Demo Button */}
@@ -61,7 +50,7 @@ export function NewHeroSection() {
 							>
 								<Link to="/contact">
 									<motion.button
-										className="bg-claude-gray-900 text-white px-4 py-2 text-xs md:text-sm rounded-xl hover:bg-claude-gray-800 transition-all font-medium shadow-md cursor-pointer"
+										className="bg-claude-gray-900 text-white px-4 md:px-8 py-2 text-xs md:text-lg rounded-xl hover:bg-claude-gray-800 transition-all font-medium shadow-md cursor-pointer"
 										whileHover={{
 											scale: 1.02,
 										}}

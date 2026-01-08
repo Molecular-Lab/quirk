@@ -3,6 +3,7 @@ import { useRef } from "react"
 import { motion, useInView } from "framer-motion"
 
 import { BenefitsSection } from "./BenefitsSection"
+import { BusinessTypesSection } from "./BusinessTypesSection"
 import { FAQSection } from "./FAQSection"
 import { HowItWorksSection } from "./HowItWorksSection"
 import { Navbar } from "./Navbar"
@@ -28,7 +29,10 @@ export function LandingPage() {
 			{/* 4. How It Works */}
 			<HowItWorksSection />
 
-			{/* 5. FAQ */}
+			{/* 5. Business Types - Platform showcase */}
+			<BusinessTypesSection />
+
+			{/* 6. FAQ */}
 			<FAQSection />
 
 			{/* Footer */}
@@ -79,7 +83,7 @@ function AnimatedFooter() {
 	return (
 		<motion.footer
 			ref={footerRef}
-			className="bg-gradient-to-b from-gray-50 to-white border-t border-gray-150 py-12 overflow-hidden"
+			className="bg-gradient-to-b from-claude-bg-50 to-white border-t border-gray-150 py-12 overflow-hidden"
 			variants={containerVariants}
 			initial="hidden"
 			animate={isInView ? "visible" : "hidden"}
