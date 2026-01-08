@@ -184,7 +184,7 @@ export function BenefitsSection() {
 									transition={{ duration: 0.5, delay: 0.2 }}
 									className="flex justify-center"
 								>
-									<div className="bg-gradient-to-br from-claude-orange-100 to-orange-50 rounded-3xl p-8 md:p-12 flex items-center justify-center">
+									<div className="bg-gradient-to-br from-claude-orange-100 to-orange-50 rounded-3xl p-8 md:p-12 flex items-center justify-center shadow-sm">
 										<Users className="size-5 md:size-15 text-claude-orange-500" />
 									</div>
 								</motion.div>
@@ -197,11 +197,11 @@ export function BenefitsSection() {
 									className="flex items-center justify-center gap-3 md:gap-4"
 								>
 									{/* Before Stat */}
-									<div className="bg-gray-100 rounded-2xl px-3 py-3 md:px-6 md:py-5 text-center min-w-[90px] md:min-w-[120px]">
-										<p className="text-md md:text-lg lg:text-2xl font-medium text-gray-500 mb-1">
+									<div className="bg-gradient-to-br from-gray-100 to-white rounded-2xl px-3 py-3 md:px-6 md:py-5 text-center min-w-[90px] md:min-w-[120px] shadow-sm">
+										<p className="text-md md:text-lg lg:text-2xl font-medium text-gray-600 mb-1">
 											{benefits[activeIndex].comparisonBefore}
 										</p>
-										<p className="text-[10px] md:text-xs text-gray-600">{benefits[activeIndex].beforeLabel}</p>
+										<p className="text-[10px] md:text-xs text-gray-800">{benefits[activeIndex].beforeLabel}</p>
 									</div>
 
 									{/* Arrow Icon */}
