@@ -48,10 +48,9 @@ export function ContactPage() {
 						className="max-w-4xl mx-auto"
 					>
 						<div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl bg-gray-900">
-							{/* Placeholder for video - replace with actual YouTube/Vimeo embed */}
 							<iframe
 								className="w-full h-full"
-								src="https://www.youtube.com/embed/dQw4w9WgXcQ"
+								src="https://www.youtube.com/embed/79xyw6wzduE"
 								title="Quirk Demo Video"
 								allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
 								allowFullScreen
